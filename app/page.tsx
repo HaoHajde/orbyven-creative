@@ -36,6 +36,7 @@ const reveal = {
 export default function HomePage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [compactNav, setCompactNav] = useState(false);
+  const [desktopMotion, setDesktopMotion] = useState(false);
   const [activeWarpSection, setActiveWarpSection] = useState<
     "intro" | "work" | "services" | "process" | "pricing" | "start" | null
   >(null);
@@ -112,6 +113,21 @@ export default function HomePage() {
 
     setTheme(initialTheme);
     document.documentElement.style.colorScheme = initialTheme;
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+
+    const sync = () => {
+      setDesktopMotion(media.matches);
+    };
+
+    sync();
+    media.addEventListener("change", sync);
+
+    return () => {
+      media.removeEventListener("change", sync);
+    };
   }, []);
 
 
@@ -216,7 +232,7 @@ export default function HomePage() {
       {/* CINEMATIC SCROLL PROGRESS */}
       <motion.div
         style={{ scaleY: smoothProgress }}
-        className="fixed right-0 top-0 z-[70] h-screen w-px origin-top bg-[var(--accent)] md:w-[2px]"
+        className="fixed right-0 top-0 z-[70] hidden h-screen w-[2px] origin-top bg-[var(--accent)] md:block"
       />
 
       <SiteHeader
@@ -237,12 +253,12 @@ export default function HomePage() {
         {/* ambient glows */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-[-29%] h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
+          className="hidden md:block pointer-events-none absolute left-1/2 top-[-29%] h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
         />
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[12%] top-[22%] h-56 w-56 rounded-full bg-[var(--accent-soft-2)] blur-[110px]"
+          className="hidden md:block pointer-events-none absolute right-[12%] top-[22%] h-56 w-56 rounded-full bg-[var(--accent-soft-2)] blur-[110px]"
         />
 
         {/* subtle grain-ish layer */}
@@ -253,9 +269,9 @@ export default function HomePage() {
 
         <motion.div
           style={{
-            y: heroY,
-            opacity: heroOpacity,
-            scale: heroScale,
+            y: desktopMotion ? heroY : 0,
+            opacity: desktopMotion ? heroOpacity : 1,
+            scale: desktopMotion ? heroScale : 1,
           }}
           className="relative mx-auto flex w-full max-w-[1500px] -translate-y-[1vh] flex-col items-center px-5 text-center sm:px-6 md:-translate-y-[3vh] md:px-10"
         >
@@ -292,7 +308,7 @@ export default function HomePage() {
         </motion.div>
 
         <motion.div
-          style={{ opacity: heroOpacity }}
+          style={{ opacity: desktopMotion ? heroOpacity : 1 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.35, duration: 0.8 }}
@@ -317,15 +333,15 @@ export default function HomePage() {
         <div className="sticky top-0 flex min-h-[100svh] items-center justify-center overflow-hidden bg-[var(--bg)] px-5 sm:px-6 md:min-h-screen md:px-10">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[860px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
+            className="hidden md:block pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[860px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
           />
 
           <motion.div
             style={{
-              opacity: statementOpacity,
-              y: statementY,
-              scale: statementScale,
-              filter: statementFilter,
+              opacity: desktopMotion ? statementOpacity : 1,
+              y: desktopMotion ? statementY : 0,
+              scale: desktopMotion ? statementScale : 1,
+              filter: desktopMotion ? statementFilter : "none",
             }}
             className="relative mx-auto max-w-[1180px] text-center"
           >
@@ -348,7 +364,7 @@ export default function HomePage() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[-10%] top-[8%] h-[460px] w-[460px] rounded-full bg-[var(--accent-soft-2)] blur-[140px]"
+          className="hidden md:block pointer-events-none absolute right-[-10%] top-[8%] h-[460px] w-[460px] rounded-full bg-[var(--accent-soft-2)] blur-[140px]"
         />
 
         <motion.div {...reveal} className="relative">
@@ -403,7 +419,7 @@ export default function HomePage() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-[-12%] top-[10%] h-[520px] w-[520px] rounded-full bg-[var(--accent-soft-2)] blur-[160px]"
+          className="hidden md:block pointer-events-none absolute left-[-12%] top-[10%] h-[520px] w-[520px] rounded-full bg-[var(--accent-soft-2)] blur-[160px]"
         />
 
         <div className="relative mx-auto max-w-[1500px] px-5 py-20 sm:px-6 sm:py-24 md:px-10 md:py-40">
@@ -470,7 +486,7 @@ export default function HomePage() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[-12%] top-[8%] h-[560px] w-[560px] rounded-full bg-[var(--accent-soft)] blur-[180px]"
+          className="hidden md:block pointer-events-none absolute right-[-12%] top-[8%] h-[560px] w-[560px] rounded-full bg-[var(--accent-soft)] blur-[180px]"
         />
 
         <div className="relative mx-auto max-w-[1500px] px-5 py-20 sm:px-6 sm:py-24 md:px-10 md:py-40">
@@ -549,7 +565,7 @@ export default function HomePage() {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[-14%] top-[4%] h-[600px] w-[600px] rounded-full bg-[var(--accent-soft)] blur-[190px]"
+          className="hidden md:block pointer-events-none absolute right-[-14%] top-[4%] h-[600px] w-[600px] rounded-full bg-[var(--accent-soft)] blur-[190px]"
         />
 
         <div className="relative mx-auto max-w-[1500px] px-5 py-20 sm:px-6 sm:py-24 md:px-10 md:py-40">
@@ -1000,6 +1016,22 @@ function ProjectCard({
   variant: "wedding" | "business";
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const [desktopPreview, setDesktopPreview] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+
+    const sync = () => {
+      setDesktopPreview(media.matches);
+    };
+
+    sync();
+    media.addEventListener("change", sync);
+
+    return () => {
+      media.removeEventListener("change", sync);
+    };
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: cardRef,
@@ -1043,9 +1075,9 @@ function ProjectCard({
     >
       <motion.div
         style={{
-          scale: cardScale,
-          opacity: cardOpacity,
-          y: cardY,
+          scale: desktopPreview ? cardScale : 1,
+          opacity: desktopPreview ? cardOpacity : 1,
+          y: desktopPreview ? cardY : 0,
         }}
         className="relative md:sticky md:top-[96px]"
       >
@@ -1089,8 +1121,8 @@ function ProjectCard({
             >
               <motion.div
                 style={{
-                  y: previewY,
-                  scale: previewScale,
+                  y: desktopPreview ? previewY : 0,
+                  scale: desktopPreview ? previewScale : 1,
                 }}
                 className="relative h-full min-h-[370px] overflow-hidden rounded-[22px] border border-white/10 bg-[#111113] shadow-[0_28px_70px_rgba(0,0,0,0.32)] will-change-transform sm:min-h-[440px] sm:rounded-[26px] md:min-h-[520px] md:rounded-[28px] md:shadow-[0_35px_100px_rgba(0,0,0,0.35)]"
               >
@@ -1113,25 +1145,31 @@ function ProjectCard({
                 </div>
 
                 <div className="relative h-[calc(100%-48px)] min-h-[322px] overflow-hidden bg-white sm:min-h-[392px] md:min-h-[472px]">
-                  <iframe
-                    src={href}
-                    title={`Preview ${title}`}
-                    loading="lazy"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    scrolling="no"
-                    className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white md:grayscale md:transition-[filter] md:duration-1000 md:ease-out md:group-hover:grayscale-0"
-                  />
+                  {desktopPreview ? (
+                    <>
+                      <iframe
+                        src={href}
+                        title={`Preview ${title}`}
+                        loading="lazy"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        scrolling="no"
+                        className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white grayscale transition-[filter] duration-1000 ease-out group-hover:grayscale-0"
+                      />
 
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.055] via-transparent to-black/[0.04] opacity-100 transition-opacity duration-1000 group-hover:opacity-40"
-                  />
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.055] via-transparent to-black/[0.04] opacity-100 transition-opacity duration-1000 group-hover:opacity-40"
+                      />
 
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/[0.08] to-transparent"
-                  />
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/[0.08] to-transparent"
+                      />
+                    </>
+                  ) : (
+                    <ProjectVisual variant={variant} />
+                  )}
                 </div>
               </motion.div>
 
@@ -1160,15 +1198,15 @@ function ProjectVisual({
 }) {
   if (variant === "wedding") {
     return (
-      <div className="relative flex min-h-[540px] h-full items-center justify-center overflow-hidden bg-[#f3efe6] p-8 md:p-12">
+      <div className="relative flex h-full min-h-[322px] items-center justify-center overflow-hidden bg-[#f3efe6] p-5 sm:min-h-[392px] sm:p-7 md:min-h-[472px] md:p-12">
         <div className="absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_25%_20%,rgba(255,255,255,.9),transparent_30%),radial-gradient(circle_at_80%_75%,rgba(194,158,68,.18),transparent_34%)]" />
 
-        <div className="relative w-full max-w-[540px] rounded-[32px] border border-[#d4af37]/25 bg-white/90 p-8 text-center shadow-[0_30px_90px_rgba(120,90,20,0.15)] backdrop-blur-xl md:p-12">
+        <div className="relative w-full max-w-[540px] rounded-[24px] border border-[#d4af37]/25 bg-white/95 p-6 text-center shadow-[0_18px_50px_rgba(120,90,20,0.12)] sm:rounded-[28px] sm:p-8 md:rounded-[32px] md:p-12 md:backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[#9b7a22]">
             Save the date
           </p>
 
-          <p className="mt-9 text-[56px] font-light leading-none tracking-[-0.06em] text-[#312c24] md:text-[72px]">
+          <p className="mt-7 text-[46px] font-light leading-none tracking-[-0.06em] text-[#312c24] sm:mt-9 sm:text-[56px] md:text-[72px]">
             D
             <span className="mx-3 text-[#b8860b]">&</span>
             F
@@ -1191,10 +1229,10 @@ function ProjectVisual({
   }
 
   return (
-    <div className="relative flex min-h-[540px] h-full items-center justify-center overflow-hidden bg-[#111113] p-8 md:p-12">
-      <div className="absolute left-[10%] top-[10%] h-60 w-60 rounded-full bg-white/[0.04] blur-3xl" />
+    <div className="relative flex h-full min-h-[322px] items-center justify-center overflow-hidden bg-[#111113] p-5 sm:min-h-[392px] sm:p-7 md:min-h-[472px] md:p-12">
+      <div className="absolute left-[10%] top-[10%] hidden h-60 w-60 rounded-full bg-white/[0.04] blur-3xl md:block" />
 
-      <div className="relative w-full max-w-[650px] overflow-hidden rounded-[28px] border border-white/10 bg-[#1c1c1e] shadow-[0_35px_100px_rgba(0,0,0,0.45)]">
+      <div className="relative w-full max-w-[650px] overflow-hidden rounded-[22px] border border-white/10 bg-[#1c1c1e] shadow-[0_20px_55px_rgba(0,0,0,0.38)] sm:rounded-[26px] md:rounded-[28px] md:shadow-[0_35px_100px_rgba(0,0,0,0.45)]">
         <div className="flex h-11 items-center gap-1.5 border-b border-white/10 px-4">
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -1206,7 +1244,7 @@ function ProjectVisual({
             Your business, elevated.
           </p>
 
-          <p className="mt-5 max-w-lg text-[38px] font-semibold leading-[1.02] tracking-[-0.05em] text-white md:text-[48px]">
+          <p className="mt-5 max-w-lg text-[32px] font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-[38px] md:text-[48px]">
             A stronger digital presence.
           </p>
 
@@ -1463,7 +1501,7 @@ function PricingScene({
       {featured && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[10%] top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-[var(--accent)]/20 blur-[120px]"
+          className="hidden md:block pointer-events-none absolute right-[10%] top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-[var(--accent)]/20 blur-[120px]"
         />
       )}
 
@@ -1606,7 +1644,7 @@ function FinalCTA() {
         {/* Static cinematic atmosphere */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/10 blur-[170px]"
+          className="hidden md:block pointer-events-none absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/10 blur-[170px]"
         />
 
         {/* Orbital motif */}
