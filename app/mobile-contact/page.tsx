@@ -28,19 +28,19 @@ export default function MobileContactPage() {
       <MobilePageChrome activePage="contact" />
 
       <section
-        className="relative overflow-hidden min-h-[72svh] px-5 pb-16 pt-32"
+        className="mobile-subhero mobile-shell-x relative overflow-hidden"
         style={{
           backgroundImage:
             "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.08), transparent 28%)",
         }}
       >
-        <OrbitalSystem variant="accent" className="left-[76%] top-[34%]" />
+        <OrbitalSystem variant="accent" className="left-[72%] top-[52%]" />
         <div className="mx-auto max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE · CONTACT
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mobile-hero-title-size mt-9 font-semibold leading-[0.91] tracking-[-0.065em]">
             Spune-ne ce
             <br />
             vrei să construim<span className="text-[#4b46ee]">.</span>
@@ -52,13 +52,13 @@ export default function MobileContactPage() {
         </div>
       </section>
 
-      <section className="mobile-defer border-t border-[var(--border)] bg-[var(--surface)] px-5 py-10">
+      <section className="mobile-defer border-t border-[var(--border)] bg-[var(--surface)] mobile-shell-x py-12">
         <div className="mx-auto max-w-[760px]">
           <MobileContactForm />
         </div>
       </section>
 
-      <section className="mobile-defer px-5 py-20">
+      <section className="mobile-defer mobile-shell-x py-20">
         <div
           className="mx-auto max-w-[760px]"
           data-mobile-reveal
@@ -94,7 +94,7 @@ export default function MobileContactPage() {
         </div>
       </section>
 
-      <footer className="mobile-defer px-4 pt-5">
+      <footer className="mobile-defer px-[clamp(12px,4vw,16px)] pt-5">
         <div
           className="rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
           data-mobile-reveal
@@ -111,7 +111,7 @@ export default function MobileContactPage() {
 
           <Link
             href="/"
-            className="mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
+            className="mobile-press mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
           >
             <span>Înapoi acasă</span>
             <span className="text-[#4b46ee]">↗</span>

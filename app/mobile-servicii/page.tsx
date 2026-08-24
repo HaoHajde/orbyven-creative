@@ -62,19 +62,19 @@ export default function MobileServicesPage() {
       <MobilePageChrome activePage="services" />
 
       <section
-        className="relative overflow-hidden min-h-[72svh] px-5 pb-16 pt-32"
+        className="mobile-subhero mobile-shell-x relative overflow-hidden"
         style={{
           backgroundImage:
             "radial-gradient(circle at 80% 18%, rgba(75,70,238,0.08), transparent 28%)",
         }}
       >
-        <OrbitalSystem variant="accent" className="left-[76%] top-[34%]" />
+        <OrbitalSystem variant="accent" className="left-[72%] top-[52%]" />
         <div className="mx-auto max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE · SERVICII
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mobile-hero-title-size mt-9 font-semibold leading-[0.91] tracking-[-0.065em]">
             Construim digital.
             <br />
             Cu un motiv<span className="text-[#4b46ee]">.</span>
@@ -86,7 +86,7 @@ export default function MobileServicesPage() {
         </div>
       </section>
 
-      <section className="mobile-defer border-t border-[var(--border)] px-5 py-12">
+      <section className="mobile-defer border-t border-[var(--border)] mobile-shell-x py-14">
         <div className="mx-auto max-w-[760px]">
           {services.map((service) => (
             <article
@@ -127,7 +127,7 @@ export default function MobileServicesPage() {
 
           <Link
             href="/contact"
-            className="mt-8 flex h-12 items-center justify-between rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]"
+            className="mobile-press mt-8 flex h-12 items-center justify-between rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]"
           >
             <span>Începe un proiect</span>
             <span>↗</span>
@@ -135,7 +135,7 @@ export default function MobileServicesPage() {
         </div>
       </section>
 
-      <footer className="mobile-defer px-4 pt-5">
+      <footer className="mobile-defer px-[clamp(12px,4vw,16px)] pt-5">
         <div
           className="rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
           data-mobile-reveal
@@ -152,7 +152,7 @@ export default function MobileServicesPage() {
 
           <Link
             href="/contact"
-            className="mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
+            className="mobile-press mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
           >
             <span>Hai să construim</span>
             <span className="text-[#4b46ee]">↗</span>

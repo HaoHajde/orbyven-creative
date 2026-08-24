@@ -115,17 +115,6 @@ iframe {
   animation: mobileHeroIn 700ms 260ms both cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.mobile-orbit {
-  animation: mobileOrbit 18s linear infinite;
-  transform-origin: center;
-  will-change: transform;
-}
-
-.mobile-orbit-reverse {
-  animation: mobileOrbitReverse 25s linear infinite;
-  transform-origin: center;
-  will-change: transform;
-}
 
 .mobile-scroll-cue {
   animation: mobileScrollCue 1.8s ease-in-out infinite;
@@ -142,16 +131,6 @@ iframe {
   }
 }
 
-@keyframes mobileOrbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes mobileOrbitReverse {
-  to {
-    transform: rotate(-360deg);
-  }
 }
 
 @keyframes mobileScrollCue {
@@ -241,7 +220,7 @@ iframe {
   translate: -50% -50%;
   aspect-ratio: 1;
   border-radius: 999px;
-  border: 1px solid rgba(139, 135, 255, 0.12);
+  border: 1px solid var(--orbit-line, rgba(139, 135, 255, 0.12));
 }
 
 .orbyven-orbit-ring--01 {
@@ -271,11 +250,11 @@ iframe {
 /* Slightly alternate line weight / opacity so the system feels designed. */
 .orbyven-orbit-ring--02,
 .orbyven-orbit-ring--05 {
-  border-color: rgba(255, 255, 255, 0.085);
+  border-color: var(--orbit-neutral-line, rgba(255, 255, 255, 0.085));
 }
 
 .orbyven-orbit-ring--04 {
-  border-color: rgba(139, 135, 255, 0.18);
+  border-color: var(--orbit-line-strong, rgba(139, 135, 255, 0.18));
 }
 
 .orbyven-orbit-track {
@@ -336,7 +315,7 @@ iframe {
   width: 5px;
   height: 5px;
   border-radius: 999px;
-  background: rgba(245, 245, 247, 0.72);
+  background: var(--orbit-body-neutral, rgba(245, 245, 247, 0.72));
 }
 
 .orbyven-orbit-body--ring {
@@ -439,5 +418,76 @@ iframe {
 @media (prefers-reduced-motion: reduce) {
   .orbyven-orbit-track {
     animation: none !important;
+  }
+}
+
+
+/* =========================================================
+   ORBYVEN MOBILE FINAL POLISH
+   Tuned for 360 / 390 / 430px widths.
+   ========================================================= */
+
+.mobile-shell-x {
+  padding-inline: clamp(18px, 5vw, 24px);
+}
+
+.mobile-hero-title-size {
+  font-size: clamp(46px, 13.2vw, 64px);
+}
+
+.mobile-section-title-size {
+  font-size: clamp(34px, 9.5vw, 42px);
+}
+
+.mobile-subhero {
+  min-height: 74svh;
+  display: flex;
+  align-items: center;
+  padding-top: 7.5rem;
+  padding-bottom: 4rem;
+}
+
+.mobile-press {
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.mobile-press:active {
+  transform: scale(0.985);
+  opacity: 0.9;
+}
+
+.mobile-hairline {
+  border-color: var(--border);
+}
+
+@media (max-width: 374px) {
+  .mobile-shell-x {
+    padding-inline: 18px;
+  }
+
+  .mobile-subhero {
+    min-height: 70svh;
+    padding-top: 7rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .orbyven-orbit-system--hero {
+    width: 124vw;
+  }
+
+  .orbyven-orbit-system--accent {
+    width: 84vw;
+  }
+}
+
+@media (min-width: 430px) and (max-width: 767px) {
+  .mobile-shell-x {
+    padding-inline: 24px;
+  }
+
+  .orbyven-orbit-system--hero {
+    width: min(116vw, 520px);
   }
 }

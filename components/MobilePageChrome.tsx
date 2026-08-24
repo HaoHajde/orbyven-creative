@@ -40,6 +40,22 @@ function applyTheme(theme: Theme) {
   );
   root.style.setProperty("--button", dark ? "#f5f5f7" : "#1d1d1f");
   root.style.setProperty("--button-text", dark ? "#000000" : "#ffffff");
+  root.style.setProperty(
+    "--orbit-line",
+    dark ? "rgba(139,135,255,0.13)" : "rgba(75,70,238,0.15)"
+  );
+  root.style.setProperty(
+    "--orbit-line-strong",
+    dark ? "rgba(139,135,255,0.20)" : "rgba(75,70,238,0.24)"
+  );
+  root.style.setProperty(
+    "--orbit-neutral-line",
+    dark ? "rgba(255,255,255,0.08)" : "rgba(29,29,31,0.08)"
+  );
+  root.style.setProperty(
+    "--orbit-body-neutral",
+    dark ? "rgba(245,245,247,0.72)" : "rgba(29,29,31,0.62)"
+  );
 
   document.documentElement.style.colorScheme = theme;
 }
@@ -107,7 +123,7 @@ export default function MobilePageChrome({
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-3">
+    <header className="fixed inset-x-0 top-0 z-50 px-[clamp(12px,4vw,16px)] pt-3">
       <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] px-3 shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
         <Link
           href="/"
@@ -137,7 +153,7 @@ export default function MobilePageChrome({
             type="button"
             onClick={toggleTheme}
             aria-label="Schimbă tema"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface)] text-sm"
+            className="mobile-press flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface)] text-sm"
           >
             {theme === "dark" ? "☀" : "☾"}
           </button>
@@ -147,7 +163,7 @@ export default function MobilePageChrome({
             onClick={() => setMenuOpen((value) => !value)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? "Închide meniul" : "Deschide meniul"}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface)]"
+            className="mobile-press flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface)]"
           >
             <span className="text-[17px] leading-none">
               {menuOpen ? "×" : "≡"}
@@ -166,7 +182,7 @@ export default function MobilePageChrome({
                 key={item.key}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={`flex min-h-12 items-center justify-between rounded-[16px] px-4 text-sm ${
+                className={`mobile-press flex min-h-12 items-center justify-between rounded-[16px] px-4 text-sm ${
                   active
                     ? "bg-[var(--surface)] text-[var(--text)]"
                     : "text-[var(--muted)]"
@@ -189,7 +205,7 @@ export default function MobilePageChrome({
             <Link
               href="/contact"
               onClick={() => setMenuOpen(false)}
-              className="flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
+              className="mobile-press flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
             >
               Începe un proiect
             </Link>

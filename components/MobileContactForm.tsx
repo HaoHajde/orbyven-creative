@@ -192,19 +192,19 @@ export default function MobileContactForm() {
       <button
         type="submit"
         disabled={sending}
-        className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-60"
+        className="mobile-press mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-60"
       >
         {sending ? "Se trimite..." : "Trimite cererea ↗"}
       </button>
 
       {sent && (
-        <p className="mt-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)]">
+        <p aria-live="polite" className="mt-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)]">
           Mulțumim. Cererea a fost trimisă.
         </p>
       )}
 
       {errorMessage && (
-        <p className="mt-4 text-sm text-red-500">
+        <p aria-live="polite" className="mt-4 text-sm text-red-500">
           {errorMessage}
         </p>
       )}

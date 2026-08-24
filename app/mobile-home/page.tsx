@@ -93,7 +93,7 @@ export default function MobileHomePage() {
       <MobileControls />
 
       <section
-        className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-5 pb-20 pt-28 text-center"
+        className="mobile-shell-x relative flex min-h-[100svh] items-center justify-center overflow-hidden pb-20 pt-28 text-center"
         style={{
           backgroundImage:
             "radial-gradient(circle at 50% 46%, rgba(75,70,238,0.10), transparent 34%)",
@@ -106,7 +106,7 @@ export default function MobileHomePage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em]">
+          <h1 className="mobile-hero-title mobile-hero-title-size mt-8 font-semibold leading-[0.89] tracking-[-0.07em]">
             We build
             <br />
             what gets
@@ -121,7 +121,7 @@ export default function MobileHomePage() {
           <div className="mobile-hero-action mt-8 flex justify-center">
             <Link
               href="/contact"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)]"
+              className="mobile-press inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)]"
             >
               Începe un proiect
             </Link>
@@ -136,7 +136,7 @@ export default function MobileHomePage() {
 
       <section
         id="intro"
-        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] px-5 py-24"
+        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] mobile-shell-x py-22"
       >
         <div
           className="mx-auto max-w-[760px]"
@@ -144,7 +144,7 @@ export default function MobileHomePage() {
         >
           <ChapterLabel number="01" label="Digital presence, rethought." />
 
-          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em]">
+          <h2 className="mt-7 mobile-section-title-size font-semibold leading-[0.99] tracking-[-0.058em]">
             Construim experiențe digitale care fac afacerile mai greu de ignorat.
           </h2>
 
@@ -156,7 +156,7 @@ export default function MobileHomePage() {
 
       <section
         id="work"
-        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] mobile-shell-x py-20"
       >
         <div className="mx-auto max-w-[760px]">
           <div
@@ -167,7 +167,7 @@ export default function MobileHomePage() {
             <div className="orbyven-orbit-content">
               <ChapterLabel number="02" label="Selected work" />
 
-              <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+              <h2 className="mt-6 mobile-section-title-size font-semibold leading-[0.98] tracking-[-0.058em]">
                 Proiecte care spun o poveste.
               </h2>
             </div>
@@ -194,7 +194,7 @@ export default function MobileHomePage() {
 
           <Link
             href="/templates"
-            className="mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+            className="mobile-press mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
           >
             <span>Vezi tot portofoliul</span>
             <span className="text-[#4b46ee]">↗</span>
@@ -204,13 +204,13 @@ export default function MobileHomePage() {
 
       <section
         id="services"
-        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] mobile-shell-x py-20"
       >
         <div className="mx-auto max-w-[760px]">
           <div data-mobile-reveal>
             <ChapterLabel number="03" label="Services" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 mobile-section-title-size font-semibold leading-[0.98] tracking-[-0.058em]">
               Ce construim.
             </h2>
           </div>
@@ -243,7 +243,7 @@ export default function MobileHomePage() {
 
           <Link
             href="/servicii"
-            className="mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 text-sm font-medium"
+            className="mobile-press mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 text-sm font-medium"
           >
             <span>Explorează serviciile</span>
             <span className="text-[#4b46ee]">↗</span>
@@ -253,13 +253,13 @@ export default function MobileHomePage() {
 
       <section
         id="process"
-        className="mobile-defer scroll-mt-24 px-5 py-20"
+        className="mobile-defer scroll-mt-24 mobile-shell-x py-20"
       >
         <div className="mx-auto max-w-[760px]">
           <div data-mobile-reveal>
             <ChapterLabel number="04" label="Cum lucrăm" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 mobile-section-title-size font-semibold leading-[0.98] tracking-[-0.058em]">
               De la idee la online.
             </h2>
           </div>
@@ -296,13 +296,13 @@ export default function MobileHomePage() {
 
       <section
         id="pricing"
-        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] mobile-shell-x py-20"
       >
         <div className="mx-auto max-w-[760px]">
           <div data-mobile-reveal>
             <ChapterLabel number="05" label="Pricing" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 mobile-section-title-size font-semibold leading-[0.98] tracking-[-0.058em]">
               Începi simplu. Crești când ai nevoie.
             </h2>
           </div>
@@ -354,7 +354,7 @@ export default function MobileHomePage() {
 
                 <Link
                   href="/contact"
-                  className={`mt-6 flex h-11 items-center justify-between rounded-full px-5 text-sm font-medium ${
+                  className={`mobile-press mt-6 flex h-11 items-center justify-between rounded-full px-5 text-sm font-medium ${
                     plan.featured
                       ? "bg-[var(--button)] text-[var(--button-text)]"
                       : "border border-[var(--border-strong)]"
@@ -395,7 +395,7 @@ export default function MobileHomePage() {
 
             <Link
               href="/contact"
-              className="mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
+              className="mobile-press mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
             >
               <span>Începe un proiect</span>
               <span className="text-[#4b46ee]">↗</span>
@@ -532,7 +532,8 @@ function ProjectCard({
 
         <Link
           href={href}
-          className="mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+          prefetch={!wedding}
+          className="mobile-press mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
         >
           <span>Vezi proiectul</span>
           <span className="text-[#4b46ee]">↗</span>
