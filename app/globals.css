@@ -185,231 +185,259 @@ iframe {
   }
 }
 
-/* ORBYVEN wide planar orbit
-   Flat 2D "solar system" around important headings.
-   Performance-safe: transform + opacity only. */
+/* =========================================================
+   ORBYVEN ORBIT SYSTEM
+   Flat 2D solar-system language for hero + selected headings.
+   CSS-only. Animated properties: transform / opacity.
+   ========================================================= */
 
-.orbyven-sparkle-text {
+.orbyven-orbit-host {
   position: relative;
-  display: inline-block;
   isolation: isolate;
-
-  /* Orbit radius follows viewport but stays controlled. */
-  --orbit-x: clamp(120px, 34vw, 260px);
-  --orbit-y: clamp(42px, 10vw, 86px);
-  --orbit-x-inner: clamp(82px, 24vw, 185px);
-  --orbit-y-inner: clamp(28px, 7vw, 58px);
 }
 
-.orbyven-sparkle-text::before,
-.orbyven-sparkle-text::after {
-  content: "✦";
+.orbyven-orbit-content {
+  position: relative;
+  z-index: 2;
+}
+
+.orbyven-orbit-system {
   position: absolute;
   left: 50%;
   top: 50%;
-  z-index: 2;
+  z-index: 0;
+  aspect-ratio: 1;
+  translate: -50% -50%;
   pointer-events: none;
+  user-select: none;
+  contain: layout paint style;
+}
+
+.orbyven-orbit-system--hero {
+  width: clamp(520px, 70vw, 980px);
+}
+
+.orbyven-orbit-system--accent {
+  width: clamp(280px, 36vw, 520px);
+  opacity: 0.72;
+}
+
+.orbyven-orbit-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  translate: -50% -50%;
+  border-radius: 999px;
+  background: #4b46ee;
+  box-shadow: 0 0 0 5px rgba(75, 70, 238, 0.06);
+}
+
+.orbyven-orbit-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 135, 255, 0.12);
+}
+
+.orbyven-orbit-ring--01 {
+  width: 24%;
+}
+
+.orbyven-orbit-ring--02 {
+  width: 38%;
+}
+
+.orbyven-orbit-ring--03 {
+  width: 52%;
+}
+
+.orbyven-orbit-ring--04 {
+  width: 66%;
+}
+
+.orbyven-orbit-ring--05 {
+  width: 80%;
+}
+
+.orbyven-orbit-ring--06 {
+  width: 94%;
+}
+
+/* Slightly alternate line weight / opacity so the system feels designed. */
+.orbyven-orbit-ring--02,
+.orbyven-orbit-ring--05 {
+  border-color: rgba(255, 255, 255, 0.085);
+}
+
+.orbyven-orbit-ring--04 {
+  border-color: rgba(139, 135, 255, 0.18);
+}
+
+.orbyven-orbit-track {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  will-change: transform;
+}
+
+.orbyven-orbit-track--one {
+  width: 52%;
+  animation: orbyvenOrbitClockwise 10s linear infinite;
+}
+
+.orbyven-orbit-track--two {
+  width: 67%;
+  animation: orbyvenOrbitCounter 14s linear infinite;
+}
+
+.orbyven-orbit-track--three {
+  width: 81%;
+  animation: orbyvenOrbitClockwise 19s linear infinite;
+}
+
+.orbyven-orbit-track--four {
+  width: 95%;
+  animation: orbyvenOrbitCounter 25s linear infinite;
+}
+
+.orbyven-orbit-body {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -50%;
+  display: block;
+}
+
+.orbyven-orbit-body--star {
   color: #8b87ff;
+  font-size: clamp(9px, 1vw, 14px);
   line-height: 1;
-  opacity: 0;
-  will-change: transform, opacity;
+  text-shadow: 0 0 12px rgba(139, 135, 255, 0.42);
 }
 
-/* Main planet/star — wide clockwise ellipse */
-.orbyven-sparkle-text::before {
-  font-size: clamp(7px, 0.14em, 11px);
-  animation: orbyvenWideOrbit 5.8s linear infinite;
+.orbyven-orbit-body--violet {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4b46ee;
+  box-shadow:
+    0 0 0 3px rgba(75, 70, 238, 0.10),
+    0 0 14px rgba(75, 70, 238, 0.28);
 }
 
-/* Secondary body — smaller reverse ellipse */
-.orbyven-sparkle-text::after {
-  font-size: clamp(4px, 0.09em, 7px);
-  color: #b8b5ff;
-  animation: orbyvenInnerOrbit 8.2s linear infinite reverse;
+.orbyven-orbit-body--small {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(245, 245, 247, 0.72);
 }
 
-/* Different headings start at different points in the orbit. */
-.orbyven-sparkle-a::before {
-  animation-delay: -0.7s;
+.orbyven-orbit-body--ring {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 135, 255, 0.82);
 }
 
-.orbyven-sparkle-a::after {
-  animation-delay: -3.1s;
+.orbyven-orbit-body--ring > span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 17px;
+  height: 4px;
+  translate: -50% -50%;
+  rotate: -20deg;
+  border: 1px solid rgba(139, 135, 255, 0.42);
+  border-radius: 999px;
 }
 
-.orbyven-sparkle-b::before {
-  animation-delay: -2.4s;
-}
-
-.orbyven-sparkle-b::after {
-  animation-delay: -5.6s;
-}
-
-.orbyven-sparkle-c::before {
-  animation-delay: -4.1s;
-}
-
-.orbyven-sparkle-c::after {
-  animation-delay: -1.8s;
-}
-
-/*
-   2D ellipse:
-   left -> top -> right -> bottom -> left
-   The heading is the "sun" at the centre.
-*/
-@keyframes orbyvenWideOrbit {
-  0% {
-    opacity: 0.58;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * -1), 0, 0)
-      scale(0.82)
-      rotate(0deg);
+@keyframes orbyvenOrbitClockwise {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
   }
 
-  12.5% {
-    opacity: 0.86;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * -0.71), calc(var(--orbit-y) * -0.71), 0)
-      scale(0.96)
-      rotate(45deg);
-  }
-
-  25% {
-    opacity: 1;
-    transform:
-      translate(-50%, -50%)
-      translate3d(0, calc(var(--orbit-y) * -1), 0)
-      scale(1.08)
-      rotate(90deg);
-  }
-
-  37.5% {
-    opacity: 0.9;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * 0.71), calc(var(--orbit-y) * -0.71), 0)
-      scale(0.98)
-      rotate(135deg);
-  }
-
-  50% {
-    opacity: 0.68;
-    transform:
-      translate(-50%, -50%)
-      translate3d(var(--orbit-x), 0, 0)
-      scale(0.84)
-      rotate(180deg);
-  }
-
-  62.5% {
-    opacity: 0.9;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * 0.71), calc(var(--orbit-y) * 0.71), 0)
-      scale(0.96)
-      rotate(225deg);
-  }
-
-  75% {
-    opacity: 1;
-    transform:
-      translate(-50%, -50%)
-      translate3d(0, var(--orbit-y), 0)
-      scale(1.06)
-      rotate(270deg);
-  }
-
-  87.5% {
-    opacity: 0.84;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * -0.71), calc(var(--orbit-y) * 0.71), 0)
-      scale(0.94)
-      rotate(315deg);
-  }
-
-  100% {
-    opacity: 0.58;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x) * -1), 0, 0)
-      scale(0.82)
-      rotate(360deg);
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
-@keyframes orbyvenInnerOrbit {
-  0% {
-    opacity: 0.38;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x-inner) * -1), 0, 0)
-      scale(0.72)
-      rotate(0deg);
+@keyframes orbyvenOrbitCounter {
+  from {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 
-  25% {
-    opacity: 0.76;
-    transform:
-      translate(-50%, -50%)
-      translate3d(0, calc(var(--orbit-y-inner) * -1), 0)
-      scale(1)
-      rotate(90deg);
-  }
-
-  50% {
-    opacity: 0.46;
-    transform:
-      translate(-50%, -50%)
-      translate3d(var(--orbit-x-inner), 0, 0)
-      scale(0.76)
-      rotate(180deg);
-  }
-
-  75% {
-    opacity: 0.76;
-    transform:
-      translate(-50%, -50%)
-      translate3d(0, var(--orbit-y-inner), 0)
-      scale(1)
-      rotate(270deg);
-  }
-
-  100% {
-    opacity: 0.38;
-    transform:
-      translate(-50%, -50%)
-      translate3d(calc(var(--orbit-x-inner) * -1), 0, 0)
-      scale(0.72)
-      rotate(360deg);
+  to {
+    transform: translate(-50%, -50%) rotate(0deg);
   }
 }
 
-/* Keep mobile orbit dramatic, but inside practical screen bounds. */
+/* A few static micro-stars, created without extra markup. */
+.orbyven-orbit-system--hero::before,
+.orbyven-orbit-system--hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(245, 245, 247, 0.55);
+  pointer-events: none;
+}
+
+.orbyven-orbit-system--hero::before {
+  left: 18%;
+  top: 29%;
+  width: 2px;
+  height: 2px;
+  box-shadow:
+    92px 126px 0 rgba(245,245,247,.35),
+    214px -6px 0 rgba(139,135,255,.48),
+    304px 172px 0 rgba(245,245,247,.30),
+    42px 238px 0 rgba(139,135,255,.34);
+}
+
+.orbyven-orbit-system--hero::after {
+  right: 22%;
+  bottom: 26%;
+  width: 2px;
+  height: 2px;
+  box-shadow:
+    -86px -108px 0 rgba(245,245,247,.25),
+    58px -138px 0 rgba(139,135,255,.38),
+    -132px 42px 0 rgba(245,245,247,.30);
+}
+
 @media (max-width: 767px) {
-  .orbyven-sparkle-text {
-    --orbit-x: clamp(112px, 36vw, 148px);
-    --orbit-y: clamp(40px, 12vw, 56px);
-    --orbit-x-inner: clamp(72px, 24vw, 100px);
-    --orbit-y-inner: clamp(25px, 8vw, 38px);
+  .orbyven-orbit-system--hero {
+    width: min(128vw, 520px);
   }
 
-  .orbyven-sparkle-text::before {
-    font-size: 7px;
+  .orbyven-orbit-system--accent {
+    width: min(88vw, 350px);
+    opacity: 0.58;
   }
 
-  .orbyven-sparkle-text::after {
-    font-size: 5px;
+  .orbyven-orbit-ring {
+    border-color: rgba(139, 135, 255, 0.13);
+  }
+
+  .orbyven-orbit-ring--02,
+  .orbyven-orbit-ring--05 {
+    border-color: rgba(255, 255, 255, 0.075);
+  }
+
+  .orbyven-orbit-body--violet {
+    width: 7px;
+    height: 7px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .orbyven-sparkle-text::before,
-  .orbyven-sparkle-text::after {
+  .orbyven-orbit-track {
     animation: none !important;
-    opacity: 0 !important;
   }
 }

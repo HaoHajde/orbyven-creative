@@ -2,6 +2,7 @@
 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 import Link from "next/link";
 import {
@@ -267,6 +268,8 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_center,currentColor_0.7px,transparent_0.7px)] [background-size:7px_7px]"
         />
 
+        <OrbitalSystem variant="hero" className="top-[48%]" />
+
         <motion.div
           style={{
             y: desktopMotion ? heroY : 0,
@@ -289,7 +292,7 @@ export default function HomePage() {
               initial={{ y: "115%" }}
               animate={{ y: "0%" }}
               transition={{ duration: 1.05, delay: 0.16, ease: easeOut }}
-              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px] orbyven-sparkle-text orbyven-sparkle-a"
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
             >
               We build
             </motion.span>
@@ -300,7 +303,7 @@ export default function HomePage() {
               initial={{ y: "115%" }}
               animate={{ y: "0%" }}
               transition={{ duration: 1.12, delay: 0.27, ease: easeOut }}
-              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px] orbyven-sparkle-text orbyven-sparkle-b"
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
             >
               what gets remembered.
             </motion.span>
@@ -335,6 +338,8 @@ export default function HomePage() {
             aria-hidden="true"
             className="hidden md:block pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[860px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
           />
+
+          <OrbitalSystem variant="accent" className="top-[50%] opacity-55" />
 
           <motion.div
             style={{
@@ -1681,7 +1686,7 @@ function FinalCTA() {
               Ai un proiect în minte?
             </p>
 
-            <h2 className="text-[48px] font-semibold leading-[0.91] tracking-[-0.065em] sm:text-[clamp(58px,8.4vw,132px)] sm:leading-[0.88] sm:tracking-[-0.075em] orbyven-sparkle-text orbyven-sparkle-c">
+            <h2 className="text-[48px] font-semibold leading-[0.91] tracking-[-0.065em] sm:text-[clamp(58px,8.4vw,132px)] sm:leading-[0.88] sm:tracking-[-0.075em]">
               Hai să-l facem
               <br />
               greu de ignorat.

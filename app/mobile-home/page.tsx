@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import MobileControls from "@/components/MobileControls";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 const services = [
   {
@@ -98,26 +99,14 @@ export default function MobileHomePage() {
             "radial-gradient(circle at 50% 46%, rgba(75,70,238,0.10), transparent 34%)",
         }}
       >
-        <div
-          aria-hidden="true"
-          className="mobile-orbit pointer-events-none absolute left-1/2 top-[48%] h-[310px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border)]"
-        >
-          <span className="absolute right-[34px] top-[31px] h-2 w-2 rounded-full bg-[#4b46ee]" />
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="mobile-orbit-reverse pointer-events-none absolute left-1/2 top-[48%] h-[218px] w-[218px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border)]"
-        >
-          <span className="absolute bottom-[21px] left-[36px] h-1.5 w-1.5 rounded-full bg-[var(--muted-2)]" />
-        </div>
+        <OrbitalSystem variant="hero" className="top-[48%]" />
 
         <div className="relative z-10 mx-auto w-full max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE
           </p>
 
-          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em] orbyven-sparkle-text orbyven-sparkle-a">
+          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em]">
             We build
             <br />
             what gets
@@ -155,7 +144,7 @@ export default function MobileHomePage() {
         >
           <ChapterLabel number="01" label="Digital presence, rethought." />
 
-          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-b">
+          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em]">
             Construim experiențe digitale care fac afacerile mai greu de ignorat.
           </h2>
 
@@ -170,12 +159,18 @@ export default function MobileHomePage() {
         className="mobile-defer scroll-mt-24 border-t border-[var(--border)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <div data-mobile-reveal>
-            <ChapterLabel number="02" label="Selected work" />
+          <div
+            className="orbyven-orbit-host"
+            data-mobile-reveal
+          >
+            <OrbitalSystem variant="accent" className="top-[58%]" />
+            <div className="orbyven-orbit-content">
+              <ChapterLabel number="02" label="Selected work" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-c">
-              Proiecte care spun o poveste.
-            </h2>
+              <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+                Proiecte care spun o poveste.
+              </h2>
+            </div>
           </div>
 
           <div className="mt-10 space-y-5">
@@ -215,7 +210,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="03" label="Services" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-a">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
               Ce construim.
             </h2>
           </div>
@@ -264,7 +259,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="04" label="Cum lucrăm" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-b">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
               De la idee la online.
             </h2>
           </div>
@@ -307,7 +302,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="05" label="Pricing" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-c">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
               Începi simplu. Crești când ai nevoie.
             </h2>
           </div>
@@ -385,13 +380,14 @@ export default function MobileHomePage() {
         className="mobile-defer scroll-mt-24 px-4 pt-6"
       >
         <div
-          className="mx-auto flex min-h-[70svh] max-w-[760px] flex-col justify-between overflow-hidden rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
+          className="orbyven-orbit-host mx-auto flex min-h-[70svh] max-w-[760px] flex-col justify-between overflow-hidden rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
           data-mobile-reveal
         >
-          <div>
+          <OrbitalSystem variant="accent" className="left-[72%] top-[31%] opacity-25" />
+          <div className="orbyven-orbit-content">
             <ChapterLabelLight number="06" label="Start a project" />
 
-            <h2 className="mt-10 text-[47px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-a">
+            <h2 className="mt-10 text-[47px] font-semibold leading-[0.91] tracking-[-0.065em]">
               Hai să-l facem
               <br />
               greu de ignorat.

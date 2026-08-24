@@ -1,25 +1,25 @@
-ORBITA CREATIVE ADMIN
+ORBYVEN SOLAR SYSTEM — CLEAN PACKAGE
 
-1. Supabase -> SQL Editor:
-   rulează supabase/admin-policies.sql
+Copy the files into the matching paths in your project:
 
-2. Supabase -> Authentication -> Users:
-   creează manual un utilizator admin cu email + parolă.
-   Nu crea pagină publică de signup.
+components/OrbitalSystem.tsx
+app/globals.css
 
-3. Copiază în web-studio:
-   app/admin/login/page.tsx
-   app/admin/page.tsx
+app/mobile-home/page.tsx
+app/mobile-servicii/page.tsx
+app/mobile-templates/page.tsx
+app/mobile-contact/page.tsx
 
-4. Restart:
-   npm run dev -- --webpack -p 3001
+app/page.tsx
+app/servicii/page.tsx
+app/templates/page.tsx
+app/contact/page.tsx
 
-5. Deschide:
-   http://localhost:3001/admin/login
+Do NOT rename OrbitalSystem.tsx.
+The pages import it as:
+@/components/OrbitalSystem
 
-Dashboard-ul poate:
-- vedea toate lead-urile
-- căuta și filtra
-- schimba statusul new/contacted/won/lost
-- deschide email-ul clientului
-- logout
+After replacing:
+git add .
+git commit -m "Add ORBYVEN solar orbit system"
+git push

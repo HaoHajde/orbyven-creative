@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import MobileContactForm from "@/components/MobileContactForm";
 import MobilePageChrome from "@/components/MobilePageChrome";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 const vars = {
   "--bg": "#000000",
@@ -27,18 +28,19 @@ export default function MobileContactPage() {
       <MobilePageChrome activePage="contact" />
 
       <section
-        className="min-h-[72svh] px-5 pb-16 pt-32"
+        className="relative overflow-hidden min-h-[72svh] px-5 pb-16 pt-32"
         style={{
           backgroundImage:
             "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.08), transparent 28%)",
         }}
       >
+        <OrbitalSystem variant="accent" className="left-[76%] top-[34%]" />
         <div className="mx-auto max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE · CONTACT
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-a">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
             Spune-ne ce
             <br />
             vrei să construim<span className="text-[#4b46ee]">.</span>
@@ -65,7 +67,7 @@ export default function MobileContactPage() {
             What happens next
           </p>
 
-          <h2 className="mt-6 text-[39px] font-semibold leading-[0.98] tracking-[-0.055em] orbyven-sparkle-text orbyven-sparkle-b">
+          <h2 className="mt-6 text-[39px] font-semibold leading-[0.98] tracking-[-0.055em]">
             Fără complicații inutile.
           </h2>
 
@@ -101,7 +103,7 @@ export default function MobileContactPage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-c">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
             O idee bună
             <br />
             merită construită bine.

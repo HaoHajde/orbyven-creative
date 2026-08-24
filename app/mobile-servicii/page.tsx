@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import MobilePageChrome from "@/components/MobilePageChrome";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 const services = [
   {
@@ -61,18 +62,19 @@ export default function MobileServicesPage() {
       <MobilePageChrome activePage="services" />
 
       <section
-        className="min-h-[72svh] px-5 pb-16 pt-32"
+        className="relative overflow-hidden min-h-[72svh] px-5 pb-16 pt-32"
         style={{
           backgroundImage:
             "radial-gradient(circle at 80% 18%, rgba(75,70,238,0.08), transparent 28%)",
         }}
       >
+        <OrbitalSystem variant="accent" className="left-[76%] top-[34%]" />
         <div className="mx-auto max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE · SERVICII
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-b">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
             Construim digital.
             <br />
             Cu un motiv<span className="text-[#4b46ee]">.</span>
@@ -142,7 +144,7 @@ export default function MobileServicesPage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-c">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
             Clar. Rapid.
             <br />
             Memorabil.

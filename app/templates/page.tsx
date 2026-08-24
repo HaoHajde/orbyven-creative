@@ -2,6 +2,7 @@
 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 import Link from "next/link";
 import {
@@ -276,6 +277,8 @@ export default function TemplatesPage() {
           className="pointer-events-none absolute right-[8%] top-[26%] h-56 w-56 rounded-full bg-[var(--accent-soft-2)] blur-[120px]"
         />
 
+        <OrbitalSystem variant="accent" className="left-[72%] top-[46%]" />
+
         <div className="relative mx-auto w-full max-w-[1500px] px-6 pb-16 pt-12 md:px-10">
           <motion.p
             initial={{
@@ -310,7 +313,7 @@ export default function TemplatesPage() {
                   delay: 0.16,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-c"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
               >
                 Alege o bază.
               </motion.span>
@@ -329,7 +332,7 @@ export default function TemplatesPage() {
                   delay: 0.27,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-a"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
               >
                 Fă-o a ta.
               </motion.span>

@@ -2,6 +2,7 @@
 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 import { orbitaSupabase as orbyvenSupabase } from "@/lib/orbita-supabase";
 import Link from "next/link";
@@ -237,6 +238,8 @@ export default function ContactPage() {
           className="pointer-events-none absolute right-[8%] top-[22%] h-56 w-56 rounded-full bg-[var(--accent-soft-2)] blur-[120px]"
         />
 
+        <OrbitalSystem variant="accent" className="left-[72%] top-[46%]" />
+
         <motion.div
           style={{
             y: heroY,
@@ -283,7 +286,7 @@ export default function ContactPage() {
                   delay: 0.27,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.2vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-a"
+                className="block text-[clamp(54px,7.2vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em]"
               >
                 Hai s-o facem memorabilă.
               </motion.span>
@@ -325,7 +328,7 @@ export default function ContactPage() {
                   Start here
                 </p>
 
-                <h2 className="mt-6 max-w-xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[56px] md:text-[66px] orbyven-sparkle-text orbyven-sparkle-b">
+                <h2 className="mt-6 max-w-xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[56px] md:text-[66px]">
                   Nu ai nevoie de un brief perfect.
                 </h2>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import MobilePageChrome from "@/components/MobilePageChrome";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 const templates = [
   {
@@ -70,18 +71,19 @@ export default function MobileTemplatesPage() {
       <MobilePageChrome activePage="templates" />
 
       <section
-        className="min-h-[72svh] px-5 pb-16 pt-32"
+        className="relative overflow-hidden min-h-[72svh] px-5 pb-16 pt-32"
         style={{
           backgroundImage:
             "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.08), transparent 28%)",
         }}
       >
+        <OrbitalSystem variant="accent" className="left-[76%] top-[34%]" />
         <div className="mx-auto max-w-[760px]">
           <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
             ORBYVEN CREATIVE · PORTOFOLIU
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-c">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
             Alege o bază.
             <br />
             Fă-o a ta<span className="text-[#4b46ee]">.</span>
@@ -155,7 +157,7 @@ export default function MobileTemplatesPage() {
             Custom by default
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-a">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
             Nu trebuie să
             <br />
             arate ca un template.

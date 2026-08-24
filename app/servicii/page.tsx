@@ -2,6 +2,7 @@
 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import OrbitalSystem from "@/components/OrbitalSystem";
 
 
 import Link from "next/link";
@@ -196,6 +197,8 @@ export default function ServicesPage() {
           className="pointer-events-none absolute left-1/2 top-[-30%] h-[780px] w-[1120px] -translate-x-1/2 rounded-full bg-[var(--hero-glow)] blur-[170px]"
         />
 
+        <OrbitalSystem variant="accent" className="left-[72%] top-[46%]" />
+
         <div className="relative mx-auto w-full max-w-[1500px] px-6 pb-16 pt-12 md:px-10">
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -212,7 +215,7 @@ export default function ServicesPage() {
                 initial={{ y: "112%" }}
                 animate={{ y: "0%" }}
                 transition={{ duration: 1.05, delay: 0.16, ease: easeOut }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-b"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
               >
                 Construim digital.
               </motion.span>
@@ -223,7 +226,7 @@ export default function ServicesPage() {
                 initial={{ y: "112%" }}
                 animate={{ y: "0%" }}
                 transition={{ duration: 1.12, delay: 0.27, ease: easeOut }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-c"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
               >
                 Cu un motiv.
               </motion.span>
@@ -413,7 +416,7 @@ export default function ServicesPage() {
           </p>
 
           <div className="mt-5 flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
-            <h2 className="max-w-4xl text-[48px] font-semibold leading-[1] tracking-[-0.055em] sm:text-[64px] md:text-[78px] orbyven-sparkle-text orbyven-sparkle-c">
+            <h2 className="max-w-4xl text-[48px] font-semibold leading-[1] tracking-[-0.055em] sm:text-[64px] md:text-[78px]">
               Spune-ne ce vrei să construim.
             </h2>
 
