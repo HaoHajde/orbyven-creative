@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
@@ -18,6 +19,7 @@ const navItems: {
 
 function applyTheme(theme: Theme) {
   const root = document.getElementById("mobile-page-root");
+
   if (!root) return;
 
   const dark = theme === "dark";
@@ -40,6 +42,33 @@ function applyTheme(theme: Theme) {
   root.style.setProperty("--button-text", dark ? "#000000" : "#ffffff");
 
   document.documentElement.style.colorScheme = theme;
+}
+
+function activateReveals() {
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-mobile-reveal]")
+  );
+
+  if (!elements.length) return () => {};
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        (entry.target as HTMLElement).dataset.visible = "true";
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: "0px 0px -8% 0px",
+      threshold: 0.08,
+    }
+  );
+
+  elements.forEach((element) => observer.observe(element));
+
+  return () => observer.disconnect();
 }
 
 export default function MobilePageChrome({
@@ -65,6 +94,8 @@ export default function MobilePageChrome({
 
     setTheme(initialTheme);
     applyTheme(initialTheme);
+
+    return activateReveals();
   }, []);
 
   const toggleTheme = () => {
@@ -77,8 +108,8 @@ export default function MobilePageChrome({
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-3">
-      <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[color:var(--bg)]/95 px-3 shadow-[0_10px_34px_rgba(0,0,0,0.16)] backdrop-blur-md">
-        <a
+      <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] px-3 shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
+        <Link
           href="/"
           aria-label="ORBYVEN CREATIVE — Acasă"
           className="flex h-10 items-center gap-2"
@@ -99,7 +130,7 @@ export default function MobilePageChrome({
           <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] min-[370px]:block">
             ORBYVEN
           </span>
-        </a>
+        </Link>
 
         <div className="flex items-center gap-2">
           <button
@@ -126,16 +157,12 @@ export default function MobilePageChrome({
       </div>
 
       {menuOpen && (
-        <div className="mx-auto mt-2 max-w-[760px] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_16px_44px_rgba(0,0,0,0.20)]">
-          <div className="px-3 pb-2 pt-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-            Navigate
-          </div>
-
+        <div className="mx-auto mt-2 max-w-[760px] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_14px_36px_rgba(0,0,0,0.16)]">
           {navItems.map((item) => {
             const active = activePage === item.key;
 
             return (
-              <a
+              <Link
                 key={item.key}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
@@ -149,21 +176,23 @@ export default function MobilePageChrome({
                   {active && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#4b46ee]" />
                   )}
+
                   {item.label}
                 </span>
+
                 <span className="text-[var(--muted-2)]">↗</span>
-              </a>
+              </Link>
             );
           })}
 
           <div className="mt-2 border-t border-[var(--border)] pt-2">
-            <a
+            <Link
               href="/contact"
               onClick={() => setMenuOpen(false)}
               className="flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
             >
               Începe un proiect
-            </a>
+            </Link>
           </div>
         </div>
       )}

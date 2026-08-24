@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { CSSProperties } from "react";
+
 import MobilePageChrome from "@/components/MobilePageChrome";
 
 const templates = [
@@ -67,40 +69,37 @@ export default function MobileTemplatesPage() {
     >
       <MobilePageChrome activePage="templates" />
 
-      <section className="relative overflow-hidden px-5 pb-20 pt-32">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-[-120px] top-[20px] h-[300px] w-[300px] rounded-full bg-[#4b46ee]/16 blur-[100px]"
-        />
+      <section
+        className="min-h-[72svh] px-5 pb-16 pt-32"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.08), transparent 28%)",
+        }}
+      >
+        <div className="mx-auto max-w-[760px]">
+          <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
+            ORBYVEN CREATIVE · PORTOFOLIU
+          </p>
 
-        <div className="relative mx-auto max-w-[760px]">
-          <div className="flex items-center justify-between">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
-              ORBYVEN CREATIVE
-            </p>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-              01 / Portfolio
-            </p>
-          </div>
-
-          <h1 className="mt-10 text-[50px] font-semibold leading-[0.9] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
             Alege o bază.
             <br />
-            <span className="text-[#4b46ee]">Fă-o a ta.</span>
+            Fă-o a ta<span className="text-[#4b46ee]">.</span>
           </h1>
 
-          <p className="mt-8 max-w-md text-[15px] leading-7 text-[var(--muted)]">
-            Pornești de la o direcție existentă sau de la o pagină complet albă. Noi o facem să arate ca a ta.
+          <p className="mobile-hero-copy mt-7 max-w-md text-[15px] leading-7 text-[var(--muted)]">
+            Direcții vizuale pe care le adaptăm până când proiectul nu mai arată ca un template.
           </p>
         </div>
       </section>
 
-      <section className="px-5 pb-16">
-        <div className="mx-auto max-w-[760px] space-y-6">
+      <section className="mobile-defer border-t border-[var(--border)] px-5 py-12">
+        <div className="mx-auto max-w-[760px] space-y-5">
           {templates.map((item, index) => (
             <article
               key={item.id}
-              className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]"
+              className="mobile-card overflow-hidden rounded-[25px] border border-[var(--border)] bg-[var(--surface)]"
+              data-mobile-reveal
             >
               <TemplateVisual
                 tone={item.tone}
@@ -108,24 +107,18 @@ export default function MobileTemplatesPage() {
                 index={String(index + 1).padStart(2, "0")}
               />
 
-              <div className="p-6">
+              <div className="p-5">
                 <div className="flex items-center justify-between">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-[var(--muted-2)]">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
                     {item.category}
                   </p>
 
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] ${
-                      item.status === "Live"
-                        ? "bg-[#4b46ee] text-white"
-                        : "border border-[var(--border)] text-[var(--muted-2)]"
-                    }`}
-                  >
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
                     {item.status}
                   </span>
                 </div>
 
-                <h2 className="mt-6 text-[36px] font-semibold leading-[0.98] tracking-[-0.055em]">
+                <h2 className="mt-5 text-[33px] font-semibold tracking-[-0.055em]">
                   {item.title}
                 </h2>
 
@@ -134,15 +127,15 @@ export default function MobileTemplatesPage() {
                 </p>
 
                 {item.href ? (
-                  <a
+                  <Link
                     href={item.href}
-                    className="mt-7 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+                    className="mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
                   >
                     <span>Vezi proiectul</span>
                     <span className="text-[#4b46ee]">↗</span>
-                  </a>
+                  </Link>
                 ) : (
-                  <div className="mt-7 flex h-11 items-center justify-between rounded-full border border-[var(--border)] px-5 text-sm text-[var(--muted-2)]">
+                  <div className="mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border)] px-5 text-sm text-[var(--muted-2)]">
                     <span>În curând</span>
                     <span>•</span>
                   </div>
@@ -153,60 +146,28 @@ export default function MobileTemplatesPage() {
         </div>
       </section>
 
-      <section className="px-5 py-20">
-        <div className="mx-auto max-w-[760px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+      <footer className="mobile-defer px-4 pt-5">
+        <div
+          className="rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
+          data-mobile-reveal
+        >
+          <p className="text-[9px] uppercase tracking-[0.18em] opacity-40">
             Custom by default
           </p>
 
-          <h2 className="mt-6 text-[38px] font-semibold leading-[0.98] tracking-[-0.055em]">
-            Un template nu trebuie
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
+            Nu trebuie să
             <br />
-            să arate ca un template.
+            arate ca un template.
           </h2>
 
-          <p className="mt-5 text-sm leading-6 text-[var(--muted)]">
-            Schimbăm structura, culorile, imaginile, typography și detaliile până când proiectul se simte al brandului tău.
-          </p>
-
-          <a
+          <Link
             href="/contact"
-            className="mt-7 flex h-12 items-center justify-center rounded-full bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
+            className="mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
           >
-            Vorbește cu noi ↗
-          </a>
-        </div>
-      </section>
-
-      <footer className="px-4 pt-4">
-        <div className="relative overflow-hidden rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]">
-          <div
-            aria-hidden="true"
-            className="absolute -right-16 -top-16 h-52 w-52 rounded-full border border-current/10"
-          />
-
-          <div className="relative">
-            <p className="text-[9px] uppercase tracking-[0.18em] opacity-40">
-              Next project
-            </p>
-
-            <h2 className="mt-7 text-[44px] font-semibold leading-[0.92] tracking-[-0.06em]">
-              Ai o direcție
-              <br />
-              în minte?
-            </h2>
-
-            <a
-              href="/contact"
-              className="mt-9 flex h-13 items-center justify-center rounded-full bg-[var(--bg)] text-sm font-semibold text-[var(--text)]"
-            >
-              Hai să o construim ↗
-            </a>
-
-            <p className="mt-16 border-t border-current/15 pt-6 text-[9px] uppercase tracking-[0.15em] opacity-40">
-              © 2026 ORBYVEN CREATIVE
-            </p>
-          </div>
+            <span>Vorbește cu noi</span>
+            <span className="text-[#4b46ee]">↗</span>
+          </Link>
         </div>
       </footer>
     </main>
@@ -224,22 +185,18 @@ function TemplateVisual({
 }) {
   if (tone === "wedding") {
     return (
-      <div className="relative flex min-h-[270px] items-center justify-center overflow-hidden bg-[#f3efe6] p-5 text-[#312c24]">
-        <div className="absolute left-5 top-5 text-[9px] uppercase tracking-[0.18em] text-[#9a8c72]">
+      <div className="relative flex min-h-[225px] items-center justify-center bg-[#f3efe6] p-5 text-[#312c24]">
+        <span className="absolute left-5 top-5 text-[8px] uppercase tracking-[0.16em] opacity-45">
           {index}
-        </div>
+        </span>
 
-        <div className="w-full rounded-[24px] border border-[#c8a85a]/25 bg-white/85 p-7 text-center shadow-[0_18px_50px_rgba(100,80,30,0.10)]">
-          <p className="text-[8px] uppercase tracking-[0.2em] text-[#9b8356]">
+        <div className="w-full rounded-[21px] border border-[#c8a85a]/25 bg-white p-6 text-center">
+          <p className="text-[8px] uppercase tracking-[0.18em] text-[#9b8356]">
             10 · 10 · 2026
           </p>
 
-          <p className="mt-8 text-[38px] font-light tracking-[-0.055em]">
+          <p className="mt-7 text-[34px] font-light tracking-[-0.055em]">
             Diana & Florin
-          </p>
-
-          <p className="mt-4 text-[8px] uppercase tracking-[0.18em] text-[#8f8779]">
-            Wedding experience
           </p>
         </div>
       </div>
@@ -256,24 +213,19 @@ function TemplateVisual({
           : "bg-[#f2f2f2] text-[#262626]";
 
   return (
-    <div className={`relative flex min-h-[270px] items-center justify-center overflow-hidden p-5 ${classes}`}>
-      <span className="absolute left-5 top-5 text-[9px] uppercase tracking-[0.18em] opacity-40">
+    <div className={`relative flex min-h-[225px] items-center p-5 ${classes}`}>
+      <span className="absolute left-5 top-5 text-[8px] uppercase tracking-[0.16em] opacity-40">
         {index}
       </span>
 
-      <div className="w-full rounded-[24px] border border-current/10 bg-current/[0.03] p-6">
-        <p className="text-[8px] uppercase tracking-[0.18em] opacity-45">
+      <div>
+        <p className="text-[8px] uppercase tracking-[0.16em] opacity-40">
           ORBYVEN · CONCEPT
         </p>
 
-        <p className="mt-12 text-[36px] font-semibold leading-[0.96] tracking-[-0.055em]">
+        <p className="mt-9 text-[33px] font-semibold leading-[0.98] tracking-[-0.055em]">
           {title}
         </p>
-
-        <div className="mt-10 flex gap-2">
-          <span className="h-1.5 w-8 rounded-full bg-current/20" />
-          <span className="h-1.5 w-16 rounded-full bg-current/10" />
-        </div>
       </div>
     </div>
   );

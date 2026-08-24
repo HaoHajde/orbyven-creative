@@ -75,6 +75,97 @@ iframe {
   outline-offset: 3px;
 }
 
+/* Mobile performance + motion */
+
+.mobile-defer {
+  content-visibility: auto;
+  contain-intrinsic-size: 720px;
+}
+
+.mobile-card {
+  contain: paint;
+}
+
+[data-mobile-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-mobile-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.mobile-hero-kicker {
+  animation: mobileHeroIn 520ms 40ms both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-hero-title {
+  animation: mobileHeroIn 720ms 110ms both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-hero-copy {
+  animation: mobileHeroIn 700ms 190ms both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-hero-action {
+  animation: mobileHeroIn 700ms 260ms both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-orbit {
+  animation: mobileOrbit 18s linear infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.mobile-orbit-reverse {
+  animation: mobileOrbitReverse 25s linear infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.mobile-scroll-cue {
+  animation: mobileScrollCue 1.8s ease-in-out infinite;
+}
+
+@keyframes mobileHeroIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes mobileOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mobileOrbitReverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes mobileScrollCue {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(0, 5px, 0);
+    opacity: 0.9;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -86,5 +177,10 @@ iframe {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  [data-mobile-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }

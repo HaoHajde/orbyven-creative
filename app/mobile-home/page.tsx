@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import MobileControls from "@/components/MobileControls";
@@ -6,22 +7,22 @@ const services = [
   {
     number: "01",
     title: "Websites",
-    text: "Site-uri de prezentare moderne pentru firme, servicii și branduri care vor să inspire încredere din prima secundă.",
+    text: "Prezențe digitale clare, rapide și construite să inspire încredere.",
   },
   {
     number: "02",
     title: "Landing Pages",
-    text: "Pagini construite pentru campanii, produse sau servicii, unde fiecare element are un rol clar.",
+    text: "Pagini concentrate pe un obiectiv clar: atenție, acțiune, conversie.",
   },
   {
     number: "03",
     title: "Redesign",
-    text: "Refacem experiențe digitale care au rămas în urmă și le aducem la nivelul actual al brandului.",
+    text: "Refacem produse digitale care nu mai reprezintă nivelul actual al brandului.",
   },
   {
     number: "04",
     title: "Digital Experiences",
-    text: "Invitații digitale și proiecte interactive în care designul, povestea și tehnologia funcționează împreună.",
+    text: "Microsite-uri și experiențe interactive în care designul și tehnologia lucrează împreună.",
   },
 ];
 
@@ -29,20 +30,20 @@ const process = [
   {
     number: "01",
     label: "Discover",
-    title: "Înțelegem ce trebuie construit.",
-    text: "Pornim de la afacere, obiectiv și public. Stabilim ce trebuie să facă site-ul, nu doar cum trebuie să arate.",
+    title: "Înțelegem.",
+    text: "Obiectivul, publicul și ce trebuie să facă produsul pentru business.",
   },
   {
     number: "02",
     label: "Design & Build",
-    title: "Construim experiența.",
-    text: "Design, structură, dezvoltare, responsive și detaliile care fac produsul să se simtă coerent.",
+    title: "Construim.",
+    text: "Structură, design, dezvoltare și responsive într-un singur sistem coerent.",
   },
   {
     number: "03",
     label: "Launch & Care",
-    title: "Lansăm. Apoi rămânem aproape.",
-    text: "Testăm, conectăm domeniul și publicăm. Cu abonament, hostingul, mentenanța și suportul rămân la noi.",
+    title: "Lansăm.",
+    text: "Testăm, publicăm și rămânem aproape pentru mentenanță și evoluție.",
   },
 ];
 
@@ -51,41 +52,20 @@ const plans = [
     number: "01",
     name: "START",
     price: "149",
-    description:
-      "Pentru o prezență online simplă, curată și profesionistă.",
-    features: [
-      "1 pagină",
-      "Design responsive",
-      "Hosting & SSL",
-      "SEO de bază",
-    ],
+    text: "O prezență online simplă și profesionistă.",
   },
   {
     number: "02",
     name: "BUSINESS",
     price: "249",
-    description:
-      "Pentru firme care vor un website complet și administrat.",
-    features: [
-      "Până la 5 pagini",
-      "Formular & WhatsApp",
-      "Analytics",
-      "SEO extins",
-    ],
+    text: "Website complet pentru firme care vor să crească.",
     featured: true,
   },
   {
     number: "03",
     name: "PRO",
     price: "399",
-    description:
-      "Pentru proiecte mai ample, integrări și suport prioritar.",
-    features: [
-      "Până la 8–10 pagini",
-      "Integrări",
-      "Suport extins",
-      "Mentenanță",
-    ],
+    text: "Pentru proiecte mai ample, integrări și suport extins.",
   },
 ];
 
@@ -111,104 +91,99 @@ export default function MobileHomePage() {
     >
       <MobileControls />
 
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden px-5 pb-20 pt-28">
+      <section
+        className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-5 pb-20 pt-28 text-center"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 50% 46%, rgba(75,70,238,0.10), transparent 34%)",
+        }}
+      >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-[-120px] top-[120px] h-[320px] w-[320px] rounded-full bg-[#4b46ee]/18 blur-[100px]"
-        />
+          className="mobile-orbit pointer-events-none absolute left-1/2 top-[48%] h-[310px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border)]"
+        >
+          <span className="absolute right-[34px] top-[31px] h-2 w-2 rounded-full bg-[#4b46ee]" />
+        </div>
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -left-24 bottom-24 h-48 w-48 rounded-full border border-[var(--border)]"
-        />
+          className="mobile-orbit-reverse pointer-events-none absolute left-1/2 top-[48%] h-[218px] w-[218px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border)]"
+        >
+          <span className="absolute bottom-[21px] left-[36px] h-1.5 w-1.5 rounded-full bg-[var(--muted-2)]" />
+        </div>
 
-        <div className="relative mx-auto w-full max-w-[760px]">
-          <div className="flex items-center justify-between">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
-              ORBYVEN CREATIVE
-            </p>
+        <div className="relative z-10 mx-auto w-full max-w-[760px]">
+          <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-2)]">
+            ORBYVEN CREATIVE
+          </p>
 
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-              Digital studio
-            </p>
-          </div>
-
-          <h1 className="mt-12 text-[clamp(52px,15vw,76px)] font-semibold leading-[0.87] tracking-[-0.07em]">
+          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em]">
             We build
             <br />
             what gets
             <br />
-            <span className="text-[#4b46ee]">remembered.</span>
+            remembered<span className="text-[#4b46ee]">.</span>
           </h1>
 
-          <p className="mt-9 max-w-sm text-[15px] leading-7 text-[var(--muted)]">
+          <p className="mobile-hero-copy mx-auto mt-8 max-w-[330px] text-[14px] leading-6 text-[var(--muted)]">
             Website-uri și experiențe digitale construite pentru branduri care vor să fie greu de ignorat.
           </p>
 
-          <div className="mt-9 flex items-center gap-3">
-            <a
+          <div className="mobile-hero-action mt-8 flex justify-center">
+            <Link
               href="/contact"
               className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)]"
             >
               Începe un proiect
-            </a>
-
-            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-strong)] text-[#4b46ee]">
-              ↗
-            </span>
+            </Link>
           </div>
 
-          <div className="mt-16 flex items-center gap-3 text-[8px] font-semibold uppercase tracking-[0.17em] text-[var(--muted-2)]">
-            <span className="h-px w-10 bg-[var(--border-strong)]" />
-            Scroll to explore
+          <div className="mobile-scroll-cue mt-16 flex flex-col items-center gap-2 text-[8px] font-semibold uppercase tracking-[0.17em] text-[var(--muted-2)]">
+            <span>Scroll to explore</span>
+            <span>↓</span>
           </div>
         </div>
       </section>
 
       <section
         id="intro"
-        className="scroll-mt-24 border-t border-[var(--border)] px-5 py-24"
+        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] px-5 py-24"
       >
-        <div className="mx-auto max-w-[760px]">
-          <div className="flex items-center justify-between">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">
-              Digital presence, rethought.
-            </p>
+        <div
+          className="mx-auto max-w-[760px]"
+          data-mobile-reveal
+        >
+          <ChapterLabel number="01" label="Digital presence, rethought." />
 
-            <span className="text-[9px] font-semibold text-[#4b46ee]">
-              01
-            </span>
-          </div>
-
-          <h2 className="mt-8 text-[42px] font-semibold leading-[0.97] tracking-[-0.06em]">
-            Construim experiențe digitale care fac afacerile
-            <span className="text-[#4b46ee]"> mai greu de ignorat.</span>
+          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em]">
+            Construim experiențe digitale care fac afacerile mai greu de ignorat.
           </h2>
 
-          <div className="mt-10 grid grid-cols-2 gap-3">
-            <Stat label="Focus" value="Brand" />
-            <Stat label="Built for" value="Growth" />
-          </div>
+          <p className="mt-6 max-w-md text-sm leading-6 text-[var(--muted)]">
+            Design curat. Tehnologie potrivită. Fără elemente puse doar ca să impresioneze.
+          </p>
         </div>
       </section>
 
       <section
         id="work"
-        className="scroll-mt-24 border-t border-[var(--border)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-t border-[var(--border)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionHeading
-            number="02"
-            eyebrow="Selected work"
-            title="Proiecte care spun o poveste."
-          />
+          <div data-mobile-reveal>
+            <ChapterLabel number="02" label="Selected work" />
 
-          <div className="mt-10 space-y-6">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+              Proiecte care spun o poveste.
+            </h2>
+          </div>
+
+          <div className="mt-10 space-y-5">
             <ProjectCard
               index="01"
               category="Wedding · Interactive"
               title="Diana & Florin"
-              text="Invitație digitală premium, cu RSVP, poveste, locații și experiență completă pentru invitați."
+              text="Invitație digitală premium cu RSVP, poveste și experiență completă pentru invitați."
               href="/demo/nunta/diana-florin"
               wedding
             />
@@ -217,104 +192,105 @@ export default function MobileHomePage() {
               index="02"
               category="Business · Website"
               title="Business presence"
-              text="Website-uri curate, rapide și construite pentru o primă impresie puternică."
+              text="Website-uri curate și construite pentru o primă impresie puternică."
               href="/templates"
             />
           </div>
 
-          <a
+          <Link
             href="/templates"
-            className="mt-8 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+            className="mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
           >
             <span>Vezi tot portofoliul</span>
             <span className="text-[#4b46ee]">↗</span>
-          </a>
+          </Link>
         </div>
       </section>
 
       <section
         id="services"
-        className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionHeading
-            number="03"
-            eyebrow="Services"
-            title="Ce construim."
-          />
+          <div data-mobile-reveal>
+            <ChapterLabel number="03" label="Services" />
 
-          <div className="mt-10 space-y-4">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+              Ce construim.
+            </h2>
+          </div>
+
+          <div className="mt-10 border-t border-[var(--border)]">
             {services.map((service) => (
               <article
                 key={service.number}
-                className="relative overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--bg)] p-5"
+                className="border-b border-[var(--border)] py-8"
+                data-mobile-reveal
               >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-1 -top-8 select-none text-[104px] font-semibold tracking-[-0.09em] text-white/[0.025]"
-                >
-                  {service.number}
-                </span>
-
-                <div className="relative">
-                  <span className="text-[9px] font-semibold text-[#4b46ee]">
+                <div className="flex items-start gap-5">
+                  <span className="pt-1 text-[9px] font-semibold text-[#4b46ee]">
                     {service.number}
                   </span>
 
-                  <h3 className="mt-7 text-[32px] font-semibold tracking-[-0.05em]">
-                    {service.title}
-                  </h3>
+                  <div>
+                    <h3 className="text-[30px] font-semibold tracking-[-0.05em]">
+                      {service.title}
+                    </h3>
 
-                  <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-                    {service.text}
-                  </p>
+                    <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
+                      {service.text}
+                    </p>
+                  </div>
                 </div>
               </article>
             ))}
           </div>
 
-          <a
+          <Link
             href="/servicii"
-            className="mt-8 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 text-sm font-medium"
+            className="mt-7 flex h-12 items-center justify-between rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 text-sm font-medium"
           >
             <span>Explorează serviciile</span>
             <span className="text-[#4b46ee]">↗</span>
-          </a>
+          </Link>
         </div>
       </section>
 
       <section
         id="process"
-        className="scroll-mt-24 px-5 py-20"
+        className="mobile-defer scroll-mt-24 px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionHeading
-            number="04"
-            eyebrow="Cum lucrăm"
-            title="De la idee la online."
-          />
+          <div data-mobile-reveal>
+            <ChapterLabel number="04" label="Cum lucrăm" />
 
-          <div className="mt-10 space-y-4">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+              De la idee la online.
+            </h2>
+          </div>
+
+          <div className="mt-10 space-y-3">
             {process.map((item) => (
               <article
                 key={item.number}
-                className="rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-6"
+                className="mobile-card rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-5"
+                data-mobile-reveal
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-[#4b46ee]">
+                  <span className="text-[9px] font-semibold text-[#4b46ee]">
                     {item.number}
                   </span>
 
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.17em] text-[var(--muted-2)]">
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
                     {item.label}
                   </span>
                 </div>
 
-                <h3 className="mt-9 text-[31px] font-semibold leading-[1.01] tracking-[-0.05em]">
+                <h3 className="mt-7 text-[30px] font-semibold tracking-[-0.05em]">
                   {item.title}
                 </h3>
 
-                <p className="mt-5 text-sm leading-6 text-[var(--muted)]">
+                <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
                   {item.text}
                 </p>
               </article>
@@ -325,71 +301,65 @@ export default function MobileHomePage() {
 
       <section
         id="pricing"
-        className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
+        className="mobile-defer scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionHeading
-            number="05"
-            eyebrow="Pricing"
-            title="Începi simplu. Crești când ai nevoie."
-          />
+          <div data-mobile-reveal>
+            <ChapterLabel number="05" label="Pricing" />
 
-          <div className="mt-10 space-y-4">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+              Începi simplu. Crești când ai nevoie.
+            </h2>
+          </div>
+
+          <div className="mt-10 space-y-3">
             {plans.map((plan) => (
               <article
                 key={plan.name}
-                className={`relative overflow-hidden rounded-[28px] border bg-[var(--bg)] p-6 ${
+                className={`mobile-card rounded-[24px] border bg-[var(--bg)] p-5 ${
                   plan.featured
                     ? "border-[#4b46ee]"
                     : "border-[var(--border)]"
                 }`}
+                data-mobile-reveal
               >
-                {plan.featured && (
-                  <div className="absolute right-4 top-4 rounded-full bg-[#4b46ee] px-3 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-white">
-                    Popular
-                  </div>
-                )}
-
                 <div className="flex items-start justify-between gap-5">
                   <div>
-                    <p className="text-[9px] font-semibold text-[#4b46ee]">
-                      {plan.number}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-semibold text-[#4b46ee]">
+                        {plan.number}
+                      </span>
 
-                    <h3 className="mt-4 text-[26px] font-semibold tracking-[-0.045em]">
+                      {plan.featured && (
+                        <span className="rounded-full bg-[#4b46ee] px-2 py-1 text-[7px] font-semibold uppercase tracking-[0.1em] text-white">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-4 text-[24px] font-semibold tracking-[-0.045em]">
                       {plan.name}
                     </h3>
                   </div>
 
-                  <div className="pt-7 text-right">
-                    <span className="text-[52px] font-semibold leading-none tracking-[-0.07em]">
+                  <div className="text-right">
+                    <span className="text-[48px] font-semibold leading-none tracking-[-0.07em]">
                       {plan.price}
                     </span>
 
-                    <p className="mt-1 text-[9px] text-[var(--muted-2)]">
+                    <p className="mt-1 text-[8px] text-[var(--muted-2)]">
                       lei / lună
                     </p>
                   </div>
                 </div>
 
-                <p className="mt-7 text-sm leading-6 text-[var(--muted)]">
-                  {plan.description}
+                <p className="mt-6 text-sm leading-6 text-[var(--muted)]">
+                  {plan.text}
                 </p>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {plan.features.map((feature) => (
-                    <span
-                      key={feature}
-                      className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-[10px] text-[var(--muted)]"
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-
-                <a
+                <Link
                   href="/contact"
-                  className={`mt-7 flex h-11 items-center justify-between rounded-full px-5 text-sm font-medium ${
+                  className={`mt-6 flex h-11 items-center justify-between rounded-full px-5 text-sm font-medium ${
                     plan.featured
                       ? "bg-[var(--button)] text-[var(--button-text)]"
                       : "border border-[var(--border-strong)]"
@@ -399,68 +369,45 @@ export default function MobileHomePage() {
                   <span className={plan.featured ? "" : "text-[#4b46ee]"}>
                     ↗
                   </span>
-                </a>
+                </Link>
               </article>
             ))}
           </div>
 
           <p className="mt-6 text-xs leading-5 text-[var(--muted-2)]">
-            Abonamentele sunt gândite pentru colaborări pe termen de minimum 12 luni.
+            Colaborările pe abonament sunt gândite pentru minimum 12 luni.
           </p>
         </div>
       </section>
 
       <section
         id="start"
-        className="scroll-mt-24 px-4 pt-6"
+        className="mobile-defer scroll-mt-24 px-4 pt-6"
       >
-        <div className="relative mx-auto min-h-[72svh] max-w-[760px] overflow-hidden rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]">
-          <div
-            aria-hidden="true"
-            className="absolute -right-16 -top-16 h-52 w-52 rounded-full border border-current/10"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute -right-3 top-5 h-28 w-28 rounded-full border border-current/10"
-          />
+        <div
+          className="mx-auto flex min-h-[70svh] max-w-[760px] flex-col justify-between overflow-hidden rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
+          data-mobile-reveal
+        >
+          <div>
+            <ChapterLabelLight number="06" label="Start a project" />
 
-          <div className="relative flex min-h-[calc(72svh-64px)] flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-40">
-                  Start a project
-                </p>
+            <h2 className="mt-10 text-[47px] font-semibold leading-[0.91] tracking-[-0.065em]">
+              Hai să-l facem
+              <br />
+              greu de ignorat.
+            </h2>
 
-                <span className="text-[9px] font-semibold opacity-35">
-                  06
-                </span>
-              </div>
+            <Link
+              href="/contact"
+              className="mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
+            >
+              <span>Începe un proiect</span>
+              <span className="text-[#4b46ee]">↗</span>
+            </Link>
+          </div>
 
-              <h2 className="mt-10 text-[48px] font-semibold leading-[0.9] tracking-[-0.065em]">
-                Hai să-l facem
-                <br />
-                greu de
-                <br />
-                <span className="opacity-45">ignorat.</span>
-              </h2>
-
-              <a
-                href="/contact"
-                className="mt-10 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
-              >
-                <span>Începe un proiect</span>
-                <span className="text-[#4b46ee]">↗</span>
-              </a>
-            </div>
-
-            <div className="mt-20">
-              <div className="border-t border-current/15 pt-6">
-                <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.15em] opacity-40">
-                  <span>© 2026 ORBYVEN CREATIVE</span>
-                  <span>RO</span>
-                </div>
-              </div>
-            </div>
+          <div className="mt-20 border-t border-current/15 pt-6 text-[9px] uppercase tracking-[0.15em] opacity-40">
+            © 2026 ORBYVEN CREATIVE
           </div>
         </div>
       </section>
@@ -468,50 +415,42 @@ export default function MobileHomePage() {
   );
 }
 
-function SectionHeading({
+function ChapterLabel({
   number,
-  eyebrow,
-  title,
+  label,
 }: {
   number: string;
-  eyebrow: string;
-  title: string;
+  label: string;
 }) {
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">
-          {eyebrow}
-        </p>
+    <div className="flex items-center justify-between">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">
+        {label}
+      </p>
 
-        <span className="text-[9px] font-semibold text-[#4b46ee]">
-          {number}
-        </span>
-      </div>
-
-      <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
-        {title}
-      </h2>
+      <span className="text-[9px] font-semibold text-[#4b46ee]">
+        {number}
+      </span>
     </div>
   );
 }
 
-function Stat({
+function ChapterLabelLight({
+  number,
   label,
-  value,
 }: {
+  number: string;
   label: string;
-  value: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-4">
-      <p className="text-[8px] uppercase tracking-[0.16em] text-[var(--muted-2)]">
+    <div className="flex items-center justify-between">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-40">
         {label}
       </p>
 
-      <p className="mt-3 text-[22px] font-semibold tracking-[-0.04em]">
-        {value}
-      </p>
+      <span className="text-[9px] font-semibold opacity-35">
+        {number}
+      </span>
     </div>
   );
 }
@@ -532,64 +471,62 @@ function ProjectCard({
   wedding?: boolean;
 }) {
   return (
-    <article className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]">
+    <article
+      className="mobile-card overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface)]"
+      data-mobile-reveal
+    >
       <div
-        className={`relative flex min-h-[270px] items-center justify-center overflow-hidden p-5 ${
+        className={`relative flex min-h-[235px] items-center justify-center p-5 ${
           wedding
             ? "bg-[#f3efe6] text-[#312c24]"
             : "bg-[#111113] text-white"
         }`}
       >
-        <span className="absolute left-5 top-5 text-[9px] uppercase tracking-[0.18em] opacity-40">
+        <span className="absolute left-5 top-5 text-[8px] uppercase tracking-[0.16em] opacity-40">
           {index}
         </span>
 
         {wedding ? (
-          <div className="w-full rounded-[24px] border border-[#c8a85a]/25 bg-white/85 p-7 text-center shadow-[0_18px_50px_rgba(100,80,30,0.10)]">
-            <p className="text-[8px] uppercase tracking-[0.2em] text-[#9b8356]">
+          <div className="w-full rounded-[22px] border border-[#c8a85a]/25 bg-white p-6 text-center">
+            <p className="text-[8px] uppercase tracking-[0.19em] text-[#9b8356]">
               10 · 10 · 2026
             </p>
 
-            <p className="mt-8 text-[38px] font-light tracking-[-0.055em]">
+            <p className="mt-7 text-[36px] font-light tracking-[-0.055em]">
               Diana & Florin
             </p>
 
-            <p className="mt-4 text-[8px] uppercase tracking-[0.18em] text-[#8f8779]">
+            <p className="mt-3 text-[8px] uppercase tracking-[0.17em] text-[#8f8779]">
               Wedding experience
             </p>
           </div>
         ) : (
-          <div className="w-full rounded-[24px] border border-white/10 bg-[#1c1c1e] p-6">
-            <p className="text-[8px] uppercase tracking-[0.18em] text-white/40">
+          <div className="w-full rounded-[22px] border border-white/10 bg-[#1c1c1e] p-6">
+            <p className="text-[8px] uppercase tracking-[0.17em] text-white/40">
               ORBYVEN · BUSINESS
             </p>
 
-            <p className="mt-12 text-[36px] font-semibold leading-[0.96] tracking-[-0.055em]">
+            <p className="mt-10 text-[33px] font-semibold leading-[0.98] tracking-[-0.055em]">
               Built to look
               <br />
               established.
             </p>
-
-            <div className="mt-10 flex gap-2">
-              <span className="h-1.5 w-8 rounded-full bg-white/20" />
-              <span className="h-1.5 w-16 rounded-full bg-white/10" />
-            </div>
           </div>
         )}
       </div>
 
-      <div className="p-6">
+      <div className="p-5">
         <div className="flex items-center justify-between">
-          <p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-[var(--muted-2)]">
+          <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
             {category}
           </p>
 
-          <span className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
+          <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
             {wedding ? "Live" : "Concept"}
           </span>
         </div>
 
-        <h3 className="mt-6 text-[36px] font-semibold leading-[0.98] tracking-[-0.055em]">
+        <h3 className="mt-5 text-[33px] font-semibold tracking-[-0.055em]">
           {title}
         </h3>
 
@@ -597,13 +534,13 @@ function ProjectCard({
           {text}
         </p>
 
-        <a
+        <Link
           href={href}
-          className="mt-7 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+          className="mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
         >
           <span>Vezi proiectul</span>
           <span className="text-[#4b46ee]">↗</span>
-        </a>
+        </Link>
       </div>
     </article>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { orbitaSupabase as orbyvenSupabase } from "@/lib/orbita-supabase";
 import {
   useState,
   type FormEvent,
@@ -61,6 +60,9 @@ export default function MobileContactForm() {
     setErrorMessage("");
 
     try {
+      const { orbitaSupabase: orbyvenSupabase } =
+        await import("@/lib/orbita-supabase");
+
       const { error } = await orbyvenSupabase
         .from("leads")
         .insert({
@@ -86,26 +88,22 @@ export default function MobileContactForm() {
   };
 
   const fieldClass =
-    "w-full rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-[15px] text-[var(--text)] outline-none transition focus:border-[#4b46ee] focus:bg-[var(--surface-2)]";
+    "w-full rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-[15px] text-[var(--text)] outline-none transition focus:border-[#4b46ee]";
 
   return (
     <form
       onSubmit={submit}
-      className="rounded-[28px] border border-[var(--border)] bg-[var(--bg)] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.10)]"
+      className="mobile-card rounded-[26px] border border-[var(--border)] bg-[var(--bg)] p-5"
+      data-mobile-reveal
     >
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-            Project brief
-          </p>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            2–3 minute de completat
-          </p>
-        </div>
+      <div className="mb-7">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+          Project brief
+        </p>
 
-        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[12px] text-[#4b46ee]">
-          ↗
-        </span>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Spune-ne esențialul. Restul îl clarificăm împreună.
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -185,8 +183,8 @@ export default function MobileContactForm() {
             onChange={(event) =>
               updateField("message", event.target.value)
             }
-            placeholder="Spune-ne ce vrei să construim și ce ar trebui să facă proiectul pentru tine."
-            className={`${fieldClass} min-h-[180px] resize-y`}
+            placeholder="Ce vrei să construim și ce rezultat urmărești?"
+            className={`${fieldClass} min-h-[170px] resize-y`}
           />
         </Field>
       </div>
@@ -194,7 +192,7 @@ export default function MobileContactForm() {
       <button
         type="submit"
         disabled={sending}
-        className="mt-6 flex h-13 w-full items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-60"
+        className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-60"
       >
         {sending ? "Se trimite..." : "Trimite cererea ↗"}
       </button>

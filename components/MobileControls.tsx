@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
@@ -42,12 +43,39 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
 }
 
+function activateReveals() {
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-mobile-reveal]")
+  );
+
+  if (!elements.length) return () => {};
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        (entry.target as HTMLElement).dataset.visible = "true";
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: "0px 0px -8% 0px",
+      threshold: 0.08,
+    }
+  );
+
+  elements.forEach((element) => observer.observe(element));
+
+  return () => observer.disconnect();
+}
+
 export default function MobileControls() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [menuOpen, setMenuOpen] = useState(false);
   const [warpOpen, setWarpOpen] = useState(false);
   const [activeSection, setActiveSection] =
-    useState<ChapterId | null>("intro");
+    useState<ChapterId>("intro");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("studio-theme");
@@ -64,6 +92,8 @@ export default function MobileControls() {
 
     setTheme(initialTheme);
     applyTheme(initialTheme);
+
+    return activateReveals();
   }, []);
 
   useEffect(() => {
@@ -117,8 +147,8 @@ export default function MobileControls() {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-3">
-        <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] px-3 shadow-[0_10px_34px_rgba(0,0,0,0.16)]">
-          <a
+        <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] px-3 shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
+          <Link
             href="/"
             aria-label="ORBYVEN CREATIVE — Acasă"
             className="flex h-10 items-center gap-2"
@@ -139,7 +169,7 @@ export default function MobileControls() {
             <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] min-[370px]:block">
               ORBYVEN
             </span>
-          </a>
+          </Link>
 
           <div className="flex items-center gap-2">
             <button
@@ -166,57 +196,49 @@ export default function MobileControls() {
         </div>
 
         {menuOpen && (
-          <div className="mx-auto mt-2 max-w-[760px] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_16px_44px_rgba(0,0,0,0.20)]">
-            <div className="px-3 pb-2 pt-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-              Navigate
-            </div>
-
+          <div className="mx-auto mt-2 max-w-[760px] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_14px_36px_rgba(0,0,0,0.16)]">
             {[
               ["/", "Acasă"],
               ["/templates", "Templates"],
               ["/servicii", "Servicii"],
               ["/contact", "Contact"],
-            ].map(([href, label], index) => {
-              const active = index === 0;
+            ].map(([href, label], index) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                className={`flex min-h-12 items-center justify-between rounded-[16px] px-4 text-sm ${
+                  index === 0
+                    ? "bg-[var(--surface)] text-[var(--text)]"
+                    : "text-[var(--muted)]"
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  {index === 0 && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#4b46ee]" />
+                  )}
 
-              return (
-                <a
-                  key={href}
-                  href={href}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-12 items-center justify-between rounded-[16px] px-4 text-sm ${
-                    active
-                      ? "bg-[var(--surface)] text-[var(--text)]"
-                      : "text-[var(--muted)]"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    {active && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#4b46ee]" />
-                    )}
+                  {label}
+                </span>
 
-                    {label}
-                  </span>
-
-                  <span className="text-[var(--muted-2)]">↗</span>
-                </a>
-              );
-            })}
+                <span className="text-[var(--muted-2)]">↗</span>
+              </Link>
+            ))}
 
             <div className="mt-2 border-t border-[var(--border)] pt-2">
-              <a
+              <Link
                 href="/contact"
                 onClick={() => setMenuOpen(false)}
                 className="flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
               >
                 Începe un proiect
-              </a>
+              </Link>
             </div>
           </div>
         )}
       </header>
 
-      <div className="pointer-events-none fixed left-1/2 top-[78px] z-40 -translate-x-1/2 whitespace-nowrap rounded-full border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[var(--muted)] shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      <div className="pointer-events-none fixed left-1/2 top-[78px] z-40 -translate-x-1/2 whitespace-nowrap rounded-full border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[var(--muted)]">
         <span className="text-[#4b46ee]">WARP</span>
         {" · "}
         {activeChapter.number}
@@ -226,7 +248,7 @@ export default function MobileControls() {
 
       <div className="fixed bottom-[calc(16px+env(safe-area-inset-bottom))] left-4 z-50">
         <div
-          className={`overflow-hidden rounded-[20px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_16px_40px_rgba(0,0,0,0.18)] ${
+          className={`overflow-hidden rounded-[20px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_14px_34px_rgba(0,0,0,0.16)] ${
             warpOpen ? "w-[236px]" : "w-[64px]"
           }`}
         >
@@ -248,10 +270,6 @@ export default function MobileControls() {
 
           {warpOpen && (
             <div className="max-h-[62svh] overflow-y-auto border-t border-[var(--border)] p-2">
-              <div className="px-3 pb-2 pt-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-                Chapters
-              </div>
-
               {chapters.map((chapter) => (
                 <button
                   key={chapter.id}
