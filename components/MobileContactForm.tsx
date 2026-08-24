@@ -1,7 +1,11 @@
 "use client";
 
 import { orbitaSupabase as orbyvenSupabase } from "@/lib/orbita-supabase";
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 type FormState = {
   name: string;
@@ -82,15 +86,30 @@ export default function MobileContactForm() {
   };
 
   const fieldClass =
-    "w-full rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-[15px] text-[var(--text)] outline-none transition focus:border-[#4b46ee]";
+    "w-full rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-[15px] text-[var(--text)] outline-none transition focus:border-[#4b46ee] focus:bg-[var(--surface-2)]";
 
   return (
     <form
       onSubmit={submit}
-      className="rounded-[26px] border border-[var(--border)] bg-[var(--bg)] p-5"
+      className="rounded-[28px] border border-[var(--border)] bg-[var(--bg)] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.10)]"
     >
+      <div className="mb-7 flex items-center justify-between">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+            Project brief
+          </p>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            2–3 minute de completat
+          </p>
+        </div>
+
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[12px] text-[#4b46ee]">
+          ↗
+        </span>
+      </div>
+
       <div className="space-y-4">
-        <Field label="Nume">
+        <Field label="01 · Nume">
           <input
             type="text"
             name="name"
@@ -105,7 +124,7 @@ export default function MobileContactForm() {
           />
         </Field>
 
-        <Field label="Email">
+        <Field label="02 · Email">
           <input
             type="email"
             name="email"
@@ -120,7 +139,7 @@ export default function MobileContactForm() {
           />
         </Field>
 
-        <Field label="Tipul proiectului">
+        <Field label="03 · Tipul proiectului">
           <select
             name="projectType"
             value={form.projectType}
@@ -138,7 +157,7 @@ export default function MobileContactForm() {
           </select>
         </Field>
 
-        <Field label="Buget orientativ">
+        <Field label="04 · Buget orientativ">
           <select
             name="budget"
             value={form.budget}
@@ -156,7 +175,7 @@ export default function MobileContactForm() {
           </select>
         </Field>
 
-        <Field label="Despre proiect">
+        <Field label="05 · Despre proiect">
           <textarea
             name="message"
             required
@@ -177,11 +196,11 @@ export default function MobileContactForm() {
         disabled={sending}
         className="mt-6 flex h-13 w-full items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-60"
       >
-        {sending ? "Se trimite..." : "Trimite cererea"}
+        {sending ? "Se trimite..." : "Trimite cererea ↗"}
       </button>
 
       {sent && (
-        <p className="mt-4 text-sm text-[var(--text)]">
+        <p className="mt-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)]">
           Mulțumim. Cererea a fost trimisă.
         </p>
       )}
@@ -204,7 +223,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-2)]">
+      <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
         {label}
       </span>
       {children}

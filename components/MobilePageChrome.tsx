@@ -23,18 +23,18 @@ function applyTheme(theme: Theme) {
   const dark = theme === "dark";
 
   root.style.setProperty("--bg", dark ? "#000000" : "#ffffff");
-  root.style.setProperty("--surface", dark ? "#0c0c0e" : "#f5f5f7");
-  root.style.setProperty("--surface-2", dark ? "#151518" : "#fbfbfd");
+  root.style.setProperty("--surface", dark ? "#0b0b0d" : "#f5f5f7");
+  root.style.setProperty("--surface-2", dark ? "#121216" : "#fbfbfd");
   root.style.setProperty("--text", dark ? "#f5f5f7" : "#1d1d1f");
   root.style.setProperty("--muted", dark ? "#a1a1a6" : "#6e6e73");
-  root.style.setProperty("--muted-2", dark ? "#77777d" : "#86868b");
+  root.style.setProperty("--muted-2", dark ? "#74747a" : "#86868b");
   root.style.setProperty(
     "--border",
-    dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)"
+    dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
   );
   root.style.setProperty(
     "--border-strong",
-    dark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.14)"
+    dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.14)"
   );
   root.style.setProperty("--button", dark ? "#f5f5f7" : "#1d1d1f");
   root.style.setProperty("--button-text", dark ? "#000000" : "#ffffff");
@@ -77,11 +77,11 @@ export default function MobilePageChrome({
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-3">
-      <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] px-3 shadow-[0_8px_28px_rgba(0,0,0,0.10)]">
+      <div className="mx-auto flex h-14 max-w-[760px] items-center justify-between rounded-[22px] border border-[var(--border-strong)] bg-[color:var(--bg)]/95 px-3 shadow-[0_10px_34px_rgba(0,0,0,0.16)] backdrop-blur-md">
         <a
           href="/"
           aria-label="ORBYVEN CREATIVE — Acasă"
-          className="flex h-10 w-12 items-center justify-center"
+          className="flex h-10 items-center gap-2"
         >
           <img
             src={
@@ -90,11 +90,15 @@ export default function MobilePageChrome({
                 : "/branding/orbyven-logo-dark.png"
             }
             alt=""
-            width="44"
-            height="44"
+            width="40"
+            height="40"
             decoding="async"
-            className="h-10 w-10 object-contain"
+            className="h-9 w-9 object-contain"
           />
+
+          <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] min-[370px]:block">
+            ORBYVEN
+          </span>
         </a>
 
         <div className="flex items-center gap-2">
@@ -122,7 +126,11 @@ export default function MobilePageChrome({
       </div>
 
       {menuOpen && (
-        <div className="mx-auto mt-2 max-w-[760px] rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_12px_35px_rgba(0,0,0,0.12)]">
+        <div className="mx-auto mt-2 max-w-[760px] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] p-2 shadow-[0_16px_44px_rgba(0,0,0,0.20)]">
+          <div className="px-3 pb-2 pt-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+            Navigate
+          </div>
+
           {navItems.map((item) => {
             const active = activePage === item.key;
 
@@ -143,18 +151,20 @@ export default function MobilePageChrome({
                   )}
                   {item.label}
                 </span>
-                <span>↗</span>
+                <span className="text-[var(--muted-2)]">↗</span>
               </a>
             );
           })}
 
-          <a
-            href="/contact"
-            onClick={() => setMenuOpen(false)}
-            className="mt-2 flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-medium text-[var(--button-text)]"
-          >
-            Începe un proiect
-          </a>
+          <div className="mt-2 border-t border-[var(--border)] pt-2">
+            <a
+              href="/contact"
+              onClick={() => setMenuOpen(false)}
+              className="flex h-12 items-center justify-center rounded-[16px] bg-[var(--button)] text-sm font-semibold text-[var(--button-text)]"
+            >
+              Începe un proiect
+            </a>
+          </div>
         </div>
       )}
     </header>
