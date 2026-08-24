@@ -1,34 +1,58 @@
-ORBYVEN — MOBILE FINAL POLISH
+ORBYVEN — SEO + LAUNCH FOUNDATION
 
-This package is the final mobile consistency/performance pass.
+Copy the package contents over the matching project paths.
 
-Replace these paths:
-- app/globals.css
-- app/mobile-home/page.tsx
-- app/mobile-servicii/page.tsx
-- app/mobile-templates/page.tsx
-- app/mobile-contact/page.tsx
-- components/MobileControls.tsx
-- components/MobilePageChrome.tsx
-- components/MobileContactForm.tsx
-- components/OrbitalSystem.tsx
-- proxy.ts
+FILES
+- app/layout.tsx
+- app/robots.ts
+- app/sitemap.ts
+- app/manifest.ts
+- app/opengraph-image.tsx
+- app/contact/layout.tsx
+- app/servicii/layout.tsx
+- app/templates/layout.tsx
+- components/StructuredData.tsx
+- lib/site-config.ts
 
-What changed:
-- responsive tuning for ~360 / 390 / 430 px
-- consistent horizontal spacing and hero typography
-- theme-aware orbital lines in both light/dark mode
-- better touch feedback without heavy effects
-- no blur/backdrop blur added
-- heavy Diana & Florin demo is not prefetched automatically
-- motion remains transform/opacity based
-- contact Supabase remains dynamically loaded only at submit
-- content-visibility stays enabled below the fold
+WHAT THIS ADDS
+- metadataBase and centralized site URL
+- robots.txt
+- sitemap.xml
+- web manifest
+- Open Graph / social sharing image
+- Organization + WebSite + ProfessionalService structured data
+- canonical URLs for Contact / Servicii / Templates
+- consistent social metadata
+- internal mobile routes excluded from robots crawl
+- no visual or mobile-performance changes
 
-After replacing:
+TEMPORARY URL
+The fallback is:
+https://orbyven-creative.vercel.app
+
+Recommended Vercel environment variable:
+NEXT_PUBLIC_SITE_URL=https://orbyven-creative.vercel.app
+
+WHEN THE CUSTOM DOMAIN IS READY
+Change ONLY:
+NEXT_PUBLIC_SITE_URL=https://your-final-domain.ro
+
+Then redeploy. Sitemap, metadata, structured data and social URLs will follow automatically.
+
+IMPORTANT
+Do NOT add /mobile-home, /mobile-contact, /mobile-servicii or /mobile-templates to the sitemap.
+They are internal mobile-rendering routes, not public SEO pages.
+
+GIT
 git add .
-git commit -m "Final mobile polish and responsive tuning"
+git commit -m "Add SEO and launch foundation"
 git push
 
-If VS Code shows stale TypeScript errors:
-Ctrl+Shift+P -> TypeScript: Restart TS Server
+AFTER DEPLOY
+Check these URLs:
+ /robots.txt
+ /sitemap.xml
+ /manifest.webmanifest
+ /opengraph-image
+
+Do not submit the site to Google Search Console until you are happy with the public content and, ideally, the final custom domain is connected.

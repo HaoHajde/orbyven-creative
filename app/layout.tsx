@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 
 import { Geist, Geist_Mono } from "next/font/google";
 
+import StructuredData from "@/components/StructuredData";
+import { getSiteUrl, siteConfig } from "@/lib/site-config";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,37 +19,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
+
   title: {
     default: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
     template: "%s | ORBYVEN CREATIVE",
   },
 
-  description:
-    "ORBYVEN CREATIVE construiește website-uri, landing pages, redesign-uri și experiențe digitale moderne pentru branduri, firme și proiecte care vor să fie greu de ignorat.",
+  description: siteConfig.description,
 
-  applicationName: "ORBYVEN CREATIVE",
+  applicationName: siteConfig.name,
 
   keywords: [
     "ORBYVEN",
     "ORBYVEN CREATIVE",
-    "web design",
+    "web design România",
+    "creare website",
+    "site prezentare",
     "website business",
     "landing page",
     "redesign website",
-    "digital experiences",
-    "web design România",
-    "site prezentare",
+    "experiențe digitale",
   ],
 
-  authors: [
-    {
-      name: "ORBYVEN CREATIVE",
-    },
-  ],
-
-  creator: "ORBYVEN CREATIVE",
-  publisher: "ORBYVEN CREATIVE",
-
+  authors: [{ name: siteConfig.name }],
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
   category: "technology",
 
   robots: {
@@ -63,11 +61,20 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    locale: "ro_RO",
-    siteName: "ORBYVEN CREATIVE",
+    locale: siteConfig.locale,
+    siteName: siteConfig.name,
+    url: "/",
     title: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
     description:
       "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru o prezență care rămâne în minte.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
+      },
+    ],
   },
 
   twitter: {
@@ -75,7 +82,10 @@ export const metadata: Metadata = {
     title: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
     description:
       "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru o prezență care rămâne în minte.",
+    images: ["/opengraph-image"],
   },
+
+  manifest: "/manifest.webmanifest",
 
   icons: {
     icon: "/favicon.ico",
@@ -109,6 +119,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <StructuredData />
         {children}
       </body>
     </html>
