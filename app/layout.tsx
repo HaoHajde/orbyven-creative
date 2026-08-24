@@ -78,21 +78,7 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: [
-      {
-        url: "/favicon.ico",
-      },
-      {
-        url: "/branding/orbyven-app-icon.png",
-        type: "image/png",
-      },
-    ],
-    apple: [
-      {
-        url: "/branding/orbyven-app-icon.png",
-        type: "image/png",
-      },
-    ],
+    icon: "/favicon.ico",
   },
 };
 
