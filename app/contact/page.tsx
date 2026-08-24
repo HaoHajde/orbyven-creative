@@ -4,7 +4,6 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import OrbitalSystem from "@/components/OrbitalSystem";
 
-import { orbitaSupabase as orbyvenSupabase } from "@/lib/orbita-supabase";
 import Link from "next/link";
 import {
   motion,
@@ -185,6 +184,9 @@ export default function ContactPage() {
     setSubmitError("");
 
     try {
+      const { orbyvenSupabase } =
+        await import("@/lib/orbyven-supabase");
+
       const { error } = await orbyvenSupabase
         .from("leads")
         .insert({

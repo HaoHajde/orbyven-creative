@@ -668,6 +668,7 @@ function TemplateCard({
     return (
       <Link
         href={item.href}
+        prefetch={false}
         aria-label={`Deschide proiectul ${item.title}`}
       >
         {card}

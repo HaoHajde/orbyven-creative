@@ -60,8 +60,8 @@ export default function MobileContactForm() {
     setErrorMessage("");
 
     try {
-      const { orbitaSupabase: orbyvenSupabase } =
-        await import("@/lib/orbita-supabase");
+      const { orbyvenSupabase } =
+        await import("@/lib/orbyven-supabase");
 
       const { error } = await orbyvenSupabase
         .from("leads")

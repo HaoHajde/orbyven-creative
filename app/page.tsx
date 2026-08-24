@@ -391,7 +391,7 @@ export default function HomePage() {
           />
 
           <ProjectCard
-            href="/templates/business"
+            href="/templates"
             index="02"
             category="Business · Website"
             title="Business presence"
@@ -1145,36 +1145,12 @@ function ProjectCard({
                   </div>
 
                   <div className="ml-auto rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.13em] text-white/45">
-                    Live preview
+                    Project preview
                   </div>
                 </div>
 
                 <div className="relative h-[calc(100%-48px)] min-h-[322px] overflow-hidden bg-white sm:min-h-[392px] md:min-h-[472px]">
-                  {desktopPreview ? (
-                    <>
-                      <iframe
-                        src={href}
-                        title={`Preview ${title}`}
-                        loading="lazy"
-                        tabIndex={-1}
-                        aria-hidden="true"
-                        scrolling="no"
-                        className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white grayscale transition-[filter] duration-1000 ease-out group-hover:grayscale-0"
-                      />
-
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.055] via-transparent to-black/[0.04] opacity-100 transition-opacity duration-1000 group-hover:opacity-40"
-                      />
-
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/[0.08] to-transparent"
-                      />
-                    </>
-                  ) : (
-                    <ProjectVisual variant={variant} />
-                  )}
+                  <ProjectVisual variant={variant} />
                 </div>
               </motion.div>
 
@@ -1187,6 +1163,7 @@ function ProjectCard({
 
           <Link
             href={href}
+            prefetch={false}
             aria-label={`Vezi proiectul ${title}`}
             className="absolute inset-0 z-20"
           />
