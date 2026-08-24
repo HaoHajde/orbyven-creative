@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import type { CSSProperties } from "react";
 
-import MobileHomeShell from "@/components/MobileHomeShell";
+import MobileControls from "@/components/MobileControls";
 
 export const metadata: Metadata = {
   robots: {
@@ -79,9 +79,28 @@ const plans = [
   },
 ];
 
+const vars = {
+  "--bg": "#000000",
+  "--surface": "#0c0c0e",
+  "--surface-2": "#151518",
+  "--text": "#f5f5f7",
+  "--muted": "#a1a1a6",
+  "--muted-2": "#77777d",
+  "--border": "rgba(255,255,255,0.09)",
+  "--border-strong": "rgba(255,255,255,0.16)",
+  "--button": "#f5f5f7",
+  "--button-text": "#000000",
+} as CSSProperties;
+
 export default function MobileHomePage() {
   return (
-    <MobileHomeShell>
+    <main
+      id="mobile-home-root"
+      style={vars}
+      className="min-h-screen overflow-x-clip bg-[var(--bg)] text-[var(--text)]"
+    >
+      <MobileControls />
+
       <section className="flex min-h-[100svh] items-center px-5 pb-20 pt-28">
         <div className="mx-auto w-full max-w-[760px]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-2)]">
@@ -100,13 +119,12 @@ export default function MobileHomePage() {
             Website-uri și experiențe digitale construite pentru branduri care vor să fie greu de ignorat.
           </p>
 
-          <Link
+          <a
             href="/contact"
-            prefetch={false}
             className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-medium text-[var(--button-text)]"
           >
             Începe un proiect
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -130,7 +148,7 @@ export default function MobileHomePage() {
         className="scroll-mt-24 border-t border-[var(--border)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionLabel
+          <SectionHeading
             eyebrow="Selected work"
             title="Proiecte care spun o poveste."
           />
@@ -154,13 +172,12 @@ export default function MobileHomePage() {
             />
           </div>
 
-          <Link
+          <a
             href="/templates"
-            prefetch={false}
             className="mt-8 flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] text-sm font-medium"
           >
             Vezi tot portofoliul ↗
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -169,7 +186,7 @@ export default function MobileHomePage() {
         className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionLabel
+          <SectionHeading
             eyebrow="Services"
             title="Ce construim."
           />
@@ -183,9 +200,11 @@ export default function MobileHomePage() {
                 <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--muted-2)]">
                   {service.number}
                 </p>
+
                 <h3 className="mt-4 text-[34px] font-semibold tracking-[-0.05em]">
                   {service.title}
                 </h3>
+
                 <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
                   {service.text}
                 </p>
@@ -193,13 +212,12 @@ export default function MobileHomePage() {
             ))}
           </div>
 
-          <Link
+          <a
             href="/servicii"
-            prefetch={false}
             className="mt-8 flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)] text-sm font-medium"
           >
             Explorează serviciile ↗
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -208,7 +226,7 @@ export default function MobileHomePage() {
         className="scroll-mt-24 px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionLabel
+          <SectionHeading
             eyebrow="Cum lucrăm"
             title="De la idee la online."
           />
@@ -223,6 +241,7 @@ export default function MobileHomePage() {
                   <span className="text-[10px] font-semibold text-[var(--muted-2)]">
                     {item.number}
                   </span>
+
                   <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
                     {item.label}
                   </span>
@@ -246,7 +265,7 @@ export default function MobileHomePage() {
         className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20"
       >
         <div className="mx-auto max-w-[760px]">
-          <SectionLabel
+          <SectionHeading
             eyebrow="Pricing"
             title="Începi simplu. Crești când ai nevoie."
           />
@@ -255,10 +274,10 @@ export default function MobileHomePage() {
             {plans.map((plan) => (
               <article
                 key={plan.name}
-                className={`rounded-[26px] border p-6 ${
+                className={`rounded-[26px] border bg-[var(--bg)] p-6 ${
                   plan.featured
-                    ? "border-[var(--accent)] bg-[var(--bg)]"
-                    : "border-[var(--border)] bg-[var(--bg)]"
+                    ? "border-[#4b46ee]"
+                    : "border-[var(--border)]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-6">
@@ -266,6 +285,7 @@ export default function MobileHomePage() {
                     <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--muted-2)]">
                       {plan.number}
                     </p>
+
                     <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">
                       {plan.name}
                     </h3>
@@ -299,17 +319,12 @@ export default function MobileHomePage() {
             ))}
           </div>
 
-          <Link
+          <a
             href="/contact"
-            prefetch={false}
             className="mt-8 flex h-12 items-center justify-center rounded-full bg-[var(--button)] text-sm font-medium text-[var(--button-text)]"
           >
             Cere o ofertă
-          </Link>
-
-          <p className="mt-5 text-xs leading-5 text-[var(--muted-2)]">
-            Abonamentele sunt gândite pentru colaborări pe termen de minimum 12 luni.
-          </p>
+          </a>
         </div>
       </section>
 
@@ -329,13 +344,12 @@ export default function MobileHomePage() {
               greu de ignorat.
             </h2>
 
-            <Link
+            <a
               href="/contact"
-              prefetch={false}
               className="mt-9 flex h-14 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
             >
               Începe un proiect ↗
-            </Link>
+            </a>
           </div>
 
           <div className="mt-20 border-t border-current/15 pt-7 text-[10px] uppercase tracking-[0.15em] opacity-40">
@@ -343,11 +357,11 @@ export default function MobileHomePage() {
           </div>
         </div>
       </section>
-    </MobileHomeShell>
+    </main>
   );
 }
 
-function SectionLabel({
+function SectionHeading({
   eyebrow,
   title,
 }: {
@@ -359,6 +373,7 @@ function SectionLabel({
       <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">
         {eyebrow}
       </p>
+
       <h2 className="mt-5 text-[40px] font-semibold leading-[1.01] tracking-[-0.055em]">
         {title}
       </h2>
@@ -384,7 +399,7 @@ function ProjectCard({
   return (
     <article className="overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface)]">
       <div
-        className={`flex min-h-[240px] items-center justify-center p-6 ${
+        className={`flex min-h-[230px] items-center justify-center p-6 ${
           wedding ? "bg-[#f3efe6]" : "bg-[#111113]"
         }`}
       >
@@ -393,9 +408,11 @@ function ProjectCard({
             <p className="text-[9px] uppercase tracking-[0.2em] text-[#9b8356]">
               10 · 10 · 2026
             </p>
+
             <p className="mt-6 text-[40px] font-light tracking-[-0.055em] text-[#312c24]">
               Diana & Florin
             </p>
+
             <p className="mt-3 text-[10px] uppercase tracking-[0.16em] text-[#8f8779]">
               Wedding experience
             </p>
@@ -405,6 +422,7 @@ function ProjectCard({
             <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
               ORBYVEN · BUSINESS
             </p>
+
             <p className="mt-8 text-[32px] font-semibold leading-[1.01] tracking-[-0.05em]">
               Built to look
               <br />
@@ -428,13 +446,12 @@ function ProjectCard({
           {text}
         </p>
 
-        <Link
+        <a
           href={href}
-          prefetch={false}
           className="mt-6 inline-flex text-sm font-medium"
         >
           Vezi proiectul ↗
-        </Link>
+        </a>
       </div>
     </article>
   );
