@@ -72,7 +72,7 @@ export default function MobileServicesPage() {
             ORBYVEN CREATIVE · SERVICII
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-b">
             Construim digital.
             <br />
             Cu un motiv<span className="text-[#4b46ee]">.</span>
@@ -142,7 +142,7 @@ export default function MobileServicesPage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-c">
             Clar. Rapid.
             <br />
             Memorabil.

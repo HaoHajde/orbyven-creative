@@ -212,7 +212,7 @@ export default function ServicesPage() {
                 initial={{ y: "112%" }}
                 animate={{ y: "0%" }}
                 transition={{ duration: 1.05, delay: 0.16, ease: easeOut }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-b"
               >
                 Construim digital.
               </motion.span>
@@ -223,7 +223,7 @@ export default function ServicesPage() {
                 initial={{ y: "112%" }}
                 animate={{ y: "0%" }}
                 transition={{ duration: 1.12, delay: 0.27, ease: easeOut }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-c"
               >
                 Cu un motiv.
               </motion.span>
@@ -413,7 +413,7 @@ export default function ServicesPage() {
           </p>
 
           <div className="mt-5 flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
-            <h2 className="max-w-4xl text-[48px] font-semibold leading-[1] tracking-[-0.055em] sm:text-[64px] md:text-[78px]">
+            <h2 className="max-w-4xl text-[48px] font-semibold leading-[1] tracking-[-0.055em] sm:text-[64px] md:text-[78px] orbyven-sparkle-text orbyven-sparkle-c">
               Spune-ne ce vrei să construim.
             </h2>
 

@@ -81,7 +81,7 @@ export default function MobileTemplatesPage() {
             ORBYVEN CREATIVE · PORTOFOLIU
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-c">
             Alege o bază.
             <br />
             Fă-o a ta<span className="text-[#4b46ee]">.</span>
@@ -155,7 +155,7 @@ export default function MobileTemplatesPage() {
             Custom by default
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-a">
             Nu trebuie să
             <br />
             arate ca un template.

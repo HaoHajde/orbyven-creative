@@ -289,7 +289,7 @@ export default function HomePage() {
               initial={{ y: "115%" }}
               animate={{ y: "0%" }}
               transition={{ duration: 1.05, delay: 0.16, ease: easeOut }}
-              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px] orbyven-sparkle-text orbyven-sparkle-a"
             >
               We build
             </motion.span>
@@ -300,7 +300,7 @@ export default function HomePage() {
               initial={{ y: "115%" }}
               animate={{ y: "0%" }}
               transition={{ duration: 1.12, delay: 0.27, ease: easeOut }}
-              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px] orbyven-sparkle-text orbyven-sparkle-b"
             >
               what gets remembered.
             </motion.span>
@@ -1681,7 +1681,7 @@ function FinalCTA() {
               Ai un proiect în minte?
             </p>
 
-            <h2 className="text-[48px] font-semibold leading-[0.91] tracking-[-0.065em] sm:text-[clamp(58px,8.4vw,132px)] sm:leading-[0.88] sm:tracking-[-0.075em]">
+            <h2 className="text-[48px] font-semibold leading-[0.91] tracking-[-0.065em] sm:text-[clamp(58px,8.4vw,132px)] sm:leading-[0.88] sm:tracking-[-0.075em] orbyven-sparkle-text orbyven-sparkle-c">
               Hai să-l facem
               <br />
               greu de ignorat.

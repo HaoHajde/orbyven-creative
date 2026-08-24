@@ -283,7 +283,7 @@ export default function ContactPage() {
                   delay: 0.27,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.2vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em]"
+                className="block text-[clamp(54px,7.2vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-a"
               >
                 Hai s-o facem memorabilă.
               </motion.span>
@@ -325,7 +325,7 @@ export default function ContactPage() {
                   Start here
                 </p>
 
-                <h2 className="mt-6 max-w-xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[56px] md:text-[66px]">
+                <h2 className="mt-6 max-w-xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[56px] md:text-[66px] orbyven-sparkle-text orbyven-sparkle-b">
                   Nu ai nevoie de un brief perfect.
                 </h2>
 

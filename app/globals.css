@@ -184,3 +184,164 @@ iframe {
     transform: none;
   }
 }
+
+
+/* ORBYVEN signature text sparkles
+   Lightweight: opacity + transform only, no blur/filter. */
+
+.orbyven-sparkle-text {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+
+.orbyven-sparkle-text::before,
+.orbyven-sparkle-text::after {
+  content: "✦";
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  color: #8b87ff;
+  font-size: clamp(7px, 0.15em, 13px);
+  line-height: 1;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.orbyven-sparkle-a::before {
+  left: 10%;
+  top: 30%;
+  animation: orbyvenSparkleA 9.6s 0.9s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orbyven-sparkle-a::after {
+  right: 17%;
+  top: 64%;
+  animation: orbyvenSparkleB 12.8s 5.2s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orbyven-sparkle-b::before {
+  left: 31%;
+  top: 12%;
+  animation: orbyvenSparkleB 11.4s 2.7s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orbyven-sparkle-b::after {
+  right: 8%;
+  top: 43%;
+  animation: orbyvenSparkleC 14.2s 7.3s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orbyven-sparkle-c::before {
+  left: 18%;
+  top: 70%;
+  animation: orbyvenSparkleC 12.6s 1.8s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orbyven-sparkle-c::after {
+  right: 29%;
+  top: 19%;
+  animation: orbyvenSparkleA 15.1s 8.5s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes orbyvenSparkleA {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg);
+  }
+
+  73% {
+    opacity: 0.95;
+    transform: translate3d(4px, -2px, 0) scale(0.8) rotate(10deg);
+  }
+
+  78% {
+    opacity: 1;
+    transform: translate3d(24px, -11px, 0) scale(1.08) rotate(35deg);
+  }
+
+  84% {
+    opacity: 0.72;
+    transform: translate3d(48px, 3px, 0) scale(0.7) rotate(70deg);
+  }
+
+  89% {
+    opacity: 0;
+    transform: translate3d(64px, -5px, 0) scale(0.4) rotate(95deg);
+  }
+}
+
+@keyframes orbyvenSparkleB {
+  0%,
+  75%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+  }
+
+  78% {
+    opacity: 0.9;
+    transform: translate3d(-4px, 3px, 0) scale(0.78) rotate(-15deg);
+  }
+
+  83% {
+    opacity: 1;
+    transform: translate3d(-24px, -9px, 0) scale(1.05) rotate(-42deg);
+  }
+
+  88% {
+    opacity: 0.66;
+    transform: translate3d(-45px, 5px, 0) scale(0.65) rotate(-70deg);
+  }
+
+  92% {
+    opacity: 0;
+    transform: translate3d(-58px, -3px, 0) scale(0.35) rotate(-100deg);
+  }
+}
+
+@keyframes orbyvenSparkleC {
+  0%,
+  78%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg);
+  }
+
+  81% {
+    opacity: 0.9;
+    transform: translate3d(2px, 0, 0) scale(0.82) rotate(12deg);
+  }
+
+  85% {
+    opacity: 1;
+    transform: translate3d(15px, -15px, 0) scale(1) rotate(40deg);
+  }
+
+  90% {
+    opacity: 0.65;
+    transform: translate3d(31px, -2px, 0) scale(0.62) rotate(72deg);
+  }
+
+  94% {
+    opacity: 0;
+    transform: translate3d(42px, 7px, 0) scale(0.35) rotate(95deg);
+  }
+}
+
+@media (max-width: 767px) {
+  .orbyven-sparkle-text::before,
+  .orbyven-sparkle-text::after {
+    font-size: clamp(6px, 0.14em, 10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbyven-sparkle-text::before,
+  .orbyven-sparkle-text::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

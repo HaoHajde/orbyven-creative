@@ -117,7 +117,7 @@ export default function MobileHomePage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em]">
+          <h1 className="mobile-hero-title mt-8 text-[clamp(50px,14.7vw,74px)] font-semibold leading-[0.89] tracking-[-0.07em] orbyven-sparkle-text orbyven-sparkle-a">
             We build
             <br />
             what gets
@@ -155,7 +155,7 @@ export default function MobileHomePage() {
         >
           <ChapterLabel number="01" label="Digital presence, rethought." />
 
-          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em]">
+          <h2 className="mt-7 text-[40px] font-semibold leading-[0.99] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-b">
             Construim experiențe digitale care fac afacerile mai greu de ignorat.
           </h2>
 
@@ -173,7 +173,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="02" label="Selected work" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-c">
               Proiecte care spun o poveste.
             </h2>
           </div>
@@ -215,7 +215,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="03" label="Services" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-a">
               Ce construim.
             </h2>
           </div>
@@ -264,7 +264,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="04" label="Cum lucrăm" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-b">
               De la idee la online.
             </h2>
           </div>
@@ -307,7 +307,7 @@ export default function MobileHomePage() {
           <div data-mobile-reveal>
             <ChapterLabel number="05" label="Pricing" />
 
-            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em]">
+            <h2 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.058em] orbyven-sparkle-text orbyven-sparkle-c">
               Începi simplu. Crești când ai nevoie.
             </h2>
           </div>
@@ -391,7 +391,7 @@ export default function MobileHomePage() {
           <div>
             <ChapterLabelLight number="06" label="Start a project" />
 
-            <h2 className="mt-10 text-[47px] font-semibold leading-[0.91] tracking-[-0.065em]">
+            <h2 className="mt-10 text-[47px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-a">
               Hai să-l facem
               <br />
               greu de ignorat.

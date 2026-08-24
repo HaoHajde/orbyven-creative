@@ -310,7 +310,7 @@ export default function TemplatesPage() {
                   delay: 0.16,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-c"
               >
                 Alege o bază.
               </motion.span>
@@ -329,7 +329,7 @@ export default function TemplatesPage() {
                   delay: 0.27,
                   ease: easeOut,
                 }}
-                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]"
+                className="block text-[clamp(54px,7.6vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em] orbyven-sparkle-text orbyven-sparkle-a"
               >
                 Fă-o a ta.
               </motion.span>

@@ -38,7 +38,7 @@ export default function MobileContactPage() {
             ORBYVEN CREATIVE · CONTACT
           </p>
 
-          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em]">
+          <h1 className="mobile-hero-title mt-9 text-[49px] font-semibold leading-[0.91] tracking-[-0.065em] orbyven-sparkle-text orbyven-sparkle-a">
             Spune-ne ce
             <br />
             vrei să construim<span className="text-[#4b46ee]">.</span>
@@ -65,7 +65,7 @@ export default function MobileContactPage() {
             What happens next
           </p>
 
-          <h2 className="mt-6 text-[39px] font-semibold leading-[0.98] tracking-[-0.055em]">
+          <h2 className="mt-6 text-[39px] font-semibold leading-[0.98] tracking-[-0.055em] orbyven-sparkle-text orbyven-sparkle-b">
             Fără complicații inutile.
           </h2>
 
@@ -101,7 +101,7 @@ export default function MobileContactPage() {
             ORBYVEN CREATIVE
           </p>
 
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em] orbyven-sparkle-text orbyven-sparkle-c">
             O idee bună
             <br />
             merită construită bine.
