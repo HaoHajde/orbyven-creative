@@ -1,0 +1,19 @@
+# ORBYVEN cloud workspace — IMPORTANT
+
+Nu adăuga valorile secrete în repository.
+
+Asigură-te că `.gitignore` conține cel puțin:
+
+.env
+.env.*
+!.env.example
+
+În Next.js, `.env*.local` este în mod normal deja ignorat,
+dar verifică înainte de primul push din Codespaces.
+
+Comandă:
+
+git status
+
+Dacă `.env.local` apare ca fișier nou de commit:
+OPREȘTE-TE și adaugă-l în `.gitignore`.

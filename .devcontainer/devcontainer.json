@@ -1,0 +1,33 @@
+{
+  "name": "ORBYVEN Cloud Workspace",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+
+  "forwardPorts": [3000],
+
+  "portsAttributes": {
+    "3000": {
+      "label": "ORBYVEN Next.js",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "css.lint.unknownAtRules": "ignore",
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  },
+
+  "postCreateCommand": "npm ci || npm install",
+
+  "remoteUser": "node"
+}
