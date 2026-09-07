@@ -19,7 +19,14 @@ import {
   type WorkTaskStatus,
 } from "@/lib/modules/tasks";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 type Props = {
   organizationId: string;
@@ -71,7 +78,12 @@ const priorityLabels: Record<WorkTaskPriority, string> = {
   urgent: "Urgentă",
 };
 
-const boardStatuses: WorkTaskStatus[] = ["planned", "in_progress", "blocked", "done"];
+const boardStatuses: WorkTaskStatus[] = [
+  "planned",
+  "in_progress",
+  "blocked",
+  "done",
+];
 
 function toIso(value: string) {
   return value ? new Date(value).toISOString() : null;
@@ -143,7 +155,10 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
   }, [organizationId]);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const selectedTask = useMemo(
@@ -152,10 +167,7 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
   );
 
   useEffect(() => {
-    if (!selectedTask) {
-      setChecklist([]);
-      return;
-    }
+    if (!selectedTask) return;
 
     let active = true;
     void listWorkTaskChecklist(organizationId, selectedTask.id)
@@ -204,7 +216,9 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
       (task) => !["done", "cancelled"].includes(task.status)
     ).length;
     const urgent = tasks.filter(
-      (task) => task.priority === "urgent" && !["done", "cancelled"].includes(task.status)
+      (task) =>
+        task.priority === "urgent" &&
+        !["done", "cancelled"].includes(task.status)
     ).length;
     const todayCount = today
       ? tasks.filter(
@@ -250,7 +264,9 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
       setCreateOpen(false);
     } catch (createError) {
       console.error(createError);
-      setError("Lucrarea nu a putut fi creată. Verifică datele și încearcă din nou.");
+      setError(
+        "Lucrarea nu a putut fi creată. Verifică datele și încearcă din nou."
+      );
     } finally {
       setSaving(false);
     }
@@ -364,17 +380,48 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
     <div className="pb-24 md:pb-8">
       <section className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Operations · Live</p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">Lucrările, fără haos.</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
+            Operations · Live
+          </p>
+          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">
+            Lucrările, fără haos.
+          </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-            Vezi ce urmează, cine se ocupă, unde trebuie ajuns și ce mai lipsește până la finalizare.
+            Vezi ce urmează, cine se ocupă, unde trebuie ajuns și ce mai lipsește
+            până la finalizare.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setViewMode("board")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "board" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Board</button>
-          <button type="button" onClick={() => setViewMode("list")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "list" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Listă</button>
+          <button
+            type="button"
+            onClick={() => setViewMode("board")}
+            className={`h-11 rounded-full px-5 text-sm font-semibold ${
+              viewMode === "board"
+                ? "bg-[var(--button)] text-[var(--button-text)]"
+                : "border border-[var(--border-strong)]"
+            }`}
+          >
+            Board
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`h-11 rounded-full px-5 text-sm font-semibold ${
+              viewMode === "list"
+                ? "bg-[var(--button)] text-[var(--button-text)]"
+                : "border border-[var(--border-strong)]"
+            }`}
+          >
+            Listă
+          </button>
           {canWrite && (
-            <button type="button" onClick={() => setCreateOpen((open) => !open)} className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white">+ Lucrare</button>
+            <button
+              type="button"
+              onClick={() => setCreateOpen((open) => !open)}
+              className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white"
+            >
+              + Lucrare
+            </button>
           )}
         </div>
       </section>
@@ -386,62 +433,281 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
         <Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />
       </section>
 
-      {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
+      {error && (
+        <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">
+          {error}
+        </div>
+      )}
 
       {createOpen && canWrite && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <form
+          onSubmit={handleCreate}
+          className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
+        >
           <div className="flex items-center justify-between gap-4">
-            <div><p className="text-xs font-medium text-[var(--muted)]">Lucrare nouă</p><h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Pune treaba în sistem.</h2></div>
-            <button type="button" onClick={() => setCreateOpen(false)} className="text-sm text-[var(--muted)]">Închide</button>
+            <div>
+              <p className="text-xs font-medium text-[var(--muted)]">Lucrare nouă</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">
+                Pune treaba în sistem.
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              className="text-sm text-[var(--muted)]"
+            >
+              Închide
+            </button>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Montaj centrală termică" className="input" /></Field>
-            <Field label="Tip"><select value={form.kind} onChange={(event) => setForm((current) => ({ ...current, kind: event.target.value as WorkTaskKind }))} className="input"><option value="work">Lucrare</option><option value="task">Task</option></select></Field>
-            <Field label="Prioritate"><select value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value as WorkTaskPriority }))} className="input"><option value="low">Scăzută</option><option value="normal">Normală</option><option value="high">Ridicată</option><option value="urgent">Urgentă</option></select></Field>
-            <Field label="Client"><select value={form.clientId} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="input"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name} · {client.kind === "client" ? "client" : "lead"}</option>)}</select></Field>
-            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Mihai" className="input" /></Field>
-            <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / punct de lucru" className="input" /></Field>
-            <Field label="Durată estimată"><input type="number" min="0" step="15" value={form.estimatedMinutes} onChange={(event) => setForm((current) => ({ ...current, estimatedMinutes: event.target.value }))} placeholder="minute" className="input" /></Field>
-            <Field label="Programată"><input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm((current) => ({ ...current, scheduledAt: event.target.value }))} className="input" /></Field>
-            <Field label="Termen"><input type="datetime-local" value={form.dueAt} onChange={(event) => setForm((current) => ({ ...current, dueAt: event.target.value }))} className="input" /></Field>
-            <Field label="Descriere" className="md:col-span-2"><textarea rows={3} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Ce trebuie făcut, materiale, observații..." className="input min-h-[98px] py-3" /></Field>
+            <Field label="Titlu" className="xl:col-span-2">
+              <input
+                required
+                value={form.title}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, title: event.target.value }))
+                }
+                placeholder="Ex. Montaj centrală termică"
+                className="input"
+              />
+            </Field>
+            <Field label="Tip">
+              <select
+                value={form.kind}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    kind: event.target.value as WorkTaskKind,
+                  }))
+                }
+                className="input"
+              >
+                <option value="work">Lucrare</option>
+                <option value="task">Task</option>
+              </select>
+            </Field>
+            <Field label="Prioritate">
+              <select
+                value={form.priority}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    priority: event.target.value as WorkTaskPriority,
+                  }))
+                }
+                className="input"
+              >
+                <option value="low">Scăzută</option>
+                <option value="normal">Normală</option>
+                <option value="high">Ridicată</option>
+                <option value="urgent">Urgentă</option>
+              </select>
+            </Field>
+            <Field label="Client">
+              <select
+                value={form.clientId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, clientId: event.target.value }))
+                }
+                className="input"
+              >
+                <option value="">Fără client asociat</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company || client.name} · {client.kind === "client" ? "client" : "lead"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Responsabil">
+              <input
+                value={form.assignee}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, assignee: event.target.value }))
+                }
+                placeholder="Ex. Mihai"
+                className="input"
+              />
+            </Field>
+            <Field label="Locație">
+              <input
+                value={form.location}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, location: event.target.value }))
+                }
+                placeholder="Adresă / punct de lucru"
+                className="input"
+              />
+            </Field>
+            <Field label="Durată estimată">
+              <input
+                type="number"
+                min="0"
+                step="15"
+                value={form.estimatedMinutes}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    estimatedMinutes: event.target.value,
+                  }))
+                }
+                placeholder="minute"
+                className="input"
+              />
+            </Field>
+            <Field label="Programată">
+              <input
+                type="datetime-local"
+                value={form.scheduledAt}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    scheduledAt: event.target.value,
+                  }))
+                }
+                className="input"
+              />
+            </Field>
+            <Field label="Termen">
+              <input
+                type="datetime-local"
+                value={form.dueAt}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, dueAt: event.target.value }))
+                }
+                className="input"
+              />
+            </Field>
+            <Field label="Descriere" className="md:col-span-2">
+              <textarea
+                rows={3}
+                value={form.description}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+                placeholder="Ce trebuie făcut, materiale, observații..."
+                className="input min-h-[98px] py-3"
+              />
+            </Field>
           </div>
-          <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Creează lucrarea"}</button></div>
+          <div className="mt-5 flex justify-end">
+            <button
+              disabled={saving}
+              className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50"
+            >
+              {saving ? "Se salvează..." : "Creează lucrarea"}
+            </button>
+          </div>
         </form>
       )}
 
       <section className="mt-4 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)] p-3 sm:flex-row sm:items-center">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută lucrare, client, responsabil sau locație..." className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none" />
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className="h-11 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Caută lucrare, client, responsabil sau locație..."
+          className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none"
+        />
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+          className="h-11 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none"
+        >
           <option value="all">Toate statusurile</option>
-          {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          {Object.entries(statusLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </select>
       </section>
 
       {loading ? (
-        <div className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center text-sm text-[var(--muted)]">Se încarcă lucrările...</div>
+        <div className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center text-sm text-[var(--muted)]">
+          Se încarcă lucrările...
+        </div>
       ) : filteredTasks.length === 0 ? (
-        <div className="mt-4 rounded-[30px] border border-dashed border-[var(--border-strong)] p-10 text-center"><h2 className="text-xl font-semibold">Nimic de urmărit aici.</h2><p className="mt-2 text-sm text-[var(--muted)]">Creează prima lucrare sau schimbă filtrele.</p></div>
-      ) : viewMode === "board" ? (
+        <div className="mt-4 rounded-[30px] border border-dashed border-[var(--border-strong)] p-10 text-center">
+          <h2 className="text-xl font-semibold">Nimic de urmărit aici.</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Creează prima lucrare sau schimbă filtrele.
+          </p>
+        </div>
+      ) : viewMode === "board" && statusFilter !== "cancelled" ? (
         <div className="mt-4 grid gap-4 xl:grid-cols-4">
           {boardStatuses.map((status) => {
             const columnTasks = filteredTasks.filter((task) => task.status === status);
-            return <div key={status} className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-3">
-              <div className="flex items-center justify-between px-2 py-2"><h2 className="text-sm font-semibold">{statusLabels[status]}</h2><span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--muted)]">{columnTasks.length}</span></div>
-              <div className="mt-2 space-y-3">{columnTasks.length ? columnTasks.map((task) => <TaskCard key={task.id} task={task} client={task.client_id ? clientById.get(task.client_id) : undefined} locale={locale} active={task.id === selectedId} onSelect={() => setSelectedId(task.id)} />) : <div className="rounded-[20px] border border-dashed border-[var(--border)] p-5 text-center text-xs text-[var(--muted)]">Gol</div>}</div>
-            </div>;
+            return (
+              <div
+                key={status}
+                className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-3"
+              >
+                <div className="flex items-center justify-between px-2 py-2">
+                  <h2 className="text-sm font-semibold">{statusLabels[status]}</h2>
+                  <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--muted)]">
+                    {columnTasks.length}
+                  </span>
+                </div>
+                <div className="mt-2 space-y-3">
+                  {columnTasks.length ? (
+                    columnTasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        client={task.client_id ? clientById.get(task.client_id) : undefined}
+                        locale={locale}
+                        active={task.id === selectedId}
+                        onSelect={() => setSelectedId(task.id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="rounded-[20px] border border-dashed border-[var(--border)] p-5 text-center text-xs text-[var(--muted)]">
+                      Gol
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
           })}
         </div>
       ) : (
         <div className="mt-4 overflow-hidden rounded-[28px] border border-[var(--border)]">
-          {filteredTasks.map((task) => <button key={task.id} type="button" onClick={() => setSelectedId(task.id)} className="grid w-full gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left last:border-b-0 hover:bg-[var(--surface-2)] sm:grid-cols-[1.5fr_0.7fr_0.7fr_0.8fr]"><div><p className="text-sm font-semibold">{task.title}</p><p className="mt-1 text-xs text-[var(--muted)]">{task.client_id ? clientById.get(task.client_id)?.company || clientById.get(task.client_id)?.name || "Client" : task.kind === "work" ? "Lucrare" : "Task"}</p></div><ListValue label="Status" value={statusLabels[task.status]} /><ListValue label="Responsabil" value={task.assignee || "Nealocat"} /><ListValue label="Termen" value={formatDateTime(task.due_at, locale)} /></button>)}
+          {filteredTasks.map((task) => (
+            <button
+              key={task.id}
+              type="button"
+              onClick={() => setSelectedId(task.id)}
+              className="grid w-full gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left last:border-b-0 hover:bg-[var(--surface-2)] sm:grid-cols-[1.5fr_0.7fr_0.7fr_0.8fr]"
+            >
+              <div>
+                <p className="text-sm font-semibold">{task.title}</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  {task.client_id
+                    ? clientById.get(task.client_id)?.company ||
+                      clientById.get(task.client_id)?.name ||
+                      "Client"
+                    : task.kind === "work"
+                      ? "Lucrare"
+                      : "Task"}
+                </p>
+              </div>
+              <ListValue label="Status" value={statusLabels[task.status]} />
+              <ListValue label="Responsabil" value={task.assignee || "Nealocat"} />
+              <ListValue label="Termen" value={formatDateTime(task.due_at, locale)} />
+            </button>
+          ))}
         </div>
       )}
 
       {selectedTask && (
         <TaskDetail
           task={selectedTask}
-          client={selectedTask.client_id ? clientById.get(selectedTask.client_id) : undefined}
+          client={
+            selectedTask.client_id ? clientById.get(selectedTask.client_id) : undefined
+          }
           checklist={checklist}
           locale={locale}
           canWrite={canWrite}
@@ -459,23 +725,98 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
       )}
 
       <style jsx>{`
-        .input { height: 44px; width: 100%; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; outline: none; color: var(--text); }
+        .input {
+          height: 44px;
+          width: 100%;
+          border-radius: 14px;
+          border: 1px solid var(--border);
+          background: var(--bg);
+          padding: 0 14px;
+          font-size: 14px;
+          outline: none;
+          color: var(--text);
+        }
       `}</style>
     </div>
   );
 }
 
-function TaskCard({ task, client, locale, active, onSelect }: { task: WorkTask; client?: WorkTaskClient; locale: string; active: boolean; onSelect: () => void }) {
-  return <button type="button" onClick={onSelect} className={`w-full rounded-[22px] border p-4 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}>
-    <div className="flex items-center justify-between gap-3"><span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">{task.kind === "work" ? "Lucrare" : "Task"}</span><span className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${task.priority === "urgent" ? "text-red-500" : task.priority === "high" ? "text-orange-500" : "text-[var(--muted)]"}`}>{priorityLabels[task.priority]}</span></div>
-    <h3 className="mt-4 text-[15px] font-semibold leading-5">{task.title}</h3>
-    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--muted)]">{client?.company || client?.name || task.location || "Fără client asociat"}</p>
-    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${task.progress}%` }} /></div>
-    <div className="mt-4 flex items-center justify-between gap-2 text-[11px] text-[var(--muted)]"><span>{task.assignee || "Nealocat"}</span><span>{task.due_at ? formatDateTime(task.due_at, locale) : "Fără termen"}</span></div>
-  </button>;
+function TaskCard({
+  task,
+  client,
+  locale,
+  active,
+  onSelect,
+}: {
+  task: WorkTask;
+  client?: WorkTaskClient;
+  locale: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-[22px] border p-4 text-left transition ${
+        active
+          ? "border-[var(--accent)] bg-[var(--bg)]"
+          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          {task.kind === "work" ? "Lucrare" : "Task"}
+        </span>
+        <span
+          className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${
+            task.priority === "urgent"
+              ? "text-red-500"
+              : task.priority === "high"
+                ? "text-orange-500"
+                : "text-[var(--muted)]"
+          }`}
+        >
+          {priorityLabels[task.priority]}
+        </span>
+      </div>
+      <h3 className="mt-4 text-[15px] font-semibold leading-5">{task.title}</h3>
+      <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--muted)]">
+        {client?.company || client?.name || task.location || "Fără client asociat"}
+      </p>
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+        <div
+          className="h-full rounded-full bg-[var(--accent)]"
+          style={{ width: `${task.progress}%` }}
+        />
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 text-[11px] text-[var(--muted)]">
+        <span>{task.assignee || "Nealocat"}</span>
+        <span>
+          {task.due_at ? formatDateTime(task.due_at, locale) : "Fără termen"}
+        </span>
+      </div>
+    </button>
+  );
 }
 
-function TaskDetail({ task, client, checklist, locale, canWrite, canDelete, saving, newChecklistTitle, onChecklistTitle, onAddChecklist, onToggleChecklist, onRemoveChecklist, onStatus, onProgress, onDelete }: {
+function TaskDetail({
+  task,
+  client,
+  checklist,
+  locale,
+  canWrite,
+  canDelete,
+  saving,
+  newChecklistTitle,
+  onChecklistTitle,
+  onAddChecklist,
+  onToggleChecklist,
+  onRemoveChecklist,
+  onStatus,
+  onProgress,
+  onDelete,
+}: {
   task: WorkTask;
   client?: WorkTaskClient;
   checklist: WorkTaskChecklistItem[];
@@ -493,36 +834,226 @@ function TaskDetail({ task, client, checklist, locale, canWrite, canDelete, savi
   onDelete: () => void;
 }) {
   const completedItems = checklist.filter((item) => item.done).length;
-  return <section className="mt-4 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-    <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><p className="text-xs font-medium text-[var(--muted)]">{task.kind === "work" ? "Lucrare" : "Task"} · {priorityLabels[task.priority]}</p><h2 className="mt-2 text-[30px] font-semibold tracking-[-0.045em]">{task.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{client?.company || client?.name || "Fără client asociat"}</p></div><span className="self-start rounded-full bg-[var(--bg)] px-3 py-2 text-xs font-semibold">{statusLabels[task.status]}</span></div>
-      {task.description && <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{task.description}</p>}
-      <div className="mt-7 grid gap-3 sm:grid-cols-2"><DetailValue label="Responsabil" value={task.assignee || "Nealocat"} /><DetailValue label="Locație" value={task.location || "—"} /><DetailValue label="Programată" value={formatDateTime(task.scheduled_at, locale)} /><DetailValue label="Termen" value={formatDateTime(task.due_at, locale)} /><DetailValue label="Durată estimată" value={formatDuration(task.estimated_minutes)} /><DetailValue label="Progres" value={`${task.progress}%`} /></div>
-      {canWrite && <div className="mt-7"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Status rapid</p><div className="mt-3 flex flex-wrap gap-2">{(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map((status) => <button key={status} type="button" disabled={saving || task.status === status} onClick={() => onStatus(status)} className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${task.status === status ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border)]"}`}>{statusLabels[status]}</button>)}</div></div>}
-      {canWrite && <div className="mt-6"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Progres</p><div className="mt-3 flex flex-wrap gap-2">{[0, 25, 50, 75, 100].map((progress) => <button key={progress} type="button" disabled={saving || task.progress === progress} onClick={() => onProgress(progress)} className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${task.progress === progress ? "bg-[var(--accent)] text-white" : "border border-[var(--border)]"}`}>{progress}%</button>)}</div></div>}
-      {canDelete && <div className="mt-8 border-t border-[var(--border)] pt-5"><button type="button" disabled={saving} onClick={onDelete} className="text-xs font-semibold text-red-500 disabled:opacity-50">Șterge lucrarea</button></div>}
-    </article>
+  return (
+    <section className="mt-4 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-xs font-medium text-[var(--muted)]">
+              {task.kind === "work" ? "Lucrare" : "Task"} · {priorityLabels[task.priority]}
+            </p>
+            <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.045em]">
+              {task.title}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {client?.company || client?.name || "Fără client asociat"}
+            </p>
+          </div>
+          <span className="self-start rounded-full bg-[var(--bg)] px-3 py-2 text-xs font-semibold">
+            {statusLabels[task.status]}
+          </span>
+        </div>
+        {task.description && (
+          <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">
+            {task.description}
+          </p>
+        )}
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <DetailValue label="Responsabil" value={task.assignee || "Nealocat"} />
+          <DetailValue label="Locație" value={task.location || "—"} />
+          <DetailValue label="Programată" value={formatDateTime(task.scheduled_at, locale)} />
+          <DetailValue label="Termen" value={formatDateTime(task.due_at, locale)} />
+          <DetailValue label="Durată estimată" value={formatDuration(task.estimated_minutes)} />
+          <DetailValue label="Progres" value={`${task.progress}%`} />
+        </div>
+        {canWrite && (
+          <div className="mt-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
+              Status rapid
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map(
+                (status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    disabled={saving || task.status === status}
+                    onClick={() => onStatus(status)}
+                    className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
+                      task.status === status
+                        ? "bg-[var(--button)] text-[var(--button-text)]"
+                        : "border border-[var(--border)]"
+                    }`}
+                  >
+                    {statusLabels[status]}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
+        {canWrite && (
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
+              Progres
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[0, 25, 50, 75, 100].map((progress) => (
+                <button
+                  key={progress}
+                  type="button"
+                  disabled={saving || task.progress === progress}
+                  onClick={() => onProgress(progress)}
+                  className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
+                    task.progress === progress
+                      ? "bg-[var(--accent)] text-white"
+                      : "border border-[var(--border)]"
+                  }`}
+                >
+                  {progress}%
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {canDelete && (
+          <div className="mt-8 border-t border-[var(--border)] pt-5">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={onDelete}
+              className="text-xs font-semibold text-red-500 disabled:opacity-50"
+            >
+              Șterge lucrarea
+            </button>
+          </div>
+        )}
+      </article>
 
-    <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
-      <div className="flex items-center justify-between gap-4"><div><p className="text-xs font-medium text-[var(--muted)]">Checklist</p><h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">Pașii lucrării</h2></div><span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">{completedItems}/{checklist.length}</span></div>
-      <div className="mt-6 space-y-2">{checklist.length ? checklist.map((item) => <div key={item.id} className="flex items-center gap-3 rounded-[18px] bg-[var(--bg)] p-3"><button type="button" disabled={!canWrite || saving} onClick={() => onToggleChecklist(item)} className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] ${item.done ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-strong)]"}`}>{item.done ? "✓" : ""}</button><span className={`min-w-0 flex-1 text-sm ${item.done ? "text-[var(--muted)] line-through" : ""}`}>{item.title}</span>{canDelete && <button type="button" disabled={saving} onClick={() => onRemoveChecklist(item)} className="text-xs text-[var(--muted)]">×</button>}</div>) : <p className="rounded-[18px] border border-dashed border-[var(--border)] p-5 text-center text-xs text-[var(--muted)]">Adaugă pașii esențiali ai lucrării.</p>}</div>
-      {canWrite && <form onSubmit={onAddChecklist} className="mt-4 flex gap-2"><input value={newChecklistTitle} onChange={(event) => onChecklistTitle(event.target.value)} placeholder="Ex. Verifică presiunea instalației" className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 text-sm outline-none" /><button disabled={saving || !newChecklistTitle.trim()} className="h-11 rounded-[14px] bg-[var(--button)] px-4 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">Adaugă</button></form>}
-    </article>
-  </section>;
+      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium text-[var(--muted)]">Checklist</p>
+            <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">
+              Pașii lucrării
+            </h2>
+          </div>
+          <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">
+            {completedItems}/{checklist.length}
+          </span>
+        </div>
+        <div className="mt-6 space-y-2">
+          {checklist.length ? (
+            checklist.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-[18px] bg-[var(--bg)] p-3"
+              >
+                <button
+                  type="button"
+                  disabled={!canWrite || saving}
+                  onClick={() => onToggleChecklist(item)}
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] ${
+                    item.done
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                      : "border-[var(--border-strong)]"
+                  }`}
+                >
+                  {item.done ? "✓" : ""}
+                </button>
+                <span
+                  className={`min-w-0 flex-1 text-sm ${
+                    item.done ? "text-[var(--muted)] line-through" : ""
+                  }`}
+                >
+                  {item.title}
+                </span>
+                {canDelete && (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onRemoveChecklist(item)}
+                    className="text-xs text-[var(--muted)]"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="rounded-[18px] border border-dashed border-[var(--border)] p-5 text-center text-xs text-[var(--muted)]">
+              Adaugă pașii esențiali ai lucrării.
+            </p>
+          )}
+        </div>
+        {canWrite && (
+          <form onSubmit={onAddChecklist} className="mt-4 flex gap-2">
+            <input
+              value={newChecklistTitle}
+              onChange={(event) => onChecklistTitle(event.target.value)}
+              placeholder="Ex. Verifică presiunea instalației"
+              className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 text-sm outline-none"
+            />
+            <button
+              disabled={saving || !newChecklistTitle.trim()}
+              className="h-11 rounded-[14px] bg-[var(--button)] px-4 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50"
+            >
+              Adaugă
+            </button>
+          </form>
+        )}
+      </article>
+    </section>
+  );
 }
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5"><p className="text-xs font-medium text-[var(--muted)]">{label}</p><p className="mt-5 text-[34px] font-semibold leading-none tracking-[-0.05em]">{value}</p><p className="mt-2 text-xs text-[var(--muted-2)]">{note}</p></article>;
+  return (
+    <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5">
+      <p className="text-xs font-medium text-[var(--muted)]">{label}</p>
+      <p className="mt-5 text-[34px] font-semibold leading-none tracking-[-0.05em]">
+        {value}
+      </p>
+      <p className="mt-2 text-xs text-[var(--muted-2)]">{note}</p>
+    </article>
+  );
 }
 
-function Field({ label, className = "", children }: { label: string; className?: string; children: React.ReactNode }) {
-  return <label className={className}><span className="mb-2 block text-xs font-medium text-[var(--muted)]">{label}</span>{children}</label>;
+function Field({
+  label,
+  className = "",
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className={className}>
+      <span className="mb-2 block text-xs font-medium text-[var(--muted)]">{label}</span>
+      {children}
+    </label>
+  );
 }
 
 function DetailValue({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-[18px] bg-[var(--bg)] p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">{label}</p><p className="mt-2 text-sm font-medium">{value}</p></div>;
+  return (
+    <div className="rounded-[18px] bg-[var(--bg)] p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium">{value}</p>
+    </div>
+  );
 }
 
 function ListValue({ label, value }: { label: string; value: string }) {
-  return <div><p className="text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">{label}</p><p className="mt-1 text-xs font-medium">{value}</p></div>;
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
+        {label}
+      </p>
+      <p className="mt-1 text-xs font-medium">{value}</p>
+    </div>
+  );
 }
