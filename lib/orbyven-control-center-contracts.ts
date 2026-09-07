@@ -77,7 +77,7 @@ export type ControlCenterAuthUser = {
 export type ControlCenterPayload = {
   organizations: ControlCenterOrganization[];
   auth_users: ControlCenterAuthUser[];
-  entitlement_source: "chat3-pending";
+  entitlement_source: "chat3-pending" | "billing";
 };
 
 export const EMPTY_ENTITLEMENT_SNAPSHOT: OrbyvenEntitlementSnapshot = {
