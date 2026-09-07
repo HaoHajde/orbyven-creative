@@ -9,6 +9,8 @@ create temporary table _orbyven_platform_core_test (
   organization_id uuid not null
 ) on commit drop;
 
+grant select on _orbyven_platform_core_test to authenticated;
+
 do $$
 declare
   test_user uuid;
