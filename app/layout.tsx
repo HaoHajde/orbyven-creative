@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Geist, Geist_Mono } from "next/font/google";
 
+import CookieConsent from "@/components/legal/CookieConsent";
 import StructuredData from "@/components/StructuredData";
 import { getSiteUrl, siteConfig } from "@/lib/site-config";
 
@@ -125,6 +126,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <StructuredData />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );
