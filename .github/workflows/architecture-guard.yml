@@ -26,7 +26,9 @@ jobs:
 
           labels="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name]')"
           owner_labels="$(echo "$labels" | jq -c '[.[] | select(test("^chat-[1-4]-"))]')"
+          integration_labels="$(echo "$labels" | jq -c '[.[] | select(test("^integration-[0-9]+$"))]')"
           owner_count="$(echo "$owner_labels" | jq 'length')"
+          integration_count="$(echo "$integration_labels" | jq 'length')"
           owner="$(echo "$owner_labels" | jq -r '.[0] // ""')"
           override="false"
           if echo "$labels" | jq -e 'index("architecture-cross-domain-approved") != null' >/dev/null; then
@@ -37,6 +39,7 @@ jobs:
 
           echo "owner=$owner" >> "$GITHUB_OUTPUT"
           echo "owner_count=$owner_count" >> "$GITHUB_OUTPUT"
+          echo "integration_count=$integration_count" >> "$GITHUB_OUTPUT"
           echo "override=$override" >> "$GITHUB_OUTPUT"
           echo "changed_files=$changed_files" >> "$GITHUB_OUTPUT"
 
@@ -44,6 +47,7 @@ jobs:
         env:
           ORBYVEN_OWNER: ${{ steps.context.outputs.owner }}
           ORBYVEN_OWNER_COUNT: ${{ steps.context.outputs.owner_count }}
+          ORBYVEN_INTEGRATION_COUNT: ${{ steps.context.outputs.integration_count }}
           ORBYVEN_ARCHITECTURE_OVERRIDE: ${{ steps.context.outputs.override }}
           ORBYVEN_CHANGED_FILES: ${{ steps.context.outputs.changed_files }}
         run: node scripts/check-architecture.mjs
