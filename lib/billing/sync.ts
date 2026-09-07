@@ -17,7 +17,6 @@ import {
 } from "@/lib/billing/stripe-webhook";
 
 type ServiceClient = ReturnType<typeof createBillingServiceClient>;
-
 type JsonObject = Record<string, unknown>;
 
 function objectValue(value: unknown): JsonObject | null {
@@ -51,6 +50,17 @@ function planFromPriceId(priceId: string | null): BillingPlanId | null {
   if (!priceId) return null;
   const entries = Object.entries(billingServerConfig.priceIds) as [BillingPlanId, string][];
   return entries.find(([, configuredPriceId]) => configuredPriceId === priceId)?.[0] ?? null;
+}
+
+function firstTaxId(customerDetails: JsonObject | null) {
+  const taxIds = customerDetails?.tax_ids;
+  if (!Array.isArray(taxIds)) return null;
+  for (const item of taxIds) {
+    const tax = objectValue(item);
+    const value = stringValue(tax?.value);
+    if (value) return value;
+  }
+  return null;
 }
 
 async function resolveOrganizationId(
@@ -118,12 +128,18 @@ export async function syncStripeCheckoutCompleted(client: ServiceClient, object:
   const customerId = stringValue(object.customer);
   const customerDetails = objectValue(object.customer_details);
   const email = stringValue(customerDetails?.email);
+  const legalName = stringValue(customerDetails?.name);
+  const address = objectValue(customerDetails?.address) ?? {};
+  const taxId = firstTaxId(customerDetails);
 
   const { error } = await client.from("billing_accounts").upsert(
     {
       organization_id: organizationId,
       stripe_customer_id: customerId,
       billing_email: email,
+      legal_name: legalName,
+      tax_id: taxId,
+      billing_address: address,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "organization_id" }
@@ -244,13 +260,7 @@ export async function syncStripeInvoice(
       .update({ grace_until: graceUntil, updated_at: new Date().toISOString() })
       .eq("stripe_subscription_id", subscriptionId);
     if (error) throw error;
-    await syncEntitlements(
-      client,
-      organizationId,
-      subscription.plan_id,
-      "past_due",
-      graceUntil
-    );
+    await syncEntitlements(client, organizationId, subscription.plan_id, "past_due", graceUntil);
   }
 
   if (eventType === "invoice.paid") {

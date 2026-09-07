@@ -73,12 +73,23 @@ Duplicate Stripe events are ignored safely.
 ## Grace period
 `invoice.payment_failed` creates a 7-day grace window. Entitlements stay valid until `grace_until`; after that, entitlement checks naturally fail even before another database update.
 
-## Fiscal handoff
+## Fiscal handoff: Oblio / RO e-Factura
 Paid Stripe invoices are recorded in `billing_invoices` with `fiscal_status='pending'`.
 
-This is the handoff point for the Romanian invoicing adapter (Oblio/e-Factura). Fiscal sending remains disabled until the accountant confirms the exact VAT, invoice-timing and SPV flow.
+The fiscal worker is intentionally separate from the Stripe webhook. It claims pending records, issues the Romanian invoice through the Oblio API using the Stripe invoice id as Oblio `idempotencyKey`, records the Oblio series/number/link and can optionally submit the emitted invoice to SPV.
 
-Do not emit a Romanian fiscal invoice directly from portable modules or Stripe callbacks without using this queue/state.
+The adapter stays OFF until `ORBYVEN_OBLIO_ENABLED=true` and every fiscal configuration value is present. There is no Cron schedule committed yet; the secure endpoint `/api/billing/fiscal/process` can later be attached to Vercel Cron using `CRON_SECRET` after the accountant validates invoice timing and VAT treatment.
+
+Required fiscal configuration before activation:
+- Oblio account email and API secret
+- issuer CIF
+- invoice series
+- VAT name and percentage exactly as configured in Oblio
+- whether VAT is included in the price
+- whether ORBYVEN should submit to SPV automatically
+- `CRON_SECRET`
+
+Do not emit a Romanian fiscal invoice directly from portable modules or from the Stripe webhook. Always use `billing_invoices` as the queue/state so retries remain idempotent and auditable.
 
 ## Chat 2 / Control Center contract
 Control Center may read commercial state through a server-side billing summary and later expose:
@@ -87,8 +98,9 @@ Control Center may read commercial state through a server-side billing summary a
 - commitment end
 - grace status
 - entitlements
+- fiscal invoice status
 
-Control Center must not mutate Stripe tables directly. Commercial changes go through Billing APIs.
+Control Center must not mutate Stripe/Oblio tables directly. Commercial changes go through Billing APIs.
 
 ## Chat 4 / public pricing contract
 Public pricing may render plan names/prices, but tax wording and checkout behavior must come from the shared billing configuration. Do not create another checkout implementation.

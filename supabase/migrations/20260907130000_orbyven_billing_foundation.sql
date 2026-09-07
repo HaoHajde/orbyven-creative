@@ -77,6 +77,11 @@ create table if not exists public.billing_invoices (
   invoice_pdf text,
   fiscal_status text not null default 'pending' check (fiscal_status in ('pending','processing','issued','failed','skipped')),
   fiscal_external_id text,
+  fiscal_series text,
+  fiscal_number text,
+  fiscal_document_url text,
+  spv_status text not null default 'not_sent',
+  spv_sent_at timestamptz,
   fiscal_error text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
