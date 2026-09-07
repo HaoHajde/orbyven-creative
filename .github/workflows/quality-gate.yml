@@ -1,0 +1,78 @@
+name: ORBYVEN Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbyven-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect changed lint targets
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE_SHA"
+            head="$PR_HEAD_SHA"
+          else
+            base="$PUSH_BEFORE_SHA"
+            head="$PUSH_HEAD_SHA"
+          fi
+
+          git diff --name-only --diff-filter=ACMR "$base" "$head" -- \
+            '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' > /tmp/orbyven-lint-targets.txt
+
+          echo "Changed lint targets:"
+          cat /tmp/orbyven-lint-targets.txt || true
+
+      - name: Lint changed code
+        run: |
+          set -euo pipefail
+
+          if [ ! -s /tmp/orbyven-lint-targets.txt ]; then
+            echo "No changed JavaScript/TypeScript files to lint."
+            exit 0
+          fi
+
+          mapfile -t files < /tmp/orbyven-lint-targets.txt
+          npx eslint "${files[@]}"
+
+      - name: Production build
+        run: npm run build
+
+      - name: Full lint baseline report
+        continue-on-error: true
+        run: npm run lint
