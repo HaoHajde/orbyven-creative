@@ -36,9 +36,13 @@ export default function MobileTemplatesPage() {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const ordered = shuffle(clientTemplateList);
-    setTemplates(ordered);
-    setActive(Math.floor(Math.random() * ordered.length));
+    const frame = window.requestAnimationFrame(() => {
+      const ordered = shuffle(clientTemplateList);
+      setTemplates(ordered);
+      setActive(Math.floor(Math.random() * ordered.length));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
