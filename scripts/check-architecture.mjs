@@ -1,6 +1,7 @@
 import process from "node:process";
 
 const owner = process.env.ORBYVEN_OWNER ?? "";
+const ownerCount = Number(process.env.ORBYVEN_OWNER_COUNT ?? "0");
 const changedFiles = JSON.parse(process.env.ORBYVEN_CHANGED_FILES ?? "[]");
 const override = process.env.ORBYVEN_ARCHITECTURE_OVERRIDE === "true";
 
@@ -10,6 +11,11 @@ const ownerLabels = new Set([
   "chat-3-billing",
   "chat-4-public",
 ]);
+
+if (ownerCount > 1) {
+  console.error("ORBYVEN Architecture Guard: a PR may have only one chat ownership label.");
+  process.exit(1);
+}
 
 if (!ownerLabels.has(owner)) {
   console.log("ORBYVEN Architecture Guard: no ownership label supplied; ownership path checks skipped.");
