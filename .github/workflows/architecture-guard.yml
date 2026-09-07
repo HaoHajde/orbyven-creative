@@ -25,7 +25,9 @@ jobs:
           set -euo pipefail
 
           labels="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name]')"
-          owner="$(echo "$labels" | jq -r '[.[] | select(test("^chat-[1-4]-"))][0] // ""')"
+          owner_labels="$(echo "$labels" | jq -c '[.[] | select(test("^chat-[1-4]-"))]')"
+          owner_count="$(echo "$owner_labels" | jq 'length')"
+          owner="$(echo "$owner_labels" | jq -r '.[0] // ""')"
           override="false"
           if echo "$labels" | jq -e 'index("architecture-cross-domain-approved") != null' >/dev/null; then
             override="true"
@@ -34,12 +36,14 @@ jobs:
           changed_files="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
 
           echo "owner=$owner" >> "$GITHUB_OUTPUT"
+          echo "owner_count=$owner_count" >> "$GITHUB_OUTPUT"
           echo "override=$override" >> "$GITHUB_OUTPUT"
           echo "changed_files=$changed_files" >> "$GITHUB_OUTPUT"
 
       - name: Enforce ownership boundaries
         env:
           ORBYVEN_OWNER: ${{ steps.context.outputs.owner }}
+          ORBYVEN_OWNER_COUNT: ${{ steps.context.outputs.owner_count }}
           ORBYVEN_ARCHITECTURE_OVERRIDE: ${{ steps.context.outputs.override }}
           ORBYVEN_CHANGED_FILES: ${{ steps.context.outputs.changed_files }}
         run: node scripts/check-architecture.mjs
