@@ -1,5 +1,5 @@
-import ClientWorkspace from "@/components/ClientWorkspace";
+import WorkspaceGate from "@/components/WorkspaceGate";
 
 export default function WorkspacePage() {
-  return <ClientWorkspace />;
+  return <WorkspaceGate />;
 }
