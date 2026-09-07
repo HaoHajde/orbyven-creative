@@ -21,15 +21,16 @@ export default function WorkspaceLoginPage() {
     const initialTheme: Theme =
       saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
 
-    setTheme(initialTheme);
     document.documentElement.style.colorScheme = initialTheme;
+    const themeTimer = window.setTimeout(() => setTheme(initialTheme), 0);
 
     const checkUser = async () => {
       const { data } = await orbyvenSupabase.auth.getUser();
       if (data.user) router.replace("/workspace");
     };
 
-    checkUser();
+    void checkUser();
+    return () => window.clearTimeout(themeTimer);
   }, [router]);
 
   const toggleTheme = () => {
