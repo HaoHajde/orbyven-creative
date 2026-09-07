@@ -68,8 +68,13 @@ The real merge gate is still CI after the latest synchronization, not the label 
 Runs on every PR and every push to `main`:
 
 1. `npm ci`
-2. full `npm run lint`
+2. strict ESLint on JavaScript/TypeScript files changed by that PR/push
 3. `npm run build`
+4. full `npm run lint` as an informational baseline report
+
+The repository currently has pre-existing full-lint debt from the React `set-state-in-effect` rule. That baseline is surfaced but does not block unrelated PRs. Any newly changed code is lint-blocking immediately, so the baseline cannot silently grow through normal development.
+
+When the existing lint baseline is cleaned to zero, the informational full-lint step can be promoted to a required blocking step.
 
 ### ORBYVEN Architecture Guard
 
