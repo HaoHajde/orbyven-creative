@@ -50,9 +50,26 @@ export async function GET(request: Request) {
   try {
     const { admin } = await authorizeControlCenter(request);
     const payload = await loadControlCenterPayload(admin);
-    return NextResponse.json(payload, {
-      headers: { "Cache-Control": "no-store" },
-    });
+
+    // Until the client workspace has an explicit organization switcher,
+    // a client account is assignable to one organization only.
+    const assignedUserIds = new Set(
+      payload.organizations.flatMap((organization) =>
+        organization.members.map((member) => member.user_id)
+      )
+    );
+
+    return NextResponse.json(
+      {
+        ...payload,
+        auth_users: payload.auth_users.filter(
+          (user) => !assignedUserIds.has(user.id)
+        ),
+      },
+      {
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
   } catch (error) {
     return errorResponse(error);
   }
@@ -72,7 +89,39 @@ export async function POST(request: Request) {
       case "update_organization":
         await updateControlCenterOrganization(admin, body);
         return NextResponse.json({ ok: true });
-      case "assign_member":
+      case "assign_member": {
+        const organizationId =
+          typeof body.organization_id === "string" ? body.organization_id : "";
+        const userId = typeof body.user_id === "string" ? body.user_id : "";
+
+        if (!organizationId || !userId) {
+          throw new ControlCenterHttpError(
+            400,
+            "invalid_assignment",
+            "organization_id și user_id sunt obligatorii."
+          );
+        }
+
+        const { data: existingMemberships, error: membershipError } = await admin
+          .from("organization_members")
+          .select("organization_id")
+          .eq("user_id", userId)
+          .neq("organization_id", organizationId)
+          .limit(1);
+
+        if (membershipError) throw membershipError;
+
+        if (existingMemberships?.length) {
+          throw new ControlCenterHttpError(
+            409,
+            "user_already_assigned",
+            "Utilizatorul este deja atribuit altei organizații. Conturile client rămân single-organization până există un switcher explicit în workspace."
+          );
+        }
+
+        await assignControlCenterMember(admin, body);
+        return NextResponse.json({ ok: true });
+      }
       case "update_member_role":
         await assignControlCenterMember(admin, body);
         return NextResponse.json({ ok: true });
