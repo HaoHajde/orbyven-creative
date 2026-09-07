@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { loadControlCenterBillingSnapshots } from "@/lib/billing/control-center";
 import {
   assignControlCenterMember,
   authorizeControlCenter,
@@ -50,11 +51,21 @@ export async function GET(request: Request) {
   try {
     const { admin } = await authorizeControlCenter(request);
     const payload = await loadControlCenterPayload(admin);
+    const billingState = await loadControlCenterBillingSnapshots(
+      admin,
+      payload.organizations.map((organization) => organization.id)
+    );
+
+    const organizations = payload.organizations.map((organization) => ({
+      ...organization,
+      subscription:
+        billingState.snapshots.get(organization.id) ?? organization.subscription,
+    }));
 
     // Until the client workspace has an explicit organization switcher,
     // a client account is assignable to one organization only.
     const assignedUserIds = new Set(
-      payload.organizations.flatMap((organization) =>
+      organizations.flatMap((organization) =>
         organization.members.map((member) => member.user_id)
       )
     );
@@ -62,6 +73,8 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ...payload,
+        organizations,
+        entitlement_source: billingState.source,
         auth_users: payload.auth_users.filter(
           (user) => !assignedUserIds.has(user.id)
         ),
