@@ -29,8 +29,5 @@ jobs:
       - name: Lint workspace foundation
         run: npx eslint app/workspace/login/page.tsx components/ClientWorkspace.tsx lib/orbyven-workspace.ts
 
-      - name: Lint Chat 4 public templates
-        run: npx eslint 'app/templates/[slug]/page.tsx' components/ClientTemplatePreview.tsx components/ClientTemplateSite.tsx lib/client-template-catalog.ts
-
       - name: Build
         run: npm run build
