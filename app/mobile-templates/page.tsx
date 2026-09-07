@@ -1,52 +1,20 @@
+"use client";
+
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import MobilePageChrome from "@/components/MobilePageChrome";
 import OrbitalSystem from "@/components/OrbitalSystem";
+import { clientTemplateList } from "@/lib/client-template-catalog";
 
-const templates = [
-  {
-    id: "diana-florin",
-    title: "Diana & Florin",
-    category: "Wedding invitation",
-    subtitle: "Elegant · Interactive · RSVP",
-    href: "/demo/nunta/diana-florin",
-    status: "Live",
-    tone: "wedding",
-  },
-  {
-    id: "wedding-minimal",
-    title: "Minimal Vows",
-    category: "Wedding invitation",
-    subtitle: "Minimal · Editorial · Modern",
-    status: "Concept",
-    tone: "minimal",
-  },
-  {
-    id: "baptism-soft",
-    title: "Little Moments",
-    category: "Baptism invitation",
-    subtitle: "Soft · Warm · Delicate",
-    status: "Concept",
-    tone: "soft",
-  },
-  {
-    id: "business-studio",
-    title: "Studio Business",
-    category: "Business website",
-    subtitle: "Professional · Clean · Premium",
-    status: "Concept",
-    tone: "business",
-  },
-  {
-    id: "landing-conversion",
-    title: "Launch",
-    category: "Landing page",
-    subtitle: "Focused · Fast · Conversion",
-    status: "Concept",
-    tone: "landing",
-  },
-];
+function shuffle<T>(items: T[]) {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+}
 
 const vars = {
   "--bg": "#000000",
@@ -62,174 +30,123 @@ const vars = {
 } as CSSProperties;
 
 export default function MobileTemplatesPage() {
+  const [templates, setTemplates] = useState(clientTemplateList);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const ordered = shuffle(clientTemplateList);
+    setTemplates(ordered);
+    setActive(Math.floor(Math.random() * ordered.length));
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActive((current) => (current + 1) % templates.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [templates.length]);
+
+  const featured = templates[active] ?? templates[0];
+
   return (
-    <main
-      id="mobile-page-root"
-      style={vars}
-      className="min-h-screen overflow-x-clip bg-[var(--bg)] text-[var(--text)]"
-    >
+    <main id="mobile-page-root" style={vars} className="min-h-screen overflow-x-clip bg-[var(--bg)] text-[var(--text)]">
       <MobilePageChrome activePage="templates" />
 
-      <section
-        className="mobile-subhero mobile-shell-x relative overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.08), transparent 28%)",
-        }}
-      >
+      <section className="mobile-subhero mobile-shell-x relative overflow-hidden" style={{ backgroundImage: "radial-gradient(circle at 78% 18%, rgba(75,70,238,0.11), transparent 28%)" }}>
         <OrbitalSystem variant="accent" className="left-[72%] top-[52%]" />
         <div className="mx-auto max-w-[760px]">
-          <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
-            ORBYVEN CREATIVE · PORTOFOLIU
-          </p>
-
-          <h1 className="mobile-hero-title mobile-hero-title-size mt-9 font-semibold leading-[0.91] tracking-[-0.065em]">
-            Alege o bază.
-            <br />
-            Fă-o a ta<span className="text-[#4b46ee]">.</span>
-          </h1>
-
-          <p className="mobile-hero-copy mt-7 max-w-md text-[15px] leading-7 text-[var(--muted)]">
-            Direcții vizuale pe care le adaptăm până când proiectul nu mai arată ca un template.
-          </p>
+          <p className="mobile-hero-kicker text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">ORBYVEN · CLIENT TEMPLATES</p>
+          <h1 className="mobile-hero-title mobile-hero-title-size mt-9 font-semibold leading-[0.91] tracking-[-0.065em]">Alege o bază.<br />Fă-o a ta<span className="text-[#4b46ee]">.</span></h1>
+          <p className="mobile-hero-copy mt-7 max-w-md text-[15px] leading-7 text-[var(--muted)]">Template-uri construite pentru business-uri reale, apoi personalizate până când nu mai arată ca un template.</p>
         </div>
       </section>
 
       <section className="mobile-defer border-t border-[var(--border)] mobile-shell-x py-14">
-        <div className="mx-auto max-w-[760px] space-y-5">
-          {templates.map((item, index) => (
-            <article
-              key={item.id}
-              className="mobile-card overflow-hidden rounded-[25px] border border-[var(--border)] bg-[var(--surface)]"
-              data-mobile-reveal
-            >
-              <TemplateVisual
-                tone={item.tone}
-                title={item.title}
-                index={String(index + 1).padStart(2, "0")}
-              />
+        <div className="mx-auto max-w-[760px]">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">Featured · random</p>
+              <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.05em]">{featured.title}</h2>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setActive((current) => (current - 1 + templates.length) % templates.length)} className="mobile-press flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)]">←</button>
+              <button type="button" onClick={() => setActive((current) => (current + 1) % templates.length)} className="mobile-press flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)]">→</button>
+            </div>
+          </div>
 
-              <div className="p-5">
+          <Link href={`/templates/${featured.slug}`} className="mobile-card block overflow-hidden rounded-[27px] border border-[var(--border)] bg-[var(--surface)]" data-mobile-reveal>
+            <div className="relative min-h-[300px] overflow-hidden p-5 text-[#12131a]" style={{ background: featured.surface }}>
+              <div className="absolute right-[-18%] top-[-18%] h-56 w-56 rounded-full blur-3xl" style={{ background: featured.accentSoft }} />
+              <div className="relative rounded-[20px] border border-black/[0.06] bg-white/90 p-5 shadow-xl">
                 <div className="flex items-center justify-between">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
-                    {item.category}
-                  </p>
-
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
-                    {item.status}
-                  </span>
-                </div>
-
-                <h2 className="mt-5 text-[33px] font-semibold tracking-[-0.055em]">
-                  {item.title}
-                </h2>
-
-                <p className="mt-3 text-sm text-[var(--muted)]">
-                  {item.subtitle}
-                </p>
-
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    prefetch={item.id !== "diana-florin"}
-                    className="mobile-press mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
-                  >
-                    <span>Vezi proiectul</span>
-                    <span className="text-[#4b46ee]">↗</span>
-                  </Link>
-                ) : (
-                  <div className="mobile-press mt-6 flex h-11 items-center justify-between rounded-full border border-[var(--border)] px-5 text-sm text-[var(--muted-2)]">
-                    <span>În curând</span>
-                    <span>•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="h-4 w-4 rounded-full border-[4px]" style={{ borderColor: featured.accent }} />
+                    <span className="text-[10px] font-semibold">{featured.title}</span>
                   </div>
-                )}
+                  <span className="rounded-full px-3 py-1.5 text-[7px] font-semibold text-white" style={{ background: featured.accent }}>{featured.primaryAction}</span>
+                </div>
+                <p className="mt-10 text-[7px] font-semibold uppercase tracking-[0.16em]" style={{ color: featured.accent }}>{featured.eyebrow}</p>
+                <p className="mt-4 text-[30px] font-semibold leading-[0.95] tracking-[-0.055em]">{featured.heroTitle}</p>
+                <div className="mt-7 grid grid-cols-2 gap-2">
+                  {featured.services.slice(0, 4).map((service) => (
+                    <div key={service.title} className="rounded-xl border border-black/[0.06] bg-white p-3">
+                      <span className="text-xs" style={{ color: featured.accent }}>{service.icon}</span>
+                      <p className="mt-3 text-[8px] font-semibold">{service.title}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </article>
-          ))}
+            </div>
+            <div className="flex items-center justify-between p-5">
+              <div>
+                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{featured.category}</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">Tap pentru demo complet</p>
+              </div>
+              <span className="text-2xl text-[#4b46ee]">↗</span>
+            </div>
+          </Link>
+
+          <div className="mt-4 flex gap-1.5">
+            {templates.map((item, index) => (
+              <button key={item.slug} onClick={() => setActive(index)} className={`h-1.5 rounded-full transition-all ${index === active ? "w-10 bg-white" : "w-5 bg-white/15"}`} aria-label={`Arată ${item.title}`} />
+            ))}
+          </div>
+
+          <div className="mt-12 space-y-5">
+            {templates.map((item) => (
+              <Link key={item.slug} href={`/templates/${item.slug}`} className="mobile-card block overflow-hidden rounded-[25px] border border-[var(--border)] bg-[var(--surface)]" data-mobile-reveal>
+                <div className="relative min-h-[210px] overflow-hidden p-5 text-[#17181d]" style={{ background: item.surface }}>
+                  <div className="absolute bottom-[-20%] right-[-10%] h-40 w-40 rounded-full blur-3xl" style={{ background: item.accentSoft }} />
+                  <div className="relative">
+                    <p className="text-[7px] font-semibold uppercase tracking-[0.16em]" style={{ color: item.accent }}>{item.category}</p>
+                    <h2 className="mt-5 max-w-[280px] text-[32px] font-semibold leading-[0.96] tracking-[-0.055em]">{item.heroTitle}</h2>
+                    <div className="mt-7 flex gap-2">
+                      {item.services.slice(0, 3).map((service) => <span key={service.title} className="rounded-full border border-black/[0.07] bg-white/75 px-3 py-2 text-[7px] font-medium">{service.title}</span>)}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-end justify-between gap-5">
+                    <div>
+                      <h3 className="text-[30px] font-semibold tracking-[-0.05em]">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
+                    </div>
+                    <span className="text-xl text-[#4b46ee]">↗</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       <footer className="mobile-defer px-[clamp(12px,4vw,16px)] pt-5">
-        <div
-          className="rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]"
-          data-mobile-reveal
-        >
-          <p className="text-[9px] uppercase tracking-[0.18em] opacity-40">
-            Custom by default
-          </p>
-
-          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">
-            Nu trebuie să
-            <br />
-            arate ca un template.
-          </h2>
-
-          <Link
-            href="/contact"
-            className="mobile-press mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"
-          >
-            <span>Vorbește cu noi</span>
-            <span className="text-[#4b46ee]">↗</span>
-          </Link>
+        <div className="rounded-t-[30px] bg-[var(--button)] px-5 py-8 text-[var(--button-text)]" data-mobile-reveal>
+          <p className="text-[9px] uppercase tracking-[0.18em] opacity-40">Custom by default</p>
+          <h2 className="mt-7 text-[43px] font-semibold leading-[0.93] tracking-[-0.06em]">Îți place direcția?<br />O facem a ta.</h2>
+          <Link href="/contact" className="mobile-press mt-9 flex h-14 items-center justify-between rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]"><span>Începe un proiect</span><span className="text-[#4b46ee]">↗</span></Link>
         </div>
       </footer>
     </main>
-  );
-}
-
-function TemplateVisual({
-  tone,
-  title,
-  index,
-}: {
-  tone: string;
-  title: string;
-  index: string;
-}) {
-  if (tone === "wedding") {
-    return (
-      <div className="relative flex min-h-[225px] items-center justify-center bg-[#f3efe6] p-5 text-[#312c24]">
-        <span className="absolute left-5 top-5 text-[8px] uppercase tracking-[0.16em] opacity-45">
-          {index}
-        </span>
-
-        <div className="w-full rounded-[21px] border border-[#c8a85a]/25 bg-white p-6 text-center">
-          <p className="text-[8px] uppercase tracking-[0.18em] text-[#9b8356]">
-            10 · 10 · 2026
-          </p>
-
-          <p className="mt-7 text-[34px] font-light tracking-[-0.055em]">
-            Diana & Florin
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const classes =
-    tone === "soft"
-      ? "bg-[#efe8ef] text-[#403644]"
-      : tone === "business"
-        ? "bg-[#111113] text-white"
-        : tone === "landing"
-          ? "bg-[#161621] text-white"
-          : "bg-[#f2f2f2] text-[#262626]";
-
-  return (
-    <div className={`relative flex min-h-[225px] items-center p-5 ${classes}`}>
-      <span className="absolute left-5 top-5 text-[8px] uppercase tracking-[0.16em] opacity-40">
-        {index}
-      </span>
-
-      <div>
-        <p className="text-[8px] uppercase tracking-[0.16em] opacity-40">
-          ORBYVEN · CONCEPT
-        </p>
-
-        <p className="mt-9 text-[33px] font-semibold leading-[0.98] tracking-[-0.055em]">
-          {title}
-        </p>
-      </div>
-    </div>
   );
 }
