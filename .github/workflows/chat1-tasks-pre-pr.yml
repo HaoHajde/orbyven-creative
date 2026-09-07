@@ -1,0 +1,28 @@
+name: Chat 1 Tasks Pre-PR Check
+
+on:
+  push:
+    branches:
+      - feature/tasks-work-module-v1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint Chat 1 Tasks scope
+        run: npx eslint components/WorkspaceContent.tsx components/modules/TasksModule.tsx lib/modules/tasks.ts
+      - name: Build
+        run: npm run build
