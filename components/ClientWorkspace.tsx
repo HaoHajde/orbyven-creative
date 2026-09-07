@@ -84,20 +84,28 @@ export default function ClientWorkspace() {
           ? "dark"
           : "light";
 
-    setTheme(nextTheme);
     document.documentElement.style.colorScheme = nextTheme;
-    loadWorkspace();
+    const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
+    void loadWorkspace();
+
+    return () => window.clearTimeout(themeTimer);
   }, [loadWorkspace]);
 
-  const enabledModules = workspace?.enabledModules ?? ["overview"];
+  const enabledModules = useMemo<OrbyvenModuleId[]>(
+    () => workspace?.enabledModules ?? ["overview"],
+    [workspace]
+  );
 
   const enabledDefinitions = useMemo(
-    () => ORBYVEN_MODULES.filter((module) => enabledModules.includes(module.id)),
+    () =>
+      ORBYVEN_MODULES.filter((definition) =>
+        enabledModules.includes(definition.id)
+      ),
     [enabledModules]
   );
 
   const activeDefinition =
-    ORBYVEN_MODULES.find((module) => module.id === activeModule) ??
+    ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ??
     ORBYVEN_MODULES[0];
 
   const canManageModules =
@@ -107,7 +115,9 @@ export default function ClientWorkspace() {
   const organizationName =
     workspace?.profile?.display_name ?? workspace?.organization.name ?? "ORBYVEN";
   const greetingName =
-    workspace?.profile?.greeting_name ?? workspace?.organization.name.split(" ")[0] ?? "";
+    workspace?.profile?.greeting_name ??
+    workspace?.organization.name.split(" ")[0] ??
+    "";
   const initials = organizationName
     .split(/\s+/)
     .filter(Boolean)
@@ -205,7 +215,11 @@ export default function ClientWorkspace() {
 
   if (loading) {
     return (
-      <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />
+      <WorkspaceStateScreen
+        vars={vars}
+        theme={theme}
+        title="Se pregătește workspace-ul..."
+      />
     );
   }
 
@@ -297,15 +311,16 @@ export default function ClientWorkspace() {
           </div>
 
           <nav className="mt-7 space-y-1.5">
-            {enabledDefinitions.map((module) => {
-              const active = panel === "workspace" && activeModule === module.id;
+            {enabledDefinitions.map((definition) => {
+              const active =
+                panel === "workspace" && activeModule === definition.id;
               return (
                 <button
-                  key={module.id}
+                  key={definition.id}
                   type="button"
                   onClick={() => {
                     setPanel("workspace");
-                    setActiveModule(module.id);
+                    setActiveModule(definition.id);
                   }}
                   className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left text-sm transition ${
                     active
@@ -315,9 +330,9 @@ export default function ClientWorkspace() {
                 >
                   <span
                     className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: module.color }}
+                    style={{ backgroundColor: definition.color }}
                   />
-                  <span>{module.shortName}</span>
+                  <span>{definition.shortName}</span>
                 </button>
               );
             })}
@@ -359,25 +374,25 @@ export default function ClientWorkspace() {
       </div>
 
       <nav className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[color:var(--bg)]/90 p-2 shadow-2xl backdrop-blur-2xl md:hidden">
-        {enabledDefinitions.slice(0, 4).map((module) => (
+        {enabledDefinitions.slice(0, 4).map((definition) => (
           <button
-            key={module.id}
+            key={definition.id}
             type="button"
             onClick={() => {
               setPanel("workspace");
-              setActiveModule(module.id);
+              setActiveModule(definition.id);
             }}
             className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] ${
-              panel === "workspace" && activeModule === module.id
+              panel === "workspace" && activeModule === definition.id
                 ? "bg-[var(--surface)] font-semibold"
                 : "text-[var(--muted)]"
             }`}
           >
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: module.color }}
+              style={{ backgroundColor: definition.color }}
             />
-            <span className="truncate">{module.shortName}</span>
+            <span className="truncate">{definition.shortName}</span>
           </button>
         ))}
         <button
@@ -407,7 +422,10 @@ function WorkspaceContent({
   role: OrbyvenWorkspace["membership"]["role"];
 }) {
   if (activeModule !== "overview") {
-    const module = ORBYVEN_MODULES.find((item) => item.id === activeModule)!;
+    const definition = ORBYVEN_MODULES.find(
+      (item) => item.id === activeModule
+    )!;
+
     return (
       <div className="pb-24 md:pb-8">
         <div className="max-w-3xl">
@@ -415,22 +433,25 @@ function WorkspaceContent({
             Modul activ
           </p>
           <h1 className="mt-4 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">
-            {module.name}
+            {definition.name}
           </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-            {module.description}
+            {definition.description}
           </p>
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {module.features.map((feature, index) => (
+          {definition.features.map((feature, index) => (
             <article
               key={feature}
               className="min-h-[190px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6"
             >
               <div
                 className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold"
-                style={{ backgroundColor: module.accent, color: module.color }}
+                style={{
+                  backgroundColor: definition.accent,
+                  color: definition.color,
+                }}
               >
                 0{index + 1}
               </div>
@@ -451,12 +472,14 @@ function WorkspaceContent({
     );
   }
 
-  const businessModules = enabledModules.filter((moduleId) => moduleId !== "overview");
-  const activeNames = ORBYVEN_MODULES.filter((module) =>
-    businessModules.includes(module.id)
+  const businessModules = enabledModules.filter(
+    (moduleId) => moduleId !== "overview"
+  );
+  const activeNames = ORBYVEN_MODULES.filter((definition) =>
+    businessModules.includes(definition.id)
   )
     .slice(0, 3)
-    .map((module) => module.name);
+    .map((definition) => definition.name);
 
   return (
     <div className="pb-24 md:pb-8">
@@ -529,7 +552,10 @@ function WorkspaceContent({
             Sistem pregătit
           </h2>
           <div className="mt-7 space-y-5">
-            <StatusItem title="Organizație încărcată" meta="Identitate și profil din backend" />
+            <StatusItem
+              title="Organizație încărcată"
+              meta="Identitate și profil din backend"
+            />
             <StatusItem
               title="Module sincronizate"
               meta={`${businessModules.length} instrumente disponibile`}
@@ -589,34 +615,38 @@ function ModuleStore({
       )}
 
       <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {ORBYVEN_MODULES.map((module) => {
-          const enabled = enabledModules.includes(module.id);
-          const locked = module.id === "overview";
-          const saving = savingModule === module.id;
+        {ORBYVEN_MODULES.map((definition) => {
+          const enabled = enabledModules.includes(definition.id);
+          const locked = definition.id === "overview";
+          const saving = savingModule === definition.id;
+
           return (
             <article
-              key={module.id}
+              key={definition.id}
               className="flex min-h-[270px] flex-col rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-6"
             >
               <div className="flex items-start justify-between gap-4">
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-[16px] text-sm font-semibold"
-                  style={{ backgroundColor: module.accent, color: module.color }}
+                  style={{
+                    backgroundColor: definition.accent,
+                    color: definition.color,
+                  }}
                 >
-                  {module.shortName.slice(0, 2).toUpperCase()}
+                  {definition.shortName.slice(0, 2).toUpperCase()}
                 </div>
-                {module.badge && (
+                {definition.badge && (
                   <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
-                    {module.badge}
+                    {definition.badge}
                   </span>
                 )}
               </div>
 
               <h2 className="mt-7 text-2xl font-semibold tracking-[-0.045em]">
-                {module.name}
+                {definition.name}
               </h2>
               <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                {module.description}
+                {definition.description}
               </p>
 
               <div className="mt-auto flex items-center justify-between gap-4 pt-7">
@@ -626,7 +656,7 @@ function ModuleStore({
                 <button
                   type="button"
                   disabled={locked || !canManage || Boolean(savingModule)}
-                  onClick={() => onToggle(module.id)}
+                  onClick={() => onToggle(definition.id)}
                   className={`h-10 rounded-full px-4 text-xs font-semibold transition ${
                     enabled
                       ? "bg-[var(--button)] text-[var(--button-text)]"
