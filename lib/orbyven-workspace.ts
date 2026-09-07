@@ -30,9 +30,31 @@ export type OrbyvenWorkspace = {
   } | null;
 };
 
+export type WorkspaceEntryPath =
+  | "/workspace/login"
+  | "/workspace/onboarding"
+  | "/workspace";
+
 const validModuleIds = new Set<OrbyvenModuleId>(
   ORBYVEN_MODULES.map((module) => module.id)
 );
+
+export async function getWorkspaceEntryPath(): Promise<WorkspaceEntryPath> {
+  const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+
+  if (authError || !authData.user) return "/workspace/login";
+
+  const { data, error } = await orbyvenSupabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", authData.user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? "/workspace" : "/workspace/onboarding";
+}
 
 export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
   const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
