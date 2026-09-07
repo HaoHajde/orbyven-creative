@@ -2,6 +2,7 @@ import process from "node:process";
 
 const owner = process.env.ORBYVEN_OWNER ?? "";
 const ownerCount = Number(process.env.ORBYVEN_OWNER_COUNT ?? "0");
+const integrationCount = Number(process.env.ORBYVEN_INTEGRATION_COUNT ?? "0");
 const changedFiles = JSON.parse(process.env.ORBYVEN_CHANGED_FILES ?? "[]");
 const override = process.env.ORBYVEN_ARCHITECTURE_OVERRIDE === "true";
 
@@ -14,6 +15,16 @@ const ownerLabels = new Set([
 
 if (ownerCount > 1) {
   console.error("ORBYVEN Architecture Guard: a PR may have only one chat ownership label.");
+  process.exit(1);
+}
+
+if (integrationCount > 1) {
+  console.error("ORBYVEN Architecture Guard: a PR may have only one integration-NN label.");
+  process.exit(1);
+}
+
+if (integrationCount === 1 && ownerCount !== 1) {
+  console.error("ORBYVEN Architecture Guard: every PR in the integration train must have exactly one chat ownership label.");
   process.exit(1);
 }
 
