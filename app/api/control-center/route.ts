@@ -122,9 +122,38 @@ export async function POST(request: Request) {
         await assignControlCenterMember(admin, body);
         return NextResponse.json({ ok: true });
       }
-      case "update_member_role":
+      case "update_member_role": {
+        const organizationId =
+          typeof body.organization_id === "string" ? body.organization_id : "";
+        const userId = typeof body.user_id === "string" ? body.user_id : "";
+
+        if (!organizationId || !userId) {
+          throw new ControlCenterHttpError(
+            400,
+            "invalid_assignment",
+            "organization_id și user_id sunt obligatorii."
+          );
+        }
+
+        const { data: membership, error: membershipError } = await admin
+          .from("organization_members")
+          .select("organization_id")
+          .eq("organization_id", organizationId)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (membershipError) throw membershipError;
+        if (!membership) {
+          throw new ControlCenterHttpError(
+            404,
+            "membership_not_found",
+            "Membership-ul nu există în organizația selectată."
+          );
+        }
+
         await assignControlCenterMember(admin, body);
         return NextResponse.json({ ok: true });
+      }
       case "remove_member":
         await removeControlCenterMember(admin, body);
         return NextResponse.json({ ok: true });
