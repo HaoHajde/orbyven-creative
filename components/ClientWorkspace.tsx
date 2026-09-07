@@ -86,9 +86,14 @@ export default function ClientWorkspace() {
 
     document.documentElement.style.colorScheme = nextTheme;
     const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
-    void loadWorkspace();
+    const workspaceTimer = window.setTimeout(() => {
+      void loadWorkspace();
+    }, 0);
 
-    return () => window.clearTimeout(themeTimer);
+    return () => {
+      window.clearTimeout(themeTimer);
+      window.clearTimeout(workspaceTimer);
+    };
   }, [loadWorkspace]);
 
   const enabledModules = useMemo<OrbyvenModuleId[]>(
