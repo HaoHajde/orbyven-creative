@@ -1,5 +1,5 @@
+import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
-import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 export type OrbyvenOrganization = {
   id: string;
@@ -14,6 +14,10 @@ export type OrbyvenMembership = {
 };
 
 export type OrbyvenWorkspace = {
+  user: {
+    id: string;
+    email: string | null;
+  };
   organization: OrbyvenOrganization;
   membership: OrbyvenMembership;
   enabledModules: OrbyvenModuleId[];
@@ -26,6 +30,10 @@ export type OrbyvenWorkspace = {
   } | null;
 };
 
+const validModuleIds = new Set<OrbyvenModuleId>(
+  ORBYVEN_MODULES.map((module) => module.id)
+);
+
 export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
   const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
 
@@ -35,9 +43,11 @@ export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
     .from("organization_members")
     .select("organization_id,role")
     .eq("user_id", authData.user.id)
+    .order("created_at", { ascending: true })
     .limit(1);
 
   if (membershipError) throw membershipError;
+
   const membership = memberships?.[0] as OrbyvenMembership | undefined;
   if (!membership) return null;
 
@@ -63,12 +73,21 @@ export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
   if (modulesResult.error) throw modulesResult.error;
   if (profileResult.error) throw profileResult.error;
 
+  const enabledModules = (modulesResult.data ?? [])
+    .map((row) => row.module_id as OrbyvenModuleId)
+    .filter((moduleId) => validModuleIds.has(moduleId));
+
   return {
+    user: {
+      id: authData.user.id,
+      email: authData.user.email ?? null,
+    },
     organization: organizationResult.data as OrbyvenOrganization,
     membership,
-    enabledModules: (modulesResult.data ?? []).map(
-      (row) => row.module_id as OrbyvenModuleId
-    ),
+    enabledModules: [
+      "overview",
+      ...enabledModules.filter((moduleId) => moduleId !== "overview"),
+    ],
     profile: profileResult.data,
   };
 }
@@ -87,6 +106,7 @@ export async function setOrganizationModuleEnabled(
         organization_id: organizationId,
         module_id: moduleId,
         enabled,
+        updated_at: new Date().toISOString(),
       },
       { onConflict: "organization_id,module_id" }
     );
