@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
+import { loadControlCenterBillingSnapshots } from "@/lib/billing/control-center";
 import {
   assignControlCenterMember,
   authorizeControlCenter,
   ControlCenterHttpError,
   createControlCenterOrganization,
+  inviteControlCenterMember,
   loadControlCenterPayload,
   removeControlCenterMember,
+  removePlatformStaff,
+  requireStaffRole,
+  sendControlCenterAccessEmail,
   setControlCenterModules,
+  setMemberAccessStatus,
+  setOrganizationLifecycle,
   updateControlCenterOrganization,
+  upsertPlatformStaff,
 } from "@/lib/orbyven-control-center-server";
 
 export const dynamic = "force-dynamic";
@@ -48,13 +56,30 @@ function errorResponse(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    const { admin } = await authorizeControlCenter(request);
-    const payload = await loadControlCenterPayload(admin);
+    const { admin, user, staffRole, staffSource } = await authorizeControlCenter(request);
+    const payload = await loadControlCenterPayload(
+      admin,
+      user,
+      staffRole,
+      staffSource
+    );
 
-    // Until the client workspace has an explicit organization switcher,
-    // a client account is assignable to one organization only.
+    // Chat 3 owns the commercial state. Platform Core consumes its adapter and
+    // never recreates subscription/entitlement logic.
+    const billing = await loadControlCenterBillingSnapshots(
+      admin,
+      payload.organizations.map((organization) => organization.id)
+    );
+    const organizations = payload.organizations.map((organization) => ({
+      ...organization,
+      subscription:
+        billing.snapshots.get(organization.id) ?? organization.subscription,
+    }));
+
+    // Until Chat 1 introduces an explicit organization switcher, client accounts
+    // remain single-organization. Existing members are not offered as assignable.
     const assignedUserIds = new Set(
-      payload.organizations.flatMap((organization) =>
+      organizations.flatMap((organization) =>
         organization.members.map((member) => member.user_id)
       )
     );
@@ -62,13 +87,13 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ...payload,
+        organizations,
+        entitlement_source: billing.source,
         auth_users: payload.auth_users.filter(
-          (user) => !assignedUserIds.has(user.id)
+          (authUser) => !assignedUserIds.has(authUser.id)
         ),
       },
-      {
-        headers: { "Cache-Control": "no-store" },
-      }
+      { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
     return errorResponse(error);
@@ -77,88 +102,78 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { admin, user } = await authorizeControlCenter(request);
+    const { admin, user, staffRole } = await authorizeControlCenter(request);
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
+    const origin = new URL(request.url).origin;
+
+    const requireAdmin = () =>
+      requireStaffRole(staffRole, ["platform_owner", "platform_admin"]);
 
     switch (action) {
       case "create_organization": {
-        const organizationId = await createControlCenterOrganization(admin, user, body);
+        requireAdmin();
+        const organizationId = await createControlCenterOrganization(
+          admin,
+          user,
+          staffRole,
+          body
+        );
         return NextResponse.json({ ok: true, organization_id: organizationId });
       }
       case "update_organization":
-        await updateControlCenterOrganization(admin, body);
+        requireAdmin();
+        await updateControlCenterOrganization(admin, user, staffRole, body);
         return NextResponse.json({ ok: true });
-      case "assign_member": {
-        const organizationId =
-          typeof body.organization_id === "string" ? body.organization_id : "";
-        const userId = typeof body.user_id === "string" ? body.user_id : "";
-
-        if (!organizationId || !userId) {
-          throw new ControlCenterHttpError(
-            400,
-            "invalid_assignment",
-            "organization_id și user_id sunt obligatorii."
-          );
-        }
-
-        const { data: existingMemberships, error: membershipError } = await admin
-          .from("organization_members")
-          .select("organization_id")
-          .eq("user_id", userId)
-          .neq("organization_id", organizationId)
-          .limit(1);
-
-        if (membershipError) throw membershipError;
-
-        if (existingMemberships?.length) {
-          throw new ControlCenterHttpError(
-            409,
-            "user_already_assigned",
-            "Utilizatorul este deja atribuit altei organizații. Conturile client rămân single-organization până există un switcher explicit în workspace."
-          );
-        }
-
-        await assignControlCenterMember(admin, body);
+      case "assign_member":
+      case "update_member_role":
+        requireAdmin();
+        await assignControlCenterMember(admin, user, staffRole, body);
         return NextResponse.json({ ok: true });
-      }
-      case "update_member_role": {
-        const organizationId =
-          typeof body.organization_id === "string" ? body.organization_id : "";
-        const userId = typeof body.user_id === "string" ? body.user_id : "";
-
-        if (!organizationId || !userId) {
-          throw new ControlCenterHttpError(
-            400,
-            "invalid_assignment",
-            "organization_id și user_id sunt obligatorii."
-          );
-        }
-
-        const { data: membership, error: membershipError } = await admin
-          .from("organization_members")
-          .select("organization_id")
-          .eq("organization_id", organizationId)
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (membershipError) throw membershipError;
-        if (!membership) {
-          throw new ControlCenterHttpError(
-            404,
-            "membership_not_found",
-            "Membership-ul nu există în organizația selectată."
-          );
-        }
-
-        await assignControlCenterMember(admin, body);
-        return NextResponse.json({ ok: true });
-      }
       case "remove_member":
-        await removeControlCenterMember(admin, body);
+        requireAdmin();
+        await removeControlCenterMember(admin, user, staffRole, body);
         return NextResponse.json({ ok: true });
       case "set_modules":
-        await setControlCenterModules(admin, body);
+        requireAdmin();
+        await setControlCenterModules(admin, user, staffRole, body);
+        return NextResponse.json({ ok: true });
+      case "set_organization_lifecycle":
+        requireAdmin();
+        await setOrganizationLifecycle(admin, user, staffRole, body);
+        return NextResponse.json({ ok: true });
+      case "set_member_access":
+        requireAdmin();
+        await setMemberAccessStatus(admin, user, staffRole, body);
+        return NextResponse.json({ ok: true });
+      case "invite_member": {
+        requireAdmin();
+        const result = await inviteControlCenterMember(
+          admin,
+          user,
+          staffRole,
+          body,
+          origin
+        );
+        return NextResponse.json({ ok: true, ...result });
+      }
+      case "send_access_email":
+        requireStaffRole(staffRole, ["platform_owner", "platform_admin", "support"]);
+        await sendControlCenterAccessEmail(
+          admin,
+          user,
+          staffRole,
+          body,
+          origin
+        );
+        return NextResponse.json({ ok: true });
+      case "upsert_platform_staff":
+        requireStaffRole(staffRole, ["platform_owner"]);
+        await upsertPlatformStaff(admin, user, staffRole, body);
+        return NextResponse.json({ ok: true });
+      case "remove_platform_staff":
+        requireStaffRole(staffRole, ["platform_owner"]);
+        await removePlatformStaff(admin, user, staffRole, body);
         return NextResponse.json({ ok: true });
       default:
         throw new ControlCenterHttpError(
