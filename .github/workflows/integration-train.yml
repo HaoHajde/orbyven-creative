@@ -38,6 +38,18 @@ jobs:
             gh label create "integration-$order" --repo "$GITHUB_REPOSITORY" --color "C5DEF5" --description "ORBYVEN integration train order $order" --force
           done
 
+      - name: Invalidate stale synced labels after main changes
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main --limit 100 --json number,labels \
+            | jq -r '.[] | select([.labels[].name] | index("orbyven-synced")) | .number' \
+            | while read -r pr_number; do
+                [ -n "$pr_number" ] || continue
+                gh pr edit "$pr_number" --repo "$GITHUB_REPOSITORY" --remove-label "orbyven-synced" || true
+              done
+
       - name: Select next integration PR
         id: next
         run: |
