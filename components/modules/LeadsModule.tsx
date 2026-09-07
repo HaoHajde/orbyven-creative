@@ -112,9 +112,7 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
   }, [organizationId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadLeads();
-    }, 0);
+    const timer = window.setTimeout(() => void loadLeads(), 0);
     return () => window.clearTimeout(timer);
   }, [loadLeads]);
 
@@ -155,31 +153,24 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
       if (stageFilter !== "all" && lead.stage !== stageFilter) return false;
       if (kindFilter !== "all" && lead.kind !== kindFilter) return false;
       if (!needle) return true;
-
       return [lead.name, lead.company, lead.email, lead.phone, lead.source]
-        .filter(Boolean)
-        .some((value) => value!.toLocaleLowerCase(locale).includes(needle));
+        .filter((value): value is string => Boolean(value))
+        .some((value) => value.toLocaleLowerCase(locale).includes(needle));
     });
   }, [kindFilter, leads, locale, search, stageFilter]);
 
   const metrics = useMemo(() => {
-    const now = Date.now();
     const activeLeads = leads.filter(
       (lead) => lead.kind === "lead" && !["won", "lost"].includes(lead.stage)
     );
-    const pipeline = activeLeads.reduce(
-      (sum, lead) => sum + (lead.estimated_value ?? 0),
-      0
-    );
-    const due = activeLeads.filter(
-      (lead) => lead.next_follow_up_at && new Date(lead.next_follow_up_at).getTime() <= now
-    ).length;
-
     return {
       active: activeLeads.length,
       clients: leads.filter((lead) => lead.kind === "client").length,
-      pipeline,
-      due,
+      pipeline: activeLeads.reduce(
+        (sum, lead) => sum + (lead.estimated_value ?? 0),
+        0
+      ),
+      followUps: activeLeads.filter((lead) => Boolean(lead.next_follow_up_at)).length,
     };
   }, [leads]);
 
@@ -194,11 +185,16 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
   );
 
   const dateFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }),
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
     [locale]
   );
 
-  const createLead = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCreateLead = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft.name.trim() || saving) return;
 
@@ -233,9 +229,9 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
   const changeStage = async (stage: CrmLeadStage) => {
     if (!selectedLead || saving || selectedLead.stage === stage) return;
 
+    const previous = selectedLead;
     setSaving(true);
     setError("");
-    const previous = selectedLead;
     setLeads((current) =>
       current.map((lead) => (lead.id === previous.id ? { ...lead, stage } : lead))
     );
@@ -343,16 +339,18 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
 
       {showCreate && (
         <form
-          onSubmit={createLead}
+          onSubmit={handleCreateLead}
           className="mt-8 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
         >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-medium text-[var(--muted)]">Cerere nouă</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Adaugă contactul</h2>
+              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">
+                Adaugă contactul
+              </h2>
             </div>
             <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold text-[var(--muted)]">
-              organization scoped
+              tenant scoped
             </span>
           </div>
 
@@ -368,7 +366,9 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
           </div>
 
           <label className="mt-3 block">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Notă</span>
+            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+              Notă
+            </span>
             <textarea
               value={draft.note}
               onChange={(event) => setDraft((d) => ({ ...d, note: event.target.value }))}
@@ -392,7 +392,7 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
         <Metric label="Cereri active" value={String(metrics.active)} note="în lucru acum" />
         <Metric label="Clienți" value={String(metrics.clients)} note="convertiți din pipeline" />
         <Metric label="Pipeline" value={money.format(metrics.pipeline)} note="valoare estimată" />
-        <Metric label="Follow-up" value={String(metrics.due)} note="ajunse la termen" />
+        <Metric label="Follow-up" value={String(metrics.followUps)} note="programate" />
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -419,7 +419,9 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
               className="h-11 rounded-full border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none"
             >
               <option value="all">Orice status</option>
-              {STAGES.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}
+              {STAGES.map((stage) => (
+                <option key={stage.id} value={stage.id}>{stage.label}</option>
+              ))}
             </select>
           </div>
 
@@ -432,15 +434,25 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                   key={lead.id}
                   type="button"
                   onClick={() => setSelectedLeadId(lead.id)}
-                  className={`w-full rounded-[20px] border p-4 text-left transition ${selectedLeadId === lead.id ? "border-[var(--border-strong)] bg-[var(--bg)]" : "border-transparent hover:bg-[var(--bg)]"}`}
+                  className={`w-full rounded-[20px] border p-4 text-left transition ${
+                    selectedLeadId === lead.id
+                      ? "border-[var(--border-strong)] bg-[var(--bg)]"
+                      : "border-transparent hover:bg-[var(--bg)]"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="truncate text-sm font-semibold">{lead.name}</p>
-                        {lead.kind === "client" && <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--accent)]">Client</span>}
+                        {lead.kind === "client" && (
+                          <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--accent)]">
+                            Client
+                          </span>
+                        )}
                       </div>
-                      <p className="mt-1 truncate text-xs text-[var(--muted)]">{lead.company || lead.phone || lead.email || "Fără detalii de contact"}</p>
+                      <p className="mt-1 truncate text-xs text-[var(--muted)]">
+                        {lead.company || lead.phone || lead.email || "Fără detalii de contact"}
+                      </p>
                     </div>
                     <StagePill stage={lead.stage} />
                   </div>
@@ -461,12 +473,25 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
             <>
               <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--muted)]">{selectedLead.kind === "client" ? "Client" : "Cerere"}</p>
-                  <h2 className="mt-2 truncate text-[30px] font-semibold tracking-[-0.05em]">{selectedLead.name}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{selectedLead.company || "Persoană fizică / companie nespecificată"}</p>
+                  <p className="text-xs font-medium text-[var(--muted)]">
+                    {selectedLead.kind === "client" ? "Client" : "Cerere"}
+                  </p>
+                  <h2 className="mt-2 truncate text-[30px] font-semibold tracking-[-0.05em]">
+                    {selectedLead.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {selectedLead.company || "Persoană / companie nespecificată"}
+                  </p>
                 </div>
                 {selectedLead.kind === "lead" && (
-                  <button type="button" onClick={convertToClient} disabled={saving} className="h-10 shrink-0 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Transformă în client</button>
+                  <button
+                    type="button"
+                    onClick={convertToClient}
+                    disabled={saving}
+                    className="h-10 shrink-0 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50"
+                  >
+                    Transformă în client
+                  </button>
                 )}
               </div>
 
@@ -474,7 +499,17 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                 <Detail label="Telefon" value={selectedLead.phone || "—"} />
                 <Detail label="Email" value={selectedLead.email || "—"} />
                 <Detail label="Sursă" value={selectedLead.source || "—"} />
-                <Detail label="Valoare" value={selectedLead.estimated_value == null ? "—" : new Intl.NumberFormat(locale, { style: "currency", currency: selectedLead.currency }).format(selectedLead.estimated_value)} />
+                <Detail
+                  label="Valoare"
+                  value={
+                    selectedLead.estimated_value == null
+                      ? "—"
+                      : new Intl.NumberFormat(locale, {
+                          style: "currency",
+                          currency: selectedLead.currency,
+                        }).format(selectedLead.estimated_value)
+                  }
+                />
               </div>
 
               <div className="mt-5 rounded-[22px] bg-[var(--bg)] p-4">
@@ -483,14 +518,23 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                     <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Status</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">Mută cererea prin pipeline.</p>
                   </div>
-                  <select value={selectedLead.stage} onChange={(event) => void changeStage(event.target.value as CrmLeadStage)} disabled={saving} className="h-10 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-semibold outline-none disabled:opacity-50">
-                    {STAGES.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}
+                  <select
+                    value={selectedLead.stage}
+                    onChange={(event) => void changeStage(event.target.value as CrmLeadStage)}
+                    disabled={saving}
+                    className="h-10 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-semibold outline-none disabled:opacity-50"
+                  >
+                    {STAGES.map((stage) => (
+                      <option key={stage.id} value={stage.id}>{stage.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               {selectedLead.note && (
-                <div className="mt-4 rounded-[22px] border border-[var(--border)] p-4 text-sm leading-6 text-[var(--muted)]">{selectedLead.note}</div>
+                <div className="mt-4 rounded-[22px] border border-[var(--border)] p-4 text-sm leading-6 text-[var(--muted)]">
+                  {selectedLead.note}
+                </div>
               )}
 
               <div className="mt-7 flex items-center justify-between gap-4">
@@ -498,15 +542,36 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                   <p className="text-xs font-medium text-[var(--muted)]">Istoric contact</p>
                   <h3 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Ultimele interacțiuni</h3>
                 </div>
-                {selectedLead.next_follow_up_at && <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--muted)]">Follow-up {dateFormatter.format(new Date(selectedLead.next_follow_up_at))}</span>}
+                {selectedLead.next_follow_up_at && (
+                  <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--muted)]">
+                    Follow-up {dateFormatter.format(new Date(selectedLead.next_follow_up_at))}
+                  </span>
+                )}
               </div>
 
               <form onSubmit={addActivity} className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <select value={activityKind} onChange={(event) => setActivityKind(event.target.value as CrmActivityKind)} className="h-11 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-3 text-xs outline-none">
-                  {Object.entries(ACTIVITY_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                <select
+                  value={activityKind}
+                  onChange={(event) => setActivityKind(event.target.value as CrmActivityKind)}
+                  className="h-11 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-3 text-xs outline-none"
+                >
+                  {Object.entries(ACTIVITY_LABELS).map(([id, label]) => (
+                    <option key={id} value={id}>{label}</option>
+                  ))}
                 </select>
-                <input value={activityBody} onChange={(event) => setActivityBody(event.target.value)} placeholder="Adaugă o notă sau o interacțiune..." className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none focus:border-[var(--accent)]" />
-                <button type="submit" disabled={!activityBody.trim() || saving} className="h-11 rounded-[16px] bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Adaugă</button>
+                <input
+                  value={activityBody}
+                  onChange={(event) => setActivityBody(event.target.value)}
+                  placeholder="Adaugă o notă sau o interacțiune..."
+                  className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none focus:border-[var(--accent)]"
+                />
+                <button
+                  type="submit"
+                  disabled={!activityBody.trim() || saving}
+                  className="h-11 rounded-[16px] bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50"
+                >
+                  Adaugă
+                </button>
               </form>
 
               <div className="mt-4 space-y-2">
@@ -516,8 +581,12 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                   activities.slice(0, 8).map((activity) => (
                     <div key={activity.id} className="rounded-[18px] bg-[var(--bg)] p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">{ACTIVITY_LABELS[activity.kind]}</span>
-                        <span className="text-[10px] text-[var(--muted-2)]">{dateFormatter.format(new Date(activity.occurred_at))}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+                          {ACTIVITY_LABELS[activity.kind]}
+                        </span>
+                        <span className="text-[10px] text-[var(--muted-2)]">
+                          {dateFormatter.format(new Date(activity.occurred_at))}
+                        </span>
                       </div>
                       <p className="mt-2 text-sm leading-6">{activity.body}</p>
                     </div>
@@ -541,11 +610,26 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
   return (
     <label className="block">
       <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</span>
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="h-11 w-full rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none focus:border-[var(--accent)]" />
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none focus:border-[var(--accent)]"
+      />
     </label>
   );
 }
@@ -571,9 +655,21 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function StagePill({ stage }: { stage: CrmLeadStage }) {
   const label = STAGES.find((item) => item.id === stage)?.label ?? stage;
-  return <span className="shrink-0 rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold text-[var(--muted)]">{label}</span>;
+  return (
+    <span className="shrink-0 rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold text-[var(--muted)]">
+      {label}
+    </span>
+  );
 }
 
 function EmptyState({ text, compact = false }: { text: string; compact?: boolean }) {
-  return <div className={`rounded-[20px] border border-dashed border-[var(--border-strong)] text-center text-sm text-[var(--muted)] ${compact ? "p-4" : "p-8"}`}>{text}</div>;
+  return (
+    <div
+      className={`rounded-[20px] border border-dashed border-[var(--border-strong)] text-center text-sm text-[var(--muted)] ${
+        compact ? "p-4" : "p-8"
+      }`}
+    >
+      {text}
+    </div>
+  );
 }
