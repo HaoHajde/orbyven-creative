@@ -76,8 +76,7 @@ export default function PlatformPage() {
     }
 
     if (!membershipData) {
-      setErrorMessage("Contul este autentificat, dar nu este încă asociat unei companii ORBYVEN.");
-      setLoading(false);
+      router.replace("/platform/onboarding");
       return;
     }
 
