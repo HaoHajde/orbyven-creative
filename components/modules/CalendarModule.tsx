@@ -83,28 +83,6 @@ const typeStyles: Record<CalendarEventType, string> = {
   internal: "bg-emerald-500/10 text-emerald-600",
 };
 
-function startOfWeek(date: Date) {
-  const next = new Date(date);
-  const day = next.getDay();
-  const distance = day === 0 ? -6 : 1 - day;
-  next.setDate(next.getDate() + distance);
-  next.setHours(0, 0, 0, 0);
-  return next;
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function dateKeyInTimeZone(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -114,26 +92,38 @@ function dateKeyInTimeZone(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function dateFromKey(key: string) {
-  return new Date(`${key}T00:00:00`);
+function addDateKeyDays(key: string, days: number) {
+  const [year, month, day] = key.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
-function formatDayLabel(date: Date, locale: string) {
+function startOfWeekKey(key: string) {
+  const date = new Date(`${key}T12:00:00Z`);
+  const weekDay = date.getUTCDay();
+  const distance = weekDay === 0 ? -6 : 1 - weekDay;
+  return addDateKeyDays(key, distance);
+}
+
+function formatDayKey(key: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
-  }).format(date);
+    timeZone: "UTC",
+  }).format(new Date(`${key}T12:00:00Z`));
 }
 
-function formatRange(start: Date, locale: string) {
-  const end = addDays(start, 6);
+function formatRange(startKey: string, locale: string) {
   const formatter = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
-  return `${formatter.format(start)} — ${formatter.format(end)}`;
+  const endKey = addDateKeyDays(startKey, 6);
+  return `${formatter.format(new Date(`${startKey}T12:00:00Z`))} — ${formatter.format(new Date(`${endKey}T12:00:00Z`))}`;
 }
 
 function formatTime(value: string, locale: string, timeZone: string) {
@@ -155,21 +145,63 @@ function formatDateTime(value: string, locale: string, timeZone: string) {
   }).format(new Date(value));
 }
 
-function toEventTimes(form: CreateForm) {
-  if (!form.date) throw new Error("Alege data evenimentului.");
-  if (form.allDay) {
-    const start = dateFromKey(form.date);
-    const end = addDays(start, 1);
-    return { startAt: start.toISOString(), endAt: end.toISOString() };
+function getTimeZoneOffsetMs(timestamp: number, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(timestamp));
+
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)])
+  );
+  const asUtc = Date.UTC(
+    values.year,
+    values.month - 1,
+    values.day,
+    values.hour,
+    values.minute,
+    values.second
+  );
+  return asUtc - Math.floor(timestamp / 1000) * 1000;
+}
+
+function zonedWallTimeToIso(dateKey: string, time: string, timeZone: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const wallClockUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  let instant = wallClockUtc;
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    instant = wallClockUtc - getTimeZoneOffsetMs(instant, timeZone);
   }
 
-  const start = new Date(`${form.date}T${form.startTime}:00`);
-  const end = new Date(`${form.date}T${form.endTime}:00`);
-  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
-    throw new Error("Ora evenimentului nu este validă.");
+  return new Date(instant).toISOString();
+}
+
+function toEventTimes(form: CreateForm, timeZone: string) {
+  if (!form.date) throw new Error("Alege data evenimentului.");
+
+  if (form.allDay) {
+    return {
+      startAt: zonedWallTimeToIso(form.date, "00:00", timeZone),
+      endAt: zonedWallTimeToIso(addDateKeyDays(form.date, 1), "00:00", timeZone),
+    };
   }
-  if (end <= start) throw new Error("Ora de final trebuie să fie după ora de început.");
-  return { startAt: start.toISOString(), endAt: end.toISOString() };
+
+  const startAt = zonedWallTimeToIso(form.date, form.startTime, timeZone);
+  const endAt = zonedWallTimeToIso(form.date, form.endTime, timeZone);
+  if (new Date(endAt) <= new Date(startAt)) {
+    throw new Error("Ora de final trebuie să fie după ora de început.");
+  }
+  return { startAt, endAt };
 }
 
 export default function CalendarModule({
@@ -197,31 +229,30 @@ export default function CalendarModule({
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const now = new Date();
-      setWeekStartKey(localDateKey(startOfWeek(now)));
-      setSnapshotIso(now.toISOString());
+      const nowIso = new Date().toISOString();
+      const today = dateKeyInTimeZone(nowIso, timeZone);
+      setWeekStartKey(startOfWeekKey(today));
+      setSnapshotIso(nowIso);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [timeZone]);
 
-  const weekStart = useMemo(
-    () => (weekStartKey ? dateFromKey(weekStartKey) : null),
+  const weekDayKeys = useMemo(
+    () =>
+      weekStartKey
+        ? Array.from({ length: 7 }, (_, index) => addDateKeyDays(weekStartKey, index))
+        : [],
     [weekStartKey]
   );
 
-  const weekDays = useMemo(
-    () => (weekStart ? Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)) : []),
-    [weekStart]
-  );
-
   const load = useCallback(async () => {
-    if (!weekStart) return;
+    if (!weekStartKey) return;
     setLoading(true);
     setError("");
-    const rangeStart = weekStart.toISOString();
-    const rangeEnd = addDays(weekStart, 7).toISOString();
 
     try {
+      const rangeStart = zonedWallTimeToIso(weekStartKey, "00:00", timeZone);
+      const rangeEnd = zonedWallTimeToIso(addDateKeyDays(weekStartKey, 7), "00:00", timeZone);
       const [nextEvents, nextClients, nextTasks] = await Promise.all([
         listCalendarEvents(organizationId, rangeStart, rangeEnd),
         listCalendarClients(organizationId),
@@ -232,7 +263,7 @@ export default function CalendarModule({
       setTasks(nextTasks);
       setSnapshotIso(new Date().toISOString());
       setSelectedId((current) =>
-        current && nextEvents.some((event) => event.id === current)
+        current && nextEvents.some((calendarEvent) => calendarEvent.id === current)
           ? current
           : nextEvents[0]?.id ?? null
       );
@@ -242,71 +273,68 @@ export default function CalendarModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, weekStart]);
+  }, [organizationId, timeZone, weekStartKey]);
 
   useEffect(() => {
-    if (!weekStart) return;
-    const timer = window.setTimeout(() => {
-      void load();
-    }, 0);
+    if (!weekStartKey) return;
+    const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
-  }, [load, weekStart]);
+  }, [load, weekStartKey]);
 
   const clientById = useMemo(
     () => new Map(clients.map((client) => [client.id, client])),
     [clients]
   );
-  const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
-
+  const taskById = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
+    [tasks]
+  );
   const selectedEvent = useMemo(
-    () => events.find((event) => event.id === selectedId) ?? null,
+    () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
-
   const filteredEvents = useMemo(
-    () =>
-      events.filter(
-        (event) => typeFilter === "all" || event.event_type === typeFilter
-      ),
+    () => events.filter((calendarEvent) => typeFilter === "all" || calendarEvent.event_type === typeFilter),
     [events, typeFilter]
   );
-
   const todayKey = useMemo(
     () => (snapshotIso ? dateKeyInTimeZone(snapshotIso, timeZone) : ""),
     [snapshotIso, timeZone]
   );
-
   const metrics = useMemo(() => {
-    const scheduled = events.filter((event) => event.status === "scheduled").length;
+    const scheduled = events.filter((calendarEvent) => calendarEvent.status === "scheduled").length;
     const today = todayKey
       ? events.filter(
-          (event) =>
-            event.status !== "cancelled" &&
-            dateKeyInTimeZone(event.start_at, timeZone) === todayKey
+          (calendarEvent) =>
+            calendarEvent.status !== "cancelled" &&
+            dateKeyInTimeZone(calendarEvent.start_at, timeZone) === todayKey
         ).length
       : 0;
-    const completed = events.filter((event) => event.status === "completed").length;
-    const linked = events.filter((event) => event.client_id || event.task_id).length;
+    const completed = events.filter((calendarEvent) => calendarEvent.status === "completed").length;
+    const linked = events.filter((calendarEvent) => calendarEvent.client_id || calendarEvent.task_id).length;
     return { scheduled, today, completed, linked };
   }, [events, timeZone, todayKey]);
 
-  const openCreate = (date?: Date) => {
-    const target = date ?? (snapshotIso ? new Date(snapshotIso) : weekStart ?? new Date());
-    setForm({ ...emptyForm, date: localDateKey(target) });
+  const openCreate = (dateKey?: string) => {
+    setForm({
+      ...emptyForm,
+      date: dateKey || todayKey || weekStartKey,
+    });
     setCreateOpen(true);
     setError("");
   };
 
   const shiftWeek = (days: number) => {
-    if (!weekStart) return;
-    setWeekStartKey(localDateKey(addDays(weekStart, days)));
+    if (!weekStartKey) return;
+    setWeekStartKey(addDateKeyDays(weekStartKey, days));
     setSelectedId(null);
   };
 
   const goToday = () => {
-    const now = new Date();
-    setWeekStartKey(localDateKey(startOfWeek(now)));
-    setSnapshotIso(now.toISOString());
+    const nowIso = new Date().toISOString();
+    const today = dateKeyInTimeZone(nowIso, timeZone);
+    setWeekStartKey(startOfWeekKey(today));
+    setSnapshotIso(nowIso);
     setSelectedId(null);
   };
 
@@ -320,14 +348,14 @@ export default function CalendarModule({
     }));
   };
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleCreate = async (submitEvent: FormEvent<HTMLFormElement>) => {
+    submitEvent.preventDefault();
     if (!canWrite || saving) return;
 
     setSaving(true);
     setError("");
     try {
-      const times = toEventTimes(form);
+      const times = toEventTimes(form, timeZone);
       const created = await createCalendarEvent(organizationId, {
         title: form.title,
         eventType: form.eventType,
@@ -341,7 +369,9 @@ export default function CalendarModule({
         notes: form.notes,
         reminderMinutes: form.reminderMinutes ? Number(form.reminderMinutes) : null,
       });
-      setEvents((current) => [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at)));
+      setEvents((current) =>
+        [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
+      );
       setSelectedId(created.id);
       setCreateOpen(false);
       setForm(emptyForm);
@@ -357,12 +387,19 @@ export default function CalendarModule({
     }
   };
 
-  const changeStatus = async (event: CalendarEvent, status: CalendarEventStatus) => {
-    if (!canWrite || saving || event.status === status) return;
+  const changeStatus = async (
+    calendarEvent: CalendarEvent,
+    status: CalendarEventStatus
+  ) => {
+    if (!canWrite || saving || calendarEvent.status === status) return;
     setSaving(true);
     setError("");
     try {
-      const updated = await setCalendarEventStatus(organizationId, event.id, status);
+      const updated = await setCalendarEventStatus(
+        organizationId,
+        calendarEvent.id,
+        status
+      );
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
@@ -374,13 +411,13 @@ export default function CalendarModule({
     }
   };
 
-  const removeEvent = async (event: CalendarEvent) => {
+  const removeEvent = async (calendarEvent: CalendarEvent) => {
     if (!canDelete || saving) return;
     setSaving(true);
     setError("");
     try {
-      await deleteCalendarEvent(organizationId, event.id);
-      setEvents((current) => current.filter((entry) => entry.id !== event.id));
+      await deleteCalendarEvent(organizationId, calendarEvent.id);
+      setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
     } catch (deleteError) {
       console.error(deleteError);
@@ -394,48 +431,14 @@ export default function CalendarModule({
     <div className="pb-24 md:pb-8">
       <section className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
-            Calendar · Live
-          </p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">
-            Săptămâna, la vedere.
-          </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-            Programări, lucrări și follow-up-uri într-un singur loc, legate de clienții și taskurile firmei.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Calendar · Live</p>
+          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">Săptămâna, la vedere.</h1>
+          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">Programări, lucrări și follow-up-uri într-un singur loc, legate de clienții și taskurile firmei.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setViewMode("week")}
-            className={`h-11 rounded-full px-5 text-sm font-semibold ${
-              viewMode === "week"
-                ? "bg-[var(--button)] text-[var(--button-text)]"
-                : "border border-[var(--border-strong)]"
-            }`}
-          >
-            Săptămână
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("agenda")}
-            className={`h-11 rounded-full px-5 text-sm font-semibold ${
-              viewMode === "agenda"
-                ? "bg-[var(--button)] text-[var(--button-text)]"
-                : "border border-[var(--border-strong)]"
-            }`}
-          >
-            Agenda
-          </button>
-          {canWrite && (
-            <button
-              type="button"
-              onClick={() => openCreate()}
-              className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white"
-            >
-              + Programare
-            </button>
-          )}
+          <button type="button" onClick={() => setViewMode("week")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "week" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Săptămână</button>
+          <button type="button" onClick={() => setViewMode("agenda")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "agenda" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Agenda</button>
+          {canWrite && <button type="button" onClick={() => openCreate()} className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white">+ Programare</button>}
         </div>
       </section>
 
@@ -446,269 +449,90 @@ export default function CalendarModule({
         <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
       </section>
 
-      {error && (
-        <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
       <section className="mt-4 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)] p-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => shiftWeek(-7)} className="h-10 w-10 rounded-full border border-[var(--border)] bg-[var(--bg)] text-sm">←</button>
           <button type="button" onClick={goToday} className="h-10 rounded-full border border-[var(--border)] bg-[var(--bg)] px-4 text-xs font-semibold">Astăzi</button>
           <button type="button" onClick={() => shiftWeek(7)} className="h-10 w-10 rounded-full border border-[var(--border)] bg-[var(--bg)] text-sm">→</button>
-          <span className="ml-1 text-sm font-semibold">
-            {weekStart ? formatRange(weekStart, locale) : "Se pregătește calendarul..."}
-          </span>
+          <span className="ml-1 text-sm font-semibold">{weekStartKey ? formatRange(weekStartKey, locale) : "Se pregătește calendarul..."}</span>
+          <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-medium text-[var(--muted)]">{timeZone}</span>
         </div>
-        <select
-          value={typeFilter}
-          onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
-          className="h-10 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 text-xs font-medium outline-none"
-        >
+        <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as TypeFilter)} className="h-10 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 text-xs font-medium outline-none">
           <option value="all">Toate tipurile</option>
-          {Object.entries(typeLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
+          {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </section>
 
       {createOpen && canWrite && (
         <form onSubmit={handleCreate} className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium text-[var(--muted)]">Eveniment nou</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Pune timpul la locul lui.</h2>
-            </div>
+            <div><p className="text-xs font-medium text-[var(--muted)]">Eveniment nou</p><h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Pune timpul la locul lui.</h2></div>
             <button type="button" onClick={() => setCreateOpen(false)} className="text-sm text-[var(--muted)]">Închide</button>
           </div>
-
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <Field label="Titlu" className="xl:col-span-2">
-              <input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" />
-            </Field>
-            <Field label="Tip">
-              <select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">
-                {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-            <Field label="Data">
-              <input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" />
-            </Field>
-            <Field label="Client">
-              <select value={form.clientId} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input">
-                <option value="">Fără client asociat</option>
-                {clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Lucrare / task">
-              <select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input">
-                <option value="">Fără lucrare asociată</option>
-                {tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}
-              </select>
-            </Field>
-            <Field label="Responsabil">
-              <input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" />
-            </Field>
-            <Field label="Locație">
-              <input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" />
-            </Field>
-            <Field label="Ora început">
-              <input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" />
-            </Field>
-            <Field label="Ora final">
-              <input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" />
-            </Field>
-            <Field label="Reminder">
-              <select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input">
-                <option value="">Fără reminder</option>
-                <option value="10">10 minute înainte</option>
-                <option value="30">30 minute înainte</option>
-                <option value="60">1 oră înainte</option>
-                <option value="1440">1 zi înainte</option>
-              </select>
-            </Field>
-            <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm">
-              <input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />
-              Toată ziua
-            </label>
-            <Field label="Notițe" className="md:col-span-2 xl:col-span-4">
-              <textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" />
-            </Field>
+            <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
+            <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+            <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
+            <Field label="Client"><select value={form.clientId} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
+            <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
+            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
+            <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
+            <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
+            <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
+            <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
           </div>
-          <div className="mt-5 flex justify-end">
-            <button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">
-              {saving ? "Se salvează..." : "Adaugă în calendar"}
-            </button>
-          </div>
+          <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Adaugă în calendar"}</button></div>
         </form>
       )}
 
-      {loading || !weekStart ? (
+      {loading || !weekStartKey ? (
         <div className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center text-sm text-[var(--muted)]">Se încarcă programul...</div>
       ) : viewMode === "week" ? (
         <div className="mt-4 grid gap-3 xl:grid-cols-7">
-          {weekDays.map((day) => {
-            const key = localDateKey(day);
-            const dayEvents = filteredEvents.filter(
-              (event) => dateKeyInTimeZone(event.start_at, timeZone) === key
-            );
-            const isToday = key === todayKey;
+          {weekDayKeys.map((dayKey) => {
+            const dayEvents = filteredEvents.filter((calendarEvent) => dateKeyInTimeZone(calendarEvent.start_at, timeZone) === dayKey);
+            const isToday = dayKey === todayKey;
             return (
-              <article key={key} className={`min-h-[240px] rounded-[26px] border p-3 ${isToday ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]"}`}>
+              <article key={dayKey} className={`min-h-[240px] rounded-[26px] border p-3 ${isToday ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]"}`}>
                 <div className="flex items-center justify-between gap-2 px-1 py-1">
-                  <div>
-                    <p className="text-xs font-semibold">{formatDayLabel(day, locale)}</p>
-                    {isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}
-                  </div>
-                  {canWrite && <button type="button" onClick={() => openCreate(day)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
+                  <div><p className="text-xs font-semibold">{formatDayKey(dayKey, locale)}</p>{isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}</div>
+                  {canWrite && <button type="button" onClick={() => openCreate(dayKey)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
                 </div>
-                <div className="mt-3 space-y-2">
-                  {dayEvents.length ? dayEvents.map((event) => (
-                    <EventCard key={event.id} event={event} locale={locale} timeZone={timeZone} active={event.id === selectedId} onSelect={() => setSelectedId(event.id)} />
-                  )) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}
-                </div>
+                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
               </article>
             );
           })}
         </div>
       ) : (
         <div className="mt-4 overflow-hidden rounded-[28px] border border-[var(--border)]">
-          {filteredEvents.length ? filteredEvents.map((event) => (
-            <button key={event.id} type="button" onClick={() => setSelectedId(event.id)} className="grid w-full gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left last:border-b-0 hover:bg-[var(--surface-2)] sm:grid-cols-[1.35fr_0.9fr_0.8fr_0.8fr]">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold">{event.title}</p>
-                  <span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span>
-                </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">{event.client_id ? clientById.get(event.client_id)?.company || clientById.get(event.client_id)?.name || "Client" : "Fără client"}</p>
-              </div>
-              <ListValue label="Când" value={event.all_day ? formatDayLabel(new Date(event.start_at), locale) : formatDateTime(event.start_at, locale, timeZone)} />
-              <ListValue label="Responsabil" value={event.assignee || "Nealocat"} />
-              <ListValue label="Status" value={statusLabels[event.status]} />
+          {filteredEvents.length ? filteredEvents.map((calendarEvent) => (
+            <button key={calendarEvent.id} type="button" onClick={() => setSelectedId(calendarEvent.id)} className="grid w-full gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left last:border-b-0 hover:bg-[var(--surface-2)] sm:grid-cols-[1.35fr_0.9fr_0.8fr_0.8fr]">
+              <div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{calendarEvent.title}</p><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] ${typeStyles[calendarEvent.event_type]}`}>{typeLabels[calendarEvent.event_type]}</span></div><p className="mt-1 text-xs text-[var(--muted)]">{calendarEvent.client_id ? clientById.get(calendarEvent.client_id)?.company || clientById.get(calendarEvent.client_id)?.name || "Client" : "Fără client"}</p></div>
+              <ListValue label="Când" value={calendarEvent.all_day ? formatDayKey(dateKeyInTimeZone(calendarEvent.start_at, timeZone), locale) : formatDateTime(calendarEvent.start_at, locale, timeZone)} />
+              <ListValue label="Responsabil" value={calendarEvent.assignee || "Nealocat"} />
+              <ListValue label="Status" value={statusLabels[calendarEvent.status]} />
             </button>
           )) : <div className="p-10 text-center text-sm text-[var(--muted)]">Nu există evenimente pentru filtrul ales.</div>}
         </div>
       )}
 
-      {selectedEvent && (
-        <EventDetail
-          event={selectedEvent}
-          client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined}
-          task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined}
-          locale={locale}
-          timeZone={timeZone}
-          canWrite={canWrite}
-          canDelete={canDelete}
-          saving={saving}
-          onStatus={(status) => void changeStatus(selectedEvent, status)}
-          onDelete={() => void removeEvent(selectedEvent)}
-        />
-      )}
+      {selectedEvent && <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />}
 
-      <style jsx>{`
-        .calendar-input {
-          height: 44px;
-          width: 100%;
-          border-radius: 14px;
-          border: 1px solid var(--border);
-          background: var(--bg);
-          padding: 0 14px;
-          font-size: 14px;
-          outline: none;
-          color: var(--text);
-        }
-      `}</style>
+      <style jsx>{`.calendar-input { height: 44px; width: 100%; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; outline: none; color: var(--text); }`}</style>
     </div>
   );
 }
 
-function EventCard({
-  event,
-  locale,
-  timeZone,
-  active,
-  onSelect,
-}: {
-  event: CalendarEvent;
-  locale: string;
-  timeZone: string;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span>
-        <span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span>
-      </div>
-      <p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>
-      {event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}
-    </button>
-  );
+function EventCard({ event, locale, timeZone, active, onSelect }: { event: CalendarEvent; locale: string; timeZone: string; active: boolean; onSelect: () => void }) {
+  return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
 }
 
-function EventDetail({
-  event,
-  client,
-  task,
-  locale,
-  timeZone,
-  canWrite,
-  canDelete,
-  saving,
-  onStatus,
-  onDelete,
-}: {
-  event: CalendarEvent;
-  client?: CalendarClient;
-  task?: CalendarTask;
-  locale: string;
-  timeZone: string;
-  canWrite: boolean;
-  canDelete: boolean;
-  saving: boolean;
-  onStatus: (status: CalendarEventStatus) => void;
-  onDelete: () => void;
-}) {
-  return (
-    <section className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div>
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span>
-            <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{event.title}</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">{statusLabels[event.status]}</p>
-          </div>
-          {canWrite && (
-            <div className="flex flex-wrap gap-2">
-              {event.status !== "completed" && <button type="button" disabled={saving} onClick={() => onStatus("completed")} className="h-9 rounded-full bg-[var(--button)] px-3 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}
-              {event.status !== "scheduled" && <button type="button" disabled={saving} onClick={() => onStatus("scheduled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold disabled:opacity-50">Reprogramează</button>}
-              {event.status !== "cancelled" && <button type="button" disabled={saving} onClick={() => onStatus("cancelled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold text-red-500 disabled:opacity-50">Anulează</button>}
-            </div>
-          )}
-        </div>
-        {event.notes && <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{event.notes}</p>}
-        <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <DetailValue label="Început" value={event.all_day ? "Toată ziua" : formatDateTime(event.start_at, locale, timeZone)} />
-          <DetailValue label="Final" value={event.all_day ? "Sfârșitul zilei" : formatDateTime(event.end_at, locale, timeZone)} />
-          <DetailValue label="Responsabil" value={event.assignee || "Nealocat"} />
-          <DetailValue label="Locație" value={event.location || "—"} />
-        </div>
-        {canDelete && <div className="mt-8 border-t border-[var(--border)] pt-5"><button type="button" disabled={saving} onClick={onDelete} className="text-xs font-semibold text-red-500 disabled:opacity-50">Șterge evenimentul</button></div>}
-      </article>
-
-      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
-        <p className="text-xs font-medium text-[var(--muted)]">Context</p>
-        <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">Totul legat.</h2>
-        <div className="mt-6 space-y-3">
-          <ContextItem label="Client" value={client?.company || client?.name || "Fără client asociat"} />
-          <ContextItem label="Lucrare" value={task?.title || "Fără lucrare asociată"} />
-          <ContextItem label="Reminder" value={event.reminder_minutes === null ? "Oprit" : event.reminder_minutes >= 1440 ? `${Math.round(event.reminder_minutes / 1440)} zi înainte` : event.reminder_minutes >= 60 ? `${Math.round(event.reminder_minutes / 60)}h înainte` : `${event.reminder_minutes} min înainte`} />
-        </div>
-      </article>
-    </section>
-  );
+function EventDetail({ event, client, task, locale, timeZone, canWrite, canDelete, saving, onStatus, onDelete }: { event: CalendarEvent; client?: CalendarClient; task?: CalendarTask; locale: string; timeZone: string; canWrite: boolean; canDelete: boolean; saving: boolean; onStatus: (status: CalendarEventStatus) => void; onDelete: () => void }) {
+  return <section className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{event.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{statusLabels[event.status]}</p></div>{canWrite && <div className="flex flex-wrap gap-2">{event.status !== "completed" && <button type="button" disabled={saving} onClick={() => onStatus("completed")} className="h-9 rounded-full bg-[var(--button)] px-3 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}{event.status !== "scheduled" && <button type="button" disabled={saving} onClick={() => onStatus("scheduled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold disabled:opacity-50">Reactivează</button>}{event.status !== "cancelled" && <button type="button" disabled={saving} onClick={() => onStatus("cancelled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold text-red-500 disabled:opacity-50">Anulează</button>}</div>}</div>{event.notes && <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{event.notes}</p>}<div className="mt-7 grid gap-3 sm:grid-cols-2"><DetailValue label="Început" value={event.all_day ? `${formatDayKey(dateKeyInTimeZone(event.start_at, timeZone), locale)} · toată ziua` : formatDateTime(event.start_at, locale, timeZone)} /><DetailValue label="Final" value={event.all_day ? "Sfârșitul zilei" : formatDateTime(event.end_at, locale, timeZone)} /><DetailValue label="Responsabil" value={event.assignee || "Nealocat"} /><DetailValue label="Locație" value={event.location || "—"} /></div>{canDelete && <div className="mt-8 border-t border-[var(--border)] pt-5"><button type="button" disabled={saving} onClick={onDelete} className="text-xs font-semibold text-red-500 disabled:opacity-50">Șterge evenimentul</button></div>}</article><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7"><p className="text-xs font-medium text-[var(--muted)]">Context</p><h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">Totul legat.</h2><div className="mt-6 space-y-3"><ContextItem label="Client" value={client?.company || client?.name || "Fără client asociat"} /><ContextItem label="Lucrare" value={task?.title || "Fără lucrare asociată"} /><ContextItem label="Reminder" value={event.reminder_minutes === null ? "Oprit" : event.reminder_minutes >= 1440 ? `${Math.round(event.reminder_minutes / 1440)} zi înainte` : event.reminder_minutes >= 60 ? `${Math.round(event.reminder_minutes / 60)}h înainte` : `${event.reminder_minutes} min înainte`} /></div></article></section>;
 }
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
