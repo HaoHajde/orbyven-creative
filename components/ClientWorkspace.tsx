@@ -110,6 +110,7 @@ export default function ClientWorkspace() {
   const greetingName =
     workspace?.profile?.greeting_name ?? workspace?.organization.name.split(" ")[0] ?? "";
   const locale = workspace?.profile?.locale ?? "ro-RO";
+  const timeZone = workspace?.profile?.timezone ?? "Europe/Bucharest";
   const initials = organizationName
     .split(/\s+/)
     .filter(Boolean)
@@ -118,7 +119,6 @@ export default function ClientWorkspace() {
     .join("");
 
   const dateLabel = useMemo(() => {
-    const timeZone = workspace?.profile?.timezone ?? "Europe/Bucharest";
     const formatted = new Intl.DateTimeFormat(locale, {
       weekday: "long",
       day: "numeric",
@@ -126,7 +126,7 @@ export default function ClientWorkspace() {
       timeZone,
     }).format(new Date());
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-  }, [locale, workspace]);
+  }, [locale, timeZone]);
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -282,6 +282,7 @@ export default function ClientWorkspace() {
               activeModule={activeDefinition.id}
               organizationId={workspace.organization.id}
               locale={locale}
+              timeZone={timeZone}
               greetingName={greetingName}
               dateLabel={dateLabel}
               enabledModules={enabledModules}
