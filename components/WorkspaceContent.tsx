@@ -1,6 +1,7 @@
 "use client";
 
 import LeadsModule from "@/components/modules/LeadsModule";
+import TasksModule from "@/components/modules/TasksModule";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 
@@ -11,6 +12,8 @@ const roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string> = {
   member: "Membru",
   viewer: "Viewer",
 };
+
+const liveModuleIds = new Set<OrbyvenModuleId>(["leads", "tasks"]);
 
 type Props = {
   activeModule: OrbyvenModuleId;
@@ -33,6 +36,10 @@ export default function WorkspaceContent({
 }: Props) {
   if (activeModule === "leads") {
     return <LeadsModule organizationId={organizationId} locale={locale} />;
+  }
+
+  if (activeModule === "tasks") {
+    return <TasksModule organizationId={organizationId} locale={locale} role={role} />;
   }
 
   if (activeModule !== "overview") {
@@ -61,7 +68,8 @@ export default function WorkspaceContent({
   }
 
   const businessModules: OrbyvenModuleId[] = enabledModules.filter((moduleId) => moduleId !== "overview");
-  const activeNames = ORBYVEN_MODULES.filter((definition) => businessModules.includes(definition.id)).slice(0, 3).map((definition) => definition.name);
+  const activeDefinitions = ORBYVEN_MODULES.filter((definition) => businessModules.includes(definition.id)).slice(0, 4);
+  const liveEnabledCount = businessModules.filter((moduleId) => liveModuleIds.has(moduleId)).length;
 
   return (
     <div className="pb-24 md:pb-8">
@@ -69,16 +77,16 @@ export default function WorkspaceContent({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{dateLabel}</p>
           <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px] lg:text-[70px]">Bună, {greetingName || "acolo"}.</h1>
-          <p className="mt-5 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">Ai doar instrumentele active pentru organizația ta. Leads / Clienți este primul modul operațional conectat end-to-end.</p>
+          <p className="mt-5 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">Workspace-ul începe să devină unealtă de lucru: clienții și lucrările sunt conectate la date reale, în contextul organizației tale.</p>
         </div>
         <span className="inline-flex h-11 self-start items-center rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 text-xs font-semibold text-[var(--muted)]">Workspace · Live</span>
       </section>
 
       <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Module active" value={String(businessModules.length)} note="configurate pentru firmă" />
+        <Metric label="Module live" value={String(liveEnabledCount)} note="date și acțiuni reale" />
         <Metric label="Acces" value={roleLabels[role]} note="rol în organizație" />
         <Metric label="Izolare date" value="RLS" note="tenant scoped" />
-        <Metric label="Leads" value={enabledModules.includes("leads") ? "Live" : "Off"} note="primul modul real" />
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
@@ -91,7 +99,7 @@ export default function WorkspaceContent({
             <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">{businessModules.length} active</span>
           </div>
           <div className="mt-7 space-y-3">
-            {activeNames.length ? activeNames.map((name) => <Priority key={name} title={name} meta={name === "Clienți & cereri" ? "Live · date reale" : "Activ · shell pregătit"} />) : <p className="rounded-[20px] bg-[var(--bg)] p-5 text-sm text-[var(--muted)]">Nu există încă module business active.</p>}
+            {activeDefinitions.length ? activeDefinitions.map((definition) => <Priority key={definition.id} title={definition.name} meta={liveModuleIds.has(definition.id) ? "Live · date reale" : "Activ · în pregătire"} />) : <p className="rounded-[20px] bg-[var(--bg)] p-5 text-sm text-[var(--muted)]">Nu există încă module business active.</p>}
           </div>
         </article>
 
