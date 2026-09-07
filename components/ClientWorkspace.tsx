@@ -2,50 +2,94 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import {
-  DEFAULT_ENABLED_MODULES,
   ORBYVEN_MODULES,
   type OrbyvenModuleId,
 } from "@/lib/orbyven-modules";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import {
+  getCurrentWorkspace,
+  setOrganizationModuleEnabled,
+  type OrbyvenWorkspace,
+} from "@/lib/orbyven-workspace";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 
 type Theme = "light" | "dark";
 type Panel = "workspace" | "modules";
 
-const STORAGE_KEY = "orbyven-demo-enabled-modules";
-
-const demoActivity = [
-  { title: "Ofertă trimisă", meta: "Client nou · acum 18 min" },
-  { title: "Lucrare actualizată", meta: "Instalație termică · acum 1h" },
-  { title: "Programare adăugată", meta: "Mâine, 09:30 · acum 2h" },
-];
+const roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string> = {
+  owner: "Owner",
+  admin: "Admin",
+  manager: "Manager",
+  member: "Membru",
+  viewer: "Viewer",
+};
 
 export default function ClientWorkspace() {
+  const router = useRouter();
   const [theme, setTheme] = useState<Theme>("light");
   const [panel, setPanel] = useState<Panel>("workspace");
-  const [activeModule, setActiveModule] = useState<OrbyvenModuleId>("overview");
-  const [enabledModules, setEnabledModules] = useState<OrbyvenModuleId[]>(
-    DEFAULT_ENABLED_MODULES
-  );
+  const [activeModule, setActiveModule] =
+    useState<OrbyvenModuleId>("overview");
+  const [workspace, setWorkspace] = useState<OrbyvenWorkspace | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
+
+  const loadWorkspace = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const { data: authData } = await orbyvenSupabase.auth.getUser();
+
+      if (!authData.user) {
+        router.replace("/workspace/login");
+        return;
+      }
+
+      const nextWorkspace = await getCurrentWorkspace();
+
+      if (!nextWorkspace) {
+        setLoadError(
+          "Contul este autentificat, dar nu are încă un workspace ORBYVEN atribuit."
+        );
+        setLoading(false);
+        return;
+      }
+
+      setWorkspace(nextWorkspace);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoadError("Workspace-ul nu a putut fi încărcat. Încearcă din nou.");
+      setLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("studio-theme");
-    const nextTheme: Theme = savedTheme === "dark" ? "dark" : "light";
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nextTheme: Theme =
+      savedTheme === "dark" || savedTheme === "light"
+        ? savedTheme
+        : prefersDark
+          ? "dark"
+          : "light";
+
     setTheme(nextTheme);
     document.documentElement.style.colorScheme = nextTheme;
+    loadWorkspace();
+  }, [loadWorkspace]);
 
-    try {
-      const savedModules = JSON.parse(
-        window.localStorage.getItem(STORAGE_KEY) ?? "[]"
-      ) as OrbyvenModuleId[];
-      if (savedModules.length) setEnabledModules(savedModules);
-    } catch {
-      // Keep the safe defaults when local preview state is invalid.
-    }
-  }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(enabledModules));
-  }, [enabledModules]);
+  const enabledModules = workspace?.enabledModules ?? ["overview"];
 
   const enabledDefinitions = useMemo(
     () => ORBYVEN_MODULES.filter((module) => enabledModules.includes(module.id)),
@@ -56,6 +100,34 @@ export default function ClientWorkspace() {
     ORBYVEN_MODULES.find((module) => module.id === activeModule) ??
     ORBYVEN_MODULES[0];
 
+  const canManageModules =
+    workspace?.membership.role === "owner" ||
+    workspace?.membership.role === "admin";
+
+  const organizationName =
+    workspace?.profile?.display_name ?? workspace?.organization.name ?? "ORBYVEN";
+  const greetingName =
+    workspace?.profile?.greeting_name ?? workspace?.organization.name.split(" ")[0] ?? "";
+  const initials = organizationName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  const dateLabel = useMemo(() => {
+    const locale = workspace?.profile?.locale ?? "ro-RO";
+    const timeZone = workspace?.profile?.timezone ?? "Europe/Bucharest";
+    const formatted = new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone,
+    }).format(new Date());
+
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }, [workspace]);
+
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
@@ -65,20 +137,52 @@ export default function ClientWorkspace() {
     });
   };
 
-  const toggleModule = (id: OrbyvenModuleId) => {
-    if (id === "overview") return;
+  const toggleModule = async (id: OrbyvenModuleId) => {
+    if (
+      id === "overview" ||
+      !workspace ||
+      !canManageModules ||
+      savingModule
+    ) {
+      return;
+    }
 
-    setEnabledModules((current) => {
-      const next = current.includes(id)
-        ? current.filter((moduleId) => moduleId !== id)
-        : [...current, id];
+    const currentlyEnabled = workspace.enabledModules.includes(id);
+    const previousModules = workspace.enabledModules;
+    const nextModules = currentlyEnabled
+      ? previousModules.filter((moduleId) => moduleId !== id)
+      : [...previousModules, id];
 
-      if (id === activeModule && current.includes(id)) {
-        setActiveModule("overview");
-      }
+    setActionError("");
+    setSavingModule(id);
+    setWorkspace((current) =>
+      current ? { ...current, enabledModules: nextModules } : current
+    );
 
-      return next;
-    });
+    if (currentlyEnabled && activeModule === id) {
+      setActiveModule("overview");
+    }
+
+    try {
+      await setOrganizationModuleEnabled(
+        workspace.organization.id,
+        id,
+        !currentlyEnabled
+      );
+    } catch (error) {
+      console.error(error);
+      setWorkspace((current) =>
+        current ? { ...current, enabledModules: previousModules } : current
+      );
+      setActionError("Modulul nu a putut fi actualizat. Modificarea a fost anulată.");
+    } finally {
+      setSavingModule(null);
+    }
+  };
+
+  const logout = async () => {
+    await orbyvenSupabase.auth.signOut();
+    router.replace("/workspace/login");
   };
 
   const vars = {
@@ -98,6 +202,27 @@ export default function ClientWorkspace() {
     "--accent-soft":
       theme === "dark" ? "rgba(75,70,238,0.20)" : "rgba(75,70,238,0.08)",
   } as CSSProperties;
+
+  if (loading) {
+    return (
+      <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />
+    );
+  }
+
+  if (loadError || !workspace) {
+    return (
+      <WorkspaceStateScreen
+        vars={vars}
+        theme={theme}
+        title="Workspace indisponibil"
+        description={loadError}
+        actionLabel="Încearcă din nou"
+        onAction={loadWorkspace}
+        secondaryLabel="Delogare"
+        onSecondary={logout}
+      />
+    );
+  }
 
   return (
     <main
@@ -125,7 +250,9 @@ export default function ClientWorkspace() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")}
+              onClick={() =>
+                setPanel(panel === "modules" ? "workspace" : "modules")
+              }
               className="hidden h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold sm:block"
             >
               {panel === "modules" ? "Înapoi" : "Module"}
@@ -140,9 +267,18 @@ export default function ClientWorkspace() {
             </button>
             <button
               type="button"
+              onClick={logout}
+              className="hidden h-10 rounded-full px-3 text-xs font-medium text-[var(--muted)] hover:bg-[var(--surface)] sm:block"
+            >
+              Ieșire
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              aria-label="Delogare"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--button)] text-xs font-semibold text-[var(--button-text)]"
             >
-              NC
+              {initials || "OR"}
             </button>
           </div>
         </div>
@@ -151,10 +287,13 @@ export default function ClientWorkspace() {
       <div className="mx-auto grid max-w-[1600px] md:grid-cols-[238px_minmax(0,1fr)]">
         <aside className="hidden min-h-[calc(100vh-72px)] border-r border-[var(--border)] px-4 py-6 md:flex md:flex-col">
           <div className="px-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-              Neagu Costică SRL
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+              {organizationName}
             </p>
             <p className="mt-2 text-sm font-semibold">Spațiul tău de lucru</p>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              {roleLabels[workspace.membership.role]}
+            </p>
           </div>
 
           <nav className="mt-7 space-y-1.5">
@@ -190,7 +329,9 @@ export default function ClientWorkspace() {
               onClick={() => setPanel("modules")}
               className="w-full rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-xs font-medium text-[var(--muted)]"
             >
-              + Adaugă sau elimină module
+              {canManageModules
+                ? "+ Adaugă sau elimină module"
+                : "Vezi modulele active"}
             </button>
           </div>
         </aside>
@@ -201,9 +342,18 @@ export default function ClientWorkspace() {
               enabledModules={enabledModules}
               onToggle={toggleModule}
               onClose={() => setPanel("workspace")}
+              canManage={canManageModules}
+              savingModule={savingModule}
+              error={actionError}
             />
           ) : (
-            <WorkspaceContent activeModule={activeDefinition.id} />
+            <WorkspaceContent
+              activeModule={activeDefinition.id}
+              greetingName={greetingName}
+              dateLabel={dateLabel}
+              enabledModules={enabledModules}
+              role={workspace.membership.role}
+            />
           )}
         </section>
       </div>
@@ -243,7 +393,19 @@ export default function ClientWorkspace() {
   );
 }
 
-function WorkspaceContent({ activeModule }: { activeModule: OrbyvenModuleId }) {
+function WorkspaceContent({
+  activeModule,
+  greetingName,
+  dateLabel,
+  enabledModules,
+  role,
+}: {
+  activeModule: OrbyvenModuleId;
+  greetingName: string;
+  dateLabel: string;
+  enabledModules: OrbyvenModuleId[];
+  role: OrbyvenWorkspace["membership"]["role"];
+}) {
   if (activeModule !== "overview") {
     const module = ORBYVEN_MODULES.find((item) => item.id === activeModule)!;
     return (
@@ -276,84 +438,103 @@ function WorkspaceContent({ activeModule }: { activeModule: OrbyvenModuleId }) {
                 {feature}
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                Interfață modulară gata să primească datele reale ale clientului.
+                Modul portabil conectat la organizația curentă prin ORBYVEN Core.
               </p>
             </article>
           ))}
         </div>
 
-        <div className="mt-4 rounded-[28px] border border-dashed border-[var(--border-strong)] p-7 text-sm text-[var(--muted)]">
-          Acesta este shell-ul portabil al modulului. Logica și datele specifice se conectează separat, fără să reconstruim dashboard-ul pentru fiecare client.
+        <div className="mt-4 rounded-[28px] border border-dashed border-[var(--border-strong)] p-7 text-sm leading-6 text-[var(--muted)]">
+          Configurația acestui modul vine acum din Supabase. Când logica specifică modulului este conectată, toate datele vor fi filtrate automat după organizația clientului.
         </div>
       </div>
     );
   }
+
+  const businessModules = enabledModules.filter((moduleId) => moduleId !== "overview");
+  const activeNames = ORBYVEN_MODULES.filter((module) =>
+    businessModules.includes(module.id)
+  )
+    .slice(0, 3)
+    .map((module) => module.name);
 
   return (
     <div className="pb-24 md:pb-8">
       <section className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
-            Luni, 7 septembrie
+            {dateLabel}
           </p>
           <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px] lg:text-[70px]">
-            Bună, Costică.
+            Bună, {greetingName || "acolo"}.
           </h1>
           <p className="mt-5 max-w-xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-            Ai tot ce contează azi într-un singur loc. Restul rămâne în spate.
+            Workspace-ul este acum legat de firma ta. Vezi doar instrumentele active pentru organizația ta.
           </p>
         </div>
-        <button
-          type="button"
-          className="h-11 self-start rounded-full bg-[var(--button)] px-5 text-sm font-medium text-[var(--button-text)]"
-        >
-          + Lucrare nouă
-        </button>
+        <span className="inline-flex h-11 self-start items-center rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 text-xs font-semibold text-[var(--muted)]">
+          Supabase · Live
+        </span>
       </section>
 
       <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Lucrări active" value="6" note="2 pentru azi" />
-        <Metric label="Cereri noi" value="3" note="din ultimele 24h" />
-        <Metric label="Programări" value="4" note="următoarele 7 zile" />
-        <Metric label="Oferte deschise" value="5" note="2 așteaptă răspuns" />
+        <Metric
+          label="Module active"
+          value={String(businessModules.length)}
+          note="configurate pentru firmă"
+        />
+        <Metric
+          label="Acces"
+          value={roleLabels[role]}
+          note="rol în organizație"
+        />
+        <Metric label="Izolare date" value="RLS" note="activă pe organizație" />
+        <Metric label="Configurație" value="Live" note="sincronizată din backend" />
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
         <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-medium text-[var(--muted)]">Astăzi</p>
+              <p className="text-xs font-medium text-[var(--muted)]">Workspace</p>
               <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.045em]">
-                Ce merită atenția ta
+                Instrumentele firmei
               </h2>
             </div>
             <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">
-              3 priorități
+              {businessModules.length} active
             </span>
           </div>
 
           <div className="mt-7 space-y-3">
-            <Priority title="Confirmă materialele" meta="Lucrare Pipera · până la 13:00" />
-            <Priority title="Sună clientul" meta="Cerere nouă · baie completă" />
-            <Priority title="Verifică echipa" meta="Montaj centrală · Bragadiru" />
+            {activeNames.length ? (
+              activeNames.map((name) => (
+                <Priority
+                  key={name}
+                  title={name}
+                  meta="Activ · conectat la workspace"
+                />
+              ))
+            ) : (
+              <p className="rounded-[20px] bg-[var(--bg)] p-5 text-sm text-[var(--muted)]">
+                Nu există încă module business active.
+              </p>
+            )}
           </div>
         </article>
 
         <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-6 sm:p-8">
-          <p className="text-xs font-medium text-[var(--muted)]">Activitate</p>
+          <p className="text-xs font-medium text-[var(--muted)]">ORBYVEN Core</p>
           <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.045em]">
-            Ultimele mișcări
+            Sistem pregătit
           </h2>
           <div className="mt-7 space-y-5">
-            {demoActivity.map((item) => (
-              <div key={item.title} className="flex gap-3">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" />
-                <div>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">{item.meta}</p>
-                </div>
-              </div>
-            ))}
+            <StatusItem title="Organizație încărcată" meta="Identitate și profil din backend" />
+            <StatusItem
+              title="Module sincronizate"
+              meta={`${businessModules.length} instrumente disponibile`}
+            />
+            <StatusItem title="RLS activ" meta="Date izolate între clienți" />
           </div>
         </article>
       </section>
@@ -365,10 +546,16 @@ function ModuleStore({
   enabledModules,
   onToggle,
   onClose,
+  canManage,
+  savingModule,
+  error,
 }: {
   enabledModules: OrbyvenModuleId[];
   onToggle: (id: OrbyvenModuleId) => void;
   onClose: () => void;
+  canManage: boolean;
+  savingModule: OrbyvenModuleId | null;
+  error: string;
 }) {
   return (
     <div className="pb-24 md:pb-8">
@@ -381,7 +568,9 @@ function ModuleStore({
             Doar ce îți trebuie.
           </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
-            Activezi instrumentele utile firmei tale. ORBYVEN le integrează în același workspace, cu aceeași experiență.
+            {canManage
+              ? "Activezi instrumentele utile firmei tale. Modificarea este salvată direct în configurația organizației."
+              : "Poți vedea instrumentele firmei. Doar un owner sau admin poate schimba configurația."}
           </p>
         </div>
         <button
@@ -393,10 +582,17 @@ function ModuleStore({
         </button>
       </section>
 
+      {error && (
+        <div className="mt-6 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">
+          {error}
+        </div>
+      )}
+
       <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {ORBYVEN_MODULES.map((module) => {
           const enabled = enabledModules.includes(module.id);
           const locked = module.id === "overview";
+          const saving = savingModule === module.id;
           return (
             <article
               key={module.id}
@@ -425,11 +621,11 @@ function ModuleStore({
 
               <div className="mt-auto flex items-center justify-between gap-4 pt-7">
                 <span className="text-xs text-[var(--muted)]">
-                  {enabled ? "Activ" : "Neactivat"}
+                  {saving ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}
                 </span>
                 <button
                   type="button"
-                  disabled={locked}
+                  disabled={locked || !canManage || Boolean(savingModule)}
                   onClick={() => onToggle(module.id)}
                   className={`h-10 rounded-full px-4 text-xs font-semibold transition ${
                     enabled
@@ -437,7 +633,15 @@ function ModuleStore({
                       : "border border-[var(--border-strong)]"
                   } disabled:cursor-default disabled:opacity-60`}
                 >
-                  {locked ? "Inclus" : enabled ? "Elimină" : "Adaugă"}
+                  {locked
+                    ? "Inclus"
+                    : !canManage
+                      ? "Blocat"
+                      : saving
+                        ? "Salvare"
+                        : enabled
+                          ? "Elimină"
+                          : "Adaugă"}
                 </button>
               </div>
             </article>
@@ -445,6 +649,76 @@ function ModuleStore({
         })}
       </div>
     </div>
+  );
+}
+
+function WorkspaceStateScreen({
+  vars,
+  theme,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  secondaryLabel,
+  onSecondary,
+}: {
+  vars: CSSProperties;
+  theme: Theme;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <main
+      style={{
+        ...vars,
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+      }}
+      className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased"
+    >
+      <div className="mx-auto flex min-h-screen max-w-[1200px] flex-col px-6 py-6 md:px-10">
+        <BrandLogo compact theme={theme} />
+        <div className="flex flex-1 items-center justify-center py-16">
+          <div className="max-w-lg text-center">
+            <div className="mx-auto h-3 w-3 rounded-full bg-[var(--accent)]" />
+            <h1 className="mt-6 text-[38px] font-semibold tracking-[-0.05em]">
+              {title}
+            </h1>
+            {description && (
+              <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
+                {description}
+              </p>
+            )}
+            {(actionLabel || secondaryLabel) && (
+              <div className="mt-7 flex flex-wrap justify-center gap-2">
+                {actionLabel && onAction && (
+                  <button
+                    type="button"
+                    onClick={onAction}
+                    className="h-11 rounded-full bg-[var(--button)] px-5 text-sm font-medium text-[var(--button-text)]"
+                  >
+                    {actionLabel}
+                  </button>
+                )}
+                {secondaryLabel && onSecondary && (
+                  <button
+                    type="button"
+                    onClick={onSecondary}
+                    className="h-11 rounded-full border border-[var(--border-strong)] px-5 text-sm font-medium"
+                  >
+                    {secondaryLabel}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -460,7 +734,7 @@ function Metric({
   return (
     <article className="rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-6">
       <p className="text-xs font-medium text-[var(--muted)]">{label}</p>
-      <p className="mt-6 text-[42px] font-semibold leading-none tracking-[-0.055em]">
+      <p className="mt-6 text-[38px] font-semibold leading-none tracking-[-0.055em]">
         {value}
       </p>
       <p className="mt-3 text-xs text-[var(--muted-2)]">{note}</p>
@@ -470,15 +744,24 @@ function Metric({
 
 function Priority({ title, meta }: { title: string; meta: string }) {
   return (
-    <button
-      type="button"
-      className="flex w-full items-center justify-between gap-4 rounded-[20px] bg-[var(--bg)] p-4 text-left transition hover:scale-[1.005]"
-    >
+    <div className="flex w-full items-center justify-between gap-4 rounded-[20px] bg-[var(--bg)] p-4 text-left">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold">{title}</p>
         <p className="mt-1 truncate text-xs text-[var(--muted)]">{meta}</p>
       </div>
-      <span className="text-lg text-[var(--muted)]">›</span>
-    </button>
+      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--accent)]" />
+    </div>
+  );
+}
+
+function StatusItem({ title, meta }: { title: string; meta: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" />
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="mt-1 text-xs text-[var(--muted)]">{meta}</p>
+      </div>
+    </div>
   );
 }
