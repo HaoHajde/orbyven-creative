@@ -1,13 +1,18 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import {
   EMPTY_ENTITLEMENT_SNAPSHOT,
+  type ControlCenterAuditEvent,
   type ControlCenterAuthUser,
   type ControlCenterMember,
   type ControlCenterModuleAssignment,
   type ControlCenterOrganization,
   type ControlCenterOrganizationProfile,
   type ControlCenterPayload,
+  type ControlCenterPlatformStaff,
+  type OrbyvenMemberAccessStatus,
+  type OrbyvenOrganizationLifecycleStatus,
   type OrbyvenPlatformRole,
+  type OrbyvenStaffRole,
 } from "@/lib/orbyven-control-center-contracts";
 import {
   ORBYVEN_MODULES,
@@ -21,10 +26,26 @@ const VALID_ROLES = new Set<OrbyvenPlatformRole>([
   "member",
   "viewer",
 ]);
+const VALID_STAFF_ROLES = new Set<OrbyvenStaffRole>([
+  "platform_owner",
+  "platform_admin",
+  "support",
+]);
+const VALID_LIFECYCLE_STATUSES = new Set<OrbyvenOrganizationLifecycleStatus>([
+  "provisioning",
+  "active",
+  "suspended",
+  "archived",
+]);
+const VALID_MEMBER_ACCESS = new Set<OrbyvenMemberAccessStatus>([
+  "active",
+  "suspended",
+]);
 const VALID_MODULE_IDS = new Set<OrbyvenModuleId>(
   ORBYVEN_MODULES.map((module) => module.id)
 );
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export class ControlCenterHttpError extends Error {
   status: number;
@@ -36,6 +57,13 @@ export class ControlCenterHttpError extends Error {
     this.code = code;
   }
 }
+
+export type ControlCenterAuthorization = {
+  admin: SupabaseClient;
+  user: User;
+  staffRole: OrbyvenStaffRole;
+  staffSource: "platform_staff" | "env_allowlist";
+};
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -76,10 +104,16 @@ function allowedAdminUserIds() {
   );
 }
 
-export async function authorizeControlCenter(request: Request): Promise<{
-  admin: SupabaseClient;
-  user: User;
-}> {
+function isMissingPlatformTableError(error: { code?: string; message?: string } | null) {
+  if (!error) return false;
+  return (
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    (error.message ?? "").toLowerCase().includes("platform_staff")
+  );
+}
+
+export async function authorizeControlCenter(request: Request): Promise<ControlCenterAuthorization> {
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.startsWith("Bearer ")
     ? authorization.slice("Bearer ".length).trim()
@@ -96,23 +130,58 @@ export async function authorizeControlCenter(request: Request): Promise<{
     throw new ControlCenterHttpError(401, "invalid_session", "Invalid or expired session.");
   }
 
+  const { data: staff, error: staffError } = await admin
+    .from("platform_staff")
+    .select("role,enabled")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+
+  if (staffError && !isMissingPlatformTableError(staffError)) throw staffError;
+
+  if (staff?.enabled && VALID_STAFF_ROLES.has(staff.role as OrbyvenStaffRole)) {
+    return {
+      admin,
+      user: data.user,
+      staffRole: staff.role as OrbyvenStaffRole,
+      staffSource: "platform_staff",
+    };
+  }
+
   const emails = allowedAdminEmails();
   const userIds = allowedAdminUserIds();
+  const email = data.user.email?.toLowerCase() ?? "";
 
-  if (emails.size === 0 && userIds.size === 0) {
+  if (emails.has(email) || userIds.has(data.user.id)) {
+    return {
+      admin,
+      user: data.user,
+      staffRole: "platform_owner",
+      staffSource: "env_allowlist",
+    };
+  }
+
+  if (emails.size === 0 && userIds.size === 0 && !staff?.enabled) {
     throw new ControlCenterHttpError(
       503,
-      "admin_allowlist_missing",
-      "Configure ORBYVEN_CONTROL_CENTER_ADMIN_EMAILS or ORBYVEN_CONTROL_CENTER_ADMIN_USER_IDS."
+      "platform_staff_not_configured",
+      "Configure an ORBYVEN platform staff user or the temporary Control Center allowlist."
     );
   }
 
-  const email = data.user.email?.toLowerCase() ?? "";
-  if (!emails.has(email) && !userIds.has(data.user.id)) {
-    throw new ControlCenterHttpError(403, "not_platform_admin", "Control Center access denied.");
-  }
+  throw new ControlCenterHttpError(403, "not_platform_staff", "Control Center access denied.");
+}
 
-  return { admin, user: data.user };
+export function requireStaffRole(
+  actual: OrbyvenStaffRole,
+  allowed: OrbyvenStaffRole[]
+) {
+  if (!allowed.includes(actual)) {
+    throw new ControlCenterHttpError(
+      403,
+      "insufficient_platform_role",
+      "Rolul ORBYVEN intern nu permite această operație."
+    );
+  }
 }
 
 async function listAllAuthUsers(admin: SupabaseClient): Promise<ControlCenterAuthUser[]> {
@@ -130,6 +199,8 @@ async function listAllAuthUsers(admin: SupabaseClient): Promise<ControlCenterAut
         email: user.email ?? null,
         created_at: user.created_at,
         last_sign_in_at: user.last_sign_in_at ?? null,
+        email_confirmed_at: user.email_confirmed_at ?? null,
+        banned_until: user.banned_until ?? null,
       }))
     );
 
@@ -138,6 +209,11 @@ async function listAllAuthUsers(admin: SupabaseClient): Promise<ControlCenterAut
   }
 
   return users;
+}
+
+async function findAuthUserByEmail(admin: SupabaseClient, email: string) {
+  const users = await listAllAuthUsers(admin);
+  return users.find((user) => user.email?.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
 type RawProfile = ControlCenterOrganizationProfile & {
@@ -149,7 +225,9 @@ type RawMember = {
   organization_id: string;
   user_id: string;
   role: OrbyvenPlatformRole;
+  access_status: OrbyvenMemberAccessStatus;
   created_at: string;
+  updated_at: string | null;
 };
 
 type RawModule = {
@@ -165,41 +243,85 @@ type RawOrganization = {
   name: string;
   slug: string;
   legal_name: string | null;
+  lifecycle_status: OrbyvenOrganizationLifecycleStatus;
   created_by: string | null;
   created_at: string;
   updated_at: string;
 };
 
+type RawStaff = {
+  user_id: string;
+  role: OrbyvenStaffRole;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type RawAudit = {
+  id: string;
+  actor_user_id: string | null;
+  actor_role: string | null;
+  organization_id: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export async function loadControlCenterPayload(
-  admin: SupabaseClient
+  admin: SupabaseClient,
+  currentUser: User,
+  currentStaffRole: OrbyvenStaffRole,
+  currentStaffSource: "platform_staff" | "env_allowlist"
 ): Promise<ControlCenterPayload> {
-  const [organizationsResult, profilesResult, membersResult, modulesResult, authUsers] =
-    await Promise.all([
-      admin
-        .from("organizations")
-        .select("id,name,slug,legal_name,created_by,created_at,updated_at")
-        .order("created_at", { ascending: false }),
-      admin
-        .from("organization_profiles")
-        .select(
-          "organization_id,display_name,greeting_name,logo_url,timezone,locale,settings,updated_at"
-        ),
-      admin
-        .from("organization_members")
-        .select("organization_id,user_id,role,created_at")
-        .order("created_at", { ascending: true }),
-      admin
-        .from("organization_modules")
-        .select("organization_id,module_id,enabled,settings,updated_at"),
-      listAllAuthUsers(admin),
-    ]);
+  const [
+    organizationsResult,
+    profilesResult,
+    membersResult,
+    modulesResult,
+    staffResult,
+    auditResult,
+    authUsers,
+  ] = await Promise.all([
+    admin
+      .from("organizations")
+      .select("id,name,slug,legal_name,lifecycle_status,created_by,created_at,updated_at")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("organization_profiles")
+      .select(
+        "organization_id,display_name,greeting_name,logo_url,timezone,locale,settings,updated_at"
+      ),
+    admin
+      .from("organization_members")
+      .select("organization_id,user_id,role,access_status,created_at,updated_at")
+      .order("created_at", { ascending: true }),
+    admin
+      .from("organization_modules")
+      .select("organization_id,module_id,enabled,settings,updated_at"),
+    admin
+      .from("platform_staff")
+      .select("user_id,role,enabled,created_at,updated_at")
+      .order("created_at", { ascending: true }),
+    admin
+      .from("platform_audit_log")
+      .select(
+        "id,actor_user_id,actor_role,organization_id,action,target_type,target_id,metadata,created_at"
+      )
+      .order("created_at", { ascending: false })
+      .limit(150),
+    listAllAuthUsers(admin),
+  ]);
 
   if (organizationsResult.error) throw organizationsResult.error;
   if (profilesResult.error) throw profilesResult.error;
   if (membersResult.error) throw membersResult.error;
   if (modulesResult.error) throw modulesResult.error;
+  if (staffResult.error) throw staffResult.error;
+  if (auditResult.error) throw auditResult.error;
 
-  const emailByUser = new Map(authUsers.map((user) => [user.id, user.email]));
+  const authById = new Map(authUsers.map((user) => [user.id, user]));
   const profiles = (profilesResult.data ?? []) as RawProfile[];
   const members = (membersResult.data ?? []) as RawMember[];
   const modules = (modulesResult.data ?? []) as RawModule[];
@@ -211,16 +333,26 @@ export async function loadControlCenterPayload(
       );
       const organizationMembers: ControlCenterMember[] = members
         .filter((member) => member.organization_id === organization.id)
-        .map((member) => ({
-          user_id: member.user_id,
-          email: emailByUser.get(member.user_id) ?? null,
-          role: member.role,
-          created_at: member.created_at,
-        }));
-      const organizationModules: ControlCenterModuleAssignment[] = modules
+        .map((member) => {
+          const authUser = authById.get(member.user_id);
+          return {
+            user_id: member.user_id,
+            email: authUser?.email ?? null,
+            role: member.role,
+            access_status: member.access_status,
+            created_at: member.created_at,
+            updated_at: member.updated_at,
+            email_confirmed_at: authUser?.email_confirmed_at ?? null,
+            last_sign_in_at: authUser?.last_sign_in_at ?? null,
+          };
+        });
+
+      const rawOrganizationModules = modules.filter(
+        (module) => module.organization_id === organization.id
+      );
+      const organizationModules: ControlCenterModuleAssignment[] = rawOrganizationModules
         .filter(
           (module) =>
-            module.organization_id === organization.id &&
             module.module_id !== "overview" &&
             VALID_MODULE_IDS.has(module.module_id as OrbyvenModuleId)
         )
@@ -232,13 +364,32 @@ export async function loadControlCenterPayload(
         }));
 
       const enabledModuleCount = organizationModules.filter((module) => module.enabled).length;
-      const hasOwner = organizationMembers.some((member) => member.role === "owner");
+      const activeMembers = organizationMembers.filter(
+        (member) => member.access_status === "active"
+      );
+      const hasOwner = activeMembers.some((member) => member.role === "owner");
+      const unknownModuleCount = rawOrganizationModules.filter(
+        (module) =>
+          module.module_id !== "overview" &&
+          !VALID_MODULE_IDS.has(module.module_id as OrbyvenModuleId)
+      ).length;
+      const pendingInviteCount = organizationMembers.filter(
+        (member) => !member.email_confirmed_at
+      ).length;
       const timestamps = [
         organization.updated_at,
         rawProfile?.updated_at ?? null,
+        ...organizationMembers.map((member) => member.updated_at),
         ...organizationModules.map((module) => module.updated_at),
       ].filter((value): value is string => Boolean(value));
       const lastConfigUpdate = timestamps.sort().at(-1) ?? null;
+      const lifecycleActive = organization.lifecycle_status === "active";
+      const healthy =
+        lifecycleActive &&
+        Boolean(rawProfile) &&
+        hasOwner &&
+        activeMembers.length > 0 &&
+        unknownModuleCount === 0;
 
       return {
         ...organization,
@@ -255,16 +406,18 @@ export async function loadControlCenterPayload(
         members: organizationMembers,
         modules: organizationModules,
         technical_status: {
-          state:
-            rawProfile && hasOwner && organizationMembers.length > 0
-              ? "healthy"
-              : "attention",
+          state: !lifecycleActive ? "suspended" : healthy ? "healthy" : "attention",
           checks: {
             profile: Boolean(rawProfile),
             owner: hasOwner,
             members: organizationMembers.length > 0,
+            active_members: activeMembers.length > 0,
+            known_modules: unknownModuleCount === 0,
+            lifecycle_active: lifecycleActive,
           },
           member_count: organizationMembers.length,
+          active_member_count: activeMembers.length,
+          pending_invite_count: pendingInviteCount,
           enabled_module_count: enabledModuleCount,
           last_config_update: lastConfigUpdate,
         },
@@ -273,9 +426,34 @@ export async function loadControlCenterPayload(
     }
   );
 
+  const platformStaff: ControlCenterPlatformStaff[] = ((staffResult.data ?? []) as RawStaff[]).map(
+    (staff) => ({
+      ...staff,
+      email: authById.get(staff.user_id)?.email ?? null,
+    })
+  );
+
+  const auditEvents: ControlCenterAuditEvent[] = ((auditResult.data ?? []) as RawAudit[]).map(
+    (event) => ({
+      ...event,
+      actor_email: event.actor_user_id
+        ? authById.get(event.actor_user_id)?.email ?? null
+        : null,
+      metadata: event.metadata ?? {},
+    })
+  );
+
   return {
     organizations,
     auth_users: authUsers,
+    platform_staff: platformStaff,
+    audit_events: auditEvents,
+    current_staff: {
+      user_id: currentUser.id,
+      email: currentUser.email ?? null,
+      role: currentStaffRole,
+      source: currentStaffSource,
+    },
     entitlement_source: "chat3-pending",
   };
 }
@@ -304,6 +482,41 @@ function requireRole(value: unknown): OrbyvenPlatformRole {
   return value as OrbyvenPlatformRole;
 }
 
+function requireStaffRoleValue(value: unknown): OrbyvenStaffRole {
+  if (typeof value !== "string" || !VALID_STAFF_ROLES.has(value as OrbyvenStaffRole)) {
+    throw new ControlCenterHttpError(400, "invalid_staff_role", "Invalid platform staff role.");
+  }
+  return value as OrbyvenStaffRole;
+}
+
+function requireLifecycleStatus(value: unknown): OrbyvenOrganizationLifecycleStatus {
+  if (
+    typeof value !== "string" ||
+    !VALID_LIFECYCLE_STATUSES.has(value as OrbyvenOrganizationLifecycleStatus)
+  ) {
+    throw new ControlCenterHttpError(400, "invalid_lifecycle", "Invalid organization lifecycle status.");
+  }
+  return value as OrbyvenOrganizationLifecycleStatus;
+}
+
+function requireMemberAccess(value: unknown): OrbyvenMemberAccessStatus {
+  if (
+    typeof value !== "string" ||
+    !VALID_MEMBER_ACCESS.has(value as OrbyvenMemberAccessStatus)
+  ) {
+    throw new ControlCenterHttpError(400, "invalid_access_status", "Invalid member access status.");
+  }
+  return value as OrbyvenMemberAccessStatus;
+}
+
+function requireEmail(value: unknown) {
+  const email = requireText(value, "email", 5, 320).toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) {
+    throw new ControlCenterHttpError(400, "invalid_email", "Email invalid.");
+  }
+  return email;
+}
+
 function cleanSlug(value: unknown) {
   const slug = requireText(value, "slug", 3, 50).toLowerCase();
   if (!SLUG_PATTERN.test(slug)) {
@@ -317,9 +530,110 @@ function cleanSettings(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+async function recordAudit(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  action: string,
+  options: {
+    organizationId?: string | null;
+    targetType?: string | null;
+    targetId?: string | null;
+    metadata?: Record<string, unknown>;
+  } = {}
+) {
+  const { error } = await admin.from("platform_audit_log").insert({
+    actor_user_id: actor.id,
+    actor_role: actorRole,
+    organization_id: options.organizationId ?? null,
+    action,
+    target_type: options.targetType ?? null,
+    target_id: options.targetId ?? null,
+    metadata: options.metadata ?? {},
+  });
+
+  if (error) {
+    // Do not roll back a completed platform operation only because its audit write
+    // failed in a separate request transaction. Surface it in server logs instead.
+    console.error("ORBYVEN audit write failed", error);
+  }
+}
+
+async function ensureOrganizationExists(admin: SupabaseClient, organizationId: string) {
+  const { data, error } = await admin
+    .from("organizations")
+    .select("id")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    throw new ControlCenterHttpError(404, "organization_not_found", "Organizația nu există.");
+  }
+}
+
+async function ensureUserNotInAnotherOrganization(
+  admin: SupabaseClient,
+  userId: string,
+  organizationId: string
+) {
+  const { data, error } = await admin
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", userId)
+    .neq("organization_id", organizationId)
+    .limit(1);
+  if (error) throw error;
+  if (data?.length) {
+    throw new ControlCenterHttpError(
+      409,
+      "user_already_assigned",
+      "Utilizatorul este deja atribuit altei organizații. Conturile client rămân single-organization până există un switcher explicit în workspace."
+    );
+  }
+}
+
+async function protectLastActiveOwner(
+  admin: SupabaseClient,
+  organizationId: string,
+  userId: string,
+  next?: { role?: OrbyvenPlatformRole; access?: OrbyvenMemberAccessStatus; remove?: boolean }
+) {
+  const { data: target, error: targetError } = await admin
+    .from("organization_members")
+    .select("role,access_status")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (targetError) throw targetError;
+  if (!target || target.role !== "owner" || target.access_status !== "active") return;
+
+  const willRemainActiveOwner =
+    !next?.remove &&
+    (next?.role ?? target.role) === "owner" &&
+    (next?.access ?? target.access_status) === "active";
+  if (willRemainActiveOwner) return;
+
+  const { count, error: countError } = await admin
+    .from("organization_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("role", "owner")
+    .eq("access_status", "active");
+  if (countError) throw countError;
+
+  if ((count ?? 0) <= 1) {
+    throw new ControlCenterHttpError(
+      409,
+      "last_owner_protected",
+      "Nu poți elimina, suspenda sau retrograda ultimul owner activ al organizației."
+    );
+  }
+}
+
 export async function createControlCenterOrganization(
   admin: SupabaseClient,
   actor: User,
+  actorRole: OrbyvenStaffRole,
   input: Record<string, unknown>
 ) {
   const name = requireText(input.name, "name", 2, 120);
@@ -342,6 +656,7 @@ export async function createControlCenterOrganization(
       name,
       slug,
       legal_name: legalName,
+      lifecycle_status: "active",
       created_by: actor.id,
     })
     .select("id")
@@ -376,11 +691,20 @@ export async function createControlCenterOrganization(
     throw error;
   }
 
+  await recordAudit(admin, actor, actorRole, "organization.create", {
+    organizationId: organization.id,
+    targetType: "organization",
+    targetId: organization.id,
+    metadata: { name, slug, initial_modules: moduleIds },
+  });
+
   return organization.id as string;
 }
 
 export async function updateControlCenterOrganization(
   admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
   input: Record<string, unknown>
 ) {
   const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
@@ -413,38 +737,64 @@ export async function updateControlCenterOrganization(
     { onConflict: "organization_id" }
   );
   if (profileError) throw profileError;
+
+  await recordAudit(admin, actor, actorRole, "organization.update", {
+    organizationId,
+    targetType: "organization",
+    targetId: organizationId,
+    metadata: { name, slug, legal_name: legalName, display_name: displayName },
+  });
 }
 
 export async function assignControlCenterMember(
   admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
   input: Record<string, unknown>
 ) {
   const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
   const userId = requireText(input.user_id, "user_id", 10, 80);
   const role = requireRole(input.role);
 
+  await ensureOrganizationExists(admin, organizationId);
+  await ensureUserNotInAnotherOrganization(admin, userId, organizationId);
+
   const { data: userData, error: userError } = await admin.auth.admin.getUserById(userId);
   if (userError || !userData.user) {
     throw new ControlCenterHttpError(404, "user_not_found", "Supabase Auth user not found.");
   }
+
+  await protectLastActiveOwner(admin, organizationId, userId, { role });
 
   const { error } = await admin.from("organization_members").upsert(
     {
       organization_id: organizationId,
       user_id: userId,
       role,
+      access_status: "active",
     },
     { onConflict: "organization_id,user_id" }
   );
   if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "member.assign", {
+    organizationId,
+    targetType: "user",
+    targetId: userId,
+    metadata: { role },
+  });
 }
 
 export async function removeControlCenterMember(
   admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
   input: Record<string, unknown>
 ) {
   const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
   const userId = requireText(input.user_id, "user_id", 10, 80);
+
+  await protectLastActiveOwner(admin, organizationId, userId, { remove: true });
 
   const { error } = await admin
     .from("organization_members")
@@ -452,10 +802,18 @@ export async function removeControlCenterMember(
     .eq("organization_id", organizationId)
     .eq("user_id", userId);
   if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "member.remove", {
+    organizationId,
+    targetType: "user",
+    targetId: userId,
+  });
 }
 
 export async function setControlCenterModules(
   admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
   input: Record<string, unknown>
 ) {
   const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
@@ -490,4 +848,246 @@ export async function setControlCenterModules(
     .from("organization_modules")
     .upsert(rows, { onConflict: "organization_id,module_id" });
   if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "modules.update", {
+    organizationId,
+    targetType: "organization",
+    targetId: organizationId,
+    metadata: {
+      modules: rows.map((row) => ({ module_id: row.module_id, enabled: row.enabled })),
+    },
+  });
+}
+
+export async function setOrganizationLifecycle(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>
+) {
+  const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
+  const status = requireLifecycleStatus(input.lifecycle_status);
+
+  const { error } = await admin
+    .from("organizations")
+    .update({ lifecycle_status: status })
+    .eq("id", organizationId);
+  if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "organization.lifecycle", {
+    organizationId,
+    targetType: "organization",
+    targetId: organizationId,
+    metadata: { lifecycle_status: status },
+  });
+}
+
+export async function setMemberAccessStatus(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>
+) {
+  const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
+  const userId = requireText(input.user_id, "user_id", 10, 80);
+  const accessStatus = requireMemberAccess(input.access_status);
+
+  await protectLastActiveOwner(admin, organizationId, userId, { access: accessStatus });
+
+  const { data, error } = await admin
+    .from("organization_members")
+    .update({ access_status: accessStatus })
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .select("user_id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    throw new ControlCenterHttpError(404, "membership_not_found", "Membership-ul nu există.");
+  }
+
+  await recordAudit(admin, actor, actorRole, "member.access", {
+    organizationId,
+    targetType: "user",
+    targetId: userId,
+    metadata: { access_status: accessStatus },
+  });
+}
+
+export async function inviteControlCenterMember(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>,
+  origin: string
+) {
+  const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
+  const email = requireEmail(input.email);
+  const role = requireRole(input.role);
+
+  await ensureOrganizationExists(admin, organizationId);
+
+  let authUser = await findAuthUserByEmail(admin, email);
+  let invited = false;
+  let createdUserId: string | null = null;
+
+  if (!authUser) {
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${origin}/workspace/invite`,
+      data: { orbyven_invited: true },
+    });
+    if (error || !data.user) {
+      throw error ?? new ControlCenterHttpError(500, "invite_failed", "Invitația nu a putut fi creată.");
+    }
+    authUser = {
+      id: data.user.id,
+      email: data.user.email ?? email,
+      created_at: data.user.created_at,
+      last_sign_in_at: data.user.last_sign_in_at ?? null,
+      email_confirmed_at: data.user.email_confirmed_at ?? null,
+      banned_until: data.user.banned_until ?? null,
+    };
+    invited = true;
+    createdUserId = data.user.id;
+  }
+
+  await ensureUserNotInAnotherOrganization(admin, authUser.id, organizationId);
+
+  const { error: membershipError } = await admin.from("organization_members").upsert(
+    {
+      organization_id: organizationId,
+      user_id: authUser.id,
+      role,
+      access_status: "active",
+    },
+    { onConflict: "organization_id,user_id" }
+  );
+
+  if (membershipError) {
+    if (createdUserId) {
+      await admin.auth.admin.deleteUser(createdUserId).catch(() => undefined);
+    }
+    throw membershipError;
+  }
+
+  await recordAudit(admin, actor, actorRole, invited ? "member.invite" : "member.attach_existing", {
+    organizationId,
+    targetType: "user",
+    targetId: authUser.id,
+    metadata: { email, role },
+  });
+
+  return { user_id: authUser.id, invited };
+}
+
+export async function sendControlCenterAccessEmail(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>,
+  origin: string
+) {
+  const organizationId = requireText(input.organization_id, "organization_id", 10, 80);
+  const email = requireEmail(input.email);
+
+  const authUser = await findAuthUserByEmail(admin, email);
+  if (!authUser) {
+    throw new ControlCenterHttpError(404, "user_not_found", "Nu există un cont Auth pentru acest email.");
+  }
+
+  const { data: membership, error: membershipError } = await admin
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", organizationId)
+    .eq("user_id", authUser.id)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+  if (!membership) {
+    throw new ControlCenterHttpError(404, "membership_not_found", "Userul nu aparține acestei organizații.");
+  }
+
+  const { error } = await admin.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/workspace/reset-password`,
+  });
+  if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "member.access_email", {
+    organizationId,
+    targetType: "user",
+    targetId: authUser.id,
+    metadata: { email },
+  });
+}
+
+export async function upsertPlatformStaff(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>
+) {
+  const userId = requireText(input.user_id, "user_id", 10, 80);
+  const role = requireStaffRoleValue(input.role);
+
+  const { data: userData, error: userError } = await admin.auth.admin.getUserById(userId);
+  if (userError || !userData.user) {
+    throw new ControlCenterHttpError(404, "user_not_found", "Supabase Auth user not found.");
+  }
+
+  const { error } = await admin.from("platform_staff").upsert(
+    {
+      user_id: userId,
+      role,
+      enabled: true,
+      created_by: actor.id,
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "platform_staff.upsert", {
+    targetType: "platform_staff",
+    targetId: userId,
+    metadata: { role },
+  });
+}
+
+export async function removePlatformStaff(
+  admin: SupabaseClient,
+  actor: User,
+  actorRole: OrbyvenStaffRole,
+  input: Record<string, unknown>
+) {
+  const userId = requireText(input.user_id, "user_id", 10, 80);
+
+  const { data: target, error: targetError } = await admin
+    .from("platform_staff")
+    .select("role,enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (targetError) throw targetError;
+  if (!target) return;
+
+  if (target.role === "platform_owner" && target.enabled) {
+    const { count, error: countError } = await admin
+      .from("platform_staff")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "platform_owner")
+      .eq("enabled", true);
+    if (countError) throw countError;
+    if ((count ?? 0) <= 1) {
+      throw new ControlCenterHttpError(
+        409,
+        "last_platform_owner_protected",
+        "Nu poți elimina ultimul platform_owner activ."
+      );
+    }
+  }
+
+  const { error } = await admin.from("platform_staff").delete().eq("user_id", userId);
+  if (error) throw error;
+
+  await recordAudit(admin, actor, actorRole, "platform_staff.remove", {
+    targetType: "platform_staff",
+    targetId: userId,
+  });
 }

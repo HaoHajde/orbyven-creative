@@ -30,19 +30,38 @@ export type OrbyvenWorkspace = {
   } | null;
 };
 
+export type WorkspaceAccessState =
+  | "login"
+  | "onboarding"
+  | "workspace"
+  | "member_suspended"
+  | "organization_provisioning"
+  | "organization_suspended"
+  | "organization_archived";
+
 export type WorkspaceEntryPath =
   | "/workspace/login"
   | "/workspace/onboarding"
+  | "/workspace/access"
   | "/workspace";
 
 const validModuleIds = new Set<OrbyvenModuleId>(
   ORBYVEN_MODULES.map((module) => module.id)
 );
 
-export async function getWorkspaceEntryPath(): Promise<WorkspaceEntryPath> {
-  const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+const VALID_ACCESS_STATES = new Set<WorkspaceAccessState>([
+  "login",
+  "onboarding",
+  "workspace",
+  "member_suspended",
+  "organization_provisioning",
+  "organization_suspended",
+  "organization_archived",
+]);
 
-  if (authError || !authData.user) return "/workspace/login";
+async function legacyWorkspaceAccessState(): Promise<WorkspaceAccessState> {
+  const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+  if (authError || !authData.user) return "login";
 
   const { data, error } = await orbyvenSupabase
     .from("organization_members")
@@ -53,7 +72,37 @@ export async function getWorkspaceEntryPath(): Promise<WorkspaceEntryPath> {
     .maybeSingle();
 
   if (error) throw error;
-  return data ? "/workspace" : "/workspace/onboarding";
+  return data ? "workspace" : "onboarding";
+}
+
+export async function getWorkspaceAccessState(): Promise<WorkspaceAccessState> {
+  const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+  if (authError || !authData.user) return "login";
+
+  const { data, error } = await orbyvenSupabase.rpc("workspace_entry_state");
+
+  if (error) {
+    // Backward-compatible fallback while a deployment and its database migration
+    // are rolling out sequentially.
+    if (error.code === "42883" || error.message.toLowerCase().includes("workspace_entry_state")) {
+      return legacyWorkspaceAccessState();
+    }
+    throw error;
+  }
+
+  const value = typeof data === "string" ? data : "";
+  return VALID_ACCESS_STATES.has(value as WorkspaceAccessState)
+    ? (value as WorkspaceAccessState)
+    : "onboarding";
+}
+
+export async function getWorkspaceEntryPath(): Promise<WorkspaceEntryPath> {
+  const state = await getWorkspaceAccessState();
+
+  if (state === "login") return "/workspace/login";
+  if (state === "onboarding") return "/workspace/onboarding";
+  if (state === "workspace") return "/workspace";
+  return "/workspace/access";
 }
 
 export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
