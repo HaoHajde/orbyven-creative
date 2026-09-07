@@ -1,0 +1,137 @@
+name: ORBYVEN Integration Train
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: orbyven-integration-train
+  cancel-in-progress: false
+
+jobs:
+  sync-next:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Bootstrap ORBYVEN labels
+        run: |
+          set -euo pipefail
+
+          gh label create "chat-1-modules" --repo "$GITHUB_REPOSITORY" --color "1D76DB" --description "Chat 1 · Modules + Client Workspace Experience" --force
+          gh label create "chat-2-platform" --repo "$GITHUB_REPOSITORY" --color "0E8A16" --description "Chat 2 · Platform Core + Auth + Supabase + Onboarding + Control Center" --force
+          gh label create "chat-3-billing" --repo "$GITHUB_REPOSITORY" --color "5319E7" --description "Chat 3 · Legal + Billing + Entitlements" --force
+          gh label create "chat-4-public" --repo "$GITHUB_REPOSITORY" --color "FBCA04" --description "Chat 4 · Public Website + Templates + Marketing" --force
+          gh label create "architecture-cross-domain-approved" --repo "$GITHUB_REPOSITORY" --color "B60205" --description "Explicitly reviewed exception to ORBYVEN ownership boundaries" --force
+          gh label create "orbyven-synced" --repo "$GITHUB_REPOSITORY" --color "0E8A16" --description "Branch contains the current canonical main" --force
+          gh label create "orbyven-blocked" --repo "$GITHUB_REPOSITORY" --color "B60205" --description "Integration train could not safely update this PR" --force
+
+          for order in 10 20 30 40 50 60 70 80 90; do
+            gh label create "integration-$order" --repo "$GITHUB_REPOSITORY" --color "C5DEF5" --description "ORBYVEN integration train order $order" --force
+          done
+
+      - name: Select next integration PR
+        id: next
+        run: |
+          set -euo pipefail
+
+          prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main --limit 100 --json number,isDraft,labels,title,url)"
+
+          next_pr="$(echo "$prs" | jq -c '
+            [
+              .[]
+              | select(.isDraft == false)
+              | ([.labels[].name
+                  | select(test("^integration-[0-9]+$"))
+                  | capture("^integration-(?<n>[0-9]+)$").n
+                  | tonumber]) as $orders
+              | select(($orders | length) > 0)
+              | . + {integrationOrder: ($orders | min)}
+            ]
+            | sort_by(.integrationOrder, .number)
+            | .[0] // empty
+          ')"
+
+          if [ -z "$next_pr" ]; then
+            echo "No opt-in integration PR is waiting."
+            echo "has_next=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          number="$(echo "$next_pr" | jq -r '.number')"
+          order="$(echo "$next_pr" | jq -r '.integrationOrder')"
+          title="$(echo "$next_pr" | jq -r '.title')"
+
+          echo "Selected PR #$number (integration-$order): $title"
+          echo "has_next=true" >> "$GITHUB_OUTPUT"
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "order=$order" >> "$GITHUB_OUTPUT"
+
+      - name: Synchronize selected PR with canonical main
+        if: steps.next.outputs.has_next == 'true'
+        env:
+          PR_NUMBER: ${{ steps.next.outputs.number }}
+        run: |
+          set -euo pipefail
+
+          pr="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          head_repo="$(echo "$pr" | jq -r '.head.repo.full_name // ""')"
+          head_sha="$(echo "$pr" | jq -r '.head.sha')"
+          base_sha="$(echo "$pr" | jq -r '.base.sha')"
+          already_blocked="$(echo "$pr" | jq -r '[.labels[].name] | index("orbyven-blocked") != null')"
+
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+            gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "orbyven-blocked"
+            if [ "$already_blocked" != "true" ]; then
+              gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "ORBYVEN Integration Train stopped safely: this PR comes from a different repository, so the automation will not modify its branch. Sync it with the latest \`main\` manually and rerun the train."
+            fi
+            exit 0
+          fi
+
+          compare="$(gh api "repos/$GITHUB_REPOSITORY/compare/$base_sha...$head_sha")"
+          status="$(echo "$compare" | jq -r '.status')"
+
+          case "$status" in
+            ahead|identical)
+              echo "PR #$PR_NUMBER already contains canonical main."
+              gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "orbyven-synced"
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/orbyven-blocked" >/dev/null 2>&1 || true
+              exit 0
+              ;;
+            behind|diverged)
+              echo "Updating PR #$PR_NUMBER with canonical main..."
+              ;;
+            *)
+              echo "Unexpected compare status: $status"
+              exit 1
+              ;;
+          esac
+
+          set +e
+          update_output="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/update-branch" -f expected_head_sha="$head_sha" 2>&1)"
+          update_status=$?
+          set -e
+
+          if [ "$update_status" -ne 0 ]; then
+            echo "$update_output"
+            gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "orbyven-blocked"
+            if [ "$already_blocked" != "true" ]; then
+              gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "ORBYVEN Integration Train stopped safely while syncing this PR with the latest \`main\`. GitHub could not update the branch automatically (usually because of a merge conflict). No automatic conflict resolution or merge was attempted. Resolve against canonical \`main\`, then remove \`orbyven-blocked\` or rerun the workflow."
+            fi
+            exit 0
+          fi
+
+          echo "$update_output"
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "orbyven-synced"
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/orbyven-blocked" >/dev/null 2>&1 || true
+
+          echo "PR #$PR_NUMBER was synchronized. Its normal PR checks will now rerun."
+          echo "The integration train does NOT auto-merge."
