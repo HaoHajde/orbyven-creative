@@ -1,0 +1,28 @@
+name: Chat 1 Module Pre-PR Check
+
+on:
+  push:
+    branches:
+      - feature/leads-client-module-v1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint Chat 1 scope
+        run: npx eslint components/ClientWorkspace.tsx components/WorkspaceContent.tsx components/WorkspaceModuleStore.tsx components/WorkspaceStateScreen.tsx components/modules/LeadsModule.tsx lib/modules/leads.ts
+      - name: Build
+        run: npm run build
