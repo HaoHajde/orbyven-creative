@@ -43,7 +43,7 @@ export default function WorkspaceOnboardingPage() {
       }
 
       const { data } = await orbyvenSupabase
-        .from("organization_memberships")
+        .from("organization_members")
         .select("organization_id")
         .eq("user_id", authData.user.id)
         .limit(1)
@@ -94,7 +94,7 @@ export default function WorkspaceOnboardingPage() {
       setErrorMessage(
         error.message.toLowerCase().includes("duplicate")
           ? "Identificatorul companiei este deja folosit. Modifică puțin numele și încearcă din nou."
-          : "Compania nu a putut fi creată. Verifică migrarea Supabase și încearcă din nou."
+          : "Compania nu a putut fi creată. Verifică integrarea Supabase și încearcă din nou."
       );
       setLoading(false);
       return;
