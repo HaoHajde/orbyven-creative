@@ -477,7 +477,7 @@ function WorkspaceContent({
     );
   }
 
-  const businessModules = enabledModules.filter(
+  const businessModules: OrbyvenModuleId[] = enabledModules.filter(
     (moduleId) => moduleId !== "overview"
   );
   const activeNames = ORBYVEN_MODULES.filter((definition) =>
