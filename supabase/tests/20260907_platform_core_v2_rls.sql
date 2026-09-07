@@ -1,6 +1,8 @@
 -- ORBYVEN Platform Core v2 tenant-access regression test.
 -- Run manually after applying 20260907133000_platform_core_auth_provisioning_v2.sql.
 -- The entire script rolls back and leaves no persistent test data.
+-- Existing memberships of the selected auth user are temporarily normalized inside
+-- the transaction so the test remains deterministic even on a populated project.
 
 begin;
 
@@ -59,6 +61,13 @@ begin
 
   insert into _orbyven_platform_core_test(user_id, organization_id)
   values (test_user, test_org);
+
+  -- The project can already contain a real membership for this user. Keep the
+  -- synthetic active tenant as the only active membership for the first phase.
+  update public.organization_members
+  set access_status = 'suspended'
+  where user_id = test_user
+    and organization_id <> test_org;
 end;
 $$;
 
@@ -110,14 +119,20 @@ $$;
 
 reset role;
 
+-- For the organization-level suspension phase, make every membership for the
+-- selected user active and every corresponding organization suspended. This
+-- keeps workspace_entry_state deterministic if the user existed before the test.
 update public.organization_members
 set access_status = 'active'
-where organization_id = (select organization_id from _orbyven_platform_core_test limit 1)
-  and user_id = (select user_id from _orbyven_platform_core_test limit 1);
+where user_id = (select user_id from _orbyven_platform_core_test limit 1);
 
 update public.organizations
 set lifecycle_status = 'suspended'
-where id = (select organization_id from _orbyven_platform_core_test limit 1);
+where id in (
+  select organization_id
+  from public.organization_members
+  where user_id = (select user_id from _orbyven_platform_core_test limit 1)
+);
 
 set local role authenticated;
 
