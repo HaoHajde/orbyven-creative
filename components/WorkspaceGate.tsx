@@ -12,13 +12,12 @@ import { useEffect, useRef, useState } from "react";
 const STORAGE_KEY = "orbyven-demo-enabled-modules";
 const VALID_MODULE_IDS = new Set(ORBYVEN_MODULES.map((module) => module.id));
 
-type Role = "owner" | "admin" | "member" | "viewer";
+type Role = "owner" | "admin" | "manager" | "member" | "viewer";
 
 type Organization = {
   id: string;
   name: string;
   slug: string;
-  status: "active" | "trial" | "paused" | "cancelled";
 };
 
 type Membership = {
@@ -63,6 +62,7 @@ export default function WorkspaceGate() {
   const [persistedModules, setPersistedModules] = useState<OrbyvenModuleId[]>([
     "overview",
   ]);
+  const [workspaceKey, setWorkspaceKey] = useState(0);
   const syncingRef = useRef(false);
 
   useEffect(() => {
@@ -83,8 +83,8 @@ export default function WorkspaceGate() {
 
       const { data: membershipData, error: membershipError } =
         await orbyvenSupabase
-          .from("organization_memberships")
-          .select("organization_id,role,organizations(id,name,slug,status)")
+          .from("organization_members")
+          .select("organization_id,role,organizations(id,name,slug)")
           .eq("user_id", authData.user.id)
           .limit(1)
           .maybeSingle();
@@ -94,7 +94,7 @@ export default function WorkspaceGate() {
       if (membershipError) {
         console.error(membershipError);
         setErrorMessage(
-          "Workspace-ul nu poate fi încărcat. Verifică dacă migrarea Supabase pentru platformă a fost aplicată."
+          "Workspace-ul nu poate fi încărcat. Verifică fundația multi-tenant din Supabase."
         );
         return;
       }
@@ -109,15 +109,6 @@ export default function WorkspaceGate() {
 
       if (!organization) {
         setErrorMessage("Compania asociată acestui cont nu a putut fi găsită.");
-        return;
-      }
-
-      if (organization.status === "paused" || organization.status === "cancelled") {
-        setErrorMessage(
-          organization.status === "paused"
-            ? "Workspace-ul companiei este momentan suspendat."
-            : "Workspace-ul companiei nu mai este activ."
-        );
         return;
       }
 
@@ -178,6 +169,7 @@ export default function WorkspaceGate() {
 
       if (!canManageModules) {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedModules));
+        setWorkspaceKey((current) => current + 1);
         return;
       }
 
@@ -187,6 +179,7 @@ export default function WorkspaceGate() {
         organization_id: organizationId,
         module_id: module.id,
         enabled: desired.includes(module.id),
+        settings: {},
         updated_at: new Date().toISOString(),
       }));
 
@@ -199,6 +192,7 @@ export default function WorkspaceGate() {
       if (error) {
         console.error(error);
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedModules));
+        setWorkspaceKey((current) => current + 1);
         return;
       }
 
@@ -242,5 +236,5 @@ export default function WorkspaceGate() {
     );
   }
 
-  return <ClientWorkspace />;
+  return <ClientWorkspace key={workspaceKey} />;
 }
