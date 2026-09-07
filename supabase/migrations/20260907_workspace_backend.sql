@@ -131,5 +131,6 @@ begin
 end;
 $$;
 
-revoke all on function public.bootstrap_organization(text, text, text[]) from public;
+revoke execute on function public.bootstrap_organization(text, text, text[]) from anon;
+revoke execute on function public.bootstrap_organization(text, text, text[]) from public;
 grant execute on function public.bootstrap_organization(text, text, text[]) to authenticated;
