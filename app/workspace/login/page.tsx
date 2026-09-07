@@ -2,6 +2,7 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 
@@ -25,8 +26,12 @@ export default function WorkspaceLoginPage() {
     const themeTimer = window.setTimeout(() => setTheme(initialTheme), 0);
 
     const checkUser = async () => {
-      const { data } = await orbyvenSupabase.auth.getUser();
-      if (data.user) router.replace("/workspace");
+      try {
+        const destination = await getWorkspaceEntryPath();
+        if (destination !== "/workspace/login") router.replace(destination);
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     void checkUser();
@@ -58,8 +63,15 @@ export default function WorkspaceLoginPage() {
       return;
     }
 
-    router.replace("/workspace");
-    router.refresh();
+    try {
+      const destination = await getWorkspaceEntryPath();
+      router.replace(destination === "/workspace/login" ? "/workspace" : destination);
+      router.refresh();
+    } catch (routeError) {
+      console.error(routeError);
+      router.replace("/workspace");
+      router.refresh();
+    }
   };
 
   const vars = {
