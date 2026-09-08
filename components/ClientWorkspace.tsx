@@ -16,6 +16,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -41,6 +42,10 @@ export default function ClientWorkspace() {
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
+  const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollFrame = useRef<number | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -89,6 +94,37 @@ export default function ClientWorkspace() {
     };
   }, [loadWorkspace]);
 
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+
+    const updateVisibility = () => {
+      const current = window.scrollY;
+      const delta = current - lastScrollY.current;
+
+      if (current < 40) {
+        setHeaderVisible(true);
+      } else if (delta > 6) {
+        setHeaderVisible(false);
+      } else if (delta < -6) {
+        setHeaderVisible(true);
+      }
+
+      lastScrollY.current = current;
+      scrollFrame.current = null;
+    };
+
+    const onScroll = () => {
+      if (scrollFrame.current !== null) return;
+      scrollFrame.current = window.requestAnimationFrame(updateVisibility);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollFrame.current !== null) window.cancelAnimationFrame(scrollFrame.current);
+    };
+  }, []);
+
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
     [workspace]
@@ -136,6 +172,12 @@ export default function ClientWorkspace() {
       return next;
     });
   };
+
+  const openModule = useCallback((id: OrbyvenModuleId) => {
+    setPanel("workspace");
+    setActiveModule(id);
+    setMobileModuleMenuOpen(false);
+  }, []);
 
   const toggleModule = async (id: OrbyvenModuleId) => {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
@@ -215,7 +257,11 @@ export default function ClientWorkspace() {
       }}
       className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/88 backdrop-blur-2xl">
+      <header
+        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/94 transition-transform duration-300 ease-out md:backdrop-blur-2xl ${
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
@@ -247,10 +293,7 @@ export default function ClientWorkspace() {
                 <button
                   key={definition.id}
                   type="button"
-                  onClick={() => {
-                    setPanel("workspace");
-                    setActiveModule(definition.id);
-                  }}
+                  onClick={() => openModule(definition.id)}
                   className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left text-sm transition ${active ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"}`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
@@ -267,7 +310,7 @@ export default function ClientWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 px-5 py-8 sm:px-7 md:px-9 md:py-10 lg:px-12 xl:px-14">
+        <section className="min-w-0 px-5 py-8 pb-28 sm:px-7 md:px-9 md:py-10 lg:px-12 xl:px-14">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
@@ -287,31 +330,70 @@ export default function ClientWorkspace() {
               dateLabel={dateLabel}
               enabledModules={enabledModules}
               role={workspace.membership.role}
+              onOpenModule={openModule}
             />
           )}
         </section>
       </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[color:var(--bg)]/90 p-2 shadow-2xl backdrop-blur-2xl md:hidden">
-        {enabledDefinitions.slice(0, 4).map((definition) => (
-          <button
-            key={definition.id}
-            type="button"
-            onClick={() => {
-              setPanel("workspace");
-              setActiveModule(definition.id);
-            }}
-            className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] ${panel === "workspace" && activeModule === definition.id ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)]"}`}
-          >
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
-            <span className="truncate">{definition.shortName}</span>
-          </button>
-        ))}
-        <button type="button" onClick={() => setPanel("modules")} className="flex flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] text-[var(--muted)]">
-          <span className="text-base leading-none">＋</span>
-          <span>Module</span>
+      <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
+        {mobileModuleMenuOpen && (
+          <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[color:var(--bg)]/78 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+            <div className="grid grid-cols-4 gap-2">
+              {enabledDefinitions.map((definition) => {
+                const active = panel === "workspace" && activeModule === definition.id;
+                return (
+                  <button
+                    key={definition.id}
+                    type="button"
+                    onClick={() => openModule(definition.id)}
+                    className={`flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[20px] border px-1 text-center transition active:scale-[0.97] ${
+                      active
+                        ? "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]"
+                        : "border-transparent bg-[color:var(--surface)]/72 text-[var(--muted)]"
+                    }`}
+                  >
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: definition.color }}
+                    />
+                    <span className="w-full truncate text-[10px] font-semibold leading-tight">
+                      {definition.shortName}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPanel("modules");
+                setMobileModuleMenuOpen(false);
+              }}
+              className="mt-3 flex h-10 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-[11px] font-semibold text-[var(--muted)]"
+            >
+              {canManageModules ? "Gestionează modulele" : "Vezi configurația modulelor"}
+            </button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          aria-expanded={mobileModuleMenuOpen}
+          aria-label={mobileModuleMenuOpen ? "Închide meniul modulelor" : "Deschide meniul modulelor"}
+          onClick={() => setMobileModuleMenuOpen((current) => !current)}
+          className="flex h-12 min-w-[124px] items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-[color:var(--bg)]/84 px-5 text-xs font-semibold shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-2xl active:scale-[0.97]"
+        >
+          <span className="grid grid-cols-2 gap-[2px]" aria-hidden="true">
+            <span className="h-1.5 w-1.5 rounded-[2px] bg-current" />
+            <span className="h-1.5 w-1.5 rounded-[2px] bg-current" />
+            <span className="h-1.5 w-1.5 rounded-[2px] bg-current" />
+            <span className="h-1.5 w-1.5 rounded-[2px] bg-current" />
+          </span>
+          <span>{mobileModuleMenuOpen ? "Închide" : activeDefinition.shortName}</span>
         </button>
-      </nav>
+      </div>
     </main>
   );
 }
