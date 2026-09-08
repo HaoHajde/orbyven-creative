@@ -17,7 +17,7 @@ export default function BackToTop() {
       frame.current = window.requestAnimationFrame(update);
     };
 
-    update();
+    frame.current = window.requestAnimationFrame(update);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
