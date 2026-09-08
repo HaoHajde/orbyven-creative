@@ -137,6 +137,11 @@ export default function ClientWorkspace() {
     });
   };
 
+  const openModule = useCallback((id: OrbyvenModuleId) => {
+    setPanel("workspace");
+    setActiveModule(id);
+  }, []);
+
   const toggleModule = async (id: OrbyvenModuleId) => {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
 
@@ -215,7 +220,7 @@ export default function ClientWorkspace() {
       }}
       className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/88 backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/94 md:backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
@@ -247,10 +252,7 @@ export default function ClientWorkspace() {
                 <button
                   key={definition.id}
                   type="button"
-                  onClick={() => {
-                    setPanel("workspace");
-                    setActiveModule(definition.id);
-                  }}
+                  onClick={() => openModule(definition.id)}
                   className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left text-sm transition ${active ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"}`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
@@ -287,30 +289,30 @@ export default function ClientWorkspace() {
               dateLabel={dateLabel}
               enabledModules={enabledModules}
               role={workspace.membership.role}
+              onOpenModule={openModule}
             />
           )}
         </section>
       </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[color:var(--bg)]/90 p-2 shadow-2xl backdrop-blur-2xl md:hidden">
-        {enabledDefinitions.slice(0, 4).map((definition) => (
-          <button
-            key={definition.id}
-            type="button"
-            onClick={() => {
-              setPanel("workspace");
-              setActiveModule(definition.id);
-            }}
-            className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] ${panel === "workspace" && activeModule === definition.id ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)]"}`}
-          >
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
-            <span className="truncate">{definition.shortName}</span>
+      <nav className="fixed inset-x-3 bottom-3 z-50 overflow-x-auto rounded-[22px] border border-[var(--border)] bg-[color:var(--bg)]/96 p-2 shadow-2xl md:hidden">
+        <div className="flex min-w-max items-center gap-1">
+          {enabledDefinitions.map((definition) => (
+            <button
+              key={definition.id}
+              type="button"
+              onClick={() => openModule(definition.id)}
+              className={`flex min-w-[72px] flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] ${panel === "workspace" && activeModule === definition.id ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)]"}`}
+            >
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
+              <span className="max-w-[68px] truncate">{definition.shortName}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setPanel("modules")} className={`flex min-w-[72px] flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] ${panel === "modules" ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)]"}`}>
+            <span className="text-base leading-none">＋</span>
+            <span>Module</span>
           </button>
-        ))}
-        <button type="button" onClick={() => setPanel("modules")} className="flex flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-2 text-[10px] text-[var(--muted)]">
-          <span className="text-base leading-none">＋</span>
-          <span>Module</span>
-        </button>
+        </div>
       </nav>
     </main>
   );
