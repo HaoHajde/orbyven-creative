@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
 type OrbitalSystemProps = {
   variant?: "hero" | "accent";
   className?: string;
@@ -7,6 +11,27 @@ export default function OrbitalSystem({
   variant = "accent",
   className = "",
 }: OrbitalSystemProps) {
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    let inView = false;
+    const sync = () => {
+      host.dataset.animating = String(inView && !document.hidden);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      sync();
+    });
+    observer.observe(host);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
+
   const rings =
     variant === "hero"
       ? ["01", "02", "03", "04", "05", "06"]
@@ -14,6 +39,7 @@ export default function OrbitalSystem({
 
   return (
     <div
+      ref={hostRef}
       aria-hidden="true"
       className={`orbyven-orbit-system orbyven-orbit-system--${variant} ${className}`}
     >
