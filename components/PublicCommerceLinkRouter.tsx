@@ -43,8 +43,11 @@ export default function PublicCommerceLinkRouter() {
       }
     };
 
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    // Capture phase runs before Next.js' delegated Link handler. That lets us
+    // preserve the selected pricing context instead of letting the legacy
+    // `/contact` href win first.
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
   }, [router]);
 
   return null;
