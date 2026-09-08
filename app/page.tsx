@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
@@ -9,6 +10,8 @@ import SiteHeader from "@/components/SiteHeader";
 import { BILLING_PLANS } from "@/lib/billing/public-config";
 
 type Theme = "light" | "dark";
+
+const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const valuePoints = [
   {
@@ -51,6 +54,16 @@ const productPaths = [
 
 export default function HomePage() {
   const [theme, setTheme] = useState<Theme>("light");
+  const [desktopMotion, setDesktopMotion] = useState(false);
+  const heroRef = useRef<HTMLElement | null>(null);
+
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(heroProgress, [0, 1], [0, -170]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.68], [1, 0]);
+  const heroScale = useTransform(heroProgress, [0, 1], [1, 0.955]);
 
   useEffect(() => {
     const hydrate = () => {
@@ -70,6 +83,14 @@ export default function HomePage() {
 
     const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const sync = () => setDesktopMotion(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
   }, []);
 
   const toggleTheme = () => {
@@ -94,7 +115,8 @@ export default function HomePage() {
     "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
     "--button-text": theme === "dark" ? "#000000" : "#ffffff",
     "--accent": "#4b46ee",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.17)" : "rgba(75,70,238,0.08)",
+    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
+    "--accent-soft-2": theme === "dark" ? "rgba(111,66,255,0.11)" : "rgba(111,66,255,0.05)",
   } as CSSProperties;
 
   return (
@@ -106,59 +128,92 @@ export default function HomePage() {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="min-h-screen antialiased"
+      className="relative min-h-screen overflow-x-clip antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="home" onToggleTheme={toggleTheme} />
 
-      <section className="relative flex min-h-[82svh] items-center overflow-hidden px-5 pb-16 pt-32 sm:px-6 md:min-h-[88vh] md:px-10 md:pb-24 md:pt-36">
-        <div className="pointer-events-none absolute left-1/2 top-[-14rem] hidden h-[38rem] w-[60rem] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block" />
-        <OrbitalSystem variant="hero" className="left-[78%] top-[52%] hidden opacity-65 md:block" />
+      <section
+        ref={heroRef}
+        className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-[var(--bg)] md:min-h-screen"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-[-29%] hidden h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-[12%] top-[22%] hidden h-56 w-56 rounded-full bg-[var(--accent-soft-2)] blur-[110px] md:block"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_center,currentColor_0.7px,transparent_0.7px)] [background-size:7px_7px]"
+        />
 
-        <div className="relative mx-auto w-full max-w-[1500px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.27em] text-[var(--muted-2)] sm:text-[11px]">
-            ORBYVEN · Digital business platform
-          </p>
+        <OrbitalSystem variant="hero" className="top-[48%]" />
 
-          <h1 className="mt-7 max-w-[1180px] text-[clamp(48px,8vw,118px)] font-semibold leading-[0.92] tracking-[-0.066em]">
-            Site-ul tău.
-            <span className="block">Instrumentele firmei.</span>
-            <span className="block text-[var(--muted)]">Același sistem.</span>
-          </h1>
+        <motion.div
+          style={{
+            y: desktopMotion ? heroY : 0,
+            opacity: desktopMotion ? heroOpacity : 1,
+            scale: desktopMotion ? heroScale : 1,
+          }}
+          className="relative mx-auto flex w-full max-w-[1500px] -translate-y-[1vh] flex-col items-center px-5 text-center sm:px-6 md:-translate-y-[3vh] md:px-10"
+        >
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.08, ease: easeOut }}
+            className="mb-6 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-2)] sm:mb-9 sm:text-[11px] sm:tracking-[0.3em]"
+          >
+            ORBYVEN CREATIVE
+          </motion.p>
 
-          <div className="mt-9 grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
-            <p className="max-w-2xl text-[16px] leading-7 text-[var(--muted)] md:text-[18px] md:leading-8">
-              ORBYVEN leagă prezența publică a business-ului de un workspace modular pentru munca de zi cu zi. Simplu pentru utilizator, puternic în spate.
-            </p>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:justify-self-end">
-              <Link
-                href="/cerere"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)]"
-              >
-                Începe un proiect
-              </Link>
-              <Link
-                href="/workspace"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] px-6 text-sm font-semibold"
-              >
-                Dashboard
-              </Link>
-            </div>
+          <div className="overflow-hidden pb-2">
+            <motion.span
+              initial={{ y: "115%" }}
+              animate={{ y: "0%" }}
+              transition={{ duration: 1.05, delay: 0.16, ease: easeOut }}
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
+            >
+              We build
+            </motion.span>
           </div>
-        </div>
+          <div className="overflow-hidden pb-4">
+            <motion.span
+              initial={{ y: "115%" }}
+              animate={{ y: "0%" }}
+              transition={{ duration: 1.12, delay: 0.27, ease: easeOut }}
+              className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] sm:leading-[0.92] sm:tracking-[-0.066em] md:text-[104px] lg:text-[124px] xl:text-[132px]"
+            >
+              what gets remembered.
+            </motion.span>
+          </div>
+        </motion.div>
+
+        <motion.div
+          style={{ opacity: desktopMotion ? heroOpacity : 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.35, duration: 0.8 }}
+          className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5 text-[10px] text-[var(--muted-2)] sm:bottom-7 sm:gap-3 sm:text-[11px]"
+        >
+          <span>Scroll to explore</span>
+          <motion.span
+            animate={{ scaleY: [0.35, 1, 0.35], opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="h-10 w-px origin-top bg-[var(--border-strong)]"
+          />
+        </motion.div>
       </section>
 
       <section className="border-y border-[var(--border)] bg-[var(--surface)] px-5 py-20 sm:px-6 md:px-10 md:py-28">
         <div className="mx-auto max-w-[1500px]">
           <div className="max-w-4xl">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">
-              De ce ORBYVEN
-            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">De ce ORBYVEN</p>
             <h2 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px] md:text-[72px]">
               Mai puține instrumente. Mai mult control.
             </h2>
           </div>
-
           <div className="mt-12 grid gap-4 md:grid-cols-3">
             {valuePoints.map((point, index) => (
               <article key={point.title} className="rounded-[28px] border border-[var(--border)] bg-[var(--bg)] p-6 md:p-7">
@@ -177,11 +232,11 @@ export default function HomePage() {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">Produsul</p>
               <h2 className="mt-5 max-w-4xl text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px] md:text-[72px]">
-                Acasă explică. Paginile dedicate intră în detalii.
+                Tot ce contează, fără să înghesuim totul pe Acasă.
               </h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-[var(--muted)]">
-              Am păstrat aici doar traseul de decizie. Serviciile, proiectele și brief-ul comercial au propriul lor spațiu.
+              Serviciile, proiectele și brief-ul comercial rămân în paginile lor dedicate.
             </p>
           </div>
 
@@ -190,9 +245,7 @@ export default function HomePage() {
               <article key={item.eyebrow} className="grid gap-6 py-8 lg:grid-cols-[0.35fr_1fr_auto] lg:items-center lg:py-10">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">{item.eyebrow}</p>
                 <div>
-                  <h3 className="max-w-3xl text-[28px] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-[34px]">
-                    {item.title}
-                  </h3>
+                  <h3 className="max-w-3xl text-[28px] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-[34px]">{item.title}</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">{item.text}</p>
                 </div>
                 <Link href={item.href} className="inline-flex h-11 items-center justify-center self-start rounded-full border border-[var(--border-strong)] px-5 text-sm font-semibold">
@@ -209,15 +262,11 @@ export default function HomePage() {
           <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">Workspace modular</p>
-              <h2 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px]">
-                Începi simplu. Activezi ce ai nevoie.
-              </h2>
+              <h2 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px]">Începi simplu. Activezi ce ai nevoie.</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {["Clienți", "Lucrări", "Calendar", "Oferte", "Documente", "Cheltuieli", "Echipă", "Overview"].map((module) => (
-                <div key={module} className="rounded-[20px] border border-[var(--border)] bg-[var(--bg)] px-4 py-5 text-center text-sm font-semibold">
-                  {module}
-                </div>
+                <div key={module} className="rounded-[20px] border border-[var(--border)] bg-[var(--bg)] px-4 py-5 text-center text-sm font-semibold">{module}</div>
               ))}
             </div>
           </div>
@@ -229,13 +278,10 @@ export default function HomePage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">Planuri</p>
-              <h2 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px]">
-                Alege nivelul. Configurăm restul împreună.
-              </h2>
+              <h2 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px]">Alege nivelul. Configurăm restul împreună.</h2>
             </div>
             <Link href="/cerere" className="text-sm font-semibold">Vezi toate opțiunile comerciale →</Link>
           </div>
-
           <div className="mt-12 grid gap-4 lg:grid-cols-3">
             {Object.values(BILLING_PLANS).map((plan) => (
               <article key={plan.id} className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-7">
@@ -245,10 +291,7 @@ export default function HomePage() {
                 </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-[var(--muted)]">{plan.description}</p>
                 <p className="mt-6 text-xs text-[var(--muted-2)]">{plan.entitlements.length} module incluse</p>
-                <Link
-                  href={`/cerere?plan=${plan.id}&payment=subscription&source=homepage`}
-                  className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]"
-                >
+                <Link href={`/cerere?plan=${plan.id}&payment=subscription&source=homepage`} className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">
                   Alege {plan.name}
                 </Link>
               </article>
@@ -261,12 +304,8 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-16 text-[var(--button-text)] sm:px-8 md:px-12 md:py-20">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-55">Primul pas</p>
           <div className="mt-5 flex flex-col justify-between gap-9 lg:flex-row lg:items-end">
-            <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px] md:text-[72px]">
-              Spune-ne problema. Construim doar ce merită.
-            </h2>
-            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">
-              Trimite o cerere
-            </Link>
+            <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[60px] md:text-[72px]">Spune-ne problema. Construim doar ce merită.</h2>
+            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Trimite o cerere</Link>
           </div>
         </div>
       </section>
