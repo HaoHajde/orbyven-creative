@@ -29,6 +29,11 @@ type FormState = {
   linkedUserId: string;
 };
 
+type EditDraft = {
+  memberId: string;
+  value: FormState;
+};
+
 const emptyForm: FormState = {
   displayName: "",
   jobTitle: "",
@@ -47,13 +52,26 @@ const roleLabels: Record<WorkspaceAccessMember["role"], string> = {
   viewer: "Viewer",
 };
 
+function formFromMember(member: TeamMember | null): FormState {
+  if (!member) return emptyForm;
+  return {
+    displayName: member.display_name,
+    jobTitle: member.job_title || "",
+    contactEmail: member.email || "",
+    phone: member.phone || "",
+    status: member.status,
+    notes: member.notes || "",
+    linkedUserId: member.linked_user_id || "",
+  };
+}
+
 export default function TeamModule({ organizationId, role }: Props) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [accessMembers, setAccessMembers] = useState<WorkspaceAccessMember[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [editForm, setEditForm] = useState<FormState>(emptyForm);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -94,21 +112,20 @@ export default function TeamModule({ organizationId, role }: Props) {
     [members, selectedId]
   );
 
-  useEffect(() => {
-    if (!selected) {
-      setEditForm(emptyForm);
-      return;
-    }
-    setEditForm({
-      displayName: selected.display_name,
-      jobTitle: selected.job_title || "",
-      contactEmail: selected.email || "",
-      phone: selected.phone || "",
-      status: selected.status,
-      notes: selected.notes || "",
-      linkedUserId: selected.linked_user_id || "",
-    });
-  }, [selected]);
+  const baseEditForm = useMemo(() => formFromMember(selected), [selected]);
+  const editForm =
+    selected && editDraft?.memberId === selected.id ? editDraft.value : baseEditForm;
+
+  const updateEditForm = useCallback(
+    (updater: (current: FormState) => FormState) => {
+      if (!selected) return;
+      setEditDraft((current) => {
+        const base = current?.memberId === selected.id ? current.value : formFromMember(selected);
+        return { memberId: selected.id, value: updater(base) };
+      });
+    },
+    [selected]
+  );
 
   const accessById = useMemo(() => new Map(accessMembers.map((item) => [item.user_id, item])), [accessMembers]);
   const linkedIds = useMemo(() => new Set(members.map((member) => member.linked_user_id).filter(Boolean)), [members]);
@@ -132,6 +149,7 @@ export default function TeamModule({ organizationId, role }: Props) {
       });
       setMembers((current) => [...current, created].sort((a, b) => a.display_name.localeCompare(b.display_name)));
       setSelectedId(created.id);
+      setEditDraft(null);
       setForm(emptyForm);
       setCreateOpen(false);
     } catch (saveError) {
@@ -158,6 +176,7 @@ export default function TeamModule({ organizationId, role }: Props) {
         linkedUserId: editForm.linkedUserId || null,
       });
       setMembers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setEditDraft(null);
     } catch (saveError) {
       console.error(saveError);
       setError(saveError instanceof Error ? saveError.message : "Datele membrului nu au putut fi salvate.");
@@ -175,6 +194,7 @@ export default function TeamModule({ organizationId, role }: Props) {
       const next = members.filter((item) => item.id !== selected.id);
       setMembers(next);
       setSelectedId(next[0]?.id ?? null);
+      setEditDraft(null);
     } catch (deleteError) {
       console.error(deleteError);
       setError("Membrul nu a putut fi șters.");
@@ -235,7 +255,15 @@ export default function TeamModule({ organizationId, role }: Props) {
               {members.map((member) => {
                 const access = member.linked_user_id ? accessById.get(member.linked_user_id) : null;
                 return (
-                  <button key={member.id} type="button" onClick={() => setSelectedId(member.id)} className={`w-full rounded-[18px] border p-4 text-left ${selectedId === member.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(member.id);
+                      setEditDraft(null);
+                    }}
+                    className={`w-full rounded-[18px] border p-4 text-left ${selectedId === member.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}
+                  >
                     <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{member.display_name}</p><p className="mt-1 truncate text-xs text-[var(--muted)]">{member.job_title || "Rol nespecificat"}{access ? ` · ${roleLabels[access.role]} access` : ""}</p></div><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${member.status === "active" ? "bg-emerald-500" : "bg-[var(--muted-2)]"}`} /></div>
                   </button>
                 );
@@ -249,19 +277,19 @@ export default function TeamModule({ organizationId, role }: Props) {
             <form onSubmit={saveSelected}>
               <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Profil operațional</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.display_name}</h2></div>{selected.linked_user_id ? <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[10px] font-semibold text-[var(--accent)]">Cont legat</span> : null}</div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <Field label="Nume"><input disabled={!canWrite} value={editForm.displayName} onChange={(e) => setEditForm((c) => ({ ...c, displayName: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Rol în firmă"><input disabled={!canWrite} value={editForm.jobTitle} onChange={(e) => setEditForm((c) => ({ ...c, jobTitle: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Telefon"><input disabled={!canWrite} value={editForm.phone} onChange={(e) => setEditForm((c) => ({ ...c, phone: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Email contact"><input disabled={!canWrite} type="email" value={editForm.contactEmail} onChange={(e) => setEditForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Status"><select disabled={!canWrite} value={editForm.status} onChange={(e) => setEditForm((c) => ({ ...c, status: e.target.value as TeamMemberStatus }))} className={moduleInputClass}><option value="active">Activ</option><option value="inactive">Inactiv</option></select></Field>
+                <Field label="Nume"><input disabled={!canWrite} value={editForm.displayName} onChange={(e) => updateEditForm((c) => ({ ...c, displayName: e.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Rol în firmă"><input disabled={!canWrite} value={editForm.jobTitle} onChange={(e) => updateEditForm((c) => ({ ...c, jobTitle: e.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Telefon"><input disabled={!canWrite} value={editForm.phone} onChange={(e) => updateEditForm((c) => ({ ...c, phone: e.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Email contact"><input disabled={!canWrite} type="email" value={editForm.contactEmail} onChange={(e) => updateEditForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Status"><select disabled={!canWrite} value={editForm.status} onChange={(e) => updateEditForm((c) => ({ ...c, status: e.target.value as TeamMemberStatus }))} className={moduleInputClass}><option value="active">Activ</option><option value="inactive">Inactiv</option></select></Field>
                 <Field label="Cont ORBYVEN">
-                  <select disabled={!canWrite} value={editForm.linkedUserId} onChange={(e) => setEditForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}>
+                  <select disabled={!canWrite} value={editForm.linkedUserId} onChange={(e) => updateEditForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}>
                     <option value="">Fără cont legat</option>
                     {accessMembers.filter((item) => item.user_id === selected.linked_user_id || !linkedIds.has(item.user_id)).map((item) => <option key={item.user_id} value={item.user_id}>{roleLabels[item.role]} · {item.user_id.slice(0, 8)}… · {item.access_status}</option>)}
                   </select>
                 </Field>
               </div>
-              <Field label="Note" className="mt-4"><textarea disabled={!canWrite} value={editForm.notes} onChange={(e) => setEditForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-24 resize-y`} /></Field>
+              <Field label="Note" className="mt-4"><textarea disabled={!canWrite} value={editForm.notes} onChange={(e) => updateEditForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-24 resize-y`} /></Field>
               <div className="mt-6 flex flex-wrap justify-end gap-2">
                 {canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-11 rounded-full px-5 text-xs font-semibold text-red-500 disabled:opacity-40">Șterge profilul</button> : null}
                 {canWrite ? <button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Salvează"}</button> : null}
