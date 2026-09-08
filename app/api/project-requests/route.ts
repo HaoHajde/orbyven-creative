@@ -21,9 +21,9 @@ function text(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function serviceClient() {
+function requestGatewayClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 
   if (!url || !key) {
     throw new Error("PROJECT_REQUEST_STORAGE_NOT_CONFIGURED");
@@ -60,7 +60,10 @@ export async function POST(request: Request) {
 
     const paymentMode = raw.paymentMode;
     if (!isProjectPaymentMode(paymentMode)) {
-      return NextResponse.json({ error: "Modalitate comercială invalidă." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Modalitate comercială invalidă." },
+        { status: 400 }
+      );
     }
 
     const planId = isBillingPlanId(raw.planId) ? raw.planId : null;
@@ -87,7 +90,10 @@ export async function POST(request: Request) {
     }
 
     if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return NextResponse.json({ error: "Adresa de email nu este validă." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Adresa de email nu este validă." },
+        { status: 400 }
+      );
     }
 
     if (raw.privacyAccepted !== true) {
@@ -97,35 +103,44 @@ export async function POST(request: Request) {
       );
     }
 
-    const client = serviceClient();
-    const { data, error } = await client
-      .from("project_requests")
-      .insert({
-        plan_id: planId,
-        payment_mode: paymentMode,
-        company_name: companyName || null,
-        contact_name: contactName,
-        email,
-        phone: phone || null,
-        project_title: projectTitle,
-        project_details: projectDetails,
-        source,
-        privacy_accepted_at: new Date().toISOString(),
-        marketing_consent: raw.marketingConsent === true,
-      })
-      .select("id,request_no")
-      .single();
+    const client = requestGatewayClient();
+    const { data, error } = await client.rpc("submit_project_request", {
+      p_plan_id: planId,
+      p_payment_mode: paymentMode,
+      p_company_name: companyName || null,
+      p_contact_name: contactName,
+      p_email: email,
+      p_phone: phone || null,
+      p_project_title: projectTitle,
+      p_project_details: projectDetails,
+      p_source: source,
+      p_privacy_accepted: true,
+      p_marketing_consent: raw.marketingConsent === true,
+    });
 
-    if (error) throw error;
+    if (error) {
+      if (
+        error.code === "P0001" &&
+        error.message.toLowerCase().includes("too recently")
+      ) {
+        return NextResponse.json(
+          { error: "Cererea a fost deja trimisă. Așteaptă câteva secunde și încearcă din nou." },
+          { status: 429 }
+        );
+      }
+      throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row?.id || row.request_no == null) {
+      throw new Error("PROJECT_REQUEST_GATEWAY_EMPTY_RESPONSE");
+    }
 
     return NextResponse.json({
       ok: true,
-      id: data.id,
-      requestNumber: publicRequestNumber(Number(data.request_no)),
-      next:
-        paymentMode === "subscription"
-          ? "/workspace"
-          : null,
+      id: row.id,
+      requestNumber: publicRequestNumber(Number(row.request_no)),
+      next: paymentMode === "subscription" ? "/workspace" : null,
     });
   } catch (error) {
     console.error("ORBYVEN project request error", error);
