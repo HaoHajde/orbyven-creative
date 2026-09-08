@@ -1,17 +1,12 @@
 "use client";
 
 import BrandLogo from "@/components/BrandLogo";
-import PublicDemoShowcase from "@/components/PublicDemoShowcase";
 import Link from "next/link";
 import type { SitePage } from "@/components/SiteHeader";
 
 type Theme = "light" | "dark";
 
-const navItems: {
-  key: SitePage;
-  href: string;
-  label: string;
-}[] = [
+const navItems: { key: SitePage; href: string; label: string }[] = [
   { key: "home", href: "/", label: "Acasă" },
   { key: "templates", href: "/templates", label: "Templates" },
   { key: "services", href: "/servicii", label: "Servicii" },
@@ -24,102 +19,41 @@ const legalLinks = [
   ["/legal/cookies", "Cookies"],
 ] as const;
 
-export default function SiteFooter({
-  theme,
-  activePage,
-}: {
-  theme: Theme;
-  activePage: SitePage;
-}) {
-  const showPublicWork =
-    activePage === "home" ||
-    activePage === "templates" ||
-    activePage === "services";
-
+export default function SiteFooter({ theme, activePage }: { theme: Theme; activePage: SitePage }) {
   return (
-    <>
-      {showPublicWork && <PublicDemoShowcase activePage={activePage} />}
+    <footer className="px-5 pb-6 sm:px-6 md:px-10 md:pb-8">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-8 text-[var(--button-text)] sm:px-8 md:px-12 md:py-10">
+        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+          <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
 
-      <footer className="px-6 pb-8 md:px-10">
-        <div className="mx-auto max-w-[1500px] overflow-hidden rounded-b-[42px] bg-[var(--button)] px-7 pb-9 text-[var(--button-text)] sm:px-10 md:px-14 lg:px-16">
-          <div className="grid gap-12 border-t border-current/15 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr] md:py-12">
-            <div>
-              <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
-              <p className="mt-5 max-w-sm text-sm leading-6 opacity-50">
-                Websites, digital experiences și produse construite pentru o prezență care rămâne în minte.
-              </p>
-            </div>
-
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-35">
-                Navigate
-              </p>
-              <div className="mt-5 flex flex-col items-start gap-3 text-sm">
-                {navItems.map((item) => {
-                  const active = activePage === item.key;
-                  return (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-2 transition hover:translate-x-1 ${
-                        active
-                          ? "opacity-100"
-                          : "opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      {active && (
-                        <span className="h-1 w-1 rounded-full bg-[var(--accent)]" />
-                      )}
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-35">
-                Studio
-              </p>
-              <div className="mt-5 space-y-3 text-sm opacity-60">
-                <p>Web design</p>
-                <p>Digital experiences</p>
-                <p>Creative development</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 border-t border-current/15 pt-7 text-[10px] uppercase tracking-[0.16em] opacity-35 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <p>© 2026 ORBYVEN CREATIVE</p>
-              {legalLinks.map(([href, label]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="transition hover:opacity-100"
-                >
-                  {label}
-                </Link>
-              ))}
-              <Link href="/legal" className="transition hover:opacity-100">
-                Legal
+          <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm">
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={activePage === item.key ? "page" : undefined}
+                className={activePage === item.key ? "opacity-100" : "opacity-55 transition hover:opacity-100"}
+              >
+                {item.label}
               </Link>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="group flex items-center gap-2 self-start transition hover:opacity-100 sm:self-auto"
-            >
-              Back to top
-              <span className="transition-transform duration-300 group-hover:-translate-y-1">
-                ↑
-              </span>
-            </button>
-          </div>
+            ))}
+          </nav>
         </div>
-      </footer>
-    </>
+
+        <div className="mt-8 flex flex-col gap-4 border-t border-current/15 pt-6 text-[10px] uppercase tracking-[0.14em] opacity-40 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span>© 2026 ORBYVEN</span>
+            {legalLinks.map(([href, label]) => (
+              <Link key={href} href={href} className="transition hover:opacity-100">
+                {label}
+              </Link>
+            ))}
+          </div>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="self-start sm:self-auto">
+            Sus ↑
+          </button>
+        </div>
+      </div>
+    </footer>
   );
 }
