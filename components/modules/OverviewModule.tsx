@@ -36,11 +36,6 @@ function zonedParts(date: Date, timeZone: string) {
   return { year: get("year"), month: get("month"), day: get("day") };
 }
 
-function todayKey(timeZone: string) {
-  const p = zonedParts(new Date(), timeZone);
-  return `${p.year}-${p.month}-${p.day}`;
-}
-
 function dateKey(value: string, timeZone: string) {
   const p = zonedParts(new Date(value), timeZone);
   return `${p.year}-${p.month}-${p.day}`;
@@ -69,6 +64,7 @@ export default function OverviewModule({
   onOpenModule,
 }: Props) {
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
+  const [snapshotNow, setSnapshotNow] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -76,7 +72,9 @@ export default function OverviewModule({
     setLoading(true);
     setError("");
     try {
-      setSnapshot(await loadOverviewSnapshot(organizationId));
+      const nextSnapshot = await loadOverviewSnapshot(organizationId);
+      setSnapshot(nextSnapshot);
+      setSnapshotNow(new Date().getTime());
     } catch (loadError) {
       console.error(loadError);
       setError("Rezumatul businessului nu a putut fi încărcat.");
@@ -91,9 +89,9 @@ export default function OverviewModule({
   }, [load]);
 
   const computed = useMemo(() => {
-    if (!snapshot) return null;
-    const today = todayKey(timeZone);
-    const now = Date.now();
+    if (!snapshot || !snapshotNow) return null;
+    const nowIso = new Date(snapshotNow).toISOString();
+    const today = dateKey(nowIso, timeZone);
     const currentMonth = today.slice(0, 7);
     const activeLeads = snapshot.leads.filter((lead) => lead.kind === "lead" && !["won", "lost"].includes(lead.stage));
     const openTasks = snapshot.tasks.filter((task) => !["done", "cancelled"].includes(task.status));
@@ -105,26 +103,26 @@ export default function OverviewModule({
 
     const attention: Attention[] = [];
     for (const lead of activeLeads) {
-      if (lead.next_follow_up_at && new Date(lead.next_follow_up_at).getTime() < now) {
+      if (lead.next_follow_up_at && new Date(lead.next_follow_up_at).getTime() < snapshotNow) {
         attention.push({ key: `lead-${lead.id}`, module: "leads", title: `${lead.name} așteaptă follow-up`, meta: "Termenul de revenire a trecut.", level: "urgent" });
       }
     }
     for (const task of openTasks) {
-      if (task.due_at && new Date(task.due_at).getTime() < now) {
+      if (task.due_at && new Date(task.due_at).getTime() < snapshotNow) {
         attention.push({ key: `task-${task.id}`, module: "tasks", title: task.title, meta: "Lucrare / task întârziat.", level: "urgent" });
       } else if (task.priority === "urgent") {
         attention.push({ key: `urgent-${task.id}`, module: "tasks", title: task.title, meta: "Prioritate urgentă.", level: "urgent" });
       }
     }
     for (const estimate of sentEstimates.slice(0, 4)) {
-      const ageDays = Math.floor((now - new Date(estimate.updated_at).getTime()) / 86400000);
+      const ageDays = Math.floor((snapshotNow - new Date(estimate.updated_at).getTime()) / 86400000);
       if (ageDays >= 3) {
         attention.push({ key: `estimate-${estimate.id}`, module: "estimates", title: `${estimate.reference} · ${estimate.title}`, meta: `Trimisă de ${ageDays} zile fără răspuns.`, level: "normal" });
       }
     }
 
     return { activeLeads, openTasks, todayEvents, sentEstimates, monthExpenses, attention: attention.slice(0, 8) };
-  }, [snapshot, timeZone]);
+  }, [snapshot, snapshotNow, timeZone]);
 
   if (loading) return <div className="pb-24 text-sm text-[var(--muted)]">Se pregătește rezumatul…</div>;
 
