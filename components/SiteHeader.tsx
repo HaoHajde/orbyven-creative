@@ -38,10 +38,6 @@ export default function SiteHeader({
   const closeMobile = () => setMobileOpen(false);
 
   useEffect(() => {
-    if (mobileOpen) setVisible(true);
-  }, [mobileOpen]);
-
-  useEffect(() => {
     lastScrollY.current = window.scrollY;
 
     const updateVisibility = () => {
@@ -141,11 +137,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={onToggleTheme}
-                aria-label={
-                  theme === "dark"
-                    ? "Activează tema luminoasă"
-                    : "Activează tema întunecată"
-                }
+                aria-label={theme === "dark" ? "Activează tema luminoasă" : "Activează tema întunecată"}
                 title={theme === "dark" ? "Light mode" : "Dark mode"}
                 className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] md:transition-transform md:hover:scale-[1.04]"
               >
@@ -168,27 +160,18 @@ export default function SiteHeader({
 
               <button
                 type="button"
-                onClick={() => setMobileOpen((current) => !current)}
+                onClick={() => {
+                  setVisible(true);
+                  setMobileOpen((current) => !current);
+                }}
                 aria-expanded={mobileOpen}
                 aria-label={mobileOpen ? "Închide meniul" : "Deschide meniul"}
                 className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] md:hidden"
               >
                 <span className="relative block h-4 w-4">
-                  <span
-                    className={`absolute left-0 top-0 h-px w-4 bg-current transition-transform duration-150 ${
-                      mobileOpen ? "translate-y-[5.5px] rotate-45" : ""
-                    }`}
-                  />
-                  <span
-                    className={`absolute left-0 top-[7px] h-px w-4 bg-current transition-opacity duration-150 ${
-                      mobileOpen ? "opacity-0" : "opacity-100"
-                    }`}
-                  />
-                  <span
-                    className={`absolute bottom-0 left-0 h-px w-4 bg-current transition-transform duration-150 ${
-                      mobileOpen ? "-translate-y-[5.5px] -rotate-45" : ""
-                    }`}
-                  />
+                  <span className={`absolute left-0 top-0 h-px w-4 bg-current transition-transform duration-150 ${mobileOpen ? "translate-y-[5.5px] rotate-45" : ""}`} />
+                  <span className={`absolute left-0 top-[7px] h-px w-4 bg-current transition-opacity duration-150 ${mobileOpen ? "opacity-0" : "opacity-100"}`} />
+                  <span className={`absolute bottom-0 left-0 h-px w-4 bg-current transition-transform duration-150 ${mobileOpen ? "-translate-y-[5.5px] -rotate-45" : ""}`} />
                 </span>
               </button>
             </div>
@@ -209,15 +192,11 @@ export default function SiteHeader({
                       aria-current={active ? "page" : undefined}
                       onClick={closeMobile}
                       className={`flex min-h-12 touch-manipulation items-center justify-between rounded-[18px] px-4 text-[14px] font-medium active:bg-[var(--surface)] ${
-                        active
-                          ? "bg-[var(--surface)] text-[var(--text)]"
-                          : "text-[var(--muted)]"
+                        active ? "bg-[var(--surface)] text-[var(--text)]" : "text-[var(--muted)]"
                       }`}
                     >
                       <span className="flex items-center gap-3">
-                        {active && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                        )}
+                        {active && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />}
                         {item.label}
                       </span>
                       <span className="text-[var(--muted-2)]">↗</span>
@@ -254,14 +233,7 @@ export default function SiteHeader({
 
 function MoonIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-[17px] w-[17px]"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[17px] w-[17px]" aria-hidden="true">
       <path d="M20.2 15.7A8.5 8.5 0 0 1 8.3 3.8 8.5 8.5 0 1 0 20.2 15.7Z" />
     </svg>
   );
@@ -269,14 +241,7 @@ function MoonIcon() {
 
 function SunIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-[17px] w-[17px]"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[17px] w-[17px]" aria-hidden="true">
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2" />
       <path d="M12 20v2" />
