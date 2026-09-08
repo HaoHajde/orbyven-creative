@@ -70,8 +70,10 @@ export default function ProjectRequestFlow({
           ? "dark"
           : "light";
 
-    setTheme(nextTheme);
     document.documentElement.style.colorScheme = nextTheme;
+    const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
+
+    return () => window.clearTimeout(themeTimer);
   }, []);
 
   const selectedPlan = useMemo(
