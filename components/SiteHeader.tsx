@@ -1,5 +1,6 @@
 "use client";
 
+import BackToTop from "@/components/BackToTop";
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -74,12 +75,17 @@ export default function SiteHeader({
         @media (max-width: 767px) {
           html { scroll-behavior: auto !important; }
           a, button { touch-action: manipulation; }
-          .orbyven-orbit-track {
-            animation: none !important;
-            will-change: auto !important;
+          .orbyven-orbit-system--accent { display: none !important; }
+          .orbyven-orbit-system--hero { display: block !important; }
+          .orbyven-orbit-system--hero .orbyven-orbit-track--three,
+          .orbyven-orbit-system--hero .orbyven-orbit-track--four { display: none !important; }
+          .orbyven-orbit-system--hero .orbyven-orbit-track--one {
+            animation-duration: 14s !important;
+            will-change: transform;
           }
-          .orbyven-orbit-system {
-            display: none !important;
+          .orbyven-orbit-system--hero .orbyven-orbit-track--two {
+            animation-duration: 20s !important;
+            will-change: transform;
           }
           main [aria-hidden="true"] {
             filter: none !important;
@@ -201,6 +207,8 @@ export default function SiteHeader({
           )}
         </div>
       </header>
+
+      {activePage !== "home" ? <BackToTop /> : null}
     </>
   );
 }
