@@ -148,7 +148,14 @@ export default function SiteHeader({
             </button>
 
             <Link
-              href="/contact"
+              href="/workspace"
+              className="hidden h-10 items-center justify-center rounded-full border border-[var(--border-strong)] px-4 text-[13px] font-medium text-[var(--text)] transition hover:bg-[var(--surface)] lg:inline-flex"
+            >
+              Dashboard
+            </Link>
+
+            <Link
+              href="/cerere"
               className="hidden h-10 items-center justify-center rounded-full bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] transition hover:scale-[1.02] sm:inline-flex"
             >
               Începe un proiect
@@ -277,9 +284,20 @@ export default function SiteHeader({
                 })}
               </nav>
 
-              <div className="mt-2 border-t border-[var(--border)] px-2 pt-2">
+              <div className="mt-2 grid gap-2 border-t border-[var(--border)] px-2 pt-2">
                 <Link
-                  href="/contact"
+                  href="/workspace"
+                  onClick={() =>
+                    setMobileOpen(false)
+                  }
+                  className="flex h-12 items-center justify-between rounded-[18px] border border-[var(--border-strong)] px-5 text-[13px] font-semibold"
+                >
+                  <span>Dashboard</span>
+                  <span className="text-[var(--muted-2)]">↗</span>
+                </Link>
+
+                <Link
+                  href="/cerere"
                   onClick={() =>
                     setMobileOpen(false)
                   }
