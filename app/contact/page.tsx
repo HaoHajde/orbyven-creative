@@ -7,9 +7,9 @@ import {
   useState,
   type CSSProperties,
   type FormEvent,
+  type ReactNode,
 } from "react";
 
-import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
@@ -31,12 +31,11 @@ const initialForm: FormState = {
   message: "",
 };
 
-function themeVars(theme: Theme) {
+function getThemeVars(theme: Theme) {
   return {
     "--bg": theme === "dark" ? "#000000" : "#ffffff",
     "--surface": theme === "dark" ? "#0c0c0e" : "#f5f5f7",
     "--surface-2": theme === "dark" ? "#151518" : "#fbfbfd",
-    "--surface-3": theme === "dark" ? "#1d1d21" : "#efeff3",
     "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
     "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
     "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
@@ -51,15 +50,10 @@ function themeVars(theme: Theme) {
     "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
     "--button-text": theme === "dark" ? "#000000" : "#ffffff",
     "--accent": "#4b46ee",
-    "--accent-2": "#6f42ff",
     "--accent-soft":
       theme === "dark"
         ? "rgba(75,70,238,0.18)"
         : "rgba(75,70,238,0.08)",
-    "--accent-soft-2":
-      theme === "dark"
-        ? "rgba(111,66,255,0.11)"
-        : "rgba(111,66,255,0.05)",
   } as CSSProperties;
 }
 
@@ -74,7 +68,7 @@ export default function ContactPage() {
   const startedAtRef = useRef(0);
 
   useEffect(() => {
-    const hydrateTheme = () => {
+    const hydrate = () => {
       const saved = window.localStorage.getItem("studio-theme");
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const nextTheme: Theme =
@@ -87,9 +81,11 @@ export default function ContactPage() {
       setTheme(nextTheme);
       startedAtRef.current = Date.now();
       document.documentElement.style.colorScheme = nextTheme;
+      document.body.style.backgroundColor =
+        nextTheme === "dark" ? "#000000" : "#ffffff";
     };
 
-    const frame = window.requestAnimationFrame(hydrateTheme);
+    const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
@@ -104,6 +100,7 @@ export default function ContactPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
+      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#ffffff";
       return next;
     });
   };
@@ -180,16 +177,20 @@ export default function ContactPage() {
     }
   };
 
-  const vars = themeVars(theme);
+  const vars = getThemeVars(theme);
+  const background = theme === "dark" ? "#000000" : "#ffffff";
+  const foreground = theme === "dark" ? "#f5f5f7" : "#1d1d1f";
 
   return (
     <main
       style={{
         ...vars,
+        backgroundColor: background,
+        color: foreground,
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="relative min-h-screen overflow-x-hidden antialiased transition-colors duration-300"
     >
       <SiteHeader
         theme={theme}
@@ -198,54 +199,39 @@ export default function ContactPage() {
         onToggleTheme={toggleTheme}
       />
 
-      <section className="relative overflow-hidden px-6 pb-16 pt-36 sm:px-8 sm:pt-40 md:flex md:min-h-[76svh] md:items-center md:px-10 md:pb-24 md:pt-32">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-[-18rem] h-[38rem] w-[58rem] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-[-4rem] top-32 h-52 w-52 rounded-full bg-[var(--accent-soft-2)] blur-[90px] md:h-72 md:w-72"
-        />
-
-        <OrbitalSystem
-          variant="accent"
-          className="left-[76%] top-[52%] hidden md:block"
-        />
+      <section
+        style={{ backgroundColor: background }}
+        className="relative px-6 pb-10 pt-32 sm:px-8 sm:pb-12 sm:pt-36 md:px-10 md:pb-20 md:pt-40"
+      >
+        <div className="pointer-events-none absolute left-1/2 top-20 h-72 w-[44rem] max-w-[90vw] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[110px]" />
 
         <div className="relative mx-auto w-full max-w-[1500px]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-2)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--muted-2)] sm:text-[11px]">
             ORBYVEN CREATIVE · CONTACT
           </p>
 
-          <div className="mt-7 max-w-[1120px] md:mt-9">
-            <h1 className="text-[clamp(48px,7vw,112px)] font-semibold leading-[0.92] tracking-[-0.065em]">
-              Ai o idee?
-              <span className="block">Hai s-o facem memorabilă.</span>
-            </h1>
-          </div>
+          <h1 className="mt-5 max-w-5xl text-[46px] font-semibold leading-[0.93] tracking-[-0.06em] sm:text-[62px] md:mt-7 md:text-[82px] lg:text-[104px]">
+            Ai o idee?
+            <span className="block">Hai s-o facem memorabilă.</span>
+          </h1>
 
-          <div className="mt-8 grid max-w-[1100px] gap-5 md:mt-10 md:grid-cols-[1fr_0.55fr] md:items-end">
-            <p className="max-w-2xl text-[16px] leading-7 text-[var(--muted)] md:text-[18px] md:leading-8">
-              Spune-ne ce vrei să obții. Nu ai nevoie de un brief perfect —
-              clarificăm împreună direcția, structura și ce merită construit.
-            </p>
-
-            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[var(--muted-2)] md:justify-self-end">
-              <span className="h-px w-10 bg-[var(--border-strong)]" />
-              Start a conversation
-            </div>
-          </div>
+          <p className="mt-6 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base md:mt-8 md:text-lg md:leading-8">
+            Spune-ne ce vrei să obții. Nu ai nevoie de un brief perfect — clarificăm
+            împreună direcția, structura și ce merită construit.
+          </p>
         </div>
       </section>
 
-      <section className="relative px-6 pb-24 sm:px-8 md:px-10 md:pb-36">
-        <div className="mx-auto grid max-w-[1500px] gap-10 xl:grid-cols-[0.72fr_1.28fr] xl:gap-20">
-          <aside className="xl:sticky xl:top-28 xl:self-start">
+      <section
+        style={{ backgroundColor: background }}
+        className="relative px-6 pb-24 sm:px-8 md:px-10 md:pb-36"
+      >
+        <div className="mx-auto grid max-w-[1500px] gap-8 xl:grid-cols-[0.72fr_1.28fr] xl:gap-20">
+          <aside className="hidden xl:block xl:sticky xl:top-28 xl:self-start">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
               Start here
             </p>
-            <h2 className="mt-5 max-w-xl text-[40px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[54px] md:text-[62px]">
+            <h2 className="mt-5 max-w-xl text-[58px] font-semibold leading-[0.98] tracking-[-0.055em]">
               Direct la ce contează.
             </h2>
             <p className="mt-6 max-w-lg text-[15px] leading-7 text-[var(--muted)]">
@@ -272,21 +258,18 @@ export default function ContactPage() {
             id="project-form"
             onSubmit={handleSubmit}
             aria-busy={sending}
-            className="relative overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 md:rounded-[36px] md:p-9 lg:p-11"
+            className="relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 md:rounded-[36px] md:p-9 lg:p-11"
           >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute right-[-12%] top-[-12%] h-[360px] w-[360px] rounded-full bg-[var(--accent-soft)] blur-[140px]"
-            />
+            <div className="pointer-events-none absolute right-[-12%] top-[-12%] h-[360px] w-[360px] rounded-full bg-[var(--accent-soft)] blur-[140px]" />
 
             <div className="relative">
-              <div className="mb-8 border-b border-[var(--border)] pb-7 md:mb-10 md:pb-8">
+              <div className="mb-7 border-b border-[var(--border)] pb-6 md:mb-10 md:pb-8">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">
                   Project inquiry
                 </p>
-                <h3 className="mt-3 text-[30px] font-semibold tracking-[-0.045em] sm:text-[38px]">
+                <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em] sm:text-[38px]">
                   Spune-ne despre proiect.
-                </h3>
+                </h2>
                 <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                   Câteva detalii sunt suficiente. Restul îl stabilim împreună.
                 </p>
@@ -364,24 +347,36 @@ export default function ContactPage() {
                 />
                 <span>
                   Am citit și accept{" "}
-                  <Link href="/legal/privacy" className="text-[var(--text)] underline underline-offset-4">
+                  <Link
+                    href="/legal/privacy"
+                    className="text-[var(--text)] underline underline-offset-4"
+                  >
                     Politica de Confidențialitate
-                  </Link>
-                  {" "}pentru prelucrarea acestei cereri.
+                  </Link>{" "}
+                  pentru prelucrarea acestei cereri.
                 </span>
               </label>
 
               {submitError && (
-                <p className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-500" role="alert">
+                <p
+                  className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-500"
+                  role="alert"
+                >
                   {submitError}
                 </p>
               )}
 
               {requestNumber && (
-                <div className="mt-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-4" role="status">
-                  <p className="text-sm font-semibold text-[var(--text)]">Cererea a fost trimisă.</p>
+                <div
+                  className="mt-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-4"
+                  role="status"
+                >
+                  <p className="text-sm font-semibold text-[var(--text)]">
+                    Cererea a fost trimisă.
+                  </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
-                    Număr de referință: <strong className="text-[var(--text)]">{requestNumber}</strong>
+                    Număr de referință:{" "}
+                    <strong className="text-[var(--text)]">{requestNumber}</strong>
                   </p>
                 </div>
               )}
@@ -417,7 +412,7 @@ function Field({
   className = "",
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
