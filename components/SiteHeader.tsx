@@ -2,7 +2,7 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type SitePage = "home" | "templates" | "services" | "contact";
 
@@ -31,8 +31,46 @@ export default function SiteHeader({
   onToggleTheme: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const frame = useRef<number | null>(null);
 
   const closeMobile = () => setMobileOpen(false);
+
+  useEffect(() => {
+    if (mobileOpen) setVisible(true);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+
+    const updateVisibility = () => {
+      const current = window.scrollY;
+      const delta = current - lastScrollY.current;
+
+      if (current < 48) {
+        setVisible(true);
+      } else if (!mobileOpen && delta > 6) {
+        setVisible(false);
+      } else if (delta < -6) {
+        setVisible(true);
+      }
+
+      lastScrollY.current = current;
+      frame.current = null;
+    };
+
+    const onScroll = () => {
+      if (frame.current !== null) return;
+      frame.current = window.requestAnimationFrame(updateVisibility);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+    };
+  }, [mobileOpen]);
 
   return (
     <>
@@ -60,7 +98,11 @@ export default function SiteHeader({
         }
       `}</style>
 
-      <header className="pointer-events-none fixed inset-x-0 top-0 z-[100]">
+      <header
+        className={`pointer-events-none fixed inset-x-0 top-0 z-[100] transform-gpu transition-transform duration-300 ease-out ${
+          visible ? "translate-y-0" : "-translate-y-[calc(100%+20px)]"
+        }`}
+      >
         <div className="mx-auto max-w-[1500px] px-4 pt-4 sm:px-6 md:px-10">
           <div
             style={{ backgroundColor: "var(--bg)" }}
