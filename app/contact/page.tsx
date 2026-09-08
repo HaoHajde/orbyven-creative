@@ -71,25 +71,30 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [requestNumber, setRequestNumber] = useState("");
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef(0);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("studio-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const nextTheme: Theme =
-      saved === "dark" || saved === "light"
-        ? saved
-        : prefersDark
-          ? "dark"
-          : "light";
+    const hydrateTheme = () => {
+      const saved = window.localStorage.getItem("studio-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const nextTheme: Theme =
+        saved === "dark" || saved === "light"
+          ? saved
+          : prefersDark
+            ? "dark"
+            : "light";
 
-    setTheme(nextTheme);
-    document.documentElement.style.colorScheme = nextTheme;
+      setTheme(nextTheme);
+      startedAtRef.current = Date.now();
+      document.documentElement.style.colorScheme = nextTheme;
+    };
+
+    const frame = window.requestAnimationFrame(hydrateTheme);
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
     const onScroll = () => setCompactNav(window.scrollY > 90);
-    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
