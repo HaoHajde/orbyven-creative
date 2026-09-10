@@ -166,7 +166,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 768px)");
+    const media = window.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
     const frame = window.requestAnimationFrame(() => setDesktopMotion(media.matches));
     const sync = (event: MediaQueryListEvent) => setDesktopMotion(event.matches);
     media.addEventListener("change", sync);
