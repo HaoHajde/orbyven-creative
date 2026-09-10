@@ -23,7 +23,13 @@ export type BusinessExpense = {
 
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string };
-export type ExpenseEstimateLink = { id: string; reference: string; title: string };
+export type ExpenseEstimateLink = {
+  id: string;
+  reference: string;
+  title: string;
+  client_id: string | null;
+  task_id: string | null;
+};
 export type ExpenseDocumentLink = { id: string; name: string };
 
 export type CreateExpenseInput = {
@@ -79,7 +85,7 @@ export async function listExpenseContexts(organizationId: string) {
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
       .from("sales_estimates")
-      .select("id,reference,title")
+      .select("id,reference,title,client_id,task_id")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
