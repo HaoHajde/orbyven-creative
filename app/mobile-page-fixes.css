@@ -25,3 +25,35 @@ body {
     contain-intrinsic-size: auto !important;
   }
 }
+
+/* Public ORBYVEN service cards: cleaner hierarchy, slightly brighter depth. */
+#services a.group {
+  background-color: color-mix(in srgb, var(--bg) 94%, var(--accent) 6%) !important;
+}
+
+#services a.group > [aria-hidden="true"]:first-child {
+  opacity: 0.92 !important;
+}
+
+#services a.group > [aria-hidden="true"]:nth-child(2) {
+  opacity: 0.075 !important;
+}
+
+#services a.group > .relative.flex.items-start.justify-between > span:first-child {
+  display: none !important;
+}
+
+/* Pilot #001 / Obsidian service cards: remove 01/02/03, bring the background
+   hero words forward a little and lift the black level without losing premium contrast. */
+#servicii article {
+  background-color: #0d0d0d !important;
+  border-color: rgba(216, 180, 56, 0.16) !important;
+}
+
+#servicii article > [aria-hidden="true"]:first-child {
+  color: rgba(216, 180, 56, 0.11) !important;
+}
+
+#servicii article > .relative.flex.h-full > .flex:first-child > span:first-child {
+  display: none !important;
+}
