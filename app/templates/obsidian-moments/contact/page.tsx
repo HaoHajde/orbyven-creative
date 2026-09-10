@@ -3,16 +3,26 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const phoneHref = "tel:0729753760";
 const whatsappBase = "https://wa.me/40729753760";
-
 const eventTypes = ["Nuntă", "Botez", "Aniversare", "Corporate", "Alt eveniment"];
 const serviceTypes = ["Platformă 360°", "Oglindă Foto", "Efecte Speciale", "Pachet complet", "Nu sunt sigur încă"];
 
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  date: string;
+  location: string;
+  event: string;
+  service: string;
+  message: string;
+};
+
 export default function ObsidianContactPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     name: "",
     email: "",
     phone: "",
@@ -23,13 +33,8 @@ export default function ObsidianContactPage() {
     message: "",
   });
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const service = params.get("serviciu");
-    if (service && serviceTypes.includes(service)) setForm((current) => ({ ...current, service }));
-  }, []);
-
   const ready = Boolean(form.name.trim() && form.date && (form.email.trim() || form.phone.trim()));
+  const setField = (field: keyof FormState, value: string) => setForm((current) => ({ ...current, [field]: value }));
 
   const whatsappHref = useMemo(() => {
     const text = [
@@ -47,8 +52,6 @@ export default function ObsidianContactPage() {
     return `${whatsappBase}?text=${encodeURIComponent(text)}`;
   }, [form]);
 
-  const setField = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
-
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#090909] text-[#f5f1e7]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}>
       <header className="sticky top-0 z-50 border-b border-[#d8b438]/10 bg-[#090909]/88 backdrop-blur-2xl">
@@ -60,14 +63,12 @@ export default function ObsidianContactPage() {
               <p className="mt-0.5 text-[7px] font-semibold uppercase tracking-[0.2em] text-[#d8b438]/62">contact & disponibilitate</p>
             </div>
           </Link>
-
           <nav className="hidden items-center gap-7 text-[10px] font-semibold text-white/45 md:flex">
             <Link href="/templates/obsidian-moments" className="transition hover:text-[#e4c34f]">Acasă</Link>
             <Link href="/templates/obsidian-moments#servicii" className="transition hover:text-[#e4c34f]">Servicii</Link>
             <Link href="/templates/obsidian-moments/preturi" className="transition hover:text-[#e4c34f]">Prețuri</Link>
             <span className="text-[#e4c34f]">Contact</span>
           </nav>
-
           <a href={phoneHref} className="rounded-full bg-[#d8b438] px-4 py-2.5 text-[10px] font-bold text-[#111] sm:px-5">Sună</a>
         </div>
       </header>
@@ -91,7 +92,7 @@ export default function ObsidianContactPage() {
             <div className="relative overflow-hidden rounded-[24px] border border-[#d8b438]/10 bg-[#101010] p-6">
               <div aria-hidden="true" className="absolute -right-3 bottom-[-16px] text-[64px] font-black leading-none tracking-[-0.08em] text-[#d8b438]/[0.045]">MAIL</div>
               <p className="relative text-[8px] font-bold uppercase tracking-[0.19em] text-[#d8b438]/58">Răspuns pe email</p>
-              <p className="relative mt-4 max-w-sm text-[20px] font-semibold leading-[1.05] tracking-[-0.045em]">Lasă adresa în formular și o includem în cererea de disponibilitate.</p>
+              <p className="relative mt-4 max-w-sm text-[20px] font-semibold leading-[1.05] tracking-[-0.045em]">Lasă emailul în cerere pentru răspuns și confirmare.</p>
             </div>
           </div>
 
@@ -130,12 +131,12 @@ export default function ObsidianContactPage() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a href={ready ? whatsappHref : undefined} target={ready ? "_blank" : undefined} rel={ready ? "noreferrer" : undefined} aria-disabled={!ready} className={`inline-flex h-13 flex-1 items-center justify-center rounded-full px-6 py-4 text-[11px] font-bold transition ${ready ? "bg-[#d8b438] text-[#111] hover:-translate-y-0.5" : "cursor-not-allowed bg-white/[0.06] text-white/22"}`}>
+              <a href={ready ? whatsappHref : undefined} target={ready ? "_blank" : undefined} rel={ready ? "noreferrer" : undefined} aria-disabled={!ready} className={`inline-flex min-h-13 flex-1 items-center justify-center rounded-full px-6 py-4 text-[11px] font-bold transition ${ready ? "bg-[#d8b438] text-[#111] hover:-translate-y-0.5" : "cursor-not-allowed bg-white/[0.06] text-white/22"}`}>
                 Verifică disponibilitatea →
               </a>
-              <a href={phoneHref} className="inline-flex h-13 items-center justify-center rounded-full border border-[#d8b438]/14 px-6 py-4 text-[11px] font-bold text-[#e5c963]">Prefer să sun</a>
+              <a href={phoneHref} className="inline-flex min-h-13 items-center justify-center rounded-full border border-[#d8b438]/14 px-6 py-4 text-[11px] font-bold text-[#e5c963]">Prefer să sun</a>
             </div>
-            <p className="mt-4 text-center text-[8px] leading-4 text-white/22">Pentru moment, cererea pregătită se trimite direct pe WhatsApp. Mai târziu o putem conecta la Leads / Calendar ORBYVEN.</p>
+            <p className="mt-4 text-center text-[8px] leading-4 text-white/22">Cererea se pregătește direct pentru WhatsApp. Integrarea cu Leads / Calendar ORBYVEN rămâne pentru etapa următoare.</p>
           </div>
         </div>
       </section>
@@ -151,31 +152,13 @@ export default function ObsidianContactPage() {
 }
 
 function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
-  return (
-    <label>
-      <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/28">{label}{required ? " *" : ""}</span>
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-2.5 h-13 w-full rounded-[16px] border border-white/[0.07] bg-black/30 px-4 py-3.5 text-[11px] text-white outline-none placeholder:text-white/20 focus:border-[#d8b438]/35" />
-    </label>
-  );
+  return <label><span className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/28">{label}{required ? " *" : ""}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-2.5 min-h-13 w-full rounded-[16px] border border-white/[0.07] bg-black/30 px-4 py-3.5 text-[11px] text-white outline-none placeholder:text-white/20 focus:border-[#d8b438]/35" /></label>;
 }
 
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) {
-  return (
-    <label>
-      <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/28">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2.5 h-13 w-full rounded-[16px] border border-white/[0.07] bg-[#0b0b0b] px-4 py-3.5 text-[11px] text-white outline-none focus:border-[#d8b438]/35">
-        {options.map((option) => <option key={option}>{option}</option>)}
-      </select>
-    </label>
-  );
+  return <label><span className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/28">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2.5 min-h-13 w-full rounded-[16px] border border-white/[0.07] bg-[#0b0b0b] px-4 py-3.5 text-[11px] text-white outline-none focus:border-[#d8b438]/35">{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
 }
 
 function ContactCard({ hero, label, value, href, external = false }: { hero: string; label: string; value: string; href: string; external?: boolean }) {
-  return (
-    <motion.a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} whileHover={{ x: 5 }} className="group relative min-h-[126px] overflow-hidden rounded-[24px] border border-[#d8b438]/10 bg-[#101010] p-6">
-      <div aria-hidden="true" className="absolute -right-2 bottom-[-14px] text-[62px] font-black leading-none tracking-[-0.08em] text-[#d8b438]/[0.045] transition group-hover:text-[#d8b438]/[0.09]">{hero}</div>
-      <p className="relative text-[8px] font-bold uppercase tracking-[0.19em] text-[#d8b438]/58">{label}</p>
-      <p className="relative mt-5 text-[22px] font-semibold tracking-[-0.045em]">{value}</p>
-    </motion.a>
-  );
+  return <motion.a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} whileHover={{ x: 5 }} className="group relative min-h-[126px] overflow-hidden rounded-[24px] border border-[#d8b438]/10 bg-[#101010] p-6"><div aria-hidden="true" className="absolute -right-2 bottom-[-14px] text-[62px] font-black leading-none tracking-[-0.08em] text-[#d8b438]/[0.045] transition group-hover:text-[#d8b438]/[0.09]">{hero}</div><p className="relative text-[8px] font-bold uppercase tracking-[0.19em] text-[#d8b438]/58">{label}</p><p className="relative mt-5 text-[22px] font-semibold tracking-[-0.045em]">{value}</p></motion.a>;
 }
