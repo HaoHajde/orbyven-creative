@@ -10,6 +10,7 @@ import StructuredData from "@/components/StructuredData";
 import { getSiteUrl, siteConfig } from "@/lib/site-config";
 
 import "./globals.css";
+import "./mobile-page-fixes.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
