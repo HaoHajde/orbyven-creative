@@ -91,6 +91,27 @@ export default function TemplatesPage() {
 
       <section className="mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="grid gap-5 lg:grid-cols-2">
+          <Link href="/templates/obsidian-moments" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#8c2331]/30 bg-[#080708] text-white lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_30%,rgba(159,38,55,.28),transparent_30%),radial-gradient(circle_at_20%_75%,rgba(81,18,28,.22),transparent_34%),linear-gradient(145deg,#10080a,#050505_62%)]" />
+            <motion.div aria-hidden="true" className="absolute right-[7%] top-[11%] h-72 w-72 rounded-full border border-[#a52c3e]/35" animate={{ rotate: 360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }}>
+              <div className="absolute left-1/2 top-[-6px] h-3 w-3 -translate-x-1/2 rounded-full bg-[#c94a5d] shadow-[0_0_24px_rgba(201,74,93,.7)]" />
+            </motion.div>
+            <div className="absolute right-[14%] top-[24%] grid h-44 w-44 place-items-center rounded-full border border-white/10 bg-black/50 shadow-[inset_0_0_45px_rgba(159,38,55,.16)]">
+              <div className="text-center"><p className="text-[42px] font-semibold tracking-[-.07em]">360</p><p className="mt-1 text-[7px] uppercase tracking-[.2em] text-white/30">moment</p></div>
+            </div>
+            <div className="absolute left-6 top-6 rounded-full border border-[#a52c3e]/30 bg-[#1a090c]/85 px-3 py-2 text-[8px] font-bold uppercase tracking-[.18em] text-[#d45b6d] backdrop-blur-xl">Pilot #001</div>
+            <div className="absolute inset-x-0 bottom-0 border-t border-white/8 bg-black/50 p-6 backdrop-blur-xl md:p-8">
+              <div className="flex items-end justify-between gap-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">Events · interactive experiences</p>
+                  <h2 className="mt-2 max-w-[470px] text-[34px] font-semibold leading-[.95] tracking-[-0.055em] md:text-[45px]">Obsidian Moments 360</h2>
+                  <p className="mt-3 max-w-md text-[12px] leading-5 text-white/38">Platformă 360°, Oglindă Magică și momente construite pentru invitați.</p>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#9d2637] text-white transition group-hover:rotate-45 group-hover:scale-105">↗</span>
+              </div>
+            </div>
+          </Link>
+
           <Link href="/demo/nunta/elegant" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#e9dfcf] lg:min-h-[520px]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,.92),transparent_28%),radial-gradient(circle_at_82%_68%,rgba(178,135,58,.18),transparent_34%),linear-gradient(135deg,#f3ecdf,#ded0ba)]" />
             <motion.div
