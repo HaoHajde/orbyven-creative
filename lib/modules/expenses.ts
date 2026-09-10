@@ -14,6 +14,7 @@ export type BusinessExpense = {
   payment_method: ExpensePaymentMethod | null;
   client_id: string | null;
   task_id: string | null;
+  estimate_id: string | null;
   document_id: string | null;
   created_by: string | null;
   created_at: string;
@@ -22,6 +23,13 @@ export type BusinessExpense = {
 
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string };
+export type ExpenseEstimateLink = {
+  id: string;
+  reference: string;
+  title: string;
+  client_id: string | null;
+  task_id: string | null;
+};
 export type ExpenseDocumentLink = { id: string; name: string };
 
 export type CreateExpenseInput = {
@@ -34,11 +42,12 @@ export type CreateExpenseInput = {
   paymentMethod?: ExpensePaymentMethod | null;
   clientId?: string | null;
   taskId?: string | null;
+  estimateId?: string | null;
   documentId?: string | null;
 };
 
 const FIELDS =
-  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,created_by,created_at,updated_at";
+  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,estimate_id,document_id,created_by,created_at,updated_at";
 
 function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
@@ -63,7 +72,7 @@ export async function listExpenses(organizationId: string): Promise<BusinessExpe
 
 export async function listExpenseContexts(organizationId: string) {
   requireOrganizationId(organizationId);
-  const [clientsResult, tasksResult, documentsResult] = await Promise.all([
+  const [clientsResult, tasksResult, estimatesResult, documentsResult] = await Promise.all([
     orbyvenSupabase
       .from("crm_leads")
       .select("id,name")
@@ -75,6 +84,11 @@ export async function listExpenseContexts(organizationId: string) {
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
+      .from("sales_estimates")
+      .select("id,reference,title,client_id,task_id")
+      .eq("organization_id", organizationId)
+      .order("updated_at", { ascending: false }),
+    orbyvenSupabase
       .from("ops_documents")
       .select("id,name")
       .eq("organization_id", organizationId)
@@ -82,10 +96,12 @@ export async function listExpenseContexts(organizationId: string) {
   ]);
   if (clientsResult.error) throw clientsResult.error;
   if (tasksResult.error) throw tasksResult.error;
+  if (estimatesResult.error) throw estimatesResult.error;
   if (documentsResult.error) throw documentsResult.error;
   return {
     clients: (clientsResult.data ?? []) as ExpenseClientLink[],
     tasks: (tasksResult.data ?? []) as ExpenseTaskLink[],
+    estimates: (estimatesResult.data ?? []) as ExpenseEstimateLink[],
     documents: (documentsResult.data ?? []) as ExpenseDocumentLink[],
   };
 }
@@ -115,6 +131,7 @@ export async function createExpense(
       payment_method: input.paymentMethod || null,
       client_id: input.clientId || null,
       task_id: input.taskId || null,
+      estimate_id: input.estimateId || null,
       document_id: input.documentId || null,
       created_by: authData.user?.id ?? null,
     })
