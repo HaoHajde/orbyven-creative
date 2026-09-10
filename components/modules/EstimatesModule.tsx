@@ -121,14 +121,12 @@ export default function EstimatesModule({ organizationId, locale, role }: Props)
   }, [load]);
 
   useEffect(() => {
-    if (!selectedId) {
-      setItems([]);
-      return;
-    }
+    if (!selectedId) return;
     let active = true;
-    setItemsLoading(true);
-    setItems([]);
     const timer = window.setTimeout(() => {
+      if (!active) return;
+      setItemsLoading(true);
+      setItems([]);
       void listEstimateItems(organizationId, selectedId)
         .then((nextItems) => {
           if (active) setItems(nextItems);
