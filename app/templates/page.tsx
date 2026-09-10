@@ -5,7 +5,6 @@ import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { clientTemplateList } from "@/lib/client-template-catalog";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState, type CSSProperties } from "react";
@@ -52,7 +51,6 @@ export default function TemplatesPage() {
     "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
     "--button-text": theme === "dark" ? "#000000" : "#ffffff",
     "--accent": "#4b46ee",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
   } as CSSProperties;
 
   return (
@@ -62,17 +60,30 @@ export default function TemplatesPage() {
     >
       <SiteHeader theme={theme} compact={false} activePage="templates" onToggleTheme={toggleTheme} />
 
-      <section className="relative flex min-h-[78svh] items-end overflow-hidden px-5 pb-16 pt-32 sm:px-6 md:min-h-[86vh] md:px-10 md:pb-24 md:pt-40">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-28%] hidden h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[160px] md:block" />
+      <section className="relative flex min-h-[78svh] items-end overflow-hidden px-5 pb-16 pt-32 text-white sm:px-6 md:min-h-[86vh] md:px-10 md:pb-24 md:pt-40">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 72% 22%, rgba(116,86,255,.32), transparent 31%), radial-gradient(circle at 30% 34%, rgba(77,54,150,.24), transparent 35%), linear-gradient(180deg, rgba(31,20,55,.99) 0%, rgba(19,11,37,.98) 44%, rgba(8,5,15,.98) 78%, var(--bg) 100%)",
+          }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-[8%] top-[22%] h-52 w-52 rounded-full bg-violet-500/10 blur-[80px]"
+          animate={{ x: [0, 42, -8, 0], y: [0, 16, 42, 0], scale: [1, 1.12, 0.96, 1] }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+        />
         <OrbitalSystem variant="accent" className="left-[76%] top-[46%] opacity-45" />
         <div className="relative mx-auto w-full max-w-[1500px]">
-          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
+          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
             ORBYVEN · Templates
           </motion.p>
           <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.08, ease: easeOut }} className="mt-6 max-w-[1200px] text-[clamp(54px,8vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em]">
             Deschizi. Vezi. Alegi.
           </motion.h1>
-          <p className="mt-7 max-w-xl text-[16px] leading-7 text-[var(--muted)]">
+          <p className="mt-7 max-w-xl text-[16px] leading-7 text-white/58">
             Fiecare template este și demo. Nu există două liste diferite.
           </p>
         </div>
@@ -80,15 +91,35 @@ export default function TemplatesPage() {
 
       <section className="mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="grid gap-5 lg:grid-cols-2">
-          <Link href="/demo/nunta/diana-florin" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#eee6d8] lg:min-h-[520px]">
-            <Image src="/demo/nunta/diana-florin/couple1.jpeg" alt="Preview Diana și Florin" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 p-6 text-white md:p-8">
+          <Link href="/demo/nunta/elegant" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#e9dfcf] lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,.92),transparent_28%),radial-gradient(circle_at_82%_68%,rgba(178,135,58,.18),transparent_34%),linear-gradient(135deg,#f3ecdf,#ded0ba)]" />
+            <motion.div
+              aria-hidden="true"
+              className="absolute -right-24 top-10 h-72 w-72 rounded-full border border-[#9f7730]/20"
+              animate={{ rotate: 360, scale: [1, 1.06, 1] }}
+              transition={{ rotate: { duration: 28, repeat: Infinity, ease: "linear" }, scale: { duration: 7, repeat: Infinity, ease: "easeInOut" } }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute -left-20 bottom-14 h-64 w-64 rounded-full bg-white/38 blur-3xl"
+              animate={{ x: [0, 36, 0], y: [0, -18, 0] }}
+              transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center px-8 pb-24 text-center text-[#261f17]">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/55">Wedding · proiect live</p>
-                <h2 className="mt-2 text-[38px] font-semibold tracking-[-0.055em] md:text-[48px]">Diana & Florin</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8f6d33]">Template invitație</p>
+                <div className="mt-7 font-serif text-[clamp(56px,7vw,94px)] leading-[0.78] tracking-[-0.07em]">
+                  Mire <span className="italic text-[#ad843c]">&amp;</span> Mireasă
+                </div>
+                <p className="mx-auto mt-7 max-w-sm text-sm leading-6 text-[#655b4f]">Un demo complet, fără date reale, pregătit să fie personalizat pentru fiecare cuplu.</p>
               </div>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-black">↗</span>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 border-t border-black/8 bg-white/35 p-6 backdrop-blur-xl md:p-8">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-black/45">Wedding · template</p>
+                <h2 className="mt-2 text-[34px] font-semibold tracking-[-0.055em] text-[#231d17] md:text-[42px]">Invitație elegantă</h2>
+              </div>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#211a14] text-white transition group-hover:rotate-45">↗</span>
             </div>
           </Link>
 
