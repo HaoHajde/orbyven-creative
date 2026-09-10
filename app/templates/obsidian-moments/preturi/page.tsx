@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 const phoneHref = "tel:0729753760";
 const whatsappHref = "https://wa.me/40729753760";
@@ -9,46 +11,46 @@ const whatsappHref = "https://wa.me/40729753760";
 const packages = [
   {
     name: "Basic",
-    note: "Pentru clienți sensibili la preț",
-    price: "2.000",
+    note: "Start simplu",
+    price: "1.999",
+    hero: "BASIC",
     features: ["Platformă 360", "Oglindă Foto", "Props-uri incluse"],
   },
   {
     name: "Standard",
     note: "Cel mai vândut",
-    price: "2.500",
+    price: "2.499",
+    hero: "BEST",
     featured: true,
     features: ["Platformă 360", "Oglindă Foto", "Props-uri incluse", "Fum greu · 1 moment", "Mașină baloane · 1 moment"],
   },
   {
     name: "Premium",
     note: "Experiența completă",
-    price: "3.000",
+    price: "2.999",
+    hero: "PLUS",
     features: ["Platformă 360", "Oglindă Foto", "Props-uri incluse", "Fum greu · mai multe momente", "Mașină baloane", "Tort shot-uri"],
   },
   {
     name: "VIP",
     note: "Totul inclus",
-    price: "4.000",
+    price: "3.999",
+    hero: "VIP",
     features: ["Platformă 360 · toată noaptea", "Oglindă Foto · toată noaptea", "Props-uri premium", "Fum greu nelimitat", "Mașină baloane", "Tort shot-uri complet", "Setup premium + coordonare"],
   },
 ];
 
 export default function ObsidianPricingPage() {
+  const [activePlan, setActivePlan] = useState(1);
+
   return (
-    <main
-      className="min-h-screen overflow-x-hidden bg-[#0b0b0b] text-[#f5f1e7]"
-      style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}
-    >
-      <header className="sticky top-0 z-50 border-b border-[#d8b438]/10 bg-[#0b0b0b]/88 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6 md:px-9">
+    <main className="min-h-screen overflow-x-hidden bg-[#090909] text-[#f5f1e7]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}>
+      <header className="sticky top-0 z-50 border-b border-[#d8b438]/10 bg-[#090909]/88 backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-9">
           <Link href="/templates/obsidian-moments" className="flex items-center gap-3">
-            <span className="relative grid h-10 w-10 place-items-center rounded-full border border-[#d8b438]/38 bg-[#12110d]">
-              <span className="absolute h-6 w-6 rounded-full border border-[#d8b438]/62" />
-              <span className="absolute h-1.5 w-1.5 rounded-full bg-[#d8b438] shadow-[0_0_14px_rgba(216,180,56,.75)]" />
-            </span>
+            <Image src="/obsidian/mark.svg" alt="Obsidian Moments" width={44} height={44} className="h-11 w-11 rounded-full" />
             <div>
-              <p className="text-[13px] font-semibold tracking-[-0.035em]">ObsidianMoments360</p>
+              <p className="text-[13px] font-semibold tracking-[-0.035em]">Obsidian Moments 360</p>
               <p className="mt-0.5 text-[7px] font-semibold uppercase tracking-[0.2em] text-[#d8b438]/62">pachete & prețuri</p>
             </div>
           </Link>
@@ -57,63 +59,85 @@ export default function ObsidianPricingPage() {
             <Link href="/templates/obsidian-moments" className="transition hover:text-[#e4c34f]">Acasă</Link>
             <Link href="/templates/obsidian-moments#servicii" className="transition hover:text-[#e4c34f]">Servicii</Link>
             <span className="text-[#e4c34f]">Prețuri</span>
-            <Link href="/templates/obsidian-moments#contact" className="transition hover:text-[#e4c34f]">Contact</Link>
+            <Link href="/templates/obsidian-moments/contact" className="transition hover:text-[#e4c34f]">Contact</Link>
           </nav>
 
-          <a href={phoneHref} className="rounded-full bg-[#d8b438] px-4 py-2.5 text-[10px] font-bold text-[#111] sm:px-5">Sună</a>
+          <Link href="/templates/obsidian-moments/contact" className="rounded-full bg-[#d8b438] px-4 py-2.5 text-[10px] font-bold text-[#111] sm:px-5">Verifică data</Link>
         </div>
       </header>
 
-      <section className="relative overflow-hidden px-4 pb-14 pt-16 sm:px-6 md:px-9 md:pb-20 md:pt-24">
-        <div aria-hidden="true" className="absolute inset-x-0 top-[-40%] h-[720px] bg-[radial-gradient(circle_at_center,rgba(216,180,56,.15),transparent_48%)]" />
+      <section className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 md:px-9 md:pb-16 md:pt-24">
+        <div aria-hidden="true" className="absolute inset-x-0 top-[-45%] h-[760px] bg-[radial-gradient(circle_at_center,rgba(216,180,56,.16),transparent_48%)]" />
         <div className="relative mx-auto max-w-[1480px]">
           <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#d8b438]">Pachete & prețuri</motion.p>
           <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.06 }} className="mt-5 max-w-5xl text-[clamp(54px,8vw,112px)] font-semibold leading-[0.88] tracking-[-0.072em]">
-            Alegi pachetul.<br /><span className="text-[#d8b438]">Rezervi data.</span>
+            Alegi experiența.<br /><span className="text-[#d8b438]">Rezervi momentul.</span>
           </motion.h1>
-          <p className="mt-6 max-w-xl text-[13px] leading-6 text-white/38">Prețuri transparente, fără costuri ascunse.</p>
+          <p className="mt-6 max-w-xl text-[13px] leading-6 text-white/38">Patru variante clare. Apasă pe un pachet ca să vezi diferența.</p>
         </div>
       </section>
 
       <section className="px-4 pb-20 sm:px-6 md:px-9 md:pb-28">
         <div className="mx-auto grid max-w-[1480px] gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {packages.map((item, index) => (
-            <motion.article
-              key={item.name}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.06 }}
-              whileHover={{ y: -5 }}
-              className={`relative flex min-h-[470px] flex-col overflow-hidden rounded-[26px] border p-6 ${item.featured ? "border-[#d8b438]/45 bg-[#15130d]" : "border-[#d8b438]/10 bg-[#101010]"}`}
-            >
-              {item.featured && <div className="absolute right-5 top-5 rounded-full bg-[#d8b438] px-3 py-1.5 text-[7px] font-black uppercase tracking-[0.14em] text-[#111]">Cel mai vândut</div>}
-              <div aria-hidden="true" className={`absolute -right-16 -top-16 h-48 w-48 rounded-full blur-[70px] ${item.featured ? "bg-[#d8b438]/18" : "bg-[#d8b438]/7"}`} />
-              <div className="relative">
-                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#d8b438]/68">{item.name}</p>
-                <p className="mt-2 text-[11px] text-white/33">{item.note}</p>
-                <div className="mt-8 flex items-end gap-2">
-                  <span className="text-[52px] font-semibold leading-none tracking-[-0.07em]">{item.price}</span>
-                  <span className="pb-1 text-[11px] font-semibold text-white/32">RON</span>
-                </div>
-              </div>
+          {packages.map((item, index) => {
+            const active = activePlan === index;
+            return (
+              <motion.button
+                key={item.name}
+                type="button"
+                onClick={() => setActivePlan(index)}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.06 }}
+                whileHover={{ y: -7 }}
+                whileTap={{ scale: 0.985 }}
+                className={`group relative flex min-h-[430px] flex-col overflow-hidden rounded-[26px] border p-6 text-left transition-all duration-300 ${active ? "border-[#d8b438]/55 bg-[#17150e] shadow-[0_26px_90px_rgba(216,180,56,.10)]" : "border-[#d8b438]/10 bg-[#101010]"}`}
+              >
+                {item.featured && <div className="absolute right-5 top-5 z-20 rounded-full bg-[#d8b438] px-3 py-1.5 text-[7px] font-black uppercase tracking-[0.14em] text-[#111]">Cel mai vândut</div>}
+                <div aria-hidden="true" className={`absolute -right-8 bottom-[-18px] text-[76px] font-black leading-none tracking-[-0.08em] transition duration-500 ${active ? "text-[#d8b438]/[0.09]" : "text-[#d8b438]/[0.035]"}`}>{item.hero}</div>
+                <motion.div aria-hidden="true" className="absolute right-[-65px] top-[-65px] h-52 w-52 rounded-full bg-[#d8b438]/12 blur-[70px]" animate={active ? { scale: [1, 1.22, 1], opacity: [0.45, 0.9, 0.45] } : { scale: 1, opacity: 0.3 }} transition={{ duration: 4.6, repeat: active ? Infinity : 0 }} />
 
-              <div className="relative mt-8 flex-1 border-t border-[#d8b438]/10 pt-6">
-                <div className="space-y-3">
-                  {item.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-3 text-[11px] leading-5 text-white/48">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8b438]" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${active ? "bg-[#d8b438] shadow-[0_0_18px_rgba(216,180,56,.7)]" : "bg-white/18"}`} />
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#d8b438]/72">{item.name}</p>
+                  </div>
+                  <p className="mt-2 text-[11px] text-white/34">{item.note}</p>
+                  <div className="mt-7 flex items-end gap-2">
+                    <span className="text-[52px] font-semibold leading-none tracking-[-0.07em]">{item.price}</span>
+                    <span className="pb-1 text-[11px] font-semibold text-white/32">RON</span>
+                  </div>
                 </div>
-              </div>
 
-              <a href={phoneHref} className={`relative mt-8 inline-flex h-12 items-center justify-center rounded-full text-[11px] font-bold transition hover:-translate-y-0.5 ${item.featured ? "bg-[#d8b438] text-[#111]" : "border border-[#d8b438]/18 bg-[#d8b438]/[0.04] text-[#e4c34f]"}`}>
-                Sună pentru rezervare
-              </a>
-            </motion.article>
-          ))}
+                <div className="relative z-10 mt-7 flex-1 border-t border-[#d8b438]/10 pt-5">
+                  <div className="space-y-2.5">
+                    {item.features.map((feature, featureIndex) => (
+                      <motion.div key={feature} animate={{ x: active ? 3 : 0, opacity: active ? 1 : 0.68 }} transition={{ delay: active ? featureIndex * 0.025 : 0 }} className="flex items-start gap-3 text-[10px] leading-5 text-white/52">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8b438]" />
+                        <span>{feature}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`relative z-10 mt-6 flex h-11 items-center justify-center rounded-full text-[10px] font-bold transition ${active ? "bg-[#d8b438] text-[#111]" : "border border-[#d8b438]/16 bg-[#d8b438]/[0.035] text-[#e4c34f]"}`}>
+                  {active ? "Pachet selectat" : "Vezi pachetul"}
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
+
+        <motion.div layout className="mx-auto mt-3 max-w-[1480px] overflow-hidden rounded-[26px] border border-[#d8b438]/12 bg-[#0d0d0d] p-6 sm:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-[0.19em] text-[#d8b438]/65">Ai ales {packages[activePlan].name}</p>
+              <h2 className="mt-3 text-[32px] font-semibold tracking-[-0.055em] sm:text-[42px]">{packages[activePlan].price} RON</h2>
+              <p className="mt-2 text-[11px] text-white/35">Disponibilitatea se confirmă pentru data și locația evenimentului.</p>
+            </div>
+            <Link href="/templates/obsidian-moments/contact" className="inline-flex h-12 items-center justify-center rounded-full bg-[#d8b438] px-6 text-[11px] font-bold text-[#111]">Verifică disponibilitatea →</Link>
+          </div>
+        </motion.div>
       </section>
 
       <section className="px-4 pb-8 sm:px-6 md:px-9">
@@ -133,8 +157,8 @@ export default function ObsidianPricingPage() {
 
       <footer className="border-t border-[#d8b438]/10 px-4 py-7 sm:px-6 md:px-9">
         <div className="mx-auto flex max-w-[1480px] flex-col gap-4 text-[9px] text-white/30 sm:flex-row sm:items-center sm:justify-between">
-          <span>ObsidianMoments360 · Pachete & Prețuri</span>
-          <div className="flex gap-5"><Link href="/templates/obsidian-moments">Acasă</Link><a href={phoneHref}>Sună</a><a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a></div>
+          <span>Obsidian Moments 360 · Pachete & Prețuri</span>
+          <div className="flex gap-5"><Link href="/templates/obsidian-moments">Acasă</Link><Link href="/templates/obsidian-moments/contact">Contact</Link><a href={phoneHref}>Sună</a><a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a></div>
         </div>
       </footer>
     </main>
