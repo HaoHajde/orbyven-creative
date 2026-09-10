@@ -48,14 +48,14 @@ export default function ObsidianMomentsTemplatePage() {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end end"] });
 
-  const leftCurtain = useTransform(scrollYProgress, [0.08, 0.56], ["0%", "-92%"]);
-  const rightCurtain = useTransform(scrollYProgress, [0.08, 0.56], ["0%", "92%"]);
-  const logoScale = useTransform(scrollYProgress, [0, 0.55], [1, 0.76]);
-  const logoY = useTransform(scrollYProgress, [0, 0.55], [0, -44]);
-  const headlineY = useTransform(scrollYProgress, [0, 0.55], [0, -24]);
-  const actionsOpacity = useTransform(scrollYProgress, [0.18, 0.42], [0, 1]);
-  const actionsY = useTransform(scrollYProgress, [0.18, 0.42], [42, 0]);
-  const cueOpacity = useTransform(scrollYProgress, [0, 0.16], [1, 0]);
+  const leftCurtain = useTransform(scrollYProgress, [0.025, 0.48], ["0%", "-97%"]);
+  const rightCurtain = useTransform(scrollYProgress, [0.025, 0.48], ["0%", "97%"]);
+  const logoScale = useTransform(scrollYProgress, [0, 0.46], [1, 0.78]);
+  const logoY = useTransform(scrollYProgress, [0, 0.46], [0, -82]);
+  const contentY = useTransform(scrollYProgress, [0, 0.18, 0.5], [0, 24, 58]);
+  const actionsOpacity = useTransform(scrollYProgress, [0.03, 0.09, 0.18], [0, 0.88, 1]);
+  const actionsY = useTransform(scrollYProgress, [0.03, 0.18], [54, 0]);
+  const cueOpacity = useTransform(scrollYProgress, [0, 0.09], [1, 0]);
 
   return (
     <main
@@ -93,10 +93,10 @@ export default function ObsidianMomentsTemplatePage() {
         </nav>
       </header>
 
-      <section ref={heroRef} id="acasa" className="relative h-[155svh]">
-        <div className="sticky top-0 isolate flex min-h-screen overflow-hidden px-4 pb-8 pt-8 sm:px-6 md:px-9">
+      <section ref={heroRef} id="acasa" className="relative h-[178svh]">
+        <div className="sticky top-0 isolate flex min-h-[100svh] overflow-hidden px-4 pb-8 pt-8 sm:px-6 md:px-9">
           <div aria-hidden="true" className="absolute inset-0 -z-30 bg-[#090909]" />
-          <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_36%,rgba(216,180,56,.13),transparent_31%),radial-gradient(circle_at_14%_72%,rgba(216,180,56,.06),transparent_25%),radial-gradient(circle_at_88%_63%,rgba(216,180,56,.07),transparent_23%)]" />
+          <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_36%,rgba(216,180,56,.15),transparent_31%),radial-gradient(circle_at_14%_72%,rgba(216,180,56,.06),transparent_25%),radial-gradient(circle_at_88%_63%,rgba(216,180,56,.07),transparent_23%)]" />
           <div aria-hidden="true" className="absolute inset-0 -z-20 opacity-[0.035] [background-image:radial-gradient(circle_at_center,#d8b438_0.65px,transparent_0.65px)] [background-size:11px_11px]" />
 
           {flashes.map(([left, top, delay, duration], index) => (
@@ -105,46 +105,46 @@ export default function ObsidianMomentsTemplatePage() {
               aria-hidden="true"
               className="absolute z-0 h-1.5 w-1.5 rounded-full bg-[#f8e8a7] shadow-[0_0_18px_6px_rgba(246,218,126,.22)]"
               style={{ left: `${left}%`, top: `${top}%` }}
-              animate={{ opacity: [0.06, 0.18, 0.95, 0.14, 0.06], scale: [0.7, 1, 2.8, 1, 0.7] }}
+              animate={{ opacity: [0.05, 0.16, 0.92, 0.12, 0.05], scale: [0.7, 1, 2.8, 1, 0.7] }}
               transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
             />
           ))}
 
-          <motion.div aria-hidden="true" className="absolute inset-y-0 left-0 z-[1] w-1/2 border-r border-[#d8b438]/10 bg-[linear-gradient(90deg,#090909_20%,#11100c_100%)]" style={{ x: leftCurtain }} />
-          <motion.div aria-hidden="true" className="absolute inset-y-0 right-0 z-[1] w-1/2 border-l border-[#d8b438]/10 bg-[linear-gradient(270deg,#090909_20%,#11100c_100%)]" style={{ x: rightCurtain }} />
-          <div aria-hidden="true" className="absolute left-1/2 top-0 z-[2] h-full w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(216,180,56,.45),transparent)]" />
+          <motion.div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-1/2 border-r border-[#d8b438]/10 bg-[linear-gradient(90deg,#090909_20%,#11100c_100%)]" style={{ x: leftCurtain }} />
+          <motion.div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-1/2 border-l border-[#d8b438]/10 bg-[linear-gradient(270deg,#090909_20%,#11100c_100%)]" style={{ x: rightCurtain }} />
+          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 z-[2] h-full w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(216,180,56,.42),transparent)]" />
 
           <div className="relative z-20 mx-auto flex w-full max-w-[1480px] flex-col items-center justify-center text-center">
             <motion.div style={{ scale: logoScale, y: logoY }} className="relative">
-              <div aria-hidden="true" className="absolute inset-0 rounded-full bg-[#d8b438]/10 blur-[70px]" />
-              <Image src="/obsidian/mark.svg" alt="Logo Obsidian Moments" width={330} height={330} className="relative h-[180px] w-[180px] rounded-full sm:h-[230px] sm:w-[230px] md:h-[300px] md:w-[300px]" priority />
+              <div aria-hidden="true" className="absolute inset-0 rounded-full bg-[#d8b438]/11 blur-[72px]" />
+              <Image src="/obsidian/mark.svg" alt="Logo Obsidian Moments" width={330} height={330} className="relative h-[175px] w-[175px] rounded-full sm:h-[230px] sm:w-[230px] md:h-[300px] md:w-[300px]" priority />
             </motion.div>
 
-            <motion.div style={{ y: headlineY }} className="mt-7">
-              <p className="text-[8px] font-bold uppercase tracking-[0.3em] text-[#d8b438]/76 sm:text-[9px]">Premium Event Experience</p>
+            <motion.div style={{ y: contentY }} className="mt-5 w-full">
+              <p className="text-[8px] font-bold uppercase tracking-[0.3em] text-[#d8b438]/82 sm:text-[9px]">Premium Event Experience</p>
               <h1 className="mx-auto mt-4 max-w-[1120px] text-[clamp(52px,9vw,132px)] font-semibold leading-[0.84] tracking-[-0.076em]">
                 Capturăm momente.<br /><span className="text-[#d8b438]">Creăm amintiri.</span>
               </h1>
-            </motion.div>
 
-            <motion.div style={{ opacity: actionsOpacity, y: actionsY }} className="mt-10 w-full max-w-4xl">
-              <p className="mx-auto max-w-xl text-[12px] leading-6 text-white/38 sm:text-[14px]">Platformă 360° · Oglindă Foto Premium · Efecte Speciale</p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Link href="/templates/obsidian-moments/contact" className="rounded-full bg-[#d8b438] px-6 py-3.5 text-[11px] font-bold text-[#111] transition hover:-translate-y-0.5">Verifică disponibilitatea</Link>
-                <Link href="/templates/obsidian-moments/preturi" className="rounded-full border border-[#d8b438]/18 bg-[#d8b438]/[0.04] px-6 py-3.5 text-[11px] font-bold text-[#ead16f] backdrop-blur-xl transition hover:bg-[#d8b438]/[0.08]">Vezi prețurile</Link>
-              </div>
-              <div className="mx-auto mt-8 grid max-w-2xl grid-cols-3 border-y border-[#d8b438]/12 py-4">
-                {stats.map((stat, index) => (
-                  <div key={stat.label} className={`px-3 ${index < stats.length - 1 ? "border-r border-[#d8b438]/12" : ""}`}>
-                    <p className="text-[22px] font-semibold tracking-[-0.05em] sm:text-[27px]">{stat.value}</p>
-                    <p className="mt-1 text-[7px] uppercase tracking-[0.14em] text-white/28">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
+              <motion.div style={{ opacity: actionsOpacity, y: actionsY }} className="mx-auto mt-8 w-full max-w-4xl rounded-[26px] border border-[#d8b438]/10 bg-black/38 p-4 shadow-[0_24px_80px_rgba(0,0,0,.30)] backdrop-blur-md sm:p-6">
+                <p className="mx-auto max-w-xl text-[12px] font-medium leading-6 text-white/72 sm:text-[14px]">Platformă 360° · Oglindă Foto Premium · Efecte Speciale</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  <Link href="/templates/obsidian-moments/contact" className="rounded-full bg-[#d8b438] px-6 py-3.5 text-[11px] font-bold text-[#111] shadow-[0_12px_30px_rgba(216,180,56,.18)] transition hover:-translate-y-0.5">Verifică disponibilitatea live</Link>
+                  <Link href="/templates/obsidian-moments/preturi" className="rounded-full border border-[#d8b438]/36 bg-black/35 px-6 py-3.5 text-[11px] font-bold text-[#f0d777] transition hover:border-[#d8b438]/60 hover:bg-[#d8b438]/[0.07]">Vezi prețurile</Link>
+                </div>
+                <div className="mx-auto mt-7 grid max-w-2xl grid-cols-3 border-y border-[#d8b438]/16 py-4">
+                  {stats.map((stat, index) => (
+                    <div key={stat.label} className={`px-3 ${index < stats.length - 1 ? "border-r border-[#d8b438]/16" : ""}`}>
+                      <p className="text-[23px] font-semibold tracking-[-0.05em] text-white sm:text-[29px]">{stat.value}</p>
+                      <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-white/52">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
 
             <motion.div style={{ opacity: cueOpacity }} className="absolute bottom-7 left-1/2 -translate-x-1/2 text-center">
-              <p className="text-[7px] font-bold uppercase tracking-[0.24em] text-white/24">scroll</p>
+              <p className="text-[7px] font-bold uppercase tracking-[0.24em] text-white/42">scroll</p>
               <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity }} className="mx-auto mt-2 h-8 w-px bg-[linear-gradient(#d8b438,transparent)]" />
             </motion.div>
           </div>
@@ -219,10 +219,10 @@ export default function ObsidianMomentsTemplatePage() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">Rezervare</p>
-              <h2 className="mt-4 max-w-4xl text-[46px] font-semibold leading-[0.92] tracking-[-0.065em] sm:text-[68px]">Ai data?<br />Verificăm disponibilitatea.</h2>
+              <h2 className="mt-4 max-w-4xl text-[46px] font-semibold leading-[0.92] tracking-[-0.065em] sm:text-[68px]">Ai data?<br />Vezi disponibilitatea live.</h2>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/templates/obsidian-moments/contact" className="rounded-full bg-[#111] px-6 py-3.5 text-[11px] font-bold text-white">Contact & disponibilitate</Link>
+              <Link href="/templates/obsidian-moments/contact" className="rounded-full bg-[#111] px-6 py-3.5 text-[11px] font-bold text-white">Deschide calendarul</Link>
               <a href={whatsappHref} target="_blank" rel="noreferrer" className="rounded-full border border-black/18 bg-white/35 px-6 py-3.5 text-[11px] font-bold">WhatsApp →</a>
             </div>
           </div>
