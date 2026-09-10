@@ -1,0 +1,27 @@
+/* Cross-project mobile viewport guard.
+   Safari can keep stale layout/scroll extents after client-side navigation when
+   100vh, intrinsic placeholders and bfcache restoration are mixed. */
+html,
+body {
+  height: auto !important;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh !important;
+}
+
+/* Tailwind's min-h-screen uses 100vh. Dynamic viewport units follow the real
+   browser chrome on iOS and avoid an artificial tail under the last section. */
+.min-h-screen {
+  min-height: 100dvh !important;
+}
+
+@media (max-width: 767px) {
+  /* Do not reserve speculative intrinsic height on mobile. It can survive a
+     route transition and create a long blank scroll area after the footer. */
+  .mobile-defer {
+    content-visibility: visible !important;
+    contain-intrinsic-size: auto !important;
+  }
+}
