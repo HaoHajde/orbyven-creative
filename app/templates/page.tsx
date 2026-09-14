@@ -144,6 +144,28 @@ export default function TemplatesPage() {
             </div>
           </Link>
 
+          <Link href="/templates/asfaltari-bucuresti" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#f4a51c]/25 bg-[#111315] text-white lg:min-h-[520px]">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
+              style={{ backgroundImage: "linear-gradient(180deg,rgba(12,14,15,.08),rgba(12,14,15,.88)),url(https://images.pexels.com/photos/4390530/pexels-photo-4390530.jpeg?auto=compress&cs=tinysrgb&w=1600)" }}
+            />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(244,165,28,.18),transparent_24%)]" />
+            <div className="absolute left-6 top-6 rounded-full border border-[#f4a51c]/30 bg-[#151719]/82 px-3 py-2 text-[8px] font-bold uppercase tracking-[.18em] text-[#f8b647] backdrop-blur-xl">Pilot #003</div>
+            <div className="absolute right-6 top-6 flex items-center gap-2 rounded-full border border-[#75e29c]/20 bg-[#111315]/80 px-3 py-2 text-[8px] font-black uppercase tracking-[.12em] text-[#75e29c] backdrop-blur-xl">
+              <span className="h-2 w-2 rounded-full bg-[#75e29c]" /> operațional · demo
+            </div>
+            <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-[#0e1012]/78 p-6 backdrop-blur-xl md:p-8">
+              <div className="flex items-end justify-between gap-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#f4a51c]">Asfaltări · București & împrejurimi</p>
+                  <h2 className="mt-2 max-w-[520px] text-[34px] font-semibold leading-[.95] tracking-[-0.055em] md:text-[45px]">VIAFORTE · infrastructură fără zgomot vizual</h2>
+                  <p className="mt-3 max-w-lg text-[12px] leading-5 text-white/45">Homepage, galerie, contact, lucrări, flotă de utilaje și status operațional transparent.</p>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f4a51c] font-black text-[#111315] transition group-hover:rotate-45 group-hover:scale-105">↗</span>
+              </div>
+            </div>
+          </Link>
+
           {clientTemplateList.map((template) => (
             <Link key={template.slug} href={`/templates/${template.slug}`} className="group overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3">
               <ClientTemplatePreview template={template} compact />
