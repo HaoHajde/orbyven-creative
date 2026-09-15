@@ -285,6 +285,12 @@ iframe {
   animation: orbyvenOrbitCounter 25s linear infinite;
 }
 
+/* Keep decorative animation idle until visible, and while the tab is hidden. */
+.orbyven-orbit-system:not([data-animating="true"]) .orbyven-orbit-track {
+  animation-play-state: paused;
+  will-change: auto;
+}
+
 .orbyven-orbit-body {
   position: absolute;
   left: 50%;

@@ -1,15 +1,21 @@
 "use client";
 
-import CalendarModule from "@/components/modules/CalendarModule";
-import DocumentsModule from "@/components/modules/DocumentsModule";
-import EstimatesModule from "@/components/modules/EstimatesModule";
-import ExpensesModule from "@/components/modules/ExpensesModule";
-import LeadsModule from "@/components/modules/LeadsModule";
+import dynamic from "next/dynamic";
 import OverviewModule from "@/components/modules/OverviewModule";
-import TasksModule from "@/components/modules/TasksModule";
-import TeamModule from "@/components/modules/TeamModule";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+
+function ModuleLoading() {
+  return <div role="status" className="min-h-48 pb-24 text-sm text-[var(--muted)]">Se încarcă modulul…</div>;
+}
+
+const CalendarModule = dynamic(() => import("@/components/modules/CalendarModule"), { loading: ModuleLoading });
+const DocumentsModule = dynamic(() => import("@/components/modules/DocumentsModule"), { loading: ModuleLoading });
+const EstimatesModule = dynamic(() => import("@/components/modules/EstimatesModule"), { loading: ModuleLoading });
+const ExpensesModule = dynamic(() => import("@/components/modules/ExpensesModule"), { loading: ModuleLoading });
+const LeadsModule = dynamic(() => import("@/components/modules/LeadsModule"), { loading: ModuleLoading });
+const TasksModule = dynamic(() => import("@/components/modules/TasksModule"), { loading: ModuleLoading });
+const TeamModule = dynamic(() => import("@/components/modules/TeamModule"), { loading: ModuleLoading });
 
 type Props = {
   activeModule: OrbyvenModuleId;
