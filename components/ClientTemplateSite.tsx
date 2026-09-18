@@ -1,12 +1,168 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import type { ClientTemplateConfig } from "@/lib/client-template-catalog";
 
 export default function ClientTemplateSite({ template }: { template: ClientTemplateConfig }) {
   if (template.style === "technical") return <TechnicalSite template={template} />;
+  if (template.style === "field-service") return <FieldServiceSite template={template} />;
   if (template.style === "editorial") return <EditorialSite template={template} />;
   if (template.style === "airy") return <AirySite template={template} />;
   return <MedicalSite template={template} />;
+}
+
+function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
+  const phone = template.contactPhone ?? "07xx xxx xxx";
+  const whatsappNumber = phone.replace(/\D/g, "");
+  const hasContactNumber = /^0\d{9}$/.test(whatsappNumber);
+  const heroImage = template.gallery[0]?.image;
+
+  return (
+    <main className="min-h-screen bg-[#08131c] text-white" style={{ fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      <div className="border-b border-white/10 bg-[#071018] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/48">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4">
+          <span>Pilot #002 · versiune de prezentare ORBYVEN</span>
+          <Link href="/templates" className="transition hover:text-white">Înapoi la template-uri ↗</Link>
+        </div>
+      </div>
+
+      <header className="relative z-20 border-b border-white/10 bg-[#08131c]/92 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-5 px-5 py-5 md:px-10">
+          <a href="#acasa" className="flex items-center gap-3" aria-label="Neagu Costică SRL - începutul paginii">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f09a3e] text-[12px] font-black text-[#08131c]">NC</span>
+            <div>
+              <p className="text-[16px] font-bold tracking-[-0.035em]">Neagu Costică SRL</p>
+              <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/38">termic · sanitar · automatizări</p>
+            </div>
+          </a>
+          <nav className="hidden items-center gap-7 text-[12px] font-medium text-white/58 lg:flex">
+            <a href="#servicii" className="transition hover:text-white">Servicii</a>
+            <a href="#smart" className="transition hover:text-white">Control smart</a>
+            <a href="#lucrari" className="transition hover:text-white">Lucrări</a>
+            <a href="#proces" className="transition hover:text-white">Cum lucrăm</a>
+          </nav>
+          <a href="#contact" className="rounded-full bg-[#f09a3e] px-5 py-3 text-[12px] font-bold text-[#08131c] transition hover:bg-[#ffad55]">WhatsApp</a>
+        </div>
+      </header>
+
+      <section id="acasa" className="relative overflow-hidden">
+        <div aria-hidden="true" className="absolute left-[-15%] top-[8%] h-[520px] w-[520px] rounded-full bg-[#17415a]/38 blur-[150px]" />
+        <div className="relative mx-auto grid max-w-[1500px] lg:min-h-[760px] lg:grid-cols-[1.04fr_.96fr]">
+          <div className="flex flex-col justify-center px-5 py-16 md:px-10 md:py-24 lg:py-28">
+            <div className="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-[0.14em]">
+              <span className="rounded-full border border-[#f09a3e]/30 bg-[#f09a3e]/10 px-3 py-2 text-[#f4aa59]">Fetești</span>
+              <span className="rounded-full border border-white/12 px-3 py-2 text-white/48">Echipă profesionistă</span>
+              <span className="rounded-full border border-white/12 px-3 py-2 text-white/48">Deplasări la cerere</span>
+            </div>
+            <h1 className="mt-8 max-w-[850px] text-[clamp(51px,6.8vw,100px)] font-semibold leading-[0.89] tracking-[-0.067em]">{template.heroTitle}</h1>
+            <p className="mt-7 max-w-2xl text-[16px] leading-8 text-white/52 md:text-[18px]">{template.heroCopy}</p>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <a href="#contact" className="rounded-full bg-[#f09a3e] px-6 py-4 text-sm font-bold text-[#08131c]">{template.primaryAction}</a>
+              <a href="#lucrari" className="rounded-full border border-white/14 px-6 py-4 text-sm font-semibold text-white/82">{template.secondaryAction}</a>
+            </div>
+            <p className="mt-5 text-[11px] leading-5 text-white/32">WhatsApp {phone} · număr demonstrativ, pregătit pentru înlocuire</p>
+          </div>
+
+          <div className="relative min-h-[520px] overflow-hidden border-y border-white/10 bg-[#142531] lg:min-h-full lg:border-x lg:border-y-0">
+            {heroImage && <Image src={heroImage} alt="Sistem profesional de încălzire în pardoseală" fill preload sizes="(max-width: 1024px) 100vw, 48vw" className="object-cover" />}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#08131c] via-[#08131c]/5 to-[#08131c]/15" />
+            <div className="absolute left-5 top-5 rounded-full border border-white/18 bg-[#08131c]/64 px-4 py-2 text-[9px] font-semibold uppercase tracking-[.15em] text-white/72 backdrop-blur-xl md:left-8 md:top-8">Execuție atentă · zonare corectă</div>
+            <div className="absolute inset-x-5 bottom-5 grid gap-3 rounded-[24px] border border-white/14 bg-[#08131c]/78 p-5 backdrop-blur-xl sm:grid-cols-[1fr_auto] sm:items-end md:inset-x-8 md:bottom-8 md:p-6">
+              <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#f0a653]">Un singur sistem, control complet</p><p className="mt-3 max-w-lg text-[25px] font-semibold leading-[1.05] tracking-[-.04em] md:text-[34px]">Căldură unde ai nevoie, nu în toată casa deodată.</p></div>
+              <span className="rounded-full bg-white/10 px-4 py-2 text-[10px] text-white/62">termostat / cameră</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/10 bg-[#0c1923]">
+        <div className="mx-auto grid max-w-[1500px] grid-cols-3 px-5 md:px-10">
+          {template.stats.map((stat) => <div key={stat.label} className="border-r border-white/10 px-3 py-6 last:border-r-0 md:px-7 md:py-8"><p className="text-[25px] font-semibold tracking-[-.05em] text-[#f0a653] md:text-[35px]">{stat.value}</p><p className="mt-2 text-[8px] uppercase tracking-[.14em] text-white/32 md:text-[9px]">{stat.label}</p></div>)}
+        </div>
+      </section>
+
+      <section id="servicii" className="bg-[#eef2f4] text-[#14202a]">
+        <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-10 md:py-28">
+          <div className="grid gap-10 lg:grid-cols-[.72fr_1.28fr]">
+            <div className="lg:sticky lg:top-10 lg:self-start">
+              <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#bd6511]">Servicii complete</p>
+              <h2 className="mt-5 text-[47px] font-semibold leading-[.93] tracking-[-.058em] md:text-[70px]">De la sursa de căldură până la ultimul robinet.</h2>
+              <p className="mt-6 max-w-md text-[15px] leading-7 text-[#14202a]/52">O singură echipă coordonează instalația termică, rețeaua sanitară și automatizarea, inclusiv pentru locuințe cu mai multe etaje.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {template.services.map((service, index) => (
+                <article key={service.title} className="group min-h-[270px] rounded-[24px] border border-[#14202a]/9 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(20,32,42,.09)] md:p-7">
+                  <div className="flex items-center justify-between"><span className="grid min-h-10 min-w-10 place-items-center rounded-full bg-[#fff0dc] px-3 text-[9px] font-black text-[#bd6511]">{service.icon}</span><span className="text-[10px] font-semibold text-[#14202a]/22">0{index + 1}</span></div>
+                  <h3 className="mt-10 text-[25px] font-semibold tracking-[-.04em]">{service.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-[#14202a]/50">{service.copy}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="smart" className="overflow-hidden bg-[#10222e]">
+        <div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-20 md:px-10 md:py-28 lg:grid-cols-[.94fr_1.06fr] lg:items-center">
+          <div className="relative min-h-[440px] overflow-hidden rounded-[28px] border border-white/10 bg-[#172d3b] md:min-h-[600px]">
+            {template.gallery[2]?.image && <Image src={template.gallery[2].image} alt="Sistem smart de control al temperaturii pe camere" fill sizes="(max-width: 1024px) 100vw, 46vw" className="object-cover" />}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#08131c]/88 via-transparent to-transparent" />
+            <div className="absolute inset-x-5 bottom-5 rounded-[20px] border border-white/14 bg-[#08131c]/76 p-5 backdrop-blur-xl md:inset-x-7 md:bottom-7">
+              <p className="text-[9px] uppercase tracking-[.18em] text-[#f0a653]">Zonare automată</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[10px]">
+                <span className="rounded-[10px] bg-[#f09a3e] px-2 py-3 font-bold text-[#08131c]">Living 22°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-3 text-white/70">Dormitor 20°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-3 text-white/70">Baie 23°</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#f0a653]">Control inteligent pe camere</p>
+            <h2 className="mt-5 max-w-3xl text-[48px] font-semibold leading-[.92] tracking-[-.06em] md:text-[72px]">O cameră cere căldură. Sistemul răspunde doar acolo.</h2>
+            <p className="mt-7 max-w-xl text-[16px] leading-8 text-white/50">Fiecare cameră primește propriul termostat. Panoul central comandă actuatoarele de pe distribuitor și pornește centrala numai când o zonă are nevoie de temperatură suplimentară.</p>
+            <div className="mt-9 grid gap-3 sm:grid-cols-2">
+              {["Termostat în fiecare cameră", "Actuatoare pe distribuitor", "Panou central de comandă", "Consum adaptat pe zone"].map((item, index) => <div key={item} className="rounded-[16px] border border-white/10 bg-white/[.035] p-4"><span className="text-[9px] font-bold text-[#f0a653]">0{index + 1}</span><p className="mt-3 text-sm font-medium text-white/78">{item}</p></div>)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f7f8f8] text-[#14202a]">
+        <div className="mx-auto grid max-w-[1500px] gap-4 px-5 py-16 md:grid-cols-3 md:px-10 md:py-20">
+          {template.benefits.map((benefit, index) => <article key={benefit.title} className="rounded-[22px] border border-[#14202a]/8 bg-white p-6 md:p-7"><span className="text-[10px] font-black text-[#bd6511]">0{index + 1}</span><h3 className="mt-8 text-[23px] font-semibold tracking-[-.04em]">{benefit.title}</h3><p className="mt-4 text-sm leading-7 text-[#14202a]/50">{benefit.copy}</p></article>)}
+        </div>
+      </section>
+
+      <section id="lucrari" className="bg-[#eef2f4] text-[#14202a]">
+        <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-10 md:py-28">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#bd6511]">Lucrări & soluții</p><h2 className="mt-5 text-[48px] font-semibold leading-[.94] tracking-[-.06em] md:text-[72px]">Detaliile care rămân sub finisaje contează cel mai mult.</h2></div><p className="max-w-md text-sm leading-7 text-[#14202a]/50">Imagini de prezentare pentru direcția vizuală a site-ului. Portofoliul real al firmei poate fi adăugat în aceeași structură.</p></div>
+          <div className="mt-12 grid gap-4 lg:grid-cols-3">
+            {template.gallery.map((item, index) => <article key={item.title} className={`group overflow-hidden rounded-[24px] bg-white ${index === 0 ? "lg:col-span-2" : ""}`}><div className="relative h-[330px] overflow-hidden md:h-[420px]">{item.image && <Image src={item.image} alt={item.title} fill sizes={index === 0 ? "(max-width: 1024px) 100vw, 66vw" : "(max-width: 1024px) 100vw, 33vw"} className="object-cover transition duration-700 group-hover:scale-[1.025]" />}<div className="absolute inset-0 bg-gradient-to-t from-[#08131c]/55 to-transparent" /><span className="absolute bottom-5 left-5 rounded-full border border-white/20 bg-[#08131c]/55 px-3 py-2 text-[8px] uppercase tracking-[.15em] text-white backdrop-blur">vizual de prezentare</span></div><div className="p-6"><p className="text-[9px] font-bold uppercase tracking-[.15em] text-[#bd6511]">{item.label}</p><h3 className="mt-3 text-[25px] font-semibold tracking-[-.04em]">{item.title}</h3><p className="mt-3 text-sm leading-6 text-[#14202a]/48">{item.copy}</p></div></article>)}
+          </div>
+        </div>
+      </section>
+
+      <section id="proces" className="bg-white text-[#14202a]">
+        <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-10 md:py-28">
+          <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]"><div><p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#bd6511]">Cum lucrăm</p><h2 className="mt-5 text-[49px] font-semibold leading-[.93] tracking-[-.06em] md:text-[70px]">De la mesaj la instalație testată.</h2></div><div className="border-t border-[#14202a]/10">{template.process.map((step) => <div key={step.number} className="grid gap-4 border-b border-[#14202a]/10 py-7 sm:grid-cols-[65px_.55fr_1fr]"><span className="text-[10px] font-black text-[#bd6511]">{step.number}</span><h3 className="text-[20px] font-semibold tracking-[-.03em]">{step.title}</h3><p className="text-sm leading-7 text-[#14202a]/50">{step.copy}</p></div>)}</div></div>
+        </div>
+      </section>
+
+      <section className="bg-[#edf2f4] text-[#14202a]">
+        <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-10 md:py-24">
+          <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#bd6511]">Recenzii · texte demonstrative</p>
+          <div className="mt-8 grid gap-3 md:grid-cols-3">{template.reviews.map((review) => <article key={review.name} className="rounded-[22px] border border-[#14202a]/8 bg-white p-6 md:p-7"><p className="text-[18px] leading-7 tracking-[-.025em]">„{review.quote}”</p><div className="mt-9 border-t border-[#14202a]/10 pt-4"><p className="text-[12px] font-semibold">{review.name}</p><p className="mt-1 text-[10px] text-[#14202a]/42">{review.meta}</p></div></article>)}</div>
+        </div>
+      </section>
+
+      <section id="contact" className="bg-[#08131c] px-5 py-20 md:px-10 md:py-28">
+        <div className="mx-auto grid max-w-[1380px] overflow-hidden rounded-[30px] border border-white/10 bg-[#10222e] lg:grid-cols-[1.15fr_.85fr]">
+          <div className="p-7 md:p-12"><p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#f0a653]">{template.contactLine}</p><h2 className="mt-6 max-w-4xl text-[48px] font-semibold leading-[.92] tracking-[-.06em] md:text-[72px]">Ai planul casei sau câteva poze? De aici putem începe.</h2><p className="mt-6 max-w-xl text-[15px] leading-7 text-white/48">Trimite locația, suprafața, numărul de etaje și tipul lucrării. Pentru deplasări în afara municipiului Fetești, costul se stabilește înainte de programare.</p></div>
+          <div className="flex flex-col justify-between border-t border-white/10 bg-[#f09a3e] p-7 text-[#08131c] md:p-10 lg:border-l lg:border-t-0"><div><p className="text-[9px] font-black uppercase tracking-[.18em]">Contact rapid</p><p className="mt-6 text-[14px] font-semibold">WhatsApp / Telefon</p><p className="mt-2 text-[clamp(35px,4vw,55px)] font-semibold leading-none tracking-[-.06em]">{phone}</p><p className="mt-4 text-[11px] leading-5 text-[#08131c]/60">Număr demonstrativ. Se înlocuiește cu numărul real înainte de publicarea site-ului clientului.</p></div>{hasContactNumber ? <a href={`https://wa.me/4${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="mt-12 inline-flex w-fit rounded-full bg-[#08131c] px-6 py-4 text-sm font-bold text-white">Trimite pe WhatsApp ↗</a> : <button type="button" disabled className="mt-12 inline-flex w-fit cursor-not-allowed rounded-full bg-[#08131c] px-6 py-4 text-sm font-bold text-white/60">WhatsApp · număr demonstrativ</button>}</div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function DemoBar({ dark = false }: { dark?: boolean }) {
