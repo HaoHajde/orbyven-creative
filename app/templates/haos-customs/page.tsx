@@ -18,45 +18,72 @@ const services = [
 export default function HaoCustomsPage() {
   return (
     <HaoShell active="home">
-      <section className="relative min-h-[94svh] overflow-hidden border-b border-white/[.07]">
-        <div
-          className="absolute inset-0 scale-[1.015] bg-cover bg-center"
-          style={{ backgroundImage: `linear-gradient(90deg,rgba(0,0,0,.93) 0%,rgba(0,0,0,.74) 37%,rgba(0,0,0,.24) 74%,rgba(0,0,0,.48) 100%),url("${haoImages.hero}")` }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,5,.06)_0%,rgba(5,5,5,.02)_48%,#050505_100%)]" />
-        <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.018)_1px,transparent_1px)] [background-size:72px_72px]" />
-        <HeroSpotlight />
-
-        <div className="relative mx-auto flex min-h-[94svh] max-w-[1600px] flex-col justify-between px-5 pb-10 pt-24 sm:px-7 md:px-12 md:pb-14 md:pt-28">
-          <header className="flex items-center justify-end">
-            <div className="flex items-center gap-2 rounded-full border border-white/[.09] bg-black/35 p-1.5 backdrop-blur-xl">
-              <span className="hidden px-3 text-[9px] font-semibold uppercase tracking-[.15em] text-white/34 sm:block">București · detailing studio</span>
-              <Link href="/templates/haos-customs/contact" className="rounded-full bg-white px-4 py-2.5 text-[10px] font-bold text-black transition hover:bg-[#e2c991]">Rezervă</Link>
+      <section className="relative overflow-hidden border-b border-white/[.07] bg-[#050505]">
+        <div className="mx-auto max-w-[1600px] px-4 pb-8 pt-5 sm:px-6 md:px-10 md:pb-12 md:pt-7">
+          <header className="flex items-center justify-between gap-4 border-b border-white/[.08] pb-5">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 place-items-center rounded-full border border-[#d9bc82]/28 bg-[#d9bc82]/8 text-[9px] font-black text-[#d9bc82]">HC</div>
+              <div>
+                <p className="text-[10px] font-black tracking-[-.02em] text-white">HAO&apos;S CUSTOMS</p>
+                <p className="mt-0.5 text-[6px] font-bold uppercase tracking-[.18em] text-[#d9bc82]/58">premium detailing studio</p>
+              </div>
             </div>
+
+            <Link
+              href="/templates/haos-customs/contact"
+              className="rounded-full border border-[#d9bc82]/32 bg-black/35 px-5 py-3 text-[10px] font-bold text-[#e3c991] transition hover:bg-[#d9bc82] hover:text-black"
+            >
+              Programează
+            </Link>
           </header>
 
-          <div className="max-w-[980px] pb-[8vh] md:pb-[5vh]">
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#d9bc82]/65" />
-              <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#d9bc82]">Hao&apos;s Customs · Professional Auto Detailing</p>
+          <div
+            className="relative mt-5 min-h-[76svh] overflow-hidden rounded-[34px] border border-white/[.08] bg-[#111] bg-cover bg-center shadow-[0_40px_120px_rgba(0,0,0,.48)]"
+            style={{
+              backgroundImage: `linear-gradient(90deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.56) 42%,rgba(0,0,0,.08) 74%,rgba(0,0,0,.20) 100%),linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,0,0,.34)),url("${haoImages.hero}")`,
+            }}
+          >
+            <div className="absolute inset-0 opacity-[.10] [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:58px_58px]" />
+            <HeroSpotlight />
+
+            <div className="relative z-10 flex min-h-[76svh] items-end px-5 pb-8 pt-20 sm:px-7 md:px-10 md:pb-12 lg:px-14 lg:pb-14">
+              <div className="max-w-[920px]">
+                <div className="flex items-center gap-3">
+                  <span className="h-px w-8 bg-[#d9bc82]/70" />
+                  <p className="text-[9px] font-bold uppercase tracking-[.26em] text-[#d9bc82]">Hao&apos;s</p>
+                </div>
+
+                <h1 className="mt-5 text-[clamp(72px,12vw,180px)] font-semibold leading-[.72] tracking-[-.085em] text-white">
+                  CUSTOMS
+                </h1>
+
+                <p className="mt-5 max-w-xl text-[14px] leading-7 text-white/58 md:text-[16px]">
+                  Detailing profesionist. Interior. Exterior. Protecție. Totul într-un traseu simplu, de la alegerea serviciului până la programare.
+                </p>
+
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <a
+                    href="#servicii"
+                    className="rounded-full bg-[#f3ead7] px-6 py-3.5 text-[11px] font-bold text-black transition hover:-translate-y-0.5 hover:bg-white"
+                  >
+                    Vezi serviciile
+                  </a>
+                  <Link
+                    href="/templates/haos-customs/galerie"
+                    className="rounded-full border border-white/[.16] bg-black/28 px-6 py-3.5 text-[11px] font-semibold text-white/72 backdrop-blur-xl transition hover:border-[#d9bc82]/40 hover:text-[#e3c991]"
+                  >
+                    Before / After
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            <h1 className="mt-7 text-[clamp(60px,10.5vw,158px)] font-semibold leading-[0.77] tracking-[-0.078em] text-white">
-              Obsesie pentru<br /><span className="bg-gradient-to-r from-[#f2dfb4] via-[#caa45b] to-[#9b793d] bg-clip-text text-transparent">fiecare reflexie.</span>
-            </h1>
-
-            <div className="mt-8 grid max-w-3xl gap-6 md:grid-cols-[1fr_auto] md:items-end">
-              <p className="max-w-xl text-[15px] leading-7 text-white/48 md:text-[17px] md:leading-8">
-                Interior și exterior tratate profesionist într-o hală dedicată. Alegi nivelul de intervenție, vezi estimarea și rezervi fără să ieși din experiență.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link href="/templates/haos-customs/preturi" className="rounded-full bg-[#d9bc82] px-6 py-3.5 text-[12px] font-bold text-black transition hover:bg-[#e7ca92]">Configurează →</Link>
-                <Link href="/templates/haos-customs/galerie" className="rounded-full border border-white/[.11] bg-black/30 px-6 py-3.5 text-[12px] font-semibold text-white/68 backdrop-blur-xl transition hover:border-white/20 hover:text-white">Before / After</Link>
-              </div>
+            <div className="pointer-events-none absolute bottom-8 right-8 hidden h-24 w-24 rounded-full border border-[#d9bc82]/18 shadow-[0_0_70px_rgba(217,188,130,.06)] md:block">
+              <div className="absolute inset-5 rounded-full border border-[#d9bc82]/10" />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 border-t border-white/[.08] pt-5">
+          <div className="mt-6 grid grid-cols-3 border-t border-white/[.08] pt-5">
             {[
               ["4", "servicii principale"],
               ["Live", "estimare instant"],
@@ -71,7 +98,7 @@ export default function HaoCustomsPage() {
         </div>
       </section>
 
-      <section className="bg-[#050505]">
+      <section id="servicii" className="bg-[#050505]">
         <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-7 md:px-10 md:py-28">
           <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr]">
             <div className="lg:sticky lg:top-8 lg:self-start">
