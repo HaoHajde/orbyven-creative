@@ -444,7 +444,7 @@ export const seoCaseStudies: SeoCaseStudy[] = [
       { number: "03", title: "Execuție", copy: "Materialele, task-urile, calendarul și cheltuielile rămân legate de lucrare." },
     ],
     note:
-      "Pilotul este folosit pentru a valida dacă un flux simplu poate reduce munca repetitivă dintre teren, deviz și urmărirea proiectului. Site-ul public trebuie să rămână ușor de folosit pentru client, în timp ce workspace-ul păstrează contextul lucrării: cine a cerut-o, unde are loc, ce s-a măsurat, ce materiale sunt necesare și ce s-a ofertat. Valoarea urmărită este continuitatea informației, nu numărul de ecrane din aplicație.",
+      "Pilotul este folosit pentru a valida dacă un flux simplu poate reduce munca repetitivă dintre teren, deviz și urmărirea proiectului. Site-ul public trebuie să rămână ușor de folosit pentru client, în timp ce workspace-ul păstrează contextul lucrării: cine a cerut-o, unde are loc, ce s-a măsurat, ce materiale sunt necesare și ce s-a ofertat. Valoarea urmărită este continuitatea informației, nu numărul de ecrane din aplicație. Același context trebuie să poată fi urmărit de la primul mesaj până la închiderea lucrării, fără dublarea datelor în tabele sau conversații separate.",
     demoHref: "/templates/pilot-002",
     demoLabel: "Deschide demo-ul Pilot #002",
     related: [
