@@ -11,6 +11,7 @@ export default function StructuredData() {
         "@id": `${siteUrl}/#organization`,
         name: siteConfig.name,
         url: siteUrl,
+        logo: `${siteUrl}/branding/orbyven-logo-dark.png`,
       },
       {
         "@type": "WebSite",
