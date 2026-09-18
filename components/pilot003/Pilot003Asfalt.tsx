@@ -176,19 +176,21 @@ export function Pilot003Home() {
       <Pilot003DemoBar />
       <Pilot003Header />
 
-      <section id="acasa" className="relative overflow-hidden bg-[#111315] text-white">
+      <section id="acasa" className="relative flex min-h-[94svh] items-center overflow-hidden bg-[#111315] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(244,165,28,.16),transparent_28%),linear-gradient(180deg,#111315,#15191c)]" />
-        <div className="relative mx-auto grid max-w-[1500px] gap-10 px-5 py-16 md:px-9 md:py-24 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
+        <div aria-hidden="true" className="absolute inset-0 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:52px_52px]" />
+        <div aria-hidden="true" className="absolute -right-24 top-16 h-72 w-72 rounded-full border-[34px] border-[#f4a51c]/10" />
+        <div className="relative mx-auto grid w-full max-w-[1580px] gap-10 px-5 py-20 md:px-9 md:py-28 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
           <div>
             <div className="flex flex-wrap gap-2 text-[9px] font-black uppercase tracking-[0.14em]">
               <span className="rounded-full border border-[#f4a51c]/25 bg-[#f4a51c]/10 px-3 py-2 text-[#f8b647]">București & împrejurimi</span>
               <span className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-2 text-white/55">Pilot #003</span>
             </div>
-            <h1 className="mt-7 max-w-[780px] text-[clamp(54px,7.4vw,106px)] font-black leading-[0.88] tracking-[-0.068em]">
+            <h1 className="mt-7 max-w-[860px] text-[clamp(62px,8.4vw,128px)] font-black leading-[0.82] tracking-[-0.074em]">
               Asfaltăm suprafețe care trebuie să țină.
             </h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-7 text-white/56 md:text-[18px] md:leading-8">
-              Curți, parcări, platforme și drumuri de acces. Măsurăm, ofertăm clar și executăm complet.
+              Curți, parcări, platforme și drumuri de acces. Măsurăm. Ofertăm. Executăm.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/templates/asfaltari-bucuresti/contact" className="rounded-[11px] bg-[#f4a51c] px-6 py-3.5 text-sm font-black text-[#111315]">Solicită evaluare</Link>
@@ -210,7 +212,7 @@ export function Pilot003Home() {
 
           <div className="relative">
             <div
-              className="min-h-[520px] overflow-hidden rounded-[24px] border border-white/10 bg-[#34393b] bg-cover bg-center shadow-[0_36px_100px_rgba(0,0,0,.36)]"
+              className="min-h-[620px] overflow-hidden rounded-[30px] border border-white/10 bg-[#34393b] bg-cover bg-center shadow-[0_42px_120px_rgba(0,0,0,.42)] lg:min-h-[720px]"
               style={{ backgroundImage: `linear-gradient(180deg,rgba(10,12,13,.02),rgba(10,12,13,.38)), url(${heroImage})` }}
             />
             <div className="absolute bottom-5 left-5 right-5 rounded-[16px] border border-white/10 bg-[#101214]/88 p-5 backdrop-blur-xl">
