@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 
-export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "hao";
+export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "hao";
 
 function BrowserFrame({
   children,
@@ -201,6 +201,57 @@ export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPrevie
                 <p className="text-[7px] font-bold uppercase tracking-[.18em] text-[#b77883]">mica noastră</p>
                 <p className="mt-1 font-serif text-[32px] italic leading-none text-[#73404a]">A</p>
                 <p className="mt-1 text-[5px] text-[#9e737a]">suflet mic · iubire mare</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </BrowserFrame>
+    );
+  }
+
+
+  if (kind === "baptismBoy") {
+    return (
+      <BrowserFrame url="botezul-lui-david.ro">
+        <div className="relative min-h-[338px] overflow-hidden bg-[#f7fbff] text-[#29435f]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_16%,rgba(255,255,255,.98),transparent_28%),radial-gradient(circle_at_84%_24%,rgba(139,177,207,.25),transparent_30%),linear-gradient(135deg,#fbfdff,#e7f0f7)]" />
+          <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full border border-[#b68e49]/18" />
+          <div className="absolute left-[58%] top-10 text-[15px] text-[#b68e49]/70">✦</div>
+          <div className="absolute right-[12%] top-[34%] text-[26px] text-[#82a8c6]/45">☾</div>
+
+          <div className="relative z-10 mx-4 mt-3 flex items-center justify-between rounded-[15px] border border-white/85 bg-white/70 px-4 py-2.5 shadow-sm backdrop-blur">
+            <div>
+              <p className="font-serif text-[10px] font-semibold tracking-[-.03em]">David ✦</p>
+              <p className="text-[4px] uppercase tracking-[.17em] text-[#6689a7]">un nou început</p>
+            </div>
+            <div className="hidden gap-2 text-[4px] font-semibold text-[#466078]/55 sm:flex"><span>Acasă</span><span>Poveste</span><span>Program</span><span>RSVP</span></div>
+            <span className="rounded-full bg-[#739fc4] px-3 py-1.5 text-[5px] font-bold text-white">Confirmă</span>
+          </div>
+
+          <div className="relative z-10 grid min-h-[286px] grid-cols-[1.02fr_.98fr] items-center gap-3 px-5 py-5">
+            <div>
+              <p className="text-[5px] font-bold uppercase tracking-[.22em] text-[#a17e43]">22 iunie 2027 · Constanța</p>
+              <h3 className="mt-3 font-serif text-[31px] font-semibold leading-[.84] tracking-[-.055em] sm:text-[39px]">
+                Botezul micuțului<br /><span className="italic text-[#6f9fc5]">David</span>
+              </h3>
+              <p className="mt-3 max-w-[210px] text-[5px] leading-[10px] text-[#5d7185]/75">
+                O invitație senină, elegantă și ușor de explorat.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {["22 Iunie", "13:00", "Constanța"].map((item) => (
+                  <span key={item} className="rounded-full border border-[#739fc4]/14 bg-white/72 px-2.5 py-1.5 text-[4px] font-bold text-[#466681]">{item}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative mx-auto grid h-40 w-40 place-items-center rounded-full border-[7px] border-white/80 bg-[radial-gradient(circle_at_35%_28%,#fff_0%,#e8f1f8_44%,#bdd2e3_100%)] shadow-[0_20px_55px_rgba(75,108,137,.17)] sm:h-48 sm:w-48">
+              <div className="absolute inset-2 rounded-full border border-[#b68e49]/35" />
+              <div className="absolute -left-3 bottom-9 text-[18px] text-[#739fc4]">☁</div>
+              <div className="absolute -right-2 top-8 text-[14px] text-[#b68e49]">✦</div>
+              <div className="text-center">
+                <p className="text-[7px] font-bold uppercase tracking-[.18em] text-[#6689a7]">micul nostru</p>
+                <p className="mt-1 font-serif text-[32px] italic leading-none text-[#3f5d78]">D</p>
+                <p className="mt-1 text-[5px] text-[#71879a]">suflet mic · visuri mari</p>
               </div>
             </div>
           </div>

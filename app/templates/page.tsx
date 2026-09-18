@@ -69,6 +69,14 @@ const featured: {
     subtitle: "Invitație pastel, program, galerie și RSVP pentru botez.",
     kind: "baptismGirl",
   },
+  {
+    href: "/templates/botez-baietel",
+    label: "Template · Botez",
+    meta: "Băiețel · invitație digitală",
+    title: "Botezul micuțului",
+    subtitle: "Invitație bleu, program, galerie și RSVP pentru botez.",
+    kind: "baptismBoy",
+  },
 ]
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
