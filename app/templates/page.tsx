@@ -1,6 +1,7 @@
 "use client";
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
+import FeaturedTemplatePreview, { type FeaturedPreviewKind } from "@/components/FeaturedTemplatePreview";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { clientTemplateList } from "@/lib/client-template-catalog";
@@ -12,48 +13,55 @@ type Theme = "light" | "dark";
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const featured = [
+const featured: {
+  href: string;
+  label: string;
+  meta: string;
+  title: string;
+  subtitle: string;
+  kind: FeaturedPreviewKind;
+}[] = [
   {
     href: "/templates/obsidian-moments",
     label: "Pilot #001 · Events",
     meta: "360° · foto · efecte",
-    title: "OBSIDIAN",
-    subtitle: "Momente care se simt înainte să fie explicate.",
-    accent: "#d7b66b",
-    bg: "radial-gradient(circle at 78% 16%,rgba(215,182,107,.22),transparent 28%),linear-gradient(135deg,#050505,#121212 58%,#070707)",
-    text: "white",
+    title: "Obsidian Moments",
+    subtitle: "Experiență premium pentru evenimente.",
+    kind: "obsidian",
   },
   {
     href: "/templates/asfaltari-bucuresti",
     label: "Pilot #003 · Infrastructură",
     meta: "București + Ilfov",
     title: "VIAFORTE",
-    subtitle: "Lucrări grele. Mesaj simplu. Încredere rapidă.",
-    accent: "#f1b52f",
-    bg: "radial-gradient(circle at 82% 20%,rgba(241,181,47,.19),transparent 30%),linear-gradient(145deg,#15181a,#0d0f10)",
-    text: "white",
+    subtitle: "Asfaltări, lucrări și transparență operațională.",
+    kind: "asphalt",
   },
   {
     href: "/templates/florarie-bragadiru",
     label: "Pilot #004 · Florărie",
     meta: "Bragadiru",
     title: "Maison Fleur",
-    subtitle: "Alegi. Personalizezi. Comanzi.",
-    accent: "#7b3445",
-    bg: "radial-gradient(circle at 76% 18%,rgba(123,52,69,.18),transparent 28%),radial-gradient(circle at 20% 80%,rgba(72,109,85,.12),transparent 34%),linear-gradient(135deg,#fbf2f0,#ead8d5)",
-    text: "#26372e",
+    subtitle: "Florărie online cu personalizare și comandă.",
+    kind: "florist",
+  },
+  {
+    href: "/templates/haos-customs",
+    label: "Pilot #005 · Auto detailing",
+    meta: "Luxury black & gold",
+    title: "Hao's Customs",
+    subtitle: "Detailing, before/after, prețuri și programare.",
+    kind: "hao",
   },
   {
     href: "/demo/nunta/elegant",
     label: "Template · Nuntă",
-    meta: "invitație digitală",
+    meta: "Invitație digitală",
     title: "Mire & Mireasă",
-    subtitle: "Elegant. Personal. Fără aglomerație.",
-    accent: "#9f7730",
-    bg: "radial-gradient(circle at 22% 18%,rgba(255,255,255,.94),transparent 28%),radial-gradient(circle at 82% 68%,rgba(178,135,58,.18),transparent 34%),linear-gradient(135deg,#f3ecdf,#ded0ba)",
-    text: "#261f17",
+    subtitle: "Invitație elegantă, RSVP și detalii de eveniment.",
+    kind: "wedding",
   },
-];
+]
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
   const reduceMotion = useReducedMotion();
@@ -201,62 +209,31 @@ export default function TemplatesPage() {
 
         <div className="grid gap-4 xl:grid-cols-2">
           {featured.map((item, index) => (
-            <Reveal key={item.href} delay={index * .04}>
+            <Reveal key={item.href} delay={index * .035}>
               <Link
                 href={item.href}
-                className="group relative flex min-h-[390px] overflow-hidden rounded-[34px] border border-[var(--border)] p-7 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)] sm:min-h-[440px] md:p-9"
-                style={{ background: item.bg, color: item.text }}
+                className="group block overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)]"
               >
-                <div className="relative z-10 flex w-full flex-col justify-between">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-[9px] font-semibold uppercase tracking-[.22em]" style={{ color: item.accent }}>{item.label}</p>
-                    <span className="rounded-full border border-current/10 bg-white/5 px-3 py-2 text-[8px] uppercase tracking-[.14em] opacity-55">{item.meta}</span>
+                <div className="overflow-hidden rounded-[27px]">
+                  <div className="transition duration-700 ease-out group-hover:scale-[1.018]">
+                    <FeaturedTemplatePreview kind={item.kind} />
                   </div>
+                </div>
 
-                  <div>
-                    <h3 className={`max-w-[92%] text-[clamp(54px,8vw,106px)] font-semibold leading-[.80] tracking-[-.075em] ${item.href.includes("florarie") || item.href.includes("nunta") ? "font-serif" : ""}`}>
-                      {item.title}
-                    </h3>
-                    <p className="mt-5 max-w-md text-sm leading-6 opacity-58">{item.subtitle}</p>
+                <div className="flex items-end justify-between gap-5 px-3 pb-3 pt-5 sm:px-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{item.label}</p>
+                      <span className="text-[8px] text-[var(--muted)]/65">· {item.meta}</span>
+                    </div>
+                    <h3 className="mt-2 text-[27px] font-semibold tracking-[-.045em] sm:text-[31px]">{item.title}</h3>
+                    <p className="mt-1.5 max-w-lg text-[11px] leading-5 text-[var(--muted)]">{item.subtitle}</p>
                   </div>
-
-                  <div className="flex items-end justify-between border-t border-current/10 pt-5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[.15em] opacity-48">Deschide demo</span>
-                    <span className="grid h-12 w-12 place-items-center rounded-full text-xl transition duration-300 group-hover:rotate-45" style={{ backgroundColor: item.accent, color: item.href.includes("florarie") || item.href.includes("nunta") ? "white" : "black" }}>↗</span>
-                  </div>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition duration-300 group-hover:rotate-45">↗</span>
                 </div>
               </Link>
             </Reveal>
           ))}
-
-          <Reveal delay={.06}>
-            <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d9bc82]/18 bg-[#050505] text-white lg:min-h-[520px]">
-              <div
-                className="absolute inset-0 scale-[1.02] bg-cover bg-center transition duration-700 group-hover:scale-[1.045]"
-                style={{ backgroundImage: "linear-gradient(90deg,rgba(0,0,0,.90),rgba(0,0,0,.56) 52%,rgba(0,0,0,.30)),url('https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1200&q=68')" }}
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.18)_50%,rgba(0,0,0,.72))]" />
-              <div className="absolute right-[-60px] top-[-45px] h-56 w-56 rounded-full border border-[#d9bc82]/13 shadow-[0_0_90px_rgba(217,188,130,.06)]" />
-              <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
-                <div className="flex items-center justify-between">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d9bc82]">Pilot #005 · Auto detailing</p>
-                  <span className="rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48 backdrop-blur">Interactive</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2"><span className="h-px w-8 bg-[#d9bc82]/65" /><p className="text-[9px] font-semibold uppercase tracking-[.24em] text-[#d9bc82]">Hao&apos;s</p></div>
-                  <div className="mt-3 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
-                  <p className="mt-5 max-w-md text-sm leading-6 text-white/52">Hero cinematic · before/after real · configurator inteligent · calendar interactiv.</p>
-                </div>
-                <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.16em] text-white/30">Luxury black & gold</p>
-                    <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Hao&apos;s Customs</h2>
-                  </div>
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9bc82] text-black transition group-hover:rotate-45">↗</span>
-                </div>
-              </div>
-            </Link>
-          </Reveal>
         </div>
       </section>
 
