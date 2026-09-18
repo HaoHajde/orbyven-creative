@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 
-export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "hao";
+export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "birthday18" | "hao";
 
 function BrowserFrame({
   children,
@@ -253,6 +253,60 @@ export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPrevie
                 <p className="mt-1 font-serif text-[32px] italic leading-none text-[#3f5d78]">D</p>
                 <p className="mt-1 text-[5px] text-[#71879a]">suflet mic · visuri mari</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </BrowserFrame>
+    );
+  }
+
+
+  if (kind === "birthday18") {
+    return (
+      <BrowserFrame url="alex18.ro" dark>
+        <div className="relative min-h-[338px] overflow-hidden bg-[#060509] text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_26%,rgba(116,72,255,.34),transparent_27%),radial-gradient(circle_at_28%_78%,rgba(180,80,255,.16),transparent_30%),linear-gradient(145deg,#09070f,#040406)]" />
+          <div className="absolute inset-0 opacity-[.09] [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:32px_32px]" />
+          <div className="absolute -right-12 top-8 text-[140px] font-black leading-none tracking-[-.12em] text-white/[.035]">18</div>
+
+          <div className="relative z-10 flex items-center justify-between border-b border-white/8 px-4 py-3">
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-[.18em]">ALEX / 18</p>
+              <p className="mt-1 text-[4px] uppercase tracking-[.20em] text-violet-300/55">midnight edition</p>
+            </div>
+            <div className="hidden gap-3 text-[4px] font-semibold text-white/38 sm:flex"><span>Start</span><span>Plan</span><span>Locație</span><span>RSVP</span></div>
+            <span className="rounded-full border border-white/10 bg-white px-3 py-1.5 text-[5px] font-bold text-black">Confirmă</span>
+          </div>
+
+          <div className="relative z-10 grid min-h-[280px] grid-cols-[1.05fr_.95fr] items-end gap-3 px-5 pb-6 pt-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-px w-7 bg-violet-300/65" />
+                <p className="text-[4px] font-bold uppercase tracking-[.24em] text-violet-200/72">12 Septembrie 2027 · București</p>
+              </div>
+              <h3 className="mt-4 text-[34px] font-semibold leading-[.78] tracking-[-.075em] sm:text-[44px]">
+                One night.<br /><span className="bg-gradient-to-r from-white via-violet-200 to-violet-500 bg-clip-text text-transparent">Eighteen forever.</span>
+              </h3>
+              <p className="mt-3 max-w-[235px] text-[5px] leading-[10px] text-white/42">
+                Un template de majorat construit pentru impact: puțin text, atmosferă multă.
+              </p>
+              <div className="mt-4 flex gap-1.5">
+                {["21:00", "Dress code", "RSVP"].map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-white/[.05] px-2.5 py-1.5 text-[4px] font-bold text-white/58 backdrop-blur">{item}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative flex h-[190px] items-center justify-center">
+              <div className="absolute h-36 w-36 rounded-full border border-violet-300/20 bg-violet-500/10 blur-[1px]" />
+              <div className="absolute h-28 w-28 rounded-full border border-white/12" />
+              <div className="relative text-center">
+                <p className="text-[8px] font-black uppercase tracking-[.32em] text-white/42">chapter</p>
+                <p className="text-[90px] font-black leading-[.72] tracking-[-.12em] text-white">18</p>
+                <p className="mt-2 text-[5px] font-bold uppercase tracking-[.24em] text-violet-300">starts now</p>
+              </div>
+              <span className="absolute right-4 top-3 text-[14px] text-violet-200">✦</span>
+              <span className="absolute bottom-3 left-6 text-[8px] text-white/38">✦</span>
             </div>
           </div>
         </div>

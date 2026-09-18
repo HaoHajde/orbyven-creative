@@ -77,6 +77,14 @@ const featured: {
     subtitle: "Invitație bleu, program, galerie și RSVP pentru botez.",
     kind: "baptismBoy",
   },
+  {
+    href: "/templates/majorat",
+    label: "Template · Majorat",
+    meta: "18 ani · invitație digitală",
+    title: "MIDNIGHT 18",
+    subtitle: "Invitație dark luxury, countdown, dress code, party plan și RSVP.",
+    kind: "birthday18",
+  },
 ]
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
