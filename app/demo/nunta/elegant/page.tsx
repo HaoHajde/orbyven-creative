@@ -131,7 +131,7 @@ export default function WeddingTemplateDemo() {
                     Mireasă
                   </h1>
                   <p className="mx-auto mt-9 max-w-xl text-[15px] leading-7 text-[#6c6358] md:text-[17px]">
-                    Un layout editorial pregătit pentru personalizare. Numele, data, locațiile și mesajele se înlocuiesc pentru fiecare eveniment.
+                    Numele, data și locațiile se personalizează pentru fiecare eveniment.
                   </p>
 
                   <div className="mx-auto mt-10 inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-[#9e7735]/15 bg-white/48 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6e604e] backdrop-blur-xl">
@@ -156,7 +156,7 @@ export default function WeddingTemplateDemo() {
               <h2 className="mt-6 font-[family-name:var(--font-wedding-editorial)] text-[clamp(50px,7vw,84px)] font-medium leading-[0.9] tracking-[-0.06em]">
                 Mire <span className="italic text-[#a77b32]">&amp;</span> Mireasă
               </h2>
-              <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#70685e]">Fără fotografii reale în template. Zona poate primi ulterior imagini, ilustrații sau poate rămâne complet tipografică.</p>
+              <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#70685e]">Fotografii, ilustrații sau o compoziție tipografică — alegi ce vi se potrivește.</p>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -171,7 +171,7 @@ export default function WeddingTemplateDemo() {
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9d7431]">Rol</p>
                       <h3 className="mt-4 font-[family-name:var(--font-wedding-editorial)] text-[64px] font-medium leading-none tracking-[-0.06em]">{role}</h3>
-                      <p className="mt-5 max-w-sm text-sm leading-7 text-[#6e665c]">Spațiu pentru o scurtă poveste, un mesaj personal sau câteva rânduri despre fiecare dintre cei doi.</p>
+                      <p className="mt-5 max-w-sm text-sm leading-7 text-[#6e665c]">Un mesaj scurt despre fiecare dintre voi.</p>
                     </div>
                   </div>
                 </article>
@@ -190,13 +190,13 @@ export default function WeddingTemplateDemo() {
                 </h2>
               </div>
               <p className="max-w-2xl text-[15px] leading-8 text-white/55 md:text-[17px]">
-                Secțiune dedicată nașilor. În varianta finală se pot introduce numele, un mesaj, o fotografie sau doar o compoziție tipografică elegantă.
+                Nume, fotografie sau mesaj scurt pentru nași.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="px-5 py-20 sm:px-6 md:py-28">
+        <section id="countdown" className="scroll-mt-24 px-5 py-20 sm:px-6 md:py-28">
           <div className="mx-auto max-w-[1180px] text-center">
             <GoldLabel>Până la eveniment</GoldLabel>
             <h2 className="mt-6 font-[family-name:var(--font-wedding-editorial)] text-[clamp(48px,7vw,82px)] font-medium tracking-[-0.06em]">Countdown personalizabil</h2>
@@ -208,7 +208,7 @@ export default function WeddingTemplateDemo() {
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-xs text-[#877e72]">Valorile se conectează automat la data evenimentului în proiectul final.</p>
+            <p className="mt-5 text-xs text-[#877e72]">Se actualizează automat după data evenimentului.</p>
           </div>
         </section>
 
@@ -240,7 +240,7 @@ export default function WeddingTemplateDemo() {
             <div>
               <GoldLabel>Confirmare</GoldLabel>
               <h2 className="mt-6 font-[family-name:var(--font-wedding-editorial)] text-[clamp(48px,6vw,76px)] font-medium leading-[0.9] tracking-[-0.06em]">RSVP demo</h2>
-              <p className="mt-6 max-w-md text-sm leading-7 text-[#6d655b]">Formular demonstrativ. Nu trimite date într-o bază reală; în proiectul final se conectează la workspace-ul clientului.</p>
+              <p className="mt-6 max-w-md text-sm leading-7 text-[#6d655b]">Confirmare simplă pentru invitați. În proiectul final se conectează la lista de participanți.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -271,7 +271,7 @@ export default function WeddingTemplateDemo() {
           <div className="mt-7 font-[family-name:var(--font-wedding-editorial)] text-[clamp(58px,9vw,118px)] font-medium leading-[0.8] tracking-[-0.075em]">
             Mire <span className="italic text-[#aa8039]">&amp;</span> Mireasă
           </div>
-          <p className="mx-auto mt-7 max-w-xl text-sm leading-7 text-[#756d62]">Tot conținutul este demonstrativ și poate fi înlocuit fără a modifica structura template-ului.</p>
+          <p className="mx-auto mt-7 max-w-xl text-sm leading-7 text-[#756d62]">Totul se personalizează fără să schimbăm structura.</p>
         </section>
       </div>
     </main>

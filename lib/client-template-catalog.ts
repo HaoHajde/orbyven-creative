@@ -48,14 +48,14 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     eyebrow: "Confort. Siguranță. Eficiență.",
     subtitle: "Instalații termice & sanitare",
     description:
-      "Un site direct și credibil pentru firme tehnice care trebuie să transmită seriozitate înainte de primul telefon.",
+      "Seriozitate, servicii clare și contact rapid.",
     accent: "#315ee8",
     accentSoft: "#eaf0ff",
     surface: "#f4f6f8",
     ink: "#121820",
     heroTitle: "Instalații făcute corect, de la prima intervenție.",
     heroCopy:
-      "Montaj, mentenanță și intervenții pentru locuințe și spații comerciale. Primești o evaluare clară, o ofertă transparentă și o echipă care respectă lucrarea.",
+      "Montaj, mentenanță și intervenții. Ofertă clară, echipă serioasă, lucrare verificată.",
     primaryAction: "Solicită o evaluare",
     secondaryAction: "Vezi serviciile",
     stats: [
@@ -102,14 +102,14 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     eyebrow: "Fetești · lucrări în țară la cerere",
     subtitle: "Confort controlat, cameră cu cameră",
     description:
-      "Template dedicat Pilotului #002: servicii termice și sanitare prezentate clar, portofoliu vizual și solicitare rapidă pe WhatsApp.",
+      "Termic, sanitar, lucrări și contact rapid pe WhatsApp.",
     accent: "#e88924",
     accentSoft: "#fff0dc",
     surface: "#edf2f5",
     ink: "#14202a",
     heroTitle: "Instalații complete pentru o casă care funcționează exact cum trebuie.",
     heroCopy:
-      "Executăm instalații termice și sanitare în Fetești, de la centrale și calorifere până la încălzire în pardoseală și control separat al temperaturii în fiecare cameră. Pentru lucrări în București, Constanța și alte localități, deplasarea se stabilește transparent în funcție de proiect.",
+      "Termic, sanitar și control smart pentru case din Fetești. Deplasări la cerere pentru proiecte din alte orașe.",
     primaryAction: "Discută pe WhatsApp",
     secondaryAction: "Vezi lucrările",
     stats: [
@@ -158,14 +158,14 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     eyebrow: "Momente care rămân.",
     subtitle: "Planning · styling · coordination",
     description:
-      "Un site editorial, cald și rafinat pentru branduri de evenimente care vând emoție, atmosferă și încredere.",
+      "Evenimente prezentate prin atmosferă, servicii și contact direct.",
     accent: "#9f5e4b",
     accentSoft: "#f1dfd7",
     surface: "#f7f1e9",
     ink: "#2b211d",
     heroTitle: "O zi care arată și se simte ca voi.",
     heroCopy:
-      "Construim nunți și evenimente private cu o direcție coerentă, de la prima schiță până la ultimul detaliu din ziua evenimentului.",
+      "Concept, furnizori și coordonare pentru un eveniment coerent, fără stres inutil.",
     primaryAction: "Povestește-ne despre voi",
     secondaryAction: "Descoperă experiența",
     stats: [
@@ -212,14 +212,14 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     eyebrow: "Beauty, without the noise.",
     subtitle: "Skin · nails · rituals",
     description:
-      "Un site soft și aerisit pentru un salon contemporan, orientat pe experiență, rezultate și programare ușoară.",
+      "Servicii beauty, rezultate și programare fără complicații.",
     accent: "#8b6a75",
     accentSoft: "#efe4e7",
     surface: "#faf7f5",
     ink: "#30282c",
     heroTitle: "Ritualuri de beauty care lasă loc pentru tine.",
     heroCopy:
-      "Tratamente atent alese, specialiști în care poți avea încredere și o atmosferă în care frumusețea nu trebuie grăbită.",
+      "Tratamente potrivite, specialiști buni și programare simplă.",
     primaryAction: "Alege o programare",
     secondaryAction: "Explorează ritualurile",
     stats: [
@@ -266,14 +266,14 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     eyebrow: "Stomatologie explicată simplu.",
     subtitle: "Dental care for real life",
     description:
-      "Un site medical calm, uman și foarte clar, construit să reducă anxietatea și să facă programarea firească.",
+      "Tratamente explicate clar și programare simplă.",
     accent: "#286d73",
     accentSoft: "#dfeeee",
     surface: "#f2f7f6",
     ink: "#172627",
     heroTitle: "Un loc în care știi ce urmează înainte să înceapă tratamentul.",
     heroCopy:
-      "Consultații explicate pe înțelesul tău, planuri de tratament clare și o echipă care pune confortul pacientului înaintea jargonului medical.",
+      "Consultații explicate simplu, plan clar și confort de la prima vizită.",
     primaryAction: "Programează o consultație",
     secondaryAction: "Vezi tratamentele",
     stats: [
