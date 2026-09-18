@@ -37,6 +37,9 @@ jobs:
       - name: Relock patched Sharp
         run: npm update sharp --package-lock-only
 
+      - name: Relock patched js-yaml
+        run: npm update js-yaml --package-lock-only
+
       - name: Reinstall patched dependency tree
         run: npm ci
 
