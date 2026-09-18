@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 export const haoImages = {
-  hero: "https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1800&q=76",
-  exteriorBefore: "https://images.unsplash.com/photo-1761312834150-4beefff097a7?auto=format&fit=crop&w=1600&q=72",
-  exteriorAfter: "https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1600&q=74",
-  interiorBefore: "https://images.unsplash.com/photo-1770936450010-6837d6933caa?auto=format&fit=crop&w=1500&q=72",
-  interiorAfter: "https://images.pexels.com/photos/36806220/pexels-photo-36806220/free-photo-of-luxurious-black-car-interior-with-sunlit-detailing.jpeg?auto=compress&dpr=1&w=1500",
-  glossAfter: "https://images.unsplash.com/photo-1655811937291-35ccc59036f6?auto=format&fit=crop&w=1600&q=74",
+  hero: "/hao-customs/hero.webp",
+  exteriorBefore: "/hao-customs/exterior-before.webp",
+  exteriorAfter: "/hao-customs/exterior-after.webp",
+  interiorBefore: "/hao-customs/interior-before.webp",
+  interiorAfter: "/hao-customs/interior-after.webp",
+  paintBefore: "/hao-customs/paint-before.webp",
+  paintAfter: "/hao-customs/paint-after.webp",
 };
 
 const navItems = [
