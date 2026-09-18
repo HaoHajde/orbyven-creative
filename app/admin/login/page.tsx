@@ -16,20 +16,21 @@ export default function AdminLoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("studio-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialTheme: Theme =
-      saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
+    const frame = window.requestAnimationFrame(() => {
+      const saved = window.localStorage.getItem("studio-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initialTheme: Theme =
+        saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
 
-    setTheme(initialTheme);
-    document.documentElement.style.colorScheme = initialTheme;
+      setTheme(initialTheme);
+      document.documentElement.style.colorScheme = initialTheme;
 
-    const checkUser = async () => {
-      const { data } = await orbitaSupabase.auth.getUser();
-      if (data.user) router.replace("/admin");
-    };
+      void orbitaSupabase.auth.getUser().then(({ data }) => {
+        if (data.user) router.replace("/admin");
+      });
+    });
 
-    checkUser();
+    return () => window.cancelAnimationFrame(frame);
   }, [router]);
 
   const toggleTheme = () => {
