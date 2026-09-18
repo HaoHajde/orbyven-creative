@@ -31,7 +31,12 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!optionalCookiesEnabled) return;
-    setVisible(!window.localStorage.getItem(STORAGE_KEY));
+
+    const frame = window.requestAnimationFrame(() => {
+      setVisible(!window.localStorage.getItem(STORAGE_KEY));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [optionalCookiesEnabled]);
 
   if (!optionalCookiesEnabled || !visible) return null;

@@ -26,8 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint workspace foundation
-        run: npx eslint app/workspace/login/page.tsx components/ClientWorkspace.tsx lib/orbyven-workspace.ts
+      - name: Lint
+        run: npm run lint
 
-      - name: Build
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Production build
         run: npm run build

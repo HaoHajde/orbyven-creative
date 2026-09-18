@@ -75,94 +75,6 @@ iframe {
   outline-offset: 3px;
 }
 
-/* Mobile performance + motion */
-
-.mobile-defer {
-  content-visibility: auto;
-  contain-intrinsic-size: 720px;
-}
-
-.mobile-card {
-  contain: paint;
-}
-
-[data-mobile-reveal] {
-  opacity: 0;
-  transform: translate3d(0, 18px, 0);
-  transition:
-    opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-mobile-reveal][data-visible="true"] {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-}
-
-.mobile-hero-kicker {
-  animation: mobileHeroIn 520ms 40ms both cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mobile-hero-title {
-  animation: mobileHeroIn 720ms 110ms both cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mobile-hero-copy {
-  animation: mobileHeroIn 700ms 190ms both cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mobile-hero-action {
-  animation: mobileHeroIn 700ms 260ms both cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-
-.mobile-scroll-cue {
-  animation: mobileScrollCue 1.8s ease-in-out infinite;
-}
-
-@keyframes mobileHeroIn {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-
-@keyframes mobileScrollCue {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-    opacity: 0.45;
-  }
-  50% {
-    transform: translate3d(0, 5px, 0);
-    opacity: 0.9;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  [data-mobile-reveal] {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* =========================================================
    ORBYVEN ORBIT SYSTEM
    Flat 2D solar-system language for hero + selected headings.
@@ -420,73 +332,60 @@ iframe {
   }
 }
 
-
 /* =========================================================
-   ORBYVEN MOBILE FINAL POLISH
-   Tuned for 360 / 390 / 430px widths.
+   ORBYVEN RESPONSIVE PERFORMANCE BASELINE
+   Canonical pages only. Legacy /mobile-* implementations were removed
+   at the Alpha Foundation checkpoint.
    ========================================================= */
 
-.mobile-shell-x {
-  padding-inline: clamp(18px, 5vw, 24px);
-}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 
-.mobile-hero-title-size {
-  font-size: clamp(46px, 13.2vw, 64px);
-}
-
-.mobile-section-title-size {
-  font-size: clamp(34px, 9.5vw, 42px);
-}
-
-.mobile-subhero {
-  min-height: 74svh;
-  display: flex;
-  align-items: center;
-  padding-top: 7.5rem;
-  padding-bottom: 4rem;
-}
-
-.mobile-press {
-  transition:
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 180ms ease;
-}
-
-.mobile-press:active {
-  transform: scale(0.985);
-  opacity: 0.9;
-}
-
-.mobile-hairline {
-  border-color: var(--border);
-}
-
-@media (max-width: 374px) {
-  .mobile-shell-x {
-    padding-inline: 18px;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
-  .mobile-subhero {
-    min-height: 70svh;
-    padding-top: 7rem;
-    padding-bottom: 3.5rem;
+  .orbyven-orbit-track { animation: none !important; }
+}
+
+@media (max-width: 767px) {
+  html { scroll-behavior: auto; }
+
+  a,
+  button { touch-action: manipulation; }
+
+  main > section:not(:first-of-type) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 760px;
   }
 
-  .orbyven-orbit-system--hero {
-    width: 124vw;
+  .orbyven-orbit-system--accent { display: none !important; }
+  .orbyven-orbit-system--hero { display: block !important; }
+
+  .orbyven-orbit-system--hero .orbyven-orbit-track--three,
+  .orbyven-orbit-system--hero .orbyven-orbit-track--four {
+    display: none !important;
   }
 
-  .orbyven-orbit-system--accent {
-    width: 84vw;
+  .orbyven-orbit-system--hero .orbyven-orbit-track--one {
+    animation-duration: 14s !important;
+    will-change: transform;
+  }
+
+  .orbyven-orbit-system--hero .orbyven-orbit-track--two {
+    animation-duration: 20s !important;
+    will-change: transform;
+  }
+
+  main [aria-hidden="true"] {
+    filter: none !important;
+    -webkit-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
-@media (min-width: 430px) and (max-width: 767px) {
-  .mobile-shell-x {
-    padding-inline: 24px;
-  }
-
-  .orbyven-orbit-system--hero {
-    width: min(116vw, 520px);
-  }
-}
