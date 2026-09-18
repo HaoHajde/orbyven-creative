@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 export const haoImages = {
   hero: "https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1800&q=76",
@@ -106,7 +106,7 @@ export function HaoShell({
 export function HeroSpotlight() {
   const ref = useRef<HTMLDivElement>(null);
 
-  const handleMove = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handleMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!ref.current || event.pointerType === "touch") return;
     const rect = ref.current.getBoundingClientRect();
     ref.current.style.setProperty("--x", `${event.clientX - rect.left}px`);
