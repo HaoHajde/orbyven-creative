@@ -176,57 +176,51 @@ export function Pilot003Home() {
       <Pilot003DemoBar />
       <Pilot003Header />
 
-      <section id="acasa" className="relative flex min-h-[94svh] items-center overflow-hidden bg-[#111315] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(244,165,28,.16),transparent_28%),linear-gradient(180deg,#111315,#15191c)]" />
-        <div aria-hidden="true" className="absolute inset-0 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:52px_52px]" />
-        <div aria-hidden="true" className="absolute -right-24 top-16 h-72 w-72 rounded-full border-[34px] border-[#f4a51c]/10" />
-        <div className="relative mx-auto grid w-full max-w-[1580px] gap-10 px-5 py-20 md:px-9 md:py-28 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-          <div>
+      <section
+        id="acasa"
+        className="relative flex min-h-[94svh] items-end overflow-hidden bg-[#111315] text-white"
+        style={{ backgroundImage: `linear-gradient(90deg,rgba(11,13,14,.94) 0%,rgba(11,13,14,.72) 45%,rgba(11,13,14,.18) 100%),linear-gradient(180deg,transparent 58%,rgba(11,13,14,.88)),url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
+      >
+        <div aria-hidden="true" className="absolute inset-0 opacity-[.11] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:54px_54px]" />
+        <div aria-hidden="true" className="absolute -right-28 top-20 h-80 w-80 rounded-full border-[38px] border-[#f4a51c]/12" />
+        <div className="relative mx-auto w-full max-w-[1580px] px-5 pb-10 pt-28 md:px-9 md:pb-14 md:pt-36">
+          <div className="max-w-[980px]">
             <div className="flex flex-wrap gap-2 text-[9px] font-black uppercase tracking-[0.14em]">
-              <span className="rounded-full border border-[#f4a51c]/25 bg-[#f4a51c]/10 px-3 py-2 text-[#f8b647]">București & împrejurimi</span>
-              <span className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-2 text-white/55">Pilot #003</span>
+              <span className="rounded-full border border-[#f4a51c]/30 bg-[#f4a51c]/12 px-3 py-2 text-[#f8b647] backdrop-blur-xl">București & împrejurimi</span>
+              <span className="rounded-full border border-white/12 bg-black/22 px-3 py-2 text-white/58 backdrop-blur-xl">Pilot #003</span>
             </div>
-            <h1 className="mt-7 max-w-[860px] text-[clamp(62px,8.4vw,128px)] font-black leading-[0.82] tracking-[-0.074em]">
-              Asfaltăm suprafețe care trebuie să țină.
+            <h1 className="mt-7 text-[clamp(64px,9vw,138px)] font-black leading-[0.79] tracking-[-0.078em]">
+              Asfaltăm.
+              <br />
+              <span className="text-white/46">Corect.</span>
             </h1>
-            <p className="mt-7 max-w-2xl text-[16px] leading-7 text-white/56 md:text-[18px] md:leading-8">
+            <p className="mt-7 max-w-xl text-[16px] leading-7 text-white/62 md:text-[18px] md:leading-8">
               Curți, parcări, platforme și drumuri de acces. Măsurăm. Ofertăm. Executăm.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/templates/asfaltari-bucuresti/contact" className="rounded-[11px] bg-[#f4a51c] px-6 py-3.5 text-sm font-black text-[#111315]">Solicită evaluare</Link>
-              <Link href="/templates/asfaltari-bucuresti/galerie" className="rounded-[11px] border border-white/15 bg-white/[0.04] px-6 py-3.5 text-sm font-bold text-white">Vezi lucrările</Link>
-            </div>
-            <div className="mt-10 grid max-w-2xl grid-cols-3 border-y border-white/10 py-5">
-              {[
-                ["24–48h", "evaluare demo"],
-                ["7–10 zile", "fereastră demo"],
-                ["B + IF", "zonă principală"],
-              ].map(([value, label]) => (
-                <div key={label} className="border-r border-white/10 px-4 first:pl-0 last:border-r-0">
-                  <p className="text-[23px] font-black tracking-[-0.05em] md:text-[30px]">{value}</p>
-                  <p className="mt-1 text-[8px] uppercase tracking-[0.14em] text-white/30">{label}</p>
-                </div>
-              ))}
+              <Link href="/templates/asfaltari-bucuresti/contact" className="rounded-[11px] bg-[#f4a51c] px-6 py-3.5 text-sm font-black text-[#111315] transition hover:-translate-y-0.5">Solicită evaluare</Link>
+              <Link href="/templates/asfaltari-bucuresti/galerie" className="rounded-[11px] border border-white/18 bg-black/22 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-xl transition hover:bg-black/36">Vezi lucrările</Link>
             </div>
           </div>
 
-          <div className="relative">
-            <div
-              className="min-h-[620px] overflow-hidden rounded-[30px] border border-white/10 bg-[#34393b] bg-cover bg-center shadow-[0_42px_120px_rgba(0,0,0,.42)] lg:min-h-[720px]"
-              style={{ backgroundImage: `linear-gradient(180deg,rgba(10,12,13,.02),rgba(10,12,13,.38)), url(${heroImage})` }}
-            />
-            <div className="absolute bottom-5 left-5 right-5 rounded-[16px] border border-white/10 bg-[#101214]/88 p-5 backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[8px] font-black uppercase tracking-[0.16em] text-white/32">Status operațional · demo</p>
-                  <p className="mt-2 text-[20px] font-black tracking-[-0.04em]">Echipe active în București</p>
-                </div>
-                <span className="flex items-center gap-2 rounded-full border border-[#5bdb8a]/20 bg-[#5bdb8a]/10 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-[#75e29c]">
-                  <span className="h-2 w-2 rounded-full bg-[#75e29c] shadow-[0_0_0_5px_rgba(117,226,156,.10)]" />
-                  Operațional
-                </span>
+          <div className="mt-12 grid overflow-hidden rounded-[22px] border border-white/12 bg-[#101214]/76 backdrop-blur-2xl md:grid-cols-[1.2fr_repeat(3,.55fr)]">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-5 md:border-b-0 md:border-r md:px-6">
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-[.16em] text-white/32">Status operațional · demo</p>
+                <p className="mt-2 text-[18px] font-black tracking-[-.035em]">Echipe active în București</p>
               </div>
+              <span className="flex shrink-0 items-center gap-2 rounded-full border border-[#5bdb8a]/20 bg-[#5bdb8a]/10 px-3 py-2 text-[8px] font-black uppercase tracking-[.12em] text-[#75e29c]"><span className="h-2 w-2 rounded-full bg-[#75e29c]" />Operațional</span>
             </div>
+            {[
+              ["24–48h", "evaluare"],
+              ["7–10 zile", "fereastră"],
+              ["B + IF", "zonă"],
+            ].map(([value, label]) => (
+              <div key={label} className="border-b border-white/10 px-5 py-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+                <p className="text-[22px] font-black tracking-[-.05em]">{value}</p>
+                <p className="mt-1 text-[7px] uppercase tracking-[.14em] text-white/30">{label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

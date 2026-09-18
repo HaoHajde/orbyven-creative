@@ -46,7 +46,9 @@ function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
       </header>
 
       <section id="acasa" className="relative overflow-hidden">
+        <div aria-hidden="true" className="absolute inset-0 opacity-[.08] [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:54px_54px]" />
         <div aria-hidden="true" className="absolute left-[-15%] top-[8%] h-[520px] w-[520px] rounded-full bg-[#17415a]/38 blur-[150px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute bottom-[-7vw] left-[2vw] text-[clamp(180px,28vw,430px)] font-black leading-none tracking-[-.1em] text-white/[.018]">NC</div>
         <div className="relative mx-auto grid max-w-[1600px] lg:min-h-[92svh] lg:grid-cols-[1.02fr_.98fr]">
           <div className="flex flex-col justify-center px-5 py-20 md:px-10 md:py-28 lg:py-32">
             <div className="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-[0.14em]">
@@ -67,6 +69,14 @@ function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
             {heroImage && <Image src={heroImage} alt="Sistem profesional de încălzire în pardoseală" fill preload sizes="(max-width: 1024px) 100vw, 48vw" className="object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#08131c] via-[#08131c]/5 to-[#08131c]/15" />
             <div className="absolute left-5 top-5 rounded-full border border-white/18 bg-[#08131c]/64 px-4 py-2 text-[9px] font-semibold uppercase tracking-[.15em] text-white/72 backdrop-blur-xl md:left-8 md:top-8">Execuție atentă · zonare corectă</div>
+            <div className="absolute right-5 top-5 rounded-[20px] border border-white/15 bg-[#08131c]/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,.20)] backdrop-blur-2xl md:right-8 md:top-8">
+              <p className="text-[7px] font-bold uppercase tracking-[.16em] text-[#f0a653]">Control pe camere</p>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <span className="rounded-[10px] bg-[#f09a3e] px-2 py-2 text-[8px] font-bold text-[#08131c]">22°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-2 text-[8px] text-white/70">20°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-2 text-[8px] text-white/70">23°</span>
+              </div>
+            </div>
             <div className="absolute inset-x-5 bottom-5 grid gap-3 rounded-[24px] border border-white/14 bg-[#08131c]/78 p-5 backdrop-blur-xl sm:grid-cols-[1fr_auto] sm:items-end md:inset-x-8 md:bottom-8 md:p-6">
               <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#f0a653]">Un singur sistem, control complet</p><p className="mt-3 max-w-lg text-[25px] font-semibold leading-[1.05] tracking-[-.04em] md:text-[34px]">Căldură unde ai nevoie, nu în toată casa deodată.</p></div>
               <span className="rounded-full bg-white/10 px-4 py-2 text-[10px] text-white/62">termostat / cameră</span>
@@ -232,23 +242,30 @@ function TechnicalSite({ template }: { template: ClientTemplateConfig }) {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-[#121820]/10 bg-[#161c24] p-3 shadow-[0_32px_100px_rgba(18,24,32,0.18)]">
-            <div className="rounded-[18px] border border-white/10 bg-[#1e2631] p-6 text-white md:p-8">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/44">Evaluare rapidă · demo</p>
-                <span className="h-2.5 w-2.5 rounded-full bg-[#61d18b] shadow-[0_0_0_5px_rgba(97,209,139,0.10)]" />
+          <div
+            className="relative min-h-[620px] overflow-hidden rounded-[34px] border border-[#121820]/10 bg-[#151c24] bg-cover bg-center shadow-[0_38px_110px_rgba(18,24,32,0.22)]"
+            style={{ backgroundImage: "linear-gradient(180deg,rgba(10,18,27,.02),rgba(10,18,27,.76)),url('/pilot-002/pardoseala.webp')" }}
+          >
+            <div className="absolute left-5 top-5 flex flex-wrap gap-2 md:left-7 md:top-7">
+              <span className="rounded-full border border-white/15 bg-[#101820]/55 px-3 py-2 text-[8px] font-bold uppercase tracking-[.15em] text-white/78 backdrop-blur-xl">execuție reală · prezentare</span>
+              <span className="rounded-full border border-[#315ee8]/35 bg-[#315ee8]/80 px-3 py-2 text-[8px] font-bold uppercase tracking-[.15em] text-white backdrop-blur-xl">instalații complete</span>
+            </div>
+            <div className="absolute inset-x-5 bottom-5 rounded-[24px] border border-white/12 bg-[#101820]/82 p-5 text-white shadow-[0_20px_70px_rgba(0,0,0,.26)] backdrop-blur-2xl md:inset-x-7 md:bottom-7 md:p-6">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[#8da8ff]">Evaluare rapidă</p>
+                  <h2 className="mt-3 max-w-md text-[28px] font-black leading-[.96] tracking-[-.05em] md:text-[38px]">Vezi lucrarea. Înțelegi soluția. Primești oferta.</h2>
+                </div>
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#61d18b] shadow-[0_0_0_6px_rgba(97,209,139,.11)]" />
               </div>
-              <h2 className="mt-6 text-[32px] font-black leading-[0.98] tracking-[-0.05em]">Spune-ne ce trebuie rezolvat.</h2>
-              <div className="mt-7 grid gap-3">
-                {["Tip lucrare · Instalație termică", "Locație · București", "Urgență · Programare normală"].map((label) => (
-                  <div key={label} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-white/[0.045] px-4 py-4 text-[12px] text-white/68">
-                    <span>{label}</span><span className="text-white/30">⌄</span>
+              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                {["Tip lucrare", "Locație", "Programare"].map((label) => (
+                  <div key={label} className="rounded-[12px] border border-white/10 bg-white/[.055] px-4 py-3 text-[10px] text-white/68">
+                    {label}<span className="float-right text-white/26">⌄</span>
                   </div>
                 ))}
-                <div className="rounded-[12px] border border-white/10 bg-white/[0.045] px-4 py-5 text-[12px] text-white/35">Descrie pe scurt lucrarea…</div>
-                <div className="rounded-[12px] bg-[#315ee8] px-5 py-4 text-center text-[12px] font-bold">Trimite solicitarea</div>
               </div>
-              <p className="mt-4 text-[10px] leading-4 text-white/30">Interfață demonstrativă. Formularul nu trimite date și nu implementează un modul ORBYVEN.</p>
+              <div className="mt-3 rounded-[12px] bg-[#315ee8] px-5 py-3.5 text-center text-[11px] font-bold">Solicită evaluarea</div>
             </div>
           </div>
         </div>
@@ -347,10 +364,23 @@ function EditorialSite({ template }: { template: ClientTemplateConfig }) {
             <p className="mt-8 max-w-xl text-[16px] leading-8 text-[#2b211d]/58">{template.heroCopy}</p>
             <div className="mt-9 flex items-center gap-5"><a href="#contact" className="rounded-full bg-[#2b211d] px-6 py-3.5 text-[12px] font-semibold text-[#fffaf5]">{template.primaryAction}</a><a href="#poveste" className="text-[11px] uppercase tracking-[0.13em] text-[#2b211d]/62">{template.secondaryAction} ↓</a></div>
           </div>
-          <div className="relative min-h-[560px] md:min-h-[650px]">
-            <div className="absolute left-[5%] top-[2%] h-[66%] w-[66%] overflow-hidden rounded-t-[160px] bg-[linear-gradient(145deg,#d5b6a5,#79564c)] shadow-[0_30px_90px_rgba(74,47,37,0.16)]"><div className="flex h-full items-end p-6 text-[#fff8f1]"><span className="font-serif text-2xl italic">garden dinner · 2026</span></div></div>
-            <div className="absolute bottom-[3%] right-[2%] h-[48%] w-[48%] overflow-hidden border-[8px] border-[#f7f1e9] bg-[linear-gradient(145deg,#efe3d5,#a77c67)]"><div className="flex h-full items-end p-5"><span className="text-[9px] uppercase tracking-[0.18em] text-white/80">flowers · candlelight · texture</span></div></div>
-            <div className="absolute right-[4%] top-[4%] rotate-6 border border-[#2b211d]/15 bg-[#fffaf5] px-5 py-4 text-center shadow-sm"><p className="font-serif text-[32px] italic">120+</p><p className="text-[8px] uppercase tracking-[0.18em] text-[#2b211d]/42">stories shaped</p></div>
+          <div className="relative min-h-[600px] md:min-h-[690px]">
+            <div
+              className="absolute inset-y-[2%] left-[2%] right-[9%] overflow-hidden rounded-[36px] bg-[#6f5047] bg-cover bg-center shadow-[0_34px_100px_rgba(74,47,37,0.22)]"
+              style={{ backgroundImage: "linear-gradient(180deg,rgba(43,33,29,.03),rgba(43,33,29,.62)),url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1500&q=82')" }}
+            >
+              <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-4 text-[#fff8f1] md:inset-x-8 md:bottom-8">
+                <div><p className="text-[8px] uppercase tracking-[.2em] text-white/55">garden dinner · 2026</p><p className="mt-2 font-serif text-[30px] italic md:text-[38px]">O atmosferă care spune povestea.</p></div>
+                <span className="hidden rounded-full border border-white/20 bg-black/15 px-4 py-2 text-[8px] uppercase tracking-[.16em] backdrop-blur md:block">selected story</span>
+              </div>
+            </div>
+            <div
+              className="absolute bottom-[2%] right-[1%] h-[34%] w-[40%] overflow-hidden rounded-[26px] border-[7px] border-[#f7f1e9] bg-[#a77c67] bg-cover bg-center shadow-[0_22px_70px_rgba(74,47,37,.18)]"
+              style={{ backgroundImage: "linear-gradient(180deg,transparent,rgba(43,33,29,.36)),url('https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80')" }}
+            >
+              <span className="absolute bottom-4 left-4 text-[7px] uppercase tracking-[.18em] text-white/80">flowers · candlelight</span>
+            </div>
+            <div className="absolute right-[2%] top-[5%] rotate-3 rounded-[18px] border border-[#2b211d]/12 bg-[#fffaf5]/94 px-5 py-4 text-center shadow-[0_14px_45px_rgba(74,47,37,.12)] backdrop-blur"><p className="font-serif text-[34px] italic">120+</p><p className="text-[7px] uppercase tracking-[0.18em] text-[#2b211d]/42">stories shaped</p></div>
           </div>
         </div>
       </section>
@@ -414,10 +444,21 @@ function AirySite({ template }: { template: ClientTemplateConfig }) {
           <h1 className="mx-auto mt-7 max-w-[1120px] text-[clamp(62px,8.2vw,122px)] font-medium leading-[0.85] tracking-[-0.072em]">{template.heroTitle}</h1>
           <p className="mx-auto mt-7 max-w-2xl text-[16px] leading-8 text-[#30282c]/52">{template.heroCopy}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3"><a href="#contact" className="rounded-full bg-[#30282c] px-6 py-3.5 text-[12px] font-semibold text-white">{template.primaryAction}</a><a href="#ritualuri" className="rounded-full border border-[#30282c]/12 bg-white px-6 py-3.5 text-[12px] font-semibold">{template.secondaryAction}</a></div>
-          <div className="mx-auto mt-14 grid max-w-[1120px] gap-3 sm:grid-cols-[0.85fr_1.3fr_0.85fr] sm:items-center">
-            <div className="h-[260px] rounded-t-[120px] rounded-b-[28px] bg-[linear-gradient(145deg,#ead7d8,#9b7478)] sm:h-[330px]" />
-            <div className="relative h-[330px] overflow-hidden rounded-[34px] bg-[linear-gradient(145deg,#f0e3dc,#b78d82)] sm:h-[450px]"><div className="absolute inset-x-8 bottom-8 rounded-[22px] bg-white/72 p-5 text-left backdrop-blur-xl"><p className="text-[8px] uppercase tracking-[0.18em] text-[#8b6a75]">Signature ritual</p><p className="mt-2 text-[19px] font-medium tracking-[-0.03em]">Calm + Glow · 75 min</p><p className="mt-2 text-[11px] leading-5 text-[#30282c]/48">consultație · curățare · hidratare · masaj facial</p></div></div>
-            <div className="h-[260px] rounded-t-[120px] rounded-b-[28px] bg-[linear-gradient(145deg,#d8c5bd,#8f706a)] sm:h-[330px]" />
+          <div className="mx-auto mt-14 grid max-w-[1180px] gap-3 sm:grid-cols-[0.82fr_1.36fr_0.82fr] sm:items-center">
+            <div
+              className="h-[260px] rounded-[32px] bg-[#d9c3c5] bg-cover bg-center shadow-[0_22px_70px_rgba(69,46,57,.10)] sm:h-[360px]"
+              style={{ backgroundImage: "linear-gradient(180deg,rgba(48,40,44,.02),rgba(48,40,44,.18)),url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=78')" }}
+            />
+            <div
+              className="relative h-[360px] overflow-hidden rounded-[38px] bg-[#b98f85] bg-cover bg-center shadow-[0_30px_90px_rgba(69,46,57,.15)] sm:h-[520px]"
+              style={{ backgroundImage: "linear-gradient(180deg,rgba(48,40,44,.02),rgba(48,40,44,.24)),url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=82')" }}
+            >
+              <div className="absolute inset-x-6 bottom-6 rounded-[24px] border border-white/45 bg-white/74 p-5 text-left shadow-sm backdrop-blur-2xl md:inset-x-8 md:bottom-8"><p className="text-[8px] uppercase tracking-[0.18em] text-[#8b6a75]">Signature ritual</p><p className="mt-2 text-[21px] font-medium tracking-[-0.03em]">Calm + Glow · 75 min</p><p className="mt-2 text-[11px] leading-5 text-[#30282c]/48">consultație · curățare · hidratare · masaj facial</p></div>
+            </div>
+            <div
+              className="h-[260px] rounded-[32px] bg-[#c8b3ad] bg-cover bg-center shadow-[0_22px_70px_rgba(69,46,57,.10)] sm:h-[360px]"
+              style={{ backgroundImage: "linear-gradient(180deg,rgba(48,40,44,.02),rgba(48,40,44,.16)),url('https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=800&q=78')" }}
+            />
           </div>
         </div>
       </section>
@@ -477,10 +518,12 @@ function MedicalSite({ template }: { template: ClientTemplateConfig }) {
             <div className="mt-8 flex flex-wrap gap-3"><a href="#contact" className="rounded-full bg-[#286d73] px-6 py-3.5 text-[12px] font-semibold text-white">{template.primaryAction}</a><a href="#tratamente" className="rounded-full border border-[#172627]/10 px-6 py-3.5 text-[12px] font-semibold">{template.secondaryAction}</a></div>
             <div className="mt-9 flex flex-wrap items-center gap-5 text-[10px] font-semibold text-[#172627]/45"><span>✓ plan de tratament clar</span><span>✓ costuri explicate</span><span>✓ opțiuni pentru anxietate</span></div>
           </div>
-          <div className="relative min-h-[480px] overflow-hidden rounded-[28px] bg-[linear-gradient(145deg,#d8e9e7,#7ea9a6)] md:min-h-[560px]">
-            <div className="absolute left-[16%] top-[12%] h-[250px] w-[250px] rounded-full bg-[#edf6f5]/80" />
-            <div className="absolute bottom-0 left-1/2 h-[72%] w-[58%] -translate-x-1/2 rounded-t-[160px] bg-[linear-gradient(180deg,#f4f8f8,#b9d0ce)]" />
-            <div className="absolute inset-x-5 bottom-5 rounded-[20px] bg-white/88 p-5 backdrop-blur-xl"><div className="flex items-center justify-between"><div><p className="text-[9px] uppercase tracking-[0.14em] text-[#286d73]">Medic coordonator · demo</p><p className="mt-2 text-[20px] font-semibold tracking-[-0.035em]">Dr. Ana Popescu</p><p className="mt-1 text-[11px] text-[#172627]/45">stomatologie generală · protetică</p></div><span className="grid h-10 w-10 place-items-center rounded-full bg-[#dfeeee] text-[#286d73]">+</span></div></div>
+          <div
+            className="relative min-h-[520px] overflow-hidden rounded-[32px] bg-[#bfd8d5] bg-cover bg-center shadow-[0_28px_90px_rgba(30,77,79,.14)] md:min-h-[610px]"
+            style={{ backgroundImage: "linear-gradient(180deg,rgba(23,38,39,.02),rgba(23,38,39,.28)),url('https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=1400&q=82')" }}
+          >
+            <div className="absolute left-5 top-5 rounded-full border border-white/55 bg-white/76 px-4 py-2 text-[8px] font-semibold uppercase tracking-[.15em] text-[#286d73] backdrop-blur-xl md:left-7 md:top-7">clinic · calm · digital</div>
+            <div className="absolute inset-x-5 bottom-5 rounded-[22px] border border-white/55 bg-white/86 p-5 shadow-[0_16px_55px_rgba(30,77,79,.11)] backdrop-blur-2xl md:inset-x-7 md:bottom-7"><div className="flex items-center justify-between gap-5"><div><p className="text-[8px] uppercase tracking-[0.14em] text-[#286d73]">Medic coordonator · demo</p><p className="mt-2 text-[22px] font-semibold tracking-[-0.035em]">Dr. Ana Popescu</p><p className="mt-1 text-[11px] text-[#172627]/45">stomatologie generală · protetică</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#dfeeee] text-[#286d73]">+</span></div></div>
           </div>
         </div>
       </section>
