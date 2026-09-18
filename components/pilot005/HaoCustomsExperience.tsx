@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 export const haoImages = {
   hero: "https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1800&q=76",
@@ -121,7 +121,7 @@ export function HeroSpotlight() {
       className="pointer-events-auto absolute inset-0 hidden md:block"
       style={{
         background: "radial-gradient(420px circle at var(--x,72%) var(--y,32%), rgba(216,183,116,.13), transparent 58%)",
-      } as React.CSSProperties}
+      } as CSSProperties}
     />
   );
 }
