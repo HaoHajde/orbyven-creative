@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 
-const heroImage =
-  "https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1800&q=76";
+const heroImage = "/hao-customs/hero.webp";
 
 type HaoHeroVisualProps = {
   compact?: boolean;
