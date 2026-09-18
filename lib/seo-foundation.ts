@@ -408,7 +408,7 @@ export const seoCaseStudies: SeoCaseStudy[] = [
       { number: "03", title: "Trimite cererea", copy: "Data și serviciul pot deveni context pentru lead și calendar." },
     ],
     note:
-      "Următorul nivel al pilotului este conectarea completă a formularului și disponibilității cu Lead-uri, Calendar și Ofertă în workspace.",
+      "Următorul nivel al pilotului este conectarea completă a formularului și disponibilității cu Lead-uri, Calendar și Ofertă în workspace. Ideea nu este să transformăm site-ul într-un CRM vizibil, ci să păstrăm experiența publică simplă și să mutăm complexitatea în spate. Data evenimentului, serviciul ales și mesajul trebuie să ajungă împreună în același context, astfel încât echipa să nu reconstruiască manual informația din conversații separate.",
     demoHref: "/templates/obsidian-moments",
     demoLabel: "Deschide demo-ul Obsidian",
     related: [
@@ -444,7 +444,7 @@ export const seoCaseStudies: SeoCaseStudy[] = [
       { number: "03", title: "Execuție", copy: "Materialele, task-urile, calendarul și cheltuielile rămân legate de lucrare." },
     ],
     note:
-      "Pilotul este folosit pentru a valida dacă un flux simplu poate reduce munca repetitivă dintre teren, deviz și urmărirea proiectului.",
+      "Pilotul este folosit pentru a valida dacă un flux simplu poate reduce munca repetitivă dintre teren, deviz și urmărirea proiectului. Site-ul public trebuie să rămână ușor de folosit pentru client, în timp ce workspace-ul păstrează contextul lucrării: cine a cerut-o, unde are loc, ce s-a măsurat, ce materiale sunt necesare și ce s-a ofertat. Valoarea urmărită este continuitatea informației, nu numărul de ecrane din aplicație.",
     demoHref: "/templates/pilot-002",
     demoLabel: "Deschide demo-ul Pilot #002",
     related: [
@@ -480,7 +480,7 @@ export const seoCaseStudies: SeoCaseStudy[] = [
       { number: "03", title: "Ofertare", copy: "Deviz, echipă și planificare într-un flux comun." },
     ],
     note:
-      "Pilotul pregătește o verticală de tip Field Service care poate fi reutilizată pentru construcții, HVAC, electricieni sau alte echipe de teren.",
+      "Pilotul pregătește o verticală de tip Field Service care poate fi reutilizată pentru construcții, HVAC, electricieni sau alte echipe de teren. Elementele comune sunt aceleași: solicitare, locație, vizită, măsurători, ofertă, echipă și costuri. Diferența dintre verticale rămâne în datele și pașii specifici meseriei, nu într-o aplicație complet diferită pentru fiecare tip de firmă.",
     demoHref: "/templates/asfaltari-bucuresti",
     demoLabel: "Deschide demo-ul VIAFORTE",
     related: [
@@ -516,7 +516,7 @@ export const seoCaseStudies: SeoCaseStudy[] = [
       { number: "03", title: "Slotul", copy: "Selecțiile pot merge mai departe în programare." },
     ],
     note:
-      "Pilotul validează o experiență de servicii premium în care site-ul poate prelua o parte din calificarea cererii înainte de contact.",
+      "Pilotul validează o experiență de servicii premium în care site-ul poate prelua o parte din calificarea cererii înainte de contact. În loc ca utilizatorul să trimită doar «cât costă?», traseul poate păstra tipul mașinii, serviciul, starea și upgrade-urile alese. Echipa primește astfel o cerere mai clară, iar clientul vede mai devreme ce influențează estimarea și programarea.",
     demoHref: "/templates/haos-customs",
     demoLabel: "Deschide demo-ul Hao's Customs",
     related: [
@@ -558,6 +558,14 @@ export const seoGuides: SeoGuide[] = [
         title: "Cum compari corect două oferte",
         paragraphs: [
           "Compară rezultatul și responsabilitatea, nu doar prețul. Cine scrie conținutul? Cine configurează Search Console? Cine verifică formularele și versiunea mobilă? Cine deține domeniul și codul?",
+          "Un preț mai mic poate fi suficient pentru un site simplu, dar devine greu de comparat dacă una dintre oferte include copy, migrare, SEO tehnic și suport, iar cealaltă include doar implementarea vizuală. Cere ca livrabilele să fie scrise clar, inclusiv ce nu este inclus.",
+        ],
+      },
+      {
+        title: "Costul după lansare",
+        paragraphs: [
+          "După publicare rămân costurile de infrastructură și operare. Domeniul, emailul business, anumite servicii cloud, mentenanța sau integrările pot avea costuri recurente. Ele trebuie separate de costul inițial al designului și dezvoltării.",
+          "Pentru ORBYVEN, site-ul public și workspace-ul pot fi două componente ale aceluiași ecosistem, dar nu presupunem automat că orice firmă are nevoie de toate modulele din prima zi.",
         ],
       },
     ],
@@ -594,7 +602,17 @@ export const seoGuides: SeoGuide[] = [
       },
       {
         title: "Fundația SEO",
-        paragraphs: ["Titlurile, descrierile, H1-ul, canonical, sitemap-ul, robots și internal linking ajută motoarele de căutare să înțeleagă site-ul."],
+        paragraphs: [
+          "Titlurile, descrierile, H1-ul, canonical, sitemap-ul, robots și internal linking ajută motoarele de căutare să înțeleagă site-ul.",
+          "La fel de important este ca fiecare pagină să aibă un subiect clar. Dacă toate serviciile sunt înghesuite într-o singură pagină, devine mai greu pentru utilizator și pentru Google să înțeleagă diferența dintre ele.",
+        ],
+      },
+      {
+        title: "Ce verifici înainte de lansare",
+        paragraphs: [
+          "Testează site-ul pe telefon, verifică formularele, linkurile, datele de contact și paginile legale. Apoi conectează domeniul, Search Console și sitemap-ul și urmărește primele crawl-uri.",
+          "Un site nu este «gata pentru SEO» doar pentru că are meta tag-uri. Trebuie să poată fi accesat, indexat și parcurs logic de la paginile principale către serviciile importante.",
+        ],
       },
     ],
     related: [
@@ -626,7 +644,17 @@ export const seoGuides: SeoGuide[] = [
       },
       {
         title: "Ce păstrezi",
-        paragraphs: ["Paginile care au linkuri, trafic sau conținut bun nu trebuie eliminate doar pentru că designul se schimbă. Inventarul și maparea URL-urilor vin înaintea lansării."],
+        paragraphs: [
+          "Paginile care au linkuri, trafic sau conținut bun nu trebuie eliminate doar pentru că designul se schimbă. Inventarul și maparea URL-urilor vin înaintea lansării.",
+          "Dacă o pagină dispare, trebuie decis unde se mută intenția ei. Uneori se păstrează același URL, alteori este nevoie de un redirect 301 către cea mai apropiată alternativă relevantă.",
+        ],
+      },
+      {
+        title: "Cum arată o migrare controlată",
+        paragraphs: [
+          "Noua versiune se verifică înainte de lansare: canonical, robots, sitemap, formulare, linkuri interne și statusurile HTTP. După publicare, Search Console ajută la observarea paginilor care nu mai sunt găsite sau nu mai sunt indexate.",
+          "Redesignul nu trebuie să fie o resetare a istoricului site-ului. Scopul este să îmbunătățești experiența păstrând semnalele bune deja câștigate.",
+        ],
       },
     ],
     related: [
@@ -658,7 +686,17 @@ export const seoGuides: SeoGuide[] = [
       },
       {
         title: "Când ai nevoie de ambele",
-        paragraphs: ["Pentru multe firme locale, social media atrage atenția, iar site-ul oferă contextul necesar înainte de apel sau cerere. Linkurile dintre ele trebuie să fie simple și consecvente."],
+        paragraphs: [
+          "Pentru multe firme locale, social media atrage atenția, iar site-ul oferă contextul necesar înainte de apel sau cerere. Linkurile dintre ele trebuie să fie simple și consecvente.",
+          "Un clip sau o postare poate aduce vizitatorul, iar site-ul poate explica serviciul, afișa lucrări, răspunde la întrebări și colecta o cerere într-un format mai ușor de urmărit.",
+        ],
+      },
+      {
+        title: "Cum le legi fără să dublezi munca",
+        paragraphs: [
+          "Folosește social media pentru conținut frecvent și exemple noi, iar site-ul pentru informația stabilă: servicii, proces, contact, portofoliu și pagini care pot fi găsite în Google.",
+          "Nu este nevoie să copiezi fiecare postare pe site. Mai util este să trimiți oamenii către pagina exactă care răspunde întrebării lor și să păstrezi acolo informația actualizată.",
+        ],
       },
     ],
     related: [
