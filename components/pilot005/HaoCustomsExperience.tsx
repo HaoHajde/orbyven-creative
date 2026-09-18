@@ -40,17 +40,10 @@ export function HaoShell({
       className="min-h-screen overflow-x-hidden bg-[#050505] text-[#f6f1e7] selection:bg-[#caa45b] selection:text-black"
       style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}
     >
-      <div className="relative z-[70] border-b border-white/[.07] bg-[#050505]/95 px-4 py-2.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/34 backdrop-blur-xl sm:px-6">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4">
-          <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#caa45b] shadow-[0_0_16px_rgba(202,164,91,.65)]" />Pilot #005 · ORBYVEN</span>
-          <Link href="/templates" className="transition hover:text-[#d9bc82]">Template library ↗</Link>
-        </div>
-      </div>
-
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="fixed left-3 top-14 z-[95] flex h-12 items-center gap-2 rounded-full border border-[#d9bc82]/24 bg-black/62 px-3.5 text-[#d9bc82] shadow-[0_16px_55px_rgba(0,0,0,.45)] backdrop-blur-2xl transition hover:border-[#d9bc82]/55 sm:left-5 sm:top-16"
+        className="fixed left-3 top-3 z-[95] flex h-12 items-center gap-2 rounded-full border border-[#d9bc82]/24 bg-black/62 px-3.5 text-[#d9bc82] shadow-[0_16px_55px_rgba(0,0,0,.45)] backdrop-blur-2xl transition hover:border-[#d9bc82]/55 sm:left-5 sm:top-5"
         aria-label={open ? "Închide meniul" : "Deschide meniul"}
       >
         <span className="grid h-7 w-7 place-items-center rounded-full border border-[#d9bc82]/24 text-[10px] font-black">{open ? "×" : "HC"}</span>
@@ -69,6 +62,7 @@ export function HaoShell({
           <p className="text-[9px] font-bold uppercase tracking-[.24em] text-[#caa45b]">Hao&apos;s Customs</p>
           <h2 className="mt-4 text-[44px] font-semibold leading-[.88] tracking-[-.065em] text-white">Detailing.<br />Fără zgomot.</h2>
           <p className="mt-5 max-w-xs text-sm leading-6 text-white/40">Navigație ascunsă, focus pe imagine și acțiuni scurte. Exact cât trebuie pentru mobil.</p>
+          <Link href="/templates" className="mt-5 inline-flex text-[10px] font-bold uppercase tracking-[.14em] text-white/28 transition hover:text-[#d9bc82]">← Înapoi la templates</Link>
         </div>
 
         <nav className="mt-9 border-t border-white/[.08]">
