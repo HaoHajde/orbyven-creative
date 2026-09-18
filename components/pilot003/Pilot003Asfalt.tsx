@@ -176,7 +176,7 @@ export function Pilot003Home() {
       <Pilot003DemoBar />
       <Pilot003Header />
 
-      <section className="relative overflow-hidden bg-[#111315] text-white">
+      <section id="acasa" className="relative overflow-hidden bg-[#111315] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(244,165,28,.16),transparent_28%),linear-gradient(180deg,#111315,#15191c)]" />
         <div className="relative mx-auto grid max-w-[1500px] gap-10 px-5 py-16 md:px-9 md:py-24 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
           <div>
@@ -188,7 +188,7 @@ export function Pilot003Home() {
               Asfaltăm suprafețe care trebuie să țină.
             </h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-7 text-white/56 md:text-[18px] md:leading-8">
-              Curți, parcări, platforme și drumuri de acces. De la fundație și drenaj până la ultimul strat asfaltic, cu ofertare clară și execuție urmărită etapă cu etapă.
+              Curți, parcări, platforme și drumuri de acces. Măsurăm, ofertăm clar și executăm complet.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/templates/asfaltari-bucuresti/contact" className="rounded-[11px] bg-[#f4a51c] px-6 py-3.5 text-sm font-black text-[#111315]">Solicită evaluare</Link>
@@ -251,7 +251,7 @@ export function Pilot003Home() {
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#c47700]">Servicii</p>
               <h2 className="mt-5 text-[46px] font-black leading-[0.93] tracking-[-0.058em] md:text-[68px]">De la teren brut la suprafață finală.</h2>
-              <p className="mt-6 max-w-md text-sm leading-7 text-black/50">Un singur flux de lucru, cu etapele importante vizibile înainte de începerea execuției.</p>
+              <p className="mt-6 max-w-md text-sm leading-7 text-black/50">Vezi din start etapele, utilajele și ce urmează pe teren.</p>
             </div>
             <div className="grid overflow-hidden rounded-[20px] border border-black/10 bg-white sm:grid-cols-2">
               {services.map(([number, title, copy]) => (
@@ -269,13 +269,13 @@ export function Pilot003Home() {
         </div>
       </section>
 
-      <section className="bg-[#111315] text-white">
+      <section id="transparenta" className="bg-[#111315] text-white">
         <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-9 md:py-28">
           <div className="grid gap-12 lg:grid-cols-[0.82fr_1.18fr]">
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#f4a51c]">Transparență operațională</p>
               <h2 className="mt-5 text-[46px] font-black leading-[0.93] tracking-[-0.058em] md:text-[68px]">Știi cu cine lucrezi înainte să intre utilajele pe teren.</h2>
-              <p className="mt-6 max-w-lg text-sm leading-7 text-white/45">Într-o implementare reală, aceste date pot fi actualizate din dashboard-ul clientului. Pentru pilot sunt afișate valori demonstrative.</p>
+              <p className="mt-6 max-w-lg text-sm leading-7 text-white/45">Echipă, status și capacitate de lucru — vizibile înainte de programare.</p>
             </div>
             <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white/[0.035]">
               {[
@@ -299,14 +299,14 @@ export function Pilot003Home() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section id="utilaje" className="bg-white">
         <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-9 md:py-28">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#c47700]">Flotă & utilaje</p>
               <h2 className="mt-5 max-w-4xl text-[46px] font-black leading-[0.93] tracking-[-0.058em] md:text-[68px]">Utilajul potrivit pentru fiecare etapă.</h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-black/48">Flota prezentată este demonstrativă și poate fi înlocuită cu inventarul real al firmei.</p>
+            <p className="max-w-md text-sm leading-6 text-black/48">Flota potrivită, explicată pe scurt pentru fiecare tip de lucrare.</p>
           </div>
           <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {fleet.map(([title, copy, tag], index) => (
@@ -323,7 +323,7 @@ export function Pilot003Home() {
         </div>
       </section>
 
-      <section className="border-y border-black/8 bg-[#e8e8e2]">
+      <section id="lucrari" className="border-y border-black/8 bg-[#e8e8e2]">
         <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-9 md:py-28">
           <div className="flex flex-col gap-7 md:flex-row md:items-end md:justify-between">
             <div>
@@ -338,7 +338,7 @@ export function Pilot003Home() {
         </div>
       </section>
 
-      <section className="bg-[#f7f7f3]">
+      <section id="proces" className="bg-[#f7f7f3]">
         <div className="mx-auto max-w-[1500px] px-5 py-20 md:px-9 md:py-28">
           <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#c47700]">Cum lucrăm</p>
           <div className="mt-6 grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
@@ -361,7 +361,7 @@ export function Pilot003Home() {
         </div>
       </section>
 
-      <section className="bg-[#f4a51c] px-5 py-6 md:px-9">
+      <section id="start" className="bg-[#f4a51c] px-5 py-6 md:px-9">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-7 rounded-[22px] bg-[#111315] px-6 py-10 text-white md:flex-row md:items-end md:justify-between md:px-9 md:py-12">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#f4a51c]">București · Ilfov · împrejurimi</p>

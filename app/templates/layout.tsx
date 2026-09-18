@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { ReactNode } from "react";\n\nimport TemplateExperienceLayer from "@/components/TemplateExperienceLayer";
 
 export const metadata: Metadata = {
   title: "Templates & Portofoliu",
@@ -21,5 +21,5 @@ export default function TemplatesLayout({
 }: {
   children: ReactNode;
 }) {
-  return children;
+  return (\n    <>\n      {children}\n      <TemplateExperienceLayer />\n    </>\n  );
 }
