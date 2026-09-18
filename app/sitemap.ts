@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { clientTemplateList } from "@/lib/client-template-catalog";
 import { getSiteUrl } from "@/lib/site-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -28,9 +29,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return routes.map((route) => ({
+  const publicRoutes = routes.map((route) => ({
     url: `${siteUrl}${route.path}`,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
+
+  const templateRoutes = clientTemplateList.map((template) => ({
+    url: `${siteUrl}/templates/${template.slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...publicRoutes, ...templateRoutes];
 }
