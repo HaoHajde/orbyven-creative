@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { BeforeAfter, HaoShell, HeroSpotlight, haoImages } from "@/components/pilot005/HaoCustomsExperience";
+import { BeforeAfter, HaoShell, haoImages } from "@/components/pilot005/HaoCustomsExperience";
+import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 
 export const metadata: Metadata = {
   title: "Hao's Customs · Premium Auto Detailing",
@@ -18,58 +19,7 @@ const services = [
 export default function HaoCustomsPage() {
   return (
     <HaoShell active="home">
-      <section className="relative min-h-[94svh] overflow-hidden border-b border-white/[.07]">
-        <div
-          className="absolute inset-0 scale-[1.015] bg-cover bg-center"
-          style={{ backgroundImage: `linear-gradient(90deg,rgba(0,0,0,.93) 0%,rgba(0,0,0,.74) 37%,rgba(0,0,0,.24) 74%,rgba(0,0,0,.48) 100%),url("${haoImages.hero}")` }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,5,.06)_0%,rgba(5,5,5,.02)_48%,#050505_100%)]" />
-        <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.018)_1px,transparent_1px)] [background-size:72px_72px]" />
-        <HeroSpotlight />
-
-        <div className="relative mx-auto flex min-h-[94svh] max-w-[1600px] flex-col justify-between px-5 pb-10 pt-24 sm:px-7 md:px-12 md:pb-14 md:pt-28">
-          <header className="flex items-center justify-end">
-            <div className="flex items-center gap-2 rounded-full border border-white/[.09] bg-black/35 p-1.5 backdrop-blur-xl">
-              <span className="hidden px-3 text-[9px] font-semibold uppercase tracking-[.15em] text-white/34 sm:block">București · detailing studio</span>
-              <Link href="/templates/haos-customs/contact" className="rounded-full bg-white px-4 py-2.5 text-[10px] font-bold text-black transition hover:bg-[#e2c991]">Rezervă</Link>
-            </div>
-          </header>
-
-          <div className="max-w-[980px] pb-[8vh] md:pb-[5vh]">
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#d9bc82]/65" />
-              <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#d9bc82]">Hao&apos;s Customs · Professional Auto Detailing</p>
-            </div>
-
-            <h1 className="mt-7 text-[clamp(60px,10.5vw,158px)] font-semibold leading-[0.77] tracking-[-0.078em] text-white">
-              Obsesie pentru<br /><span className="bg-gradient-to-r from-[#f2dfb4] via-[#caa45b] to-[#9b793d] bg-clip-text text-transparent">fiecare reflexie.</span>
-            </h1>
-
-            <div className="mt-8 grid max-w-3xl gap-6 md:grid-cols-[1fr_auto] md:items-end">
-              <p className="max-w-xl text-[15px] leading-7 text-white/48 md:text-[17px] md:leading-8">
-                Interior și exterior tratate profesionist într-o hală dedicată. Alegi nivelul de intervenție, vezi estimarea și rezervi fără să ieși din experiență.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link href="/templates/haos-customs/preturi" className="rounded-full bg-[#d9bc82] px-6 py-3.5 text-[12px] font-bold text-black transition hover:bg-[#e7ca92]">Configurează →</Link>
-                <Link href="/templates/haos-customs/galerie" className="rounded-full border border-white/[.11] bg-black/30 px-6 py-3.5 text-[12px] font-semibold text-white/68 backdrop-blur-xl transition hover:border-white/20 hover:text-white">Before / After</Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 border-t border-white/[.08] pt-5">
-            {[
-              ["4", "servicii principale"],
-              ["Live", "estimare instant"],
-              ["14 zile", "calendar vizibil"],
-            ].map(([value, label]) => (
-              <div key={label} className="border-r border-white/[.07] px-3 first:pl-0 last:border-r-0">
-                <p className="text-[22px] font-semibold tracking-[-.05em] text-white md:text-[30px]">{value}</p>
-                <p className="mt-1 text-[7px] uppercase tracking-[.14em] text-white/24 md:text-[8px]">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HaoHeroVisual />
 
       <section className="bg-[#050505]">
         <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-7 md:px-10 md:py-28">
