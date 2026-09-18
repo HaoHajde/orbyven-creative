@@ -281,7 +281,7 @@ export default function MajoratTemplate() {
                 </h2>
               </div>
               <p className="max-w-sm text-sm leading-7 text-white/42">
-                Fără program kilometr ic. Doar momentele care contează.
+                Fără program kilometric. Doar momentele care contează.
               </p>
             </div>
 
