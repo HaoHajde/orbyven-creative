@@ -159,26 +159,29 @@ export default function TemplatesPage() {
             </div>
           </Link>
 
-          <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d2ad62]/20 bg-[#050505] text-white lg:min-h-[520px]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_18%,rgba(210,173,98,.19),transparent_26%),linear-gradient(145deg,#050505,#111_62%,#070707)]" />
-            <div className="absolute -right-16 top-16 h-64 w-64 rounded-full border-[1px] border-[#d2ad62]/18 shadow-[0_0_90px_rgba(210,173,98,.08)]" />
-            <div className="absolute right-10 top-28 h-40 w-40 rounded-full border border-white/8" />
+          <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d9bc82]/18 bg-[#050505] text-white lg:min-h-[520px]">
+            <div
+              className="absolute inset-0 scale-[1.02] bg-cover bg-center transition duration-700 group-hover:scale-[1.045]"
+              style={{ backgroundImage: "linear-gradient(90deg,rgba(0,0,0,.90),rgba(0,0,0,.56) 52%,rgba(0,0,0,.30)),url('https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1200&q=68')" }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.18)_50%,rgba(0,0,0,.72))]" />
+            <div className="absolute right-[-60px] top-[-45px] h-56 w-56 rounded-full border border-[#d9bc82]/13 shadow-[0_0_90px_rgba(217,188,130,.06)]" />
             <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
               <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d2ad62]">Pilot #005 · Auto detailing</p>
-                <span className="rounded-full border border-[#d2ad62]/18 bg-black/30 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48">Black & Gold</span>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d9bc82]">Pilot #005 · Auto detailing</p>
+                <span className="rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48 backdrop-blur">Interactive</span>
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-[#d2ad62]">Hao&apos;s</p>
-                <div className="mt-2 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
-                <p className="mt-5 max-w-md text-sm leading-6 text-white/50">Detailing premium · before/after · configurator · calendar de disponibilitate.</p>
+                <div className="flex items-center gap-2"><span className="h-px w-8 bg-[#d9bc82]/65" /><p className="text-[9px] font-semibold uppercase tracking-[.24em] text-[#d9bc82]">Hao&apos;s</p></div>
+                <div className="mt-3 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
+                <p className="mt-5 max-w-md text-sm leading-6 text-white/52">Hero cinematic · before/after real · configurator inteligent · calendar interactiv.</p>
               </div>
               <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/32">Luxury detailing experience</p>
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/30">Luxury black & gold</p>
                   <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Hao&apos;s Customs</h2>
                 </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d2ad62] text-black transition group-hover:rotate-45">↗</span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9bc82] text-black transition group-hover:rotate-45">↗</span>
               </div>
             </div>
           </Link>
