@@ -255,38 +255,48 @@ export default function ClientWorkspace() {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -left-32 top-24 h-[420px] w-[420px] rounded-full bg-[#6d68ff]/[0.10] blur-[110px] dark:bg-[#6d68ff]/[0.14]" />
+        <div className="absolute -right-40 top-[18%] h-[480px] w-[480px] rounded-full bg-[#3b82f6]/[0.07] blur-[130px] dark:bg-[#3b82f6]/[0.10]" />
+        <div className="absolute bottom-[-180px] left-[36%] h-[420px] w-[520px] rounded-full bg-[#8b5cf6]/[0.06] blur-[140px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.82),transparent_45%)] opacity-50 dark:opacity-[0.04]" />
+      </div>
+
       <header
-        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/94 transition-transform duration-300 ease-out md:backdrop-blur-2xl ${
+        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/72 shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl transition-transform duration-300 ease-out ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-8">
+        <div className="mx-auto flex h-[68px] max-w-[1520px] items-center justify-between px-5 md:px-7">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
             <div className="hidden h-6 w-px bg-[var(--border)] md:block" />
-            <button type="button" onClick={() => setPanel("workspace")} className="hidden text-sm font-medium text-[var(--muted)] md:block">Workspace</button>
+            <button type="button" onClick={() => setPanel("workspace")} className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-3 py-2 text-[11px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)] md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />Workspace</button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold sm:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
-            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface)] text-sm">{theme === "dark" ? "☀" : "☾"}</button>
-            <button type="button" onClick={logout} className="hidden h-10 rounded-full px-3 text-xs font-medium text-[var(--muted)] hover:bg-[var(--surface)] sm:block">Ieșire</button>
-            <button type="button" onClick={logout} aria-label="Delogare" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--button)] text-xs font-semibold text-[var(--button-text)]">{initials || "OR"}</button>
+            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-4 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:block">{panel === "modules" ? "Înapoi la dashboard" : "Personalizează"}</button>
+            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
+            <button type="button" onClick={logout} className="hidden h-9 rounded-full px-3 text-[11px] font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] sm:block">Ieșire</button>
+            <button type="button" onClick={logout} aria-label="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--button)] text-[11px] font-semibold text-[var(--button-text)] shadow-sm">{initials || "OR"}</button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1600px] md:grid-cols-[238px_minmax(0,1fr)]">
-        <aside className="hidden min-h-[calc(100vh-72px)] border-r border-[var(--border)] px-4 py-6 md:flex md:flex-col">
-          <div className="px-3">
-            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">{organizationName}</p>
-            <p className="mt-2 text-sm font-semibold">Spațiul tău de lucru</p>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">{roleLabels[workspace.membership.role]}</p>
+      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-4 px-3 pb-4 pt-4 md:grid-cols-[224px_minmax(0,1fr)] md:px-5 md:pb-6">
+        <aside className="sticky top-[84px] hidden h-[calc(100vh-100px)] rounded-[24px] border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-3 py-4 shadow-[0_18px_55px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:flex md:flex-col">
+          <div className="rounded-[18px] border border-[var(--border)] bg-[color:var(--bg)]/54 px-3.5 py-3.5">
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{organizationName}</p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold">Dashboard</p>
+              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[9px] font-semibold text-[var(--accent)]">{roleLabels[workspace.membership.role]}</span>
+            </div>
           </div>
 
-          <nav className="mt-7 space-y-1.5">
+          <p className="mt-6 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">Navigare</p>
+          <nav className="mt-2 space-y-1">
             {enabledDefinitions.map((definition) => {
               const active = panel === "workspace" && activeModule === definition.id;
               return (
@@ -294,23 +304,24 @@ export default function ClientWorkspace() {
                   key={definition.id}
                   type="button"
                   onClick={() => openModule(definition.id)}
-                  className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left text-sm transition ${active ? "bg-[var(--surface)] font-semibold" : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"}`}
+                  className={`flex w-full items-center gap-3 rounded-[13px] border px-3 py-2.5 text-left text-[13px] transition ${active ? "border-[var(--border)] bg-[color:var(--bg)]/74 font-semibold shadow-sm" : "border-transparent text-[var(--muted)] hover:bg-[color:var(--bg)]/52 hover:text-[var(--text)]"}`}
                 >
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: definition.color }} />
-                  <span>{definition.shortName}</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[10px] font-bold" style={{ backgroundColor: definition.accent, color: definition.color }}>{definition.shortName.slice(0, 1)}</span>
+                  <span className="truncate">{definition.shortName}</span>
                 </button>
               );
             })}
           </nav>
 
           <div className="mt-auto pt-6">
-            <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-xs font-medium text-[var(--muted)]">
-              {canManageModules ? "+ Adaugă sau elimină module" : "Vezi modulele active"}
+            <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[15px] border border-[var(--border)] bg-[color:var(--bg)]/58 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
+              <span className="block text-[var(--text)]">{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</span>
+              <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</span>
             </button>
           </div>
         </aside>
 
-        <section className="min-w-0 px-5 py-8 pb-28 sm:px-7 md:px-9 md:py-10 lg:px-12 xl:px-14">
+        <section className="min-w-0 rounded-[28px] border border-[var(--border)] bg-[color:var(--bg)]/66 px-5 py-6 pb-28 shadow-[0_22px_70px_rgba(0,0,0,0.05)] backdrop-blur-xl sm:px-7 md:min-h-[calc(100vh-100px)] md:px-8 md:py-7 md:pb-7 lg:px-9 xl:px-10">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
