@@ -26,7 +26,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
           <Link href="/" aria-label="ORBYVEN — Acasă" className="flex items-center gap-3">
             <Image
               src="/branding/orbyven-logo-light.png"
-              alt=""
+              alt="ORBYVEN CREATIVE"
               width={52}
               height={52}
               priority

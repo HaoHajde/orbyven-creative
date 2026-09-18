@@ -712,7 +712,9 @@ export function buildSeoMetadata({
   const url = `${siteUrl}${path}`;
 
   return {
-    title,
+    title: {
+      absolute: title,
+    },
     description,
     alternates: {
       canonical: path,
