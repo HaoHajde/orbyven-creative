@@ -1,11 +1,13 @@
 export type ClientTemplateSlug =
   | "instalatii"
+  | "pilot-002"
   | "evenimente"
   | "beauty"
   | "clinica-dentara";
 
 export type ClientTemplateStyle =
   | "technical"
+  | "field-service"
   | "editorial"
   | "airy"
   | "medical";
@@ -30,10 +32,11 @@ export type ClientTemplateConfig = {
   services: { title: string; copy: string; icon: string }[];
   benefits: { title: string; copy: string }[];
   process: { number: string; title: string; copy: string }[];
-  gallery: { label: string; title: string; copy: string }[];
+  gallery: { label: string; title: string; copy: string; image?: string }[];
   reviews: { quote: string; name: string; meta: string }[];
   testimonial: string;
   contactLine: string;
+  contactPhone?: string;
 };
 
 export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateConfig> = {
@@ -90,6 +93,62 @@ export const clientTemplateCatalog: Record<ClientTemplateSlug, ClientTemplateCon
     testimonial:
       "Profesioniști, punctuali și foarte clari. Exact genul de firmă pe care vrei să o găsești când ai nevoie de o lucrare serioasă.",
     contactLine: "București · Ilfov · împrejurimi",
+  },
+  "pilot-002": {
+    slug: "pilot-002",
+    style: "field-service",
+    title: "Neagu Costică SRL",
+    category: "Pilot #002 · Instalații termice & sanitare",
+    eyebrow: "Fetești · lucrări în țară la cerere",
+    subtitle: "Confort controlat, cameră cu cameră",
+    description:
+      "Template dedicat Pilotului #002: servicii termice și sanitare prezentate clar, portofoliu vizual și solicitare rapidă pe WhatsApp.",
+    accent: "#e88924",
+    accentSoft: "#fff0dc",
+    surface: "#edf2f5",
+    ink: "#14202a",
+    heroTitle: "Instalații complete pentru o casă care funcționează exact cum trebuie.",
+    heroCopy:
+      "Executăm instalații termice și sanitare în Fetești, de la centrale și calorifere până la încălzire în pardoseală și control separat al temperaturii în fiecare cameră. Pentru lucrări în București, Constanța și alte localități, deplasarea se stabilește transparent în funcție de proiect.",
+    primaryAction: "Discută pe WhatsApp",
+    secondaryAction: "Vezi lucrările",
+    stats: [
+      { value: "2–3+", label: "niveluri de locuință" },
+      { value: "1°C", label: "control pe cameră" },
+      { value: "360°", label: "termic + sanitar" },
+    ],
+    services: [
+      { title: "Centrale pe gaz", copy: "Montaj, trasee, calorifere, distribuitoare și configurarea sistemului pentru întreaga locuință.", icon: "GAZ" },
+      { title: "Centrale pe lemne", copy: "Soluții complete pentru încălzire pe combustibil solid, adaptate spațiului și necesarului termic.", icon: "LEM" },
+      { title: "Încălzire în pardoseală", copy: "Circuite așezate corect, distribuitoare, probe și zonare pentru confort uniform și consum eficient.", icon: "IP" },
+      { title: "Instalații pe mai multe etaje", copy: "Dimensionare și distribuție coerentă pentru case cu parter, etaj și zone cu necesar diferit.", icon: "P+E" },
+      { title: "Control smart pe camere", copy: "Termostate individuale, actuatoare și panou de control care pornesc centrala doar când o zonă cere căldură.", icon: "SMART" },
+      { title: "Instalații sanitare", copy: "Băi complexe, trasee noi, alimentare, scurgere și montaj atent al obiectelor sanitare.", icon: "SAN" },
+    ],
+    benefits: [
+      { title: "O singură echipă, sistem complet", copy: "Termic, sanitar și automatizare gândite împreună, fără improvizații între executanți diferiți." },
+      { title: "Lucrare curată și verificată", copy: "Circuitele sunt organizate, testate și explicate înainte de închiderea pardoselii sau a pereților." },
+      { title: "Deplasare stabilită dinainte", copy: "În Fetești lucrăm local, iar pentru București, Constanța și alte orașe costul deplasării se comunică înainte de programare." },
+    ],
+    process: [
+      { number: "01", title: "Ne trimiți detaliile", copy: "Locația, tipul lucrării, suprafața, numărul de etaje și câteva fotografii, direct pe WhatsApp." },
+      { number: "02", title: "Alegem soluția", copy: "Evaluăm necesarul, stabilim sistemul potrivit și explicăm materialele, etapele și deplasarea." },
+      { number: "03", title: "Executăm și testăm", copy: "Echipa montează organizat, face probele necesare și configurează controlul pe zone înainte de predare." },
+    ],
+    gallery: [
+      { label: "Termic · rezidențial", title: "Încălzire în pardoseală", copy: "Circuite ordonate și distribuție pe zone, pregătite pentru testare.", image: "/pilot-002/pardoseala.webp" },
+      { label: "Sanitar · baie completă", title: "Instalații pentru băi complexe", copy: "Trasee și obiecte sanitare integrate într-un finisaj contemporan.", image: "/pilot-002/baie-complexa.webp" },
+      { label: "Automatizare · multi-zonă", title: "Temperatură separată în fiecare cameră", copy: "Termostate, actuatoare și panou central pentru control inteligent.", image: "/pilot-002/control-smart.webp" },
+    ],
+    reviews: [
+      { quote: "Au explicat fiecare etapă și au lăsat instalația ordonată, testată și ușor de controlat.", name: "Client rezidențial", meta: "Fetești · casă P+1 · text demonstrativ" },
+      { quote: "Am putut seta temperaturi diferite în camere, iar centrala pornește numai unde este nevoie.", name: "Proprietar locuință", meta: "Ialomița · automatizare pe zone · text demonstrativ" },
+      { quote: "Lucrarea complexă din baie a fost coordonată bine, fără să chemăm echipe diferite pentru fiecare etapă.", name: "Client renovare", meta: "Constanța · instalații sanitare · text demonstrativ" },
+    ],
+    testimonial:
+      "O echipă tehnică serioasă, pentru lucrări în care confortul, siguranța și execuția corectă contează pe termen lung.",
+    contactLine: "Fetești · deplasări în București, Constanța și alte localități, contra cost",
+    contactPhone: "07xx xxx xxx",
   },
   evenimente: {
     slug: "evenimente",

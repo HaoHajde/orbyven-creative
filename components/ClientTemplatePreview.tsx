@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import type { ClientTemplateConfig } from "@/lib/client-template-catalog";
@@ -14,6 +15,8 @@ export default function ClientTemplatePreview({
   const preview =
     template.style === "technical" ? (
       <TechnicalPreview template={template} compact={compact} />
+    ) : template.style === "field-service" ? (
+      <FieldServicePreview template={template} compact={compact} />
     ) : template.style === "editorial" ? (
       <EditorialPreview template={template} compact={compact} />
     ) : template.style === "airy" ? (
@@ -32,6 +35,36 @@ export default function ClientTemplatePreview({
           aria-label={`Deschide template-ul ${template.title}`}
         />
       )}
+    </div>
+  );
+}
+
+function FieldServicePreview({ template, compact }: { template: ClientTemplateConfig; compact: boolean }) {
+  const heroImage = template.gallery[0]?.image;
+
+  return (
+    <div className={`overflow-hidden rounded-[28px] border border-[#21313d] bg-[#08131c] text-white shadow-[0_30px_90px_rgba(8,19,28,0.24)] ${compact ? "min-h-[360px]" : "min-h-[520px]"}`}>
+      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-full border border-[#f09a3e]/40 bg-[#f09a3e] text-[8px] font-black text-[#08131c]">NC</span>
+          <div><p className="text-[10px] font-bold">Neagu Costică</p><p className="text-[5px] uppercase tracking-[.18em] text-white/38">instalații complete</p></div>
+        </div>
+        <span className="rounded-full bg-[#f09a3e] px-3 py-2 text-[7px] font-bold text-[#08131c]">WhatsApp</span>
+      </div>
+      <div className="grid min-h-[280px] md:grid-cols-[1.05fr_.95fr]">
+        <div className="flex flex-col justify-center p-5 md:p-7">
+          <p className="text-[7px] font-bold uppercase tracking-[.18em] text-[#f0a653]">Pilot #002 · Fetești</p>
+          <h3 className={`${compact ? "mt-4 text-[31px]" : "mt-5 text-[44px] md:text-[52px]"} max-w-xl font-semibold leading-[.91] tracking-[-.06em]`}>{template.heroTitle}</h3>
+          {!compact && <p className="mt-4 max-w-lg text-[10px] leading-5 text-white/48">{template.heroCopy}</p>}
+          <div className="mt-5 flex gap-2"><span className="rounded-full bg-[#f09a3e] px-4 py-2.5 text-[8px] font-bold text-[#08131c]">Cere evaluare</span><span className="rounded-full border border-white/15 px-4 py-2.5 text-[8px]">Lucrări</span></div>
+        </div>
+        <div className="relative min-h-[190px] overflow-hidden bg-[#152632] md:min-h-full">
+          {heroImage && <Image src={heroImage} alt="Încălzire în pardoseală" fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#08131c]/80 via-transparent to-transparent" />
+          <div className="absolute inset-x-4 bottom-4 rounded-[12px] border border-white/12 bg-[#08131c]/78 p-3 backdrop-blur-md"><p className="text-[6px] uppercase tracking-[.16em] text-[#f0a653]">Sistem complet</p><p className="mt-1 text-[9px] font-semibold">Termic · sanitar · smart</p></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 border-t border-white/10">{template.stats.map((stat) => <div key={stat.label} className="border-r border-white/10 px-3 py-4 last:border-r-0"><p className="text-[17px] font-semibold text-[#f0a653]">{stat.value}</p><p className="mt-1 text-[6px] uppercase tracking-[.1em] text-white/30">{stat.label}</p></div>)}</div>
     </div>
   );
 }
