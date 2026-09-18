@@ -159,6 +159,30 @@ export default function TemplatesPage() {
             </div>
           </Link>
 
+          <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d2ad62]/20 bg-[#050505] text-white lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_18%,rgba(210,173,98,.19),transparent_26%),linear-gradient(145deg,#050505,#111_62%,#070707)]" />
+            <div className="absolute -right-16 top-16 h-64 w-64 rounded-full border-[1px] border-[#d2ad62]/18 shadow-[0_0_90px_rgba(210,173,98,.08)]" />
+            <div className="absolute right-10 top-28 h-40 w-40 rounded-full border border-white/8" />
+            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d2ad62]">Pilot #005 · Auto detailing</p>
+                <span className="rounded-full border border-[#d2ad62]/18 bg-black/30 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48">Black & Gold</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-[#d2ad62]">Hao&apos;s</p>
+                <div className="mt-2 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
+                <p className="mt-5 max-w-md text-sm leading-6 text-white/50">Detailing premium · before/after · configurator · calendar de disponibilitate.</p>
+              </div>
+              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/32">Luxury detailing experience</p>
+                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Hao&apos;s Customs</h2>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d2ad62] text-black transition group-hover:rotate-45">↗</span>
+              </div>
+            </div>
+          </Link>
+
           <Link href="/demo/nunta/elegant" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#e9dfcf] lg:min-h-[520px]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,.92),transparent_28%),radial-gradient(circle_at_82%_68%,rgba(178,135,58,.18),transparent_34%),linear-gradient(135deg,#f3ecdf,#ded0ba)]" />
             <motion.div
