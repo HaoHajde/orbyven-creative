@@ -61,6 +61,14 @@ const featured: {
     subtitle: "Invitație elegantă, RSVP și detalii de eveniment.",
     kind: "wedding",
   },
+  {
+    href: "/templates/botez-fetita",
+    label: "Template · Botez",
+    meta: "Fetiță · invitație digitală",
+    title: "Botezul micuței",
+    subtitle: "Invitație pastel, program, galerie și RSVP pentru botez.",
+    kind: "baptismGirl",
+  },
 ]
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {

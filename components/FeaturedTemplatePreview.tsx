@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 
-export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "hao";
+export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "hao";
 
 function BrowserFrame({
   children,
@@ -151,6 +151,56 @@ export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPrevie
               <div className="absolute bottom-4 left-4 rounded-[12px] bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
                 <p className="text-[5px] font-bold">Comandă până la 14:00</p>
                 <p className="text-[4px] text-black/48">livrare în aceeași zi</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </BrowserFrame>
+    );
+  }
+
+
+  if (kind === "baptismGirl") {
+    return (
+      <BrowserFrame url="botezul-anastasiei.ro">
+        <div className="relative min-h-[338px] overflow-hidden bg-[#fff8f5] text-[#5f2631]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,.96),transparent_28%),radial-gradient(circle_at_82%_24%,rgba(225,154,166,.22),transparent_28%),linear-gradient(135deg,#fffaf7,#f9e9e7)]" />
+          <div className="absolute -right-12 -top-16 h-56 w-56 rounded-full border border-[#c79b58]/18" />
+          <div className="absolute -left-10 bottom-8 h-36 w-36 rounded-full bg-[#e9b7c0]/18 blur-3xl" />
+
+          <div className="relative z-10 mx-4 mt-3 flex items-center justify-between rounded-[15px] border border-white/85 bg-white/68 px-4 py-2.5 shadow-sm backdrop-blur">
+            <div>
+              <p className="font-serif text-[10px] font-semibold tracking-[-.03em]">Anastasia ♡</p>
+              <p className="text-[4px] uppercase tracking-[.17em] text-[#ae7a83]">un început frumos</p>
+            </div>
+            <div className="hidden gap-2 text-[4px] font-semibold text-[#6e4c52]/55 sm:flex"><span>Acasă</span><span>Poveste</span><span>Program</span><span>RSVP</span></div>
+            <span className="rounded-full bg-[#d77486] px-3 py-1.5 text-[5px] font-bold text-white">Confirmă</span>
+          </div>
+
+          <div className="relative z-10 grid min-h-[286px] grid-cols-[1.02fr_.98fr] items-center gap-3 px-5 py-5">
+            <div>
+              <p className="text-[5px] font-bold uppercase tracking-[.22em] text-[#c69a58]">Cu iubire · 15 mai 2027</p>
+              <h3 className="mt-3 font-serif text-[31px] font-semibold leading-[.84] tracking-[-.055em] sm:text-[39px]">
+                Botezul micuței<br /><span className="italic text-[#d77486]">Anastasia</span>
+              </h3>
+              <p className="mt-3 max-w-[210px] text-[5px] leading-[10px] text-[#725b60]/72">
+                O invitație luminoasă, delicată și simplu de urmărit.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {["15 Mai", "12:00", "București"].map((item) => (
+                  <span key={item} className="rounded-full border border-[#d77486]/12 bg-white/70 px-2.5 py-1.5 text-[4px] font-bold text-[#7a4b54]">{item}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative mx-auto grid h-40 w-40 place-items-center rounded-full border-[7px] border-white/75 bg-[radial-gradient(circle_at_35%_28%,#fff_0%,#fde5e4_42%,#efbcc3_100%)] shadow-[0_20px_55px_rgba(157,95,105,.18)] sm:h-48 sm:w-48">
+              <div className="absolute inset-2 rounded-full border border-[#c79b58]/40" />
+              <div className="absolute -left-4 bottom-8 text-[18px] text-[#d69aa4]">✿</div>
+              <div className="absolute -right-3 top-8 text-[13px] text-[#c79b58]">✦</div>
+              <div className="text-center">
+                <p className="text-[7px] font-bold uppercase tracking-[.18em] text-[#b77883]">mica noastră</p>
+                <p className="mt-1 font-serif text-[32px] italic leading-none text-[#73404a]">A</p>
+                <p className="mt-1 text-[5px] text-[#9e737a]">suflet mic · iubire mare</p>
               </div>
             </div>
           </div>
