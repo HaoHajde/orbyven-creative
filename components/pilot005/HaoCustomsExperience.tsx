@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 export const haoImages = {
@@ -213,6 +214,7 @@ const extras = [
 ];
 
 export function Configurator() {
+  const router = useRouter();
   const [vehicle, setVehicle] = useState("compact");
   const [pack, setPack] = useState("full");
   const [condition, setCondition] = useState("maintained");
@@ -239,7 +241,7 @@ export function Configurator() {
       total,
     };
     window.sessionStorage.setItem("haos-customs-estimate", JSON.stringify(payload));
-    window.location.assign(`/templates/haos-customs/contact?estimate=${total}`);
+    router.push(`/templates/haos-customs/contact?estimate=${total}`);
   };
 
   return (
@@ -347,36 +349,40 @@ export function AvailabilityCalendar() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    const formatter = new Intl.DateTimeFormat("ro-RO", { weekday: "short", day: "2-digit", month: "short" });
-    const fullFormatter = new Intl.DateTimeFormat("ro-RO", { weekday: "long", day: "numeric", month: "long" });
-    const nextDays = Array.from({ length: 14 }, (_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() + index + 1);
-      const parts = formatter.formatToParts(date);
-      return {
-        iso: date.toISOString().slice(0, 10),
-        weekday: parts.find((part) => part.type === "weekday")?.value ?? "",
-        date: parts.filter((part) => part.type === "day" || part.type === "month").map((part) => part.value).join(" "),
-        full: fullFormatter.format(date),
-      };
-    });
-    setDays(nextDays);
-    setSelectedDay(nextDays[0]?.iso ?? "");
-
-    const params = new URLSearchParams(window.location.search);
-    const estimateParam = Number(params.get("estimate"));
-    if (Number.isFinite(estimateParam) && estimateParam > 0) setEstimate(estimateParam);
-
-    const stored = window.sessionStorage.getItem("haos-customs-estimate");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setSummary(parsed);
-        if (typeof parsed.total === "number") setEstimate(parsed.total);
-      } catch {
-        setSummary(null);
+    const frame = window.requestAnimationFrame(() => {
+      const formatter = new Intl.DateTimeFormat("ro-RO", { weekday: "short", day: "2-digit", month: "short" });
+      const fullFormatter = new Intl.DateTimeFormat("ro-RO", { weekday: "long", day: "numeric", month: "long" });
+      const nextDays = Array.from({ length: 14 }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() + index + 1);
+        const parts = formatter.formatToParts(date);
+        return {
+          iso: date.toISOString().slice(0, 10),
+          weekday: parts.find((part) => part.type === "weekday")?.value ?? "",
+          date: parts.filter((part) => part.type === "day" || part.type === "month").map((part) => part.value).join(" "),
+          full: fullFormatter.format(date),
+        };
+      });
+      setDays(nextDays);
+      setSelectedDay(nextDays[0]?.iso ?? "");
+  
+      const params = new URLSearchParams(window.location.search);
+      const estimateParam = Number(params.get("estimate"));
+      if (Number.isFinite(estimateParam) && estimateParam > 0) setEstimate(estimateParam);
+  
+      const stored = window.sessionStorage.getItem("haos-customs-estimate");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setSummary(parsed);
+          if (typeof parsed.total === "number") setEstimate(parsed.total);
+        } catch {
+          setSummary(null);
+        }
       }
-    }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const selectedIndex = Math.max(0, days.findIndex((day) => day.iso === selectedDay));
