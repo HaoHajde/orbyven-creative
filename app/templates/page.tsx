@@ -4,7 +4,7 @@ import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview, { type FeaturedPreviewKind } from "@/components/FeaturedTemplatePreview";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { clientTemplateList } from "@/lib/client-template-catalog";
+import { clientTemplateList, type ClientTemplateConfig } from "@/lib/client-template-catalog";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
@@ -13,14 +13,16 @@ type Theme = "light" | "dark";
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const featured: {
+type FeaturedTemplate = {
   href: string;
   label: string;
   meta: string;
   title: string;
   subtitle: string;
   kind: FeaturedPreviewKind;
-}[] = [
+};
+
+const featured: FeaturedTemplate[] = [
   {
     href: "/templates/obsidian-moments",
     label: "Pilot #001 · Events",
@@ -85,7 +87,56 @@ const featured: {
     subtitle: "Invitație dark luxury, countdown, dress code, party plan și RSVP.",
     kind: "birthday18",
   },
-]
+];
+
+const templateCategories = [
+  {
+    id: "constructii-instalatii",
+    short: "Construcții",
+    kicker: "Construcții · instalații · infrastructură",
+    title: "Construcții & instalații",
+    description: "Pentru firme care execută lucrări și trebuie să inspire încredere înainte de prima ofertă.",
+    featuredHrefs: ["/templates/asfaltari-bucuresti"],
+    catalogSlugs: ["pilot-002", "instalatii"],
+  },
+  {
+    id: "evenimente-invitatii",
+    short: "Evenimente",
+    kicker: "Evenimente · invitații digitale",
+    title: "Evenimente & invitații",
+    description: "De la servicii pentru evenimente până la invitații digitale complete, cu atmosferă și acțiuni clare.",
+    featuredHrefs: ["/templates/obsidian-moments", "/demo/nunta/elegant", "/templates/botez-fetita", "/templates/botez-baietel", "/templates/majorat"],
+    catalogSlugs: ["evenimente"],
+  },
+  {
+    id: "auto-detailing",
+    short: "Auto",
+    kicker: "Auto · detailing",
+    title: "Auto & detailing",
+    description: "Experiențe vizuale pentru servicii auto unde rezultatul trebuie să se vadă imediat.",
+    featuredHrefs: ["/templates/haos-customs"],
+    catalogSlugs: [],
+  },
+  {
+    id: "retail-beauty",
+    short: "Lifestyle",
+    kicker: "Retail · beauty · lifestyle",
+    title: "Retail, beauty & lifestyle",
+    description: "Produse și servicii cumpărate cu ochii: imagine puternică, selecție simplă și conversie rapidă.",
+    featuredHrefs: ["/templates/florarie-bragadiru"],
+    catalogSlugs: ["beauty"],
+  },
+  {
+    id: "medical",
+    short: "Medical",
+    kicker: "Medical · servicii profesionale",
+    title: "Medical",
+    description: "Informație clară, încredere și programare simplă pentru servicii unde confortul contează.",
+    featuredHrefs: [],
+    catalogSlugs: ["clinica-dentara"],
+  },
+] as const;
+
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
   const reduceMotion = useReducedMotion();
@@ -99,6 +150,60 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
     >
       {children}
     </motion.div>
+  );
+}
+
+function FeaturedCard({ item, delay = 0 }: { item: FeaturedTemplate; delay?: number }) {
+  return (
+    <Reveal delay={delay}>
+      <Link
+        href={item.href}
+        className="group block overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)]"
+      >
+        <div className="overflow-hidden rounded-[27px]">
+          <div className="transition duration-700 ease-out group-hover:scale-[1.018]">
+            <FeaturedTemplatePreview kind={item.kind} />
+          </div>
+        </div>
+        <div className="flex items-end justify-between gap-5 px-3 pb-3 pt-5 sm:px-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{item.label}</p>
+              <span className="text-[8px] text-[var(--muted)]/65">· {item.meta}</span>
+            </div>
+            <h3 className="mt-2 text-[27px] font-semibold tracking-[-.045em] sm:text-[31px]">{item.title}</h3>
+            <p className="mt-1.5 max-w-lg text-[11px] leading-5 text-[var(--muted)]">{item.subtitle}</p>
+          </div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition duration-300 group-hover:rotate-45">↗</span>
+        </div>
+      </Link>
+    </Reveal>
+  );
+}
+
+function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; delay?: number }) {
+  return (
+    <Reveal delay={delay}>
+      <Link
+        href={`/templates/${template.slug}`}
+        className="group grid min-h-[310px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3 transition duration-400 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(0,0,0,.10)] sm:grid-cols-[1.02fr_.98fr]"
+      >
+        <div className="overflow-hidden rounded-[22px]">
+          <ClientTemplatePreview template={template} compact />
+        </div>
+        <div className="flex min-h-[210px] flex-col justify-between p-5 sm:min-h-full sm:p-6">
+          <div>
+            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
+            <h3 className="mt-3 text-[34px] font-semibold leading-[.94] tracking-[-.055em]">{template.title}</h3>
+            <p className="mt-4 max-w-sm text-[12px] leading-6 text-[var(--muted)]">{template.description}</p>
+          </div>
+          <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-4">
+            <span className="text-[10px] font-semibold">Vezi modelul</span>
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition group-hover:rotate-45">↗</span>
+          </div>
+        </div>
+      </Link>
+    </Reveal>
   );
 }
 
@@ -138,6 +243,24 @@ export default function TemplatesPage() {
     "--button": theme === "dark" ? "#f5f5f7" : "#111114",
     "--button-text": theme === "dark" ? "#050506" : "#ffffff",
   } as CSSProperties;
+
+  const templateGroups = templateCategories.map((category) => {
+    const categoryFeatured = category.featuredHrefs.flatMap((href) => {
+      const item = featured.find((entry) => entry.href === href);
+      return item ? [item] : [];
+    });
+    const categoryCatalog = category.catalogSlugs.flatMap((slug) => {
+      const item = clientTemplateList.find((entry) => entry.slug === slug);
+      return item ? [item] : [];
+    });
+
+    return {
+      ...category,
+      featured: categoryFeatured,
+      catalog: categoryCatalog,
+      count: categoryFeatured.length + categoryCatalog.length,
+    };
+  });
 
   return (
     <main
@@ -222,80 +345,74 @@ export default function TemplatesPage() {
         </div>
       </section>
 
-      <section id="modele" className="mx-auto max-w-[1520px] px-5 py-14 sm:px-6 md:px-10 md:py-20">
-        <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <section id="modele" className="mx-auto max-w-[1520px] px-5 pb-8 pt-14 sm:px-6 md:px-10 md:pb-10 md:pt-20">
+        <div className="flex flex-col gap-7 border-b border-[var(--border)] pb-10 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-[.22em] text-[var(--muted)]">Alege după senzație</p>
-            <h2 className="mt-4 text-[clamp(42px,6vw,76px)] font-semibold leading-[.9] tracking-[-.062em]">Fiecare business.<br />Altă personalitate.</h2>
+            <p className="text-[9px] font-bold uppercase tracking-[.22em] text-[var(--muted)]">Biblioteca ORBYVEN</p>
+            <h2 className="mt-4 text-[clamp(42px,6vw,76px)] font-semibold leading-[.9] tracking-[-.062em]">
+              Alege industria.
+              <br />
+              <span className="text-[var(--muted)]">Apoi alege direcția.</span>
+            </h2>
           </div>
-          <p className="max-w-sm text-sm leading-6 text-[var(--muted)]">Structura rămâne simplă. Stilul rămâne al clientului.</p>
+          <p className="max-w-sm text-sm leading-6 text-[var(--muted)]">
+            Modelele sunt grupate după tipul de business, ca să ajungi rapid la exemple relevante.
+          </p>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          {featured.map((item, index) => (
-            <Reveal key={item.href} delay={index * .035}>
-              <Link
-                href={item.href}
-                className="group block overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)]"
+        <div className="sticky top-[72px] z-30 -mx-1 mt-5 overflow-x-auto px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max gap-2">
+            {templateGroups.map((group) => (
+              <a
+                key={group.id}
+                href={`#${group.id}`}
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)]/95 px-4 py-3 text-[10px] font-semibold shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[var(--text)]/20"
               >
-                <div className="overflow-hidden rounded-[27px]">
-                  <div className="transition duration-700 ease-out group-hover:scale-[1.018]">
-                    <FeaturedTemplatePreview kind={item.kind} />
-                  </div>
-                </div>
-
-                <div className="flex items-end justify-between gap-5 px-3 pb-3 pt-5 sm:px-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{item.label}</p>
-                      <span className="text-[8px] text-[var(--muted)]/65">· {item.meta}</span>
-                    </div>
-                    <h3 className="mt-2 text-[27px] font-semibold tracking-[-.045em] sm:text-[31px]">{item.title}</h3>
-                    <p className="mt-1.5 max-w-lg text-[11px] leading-5 text-[var(--muted)]">{item.subtitle}</p>
-                  </div>
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition duration-300 group-hover:rotate-45">↗</span>
-                </div>
-              </Link>
-            </Reveal>
-          ))}
+                <span>{group.short}</span>
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--surface-2)] px-1.5 text-[8px] text-[var(--muted)]">{group.count}</span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1520px] px-5 pb-16 sm:px-6 md:px-10 md:pb-24">
-        <div className="mb-8 flex items-end justify-between gap-5 border-t border-[var(--border)] pt-10">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[var(--muted)]">Alte direcții</p>
-            <h2 className="mt-3 text-[36px] font-semibold tracking-[-.05em] md:text-[48px]">Aceeași logică. Altă industrie.</h2>
+      {templateGroups.map((group, groupIndex) => (
+        <section
+          key={group.id}
+          id={group.id}
+          className="mx-auto max-w-[1520px] scroll-mt-28 px-5 py-12 sm:px-6 md:px-10 md:py-16"
+        >
+          <div className="mb-8 grid gap-5 border-t border-[var(--border)] pt-9 lg:grid-cols-[.82fr_1.18fr] lg:items-end">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="text-[9px] font-bold tabular-nums text-[var(--muted)]">0{groupIndex + 1}</span>
+                <span className="h-px w-8 bg-[var(--border)]" />
+                <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[var(--muted)]">{group.kicker}</p>
+              </div>
+              <h2 className="mt-4 text-[clamp(38px,5vw,62px)] font-semibold leading-[.92] tracking-[-.058em]">{group.title}</h2>
+            </div>
+            <div className="flex items-end justify-between gap-5">
+              <p className="max-w-xl text-[13px] leading-6 text-[var(--muted)]">{group.description}</p>
+              <span className="hidden shrink-0 text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--muted)] md:block">
+                {group.count} {group.count === 1 ? "model" : "modele"}
+              </span>
+            </div>
           </div>
-          <span className="hidden text-[10px] uppercase tracking-[.16em] text-[var(--muted)] md:block">max. 3 click-uri</span>
-        </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          {clientTemplateList.map((template, index) => (
-            <Reveal key={template.slug} delay={Math.min(index * .025, .12)}>
-              <Link
-                href={`/templates/${template.slug}`}
-                className="group grid min-h-[310px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3 transition duration-400 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(0,0,0,.10)] sm:grid-cols-[1.02fr_.98fr]"
-              >
-                <div className="overflow-hidden rounded-[22px]">
-                  <ClientTemplatePreview template={template} compact />
-                </div>
-                <div className="flex min-h-[210px] flex-col justify-between p-5 sm:min-h-full sm:p-6">
-                  <div>
-                    <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
-                    <h3 className="mt-3 text-[34px] font-semibold leading-[.94] tracking-[-.055em]">{template.title}</h3>
-                    <p className="mt-4 max-w-sm text-[12px] leading-6 text-[var(--muted)]">{template.description}</p>
-                  </div>
-                  <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-4">
-                    <span className="text-[10px] font-semibold">Vezi modelul</span>
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition group-hover:rotate-45">↗</span>
-                  </div>
-                </div>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {group.featured.map((item, index) => (
+              <FeaturedCard key={item.href} item={item} delay={Math.min(index * .035, .12)} />
+            ))}
+            {group.catalog.map((template, index) => (
+              <CatalogCard
+                key={template.slug}
+                template={template}
+                delay={Math.min((group.featured.length + index) * .035, .12)}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="px-5 pb-8 sm:px-6 md:px-10">
         <div className="mx-auto max-w-[1520px] overflow-hidden rounded-[36px] bg-[var(--button)] px-7 py-14 text-[var(--button-text)] sm:px-9 md:px-12 md:py-16">
