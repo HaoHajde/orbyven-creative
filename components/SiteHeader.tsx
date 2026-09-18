@@ -71,34 +71,7 @@ export default function SiteHeader({
 
   return (
     <>
-      <style>{`
-        @media (max-width: 767px) {
-          html { scroll-behavior: auto !important; }
-          a, button { touch-action: manipulation; }
-          .orbyven-orbit-system--accent { display: none !important; }
-          .orbyven-orbit-system--hero { display: block !important; }
-          .orbyven-orbit-system--hero .orbyven-orbit-track--three,
-          .orbyven-orbit-system--hero .orbyven-orbit-track--four { display: none !important; }
-          .orbyven-orbit-system--hero .orbyven-orbit-track--one {
-            animation-duration: 14s !important;
-            will-change: transform;
-          }
-          .orbyven-orbit-system--hero .orbyven-orbit-track--two {
-            animation-duration: 20s !important;
-            will-change: transform;
-          }
-          main [aria-hidden="true"] {
-            filter: none !important;
-            -webkit-filter: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-          }
-          .mobile-defer {
-            content-visibility: visible !important;
-            contain-intrinsic-size: auto !important;
-          }
-        }
-      `}</style>
+
 
       <header
         className={`pointer-events-none fixed inset-x-0 top-0 z-[100] transform-gpu transition-transform duration-300 ease-out ${
