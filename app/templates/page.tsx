@@ -6,12 +6,9 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { clientTemplateList, type ClientTemplateConfig } from "@/lib/client-template-catalog";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
-
-const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 type FeaturedTemplate = {
   href: string;
@@ -138,19 +135,8 @@ const templateCategories = [
 ] as const;
 
 
-function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.992 }}
-      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.72, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
+function Reveal({ children, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+  return <div className={`[content-visibility:auto] [contain-intrinsic-size:520px] ${className}`}>{children}</div>;
 }
 
 function FeaturedCard({ item, delay = 0 }: { item: FeaturedTemplate; delay?: number }) {
@@ -209,7 +195,6 @@ function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; 
 
 export default function TemplatesPage() {
   const [theme, setTheme] = useState<Theme>("light");
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -281,37 +266,33 @@ export default function TemplatesPage() {
         <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_68%_25%,rgba(115,83,255,.35),transparent_26%),radial-gradient(circle_at_24%_68%,rgba(70,51,150,.24),transparent_32%),linear-gradient(180deg,#161027_0%,#09080f_68%,#07070a_100%)]" />
         <div className="absolute inset-0 -z-10 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:44px_44px]" />
 
-        {!reduceMotion ? (
-          <>
-            <motion.div
+        <div
               aria-hidden="true"
               className="absolute left-[8%] top-[22%] h-52 w-52 rounded-full bg-violet-500/12 blur-[90px]"
-              animate={{ x: [0, 46, -12, 0], y: [0, 22, 42, 0], scale: [1, 1.18, .96, 1] }}
-              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+              
+              
             />
-            <motion.div
+            <div
               aria-hidden="true"
               className="absolute right-[11%] top-[16%] h-72 w-72 rounded-full border border-white/8"
-              animate={{ rotate: 360, scale: [1, 1.08, 1] }}
-              transition={{ rotate: { duration: 32, repeat: Infinity, ease: "linear" }, scale: { duration: 8, repeat: Infinity, ease: "easeInOut" } }}
+              
+              
             />
-          </>
-        ) : null}
 
         <div className="relative mx-auto grid w-full max-w-[1520px] gap-12 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
           <div>
-            <motion.p
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: .6 }}
+            <p
+              
+              
+              
               className="text-[9px] font-semibold uppercase tracking-[.27em] text-white/46"
             >
               ORBYVEN · Template system
-            </motion.p>
-            <motion.h1
-              initial={reduceMotion ? false : { opacity: 0, y: 34 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: .9, delay: .06, ease }}
+            </p>
+            <h1
+              
+              
+              
               className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]"
             >
               Vezi.
@@ -319,13 +300,13 @@ export default function TemplatesPage() {
               <span className="text-white/35">Înțelegi.</span>
               <br />
               Alegi.
-            </motion.h1>
+            </h1>
           </div>
 
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: .75, delay: .18, ease }}
+          <div
+            
+            
+            
             className="lg:pb-2"
           >
             <p className="max-w-md text-[15px] leading-7 text-white/55">
@@ -341,7 +322,7 @@ export default function TemplatesPage() {
             <a href="#modele" className="mt-8 inline-flex h-12 items-center rounded-full bg-white px-6 text-[12px] font-semibold text-black transition hover:-translate-y-0.5">
               Vezi modelele ↓
             </a>
-          </motion.div>
+          </div>
         </div>
       </section>
 

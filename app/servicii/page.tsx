@@ -3,7 +3,6 @@
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 
@@ -47,8 +46,6 @@ const services: Service[] = [
     gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.34), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.18), transparent 36%), linear-gradient(135deg, #0a0914, #171326 55%, #07070b)",
   },
 ];
-
-const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function ServicesPage() {
   const [theme, setTheme] = useState<Theme>("light");
@@ -106,20 +103,20 @@ export default function ServicesPage() {
               "radial-gradient(circle at 76% 20%, rgba(108,78,255,.34), transparent 31%), radial-gradient(circle at 26% 40%, rgba(79,49,153,.25), transparent 36%), linear-gradient(180deg, rgba(30,19,54,.99) 0%, rgba(18,10,34,.98) 45%, rgba(7,5,13,.98) 78%, var(--bg) 100%)",
           }}
         />
-        <motion.div
+        <div
           aria-hidden="true"
           className="pointer-events-none absolute left-[12%] top-[24%] h-56 w-56 rounded-full bg-violet-500/10 blur-[90px]"
-          animate={{ x: [0, 52, -8, 0], y: [0, 20, 46, 0], scale: [1, 1.12, 0.95, 1] }}
-          transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+          
+          
         />
         <OrbitalSystem variant="accent" className="left-[74%] top-[46%] opacity-70" />
         <div className="relative mx-auto w-full max-w-[1500px]">
-          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
+          <p    className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
             ORBYVEN · Servicii
-          </motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.95, delay: 0.08, ease: easeOut }} className="mt-6 max-w-[1250px] text-[clamp(54px,8vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]">
+          </p>
+          <h1    className="mt-6 max-w-[1250px] text-[clamp(54px,8vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]">
             Construim digital.<br />Fără balast.
-          </motion.h1>
+          </h1>
           <p className="mt-7 max-w-xl text-[16px] leading-7 text-white/58">
             Alegi problema. Noi alegem forma potrivită.
           </p>
@@ -128,27 +125,27 @@ export default function ServicesPage() {
 
       <section className="mx-auto max-w-[1500px] px-5 py-14 sm:px-6 md:px-10 md:py-24">
         <div className="grid gap-5">
-          {services.map((service, index) => (
-            <motion.article
+          {services.map((service) => (
+            <article
               key={service.number}
-              initial={{ opacity: 0, y: 34 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.18 }}
-              transition={{ duration: 0.75, delay: index * 0.05, ease: easeOut }}
-              className="group relative min-h-[350px] overflow-hidden rounded-[32px] border border-white/10 px-6 py-7 text-white shadow-[0_24px_80px_rgba(0,0,0,.16)] sm:px-8 sm:py-9 md:min-h-[430px] md:px-10 md:py-10"
+              
+              
+              
+              
+              className="group relative min-h-[350px] overflow-hidden rounded-[32px] border border-white/10 px-6 py-7 text-white shadow-[0_24px_80px_rgba(0,0,0,.16)] sm:px-8 sm:py-9 md:min-h-[430px] md:px-10 md:py-10 [content-visibility:auto] [contain-intrinsic-size:430px]"
               style={{ background: service.gradient }}
             >
-              <motion.div
+              <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-white/8 blur-[70px]"
-                animate={{ x: [0, -50, 18, 0], y: [0, 30, 74, 0], scale: [1, 1.18, 0.92, 1] }}
-                transition={{ duration: 13 + index * 2, repeat: Infinity, ease: "easeInOut" }}
+                
+                
               />
-              <motion.div
+              <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -bottom-24 left-[12%] h-72 w-72 rounded-full bg-violet-400/10 blur-[80px]"
-                animate={{ x: [0, 60, -24, 0], y: [0, -42, 10, 0] }}
-                transition={{ duration: 16 + index * 1.5, repeat: Infinity, ease: "easeInOut" }}
+                
+                
               />
 
               <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden px-4">
@@ -174,7 +171,7 @@ export default function ServicesPage() {
                   <p className="mt-5 max-w-2xl text-[15px] leading-7 text-white/58 md:text-[17px]">{service.line}</p>
                 </div>
               </div>
-            </motion.article>
+            </article>
           ))}
         </div>
       </section>
