@@ -198,7 +198,33 @@ export default function TemplateExperienceLayer() {
         }
 
         html[data-orbyven-template-root="on"] main > section:first-of-type {
-          min-height: min(92svh, 980px);
+          min-height: 94svh;
+          position: relative;
+          isolation: isolate;
+        }
+
+        html[data-orbyven-template-root="on"] main > section:first-of-type h1 {
+          text-wrap: balance;
+        }
+
+        html[data-orbyven-template-experience="on"] main > section:not(:first-of-type) {
+          content-visibility: auto;
+          contain-intrinsic-size: 780px;
+        }
+
+        html[data-orbyven-template-experience="on"] main article {
+          transition:
+            transform 360ms cubic-bezier(.16, 1, .3, 1),
+            box-shadow 360ms cubic-bezier(.16, 1, .3, 1),
+            border-color 360ms ease,
+            opacity 620ms cubic-bezier(.16, 1, .3, 1) var(--orbyven-reveal-delay, 0ms),
+            filter 720ms cubic-bezier(.16, 1, .3, 1) var(--orbyven-reveal-delay, 0ms);
+        }
+
+        @media (hover: hover) {
+          html[data-orbyven-template-experience="on"] main article.orbyven-visible:hover {
+            transform: translate3d(0, -5px, 0);
+          }
         }
 
         html[data-orbyven-template-experience="on"] .orbyven-reveal-target {
@@ -235,7 +261,11 @@ export default function TemplateExperienceLayer() {
           }
 
           html[data-orbyven-template-root="on"] main > section:first-of-type {
-            min-height: 88svh;
+            min-height: 92svh;
+          }
+
+          html[data-orbyven-template-experience="on"] main > section:not(:first-of-type) {
+            contain-intrinsic-size: 620px;
           }
         }
 
