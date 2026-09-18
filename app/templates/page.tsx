@@ -91,6 +91,74 @@ export default function TemplatesPage() {
 
       <section className="mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="grid gap-5 lg:grid-cols-2">
+
+          <Link href="/templates/obsidian-moments" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d7b66b]/20 bg-[#080808] text-white lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_20%,rgba(209,170,88,.18),transparent_30%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,.06),transparent_34%),linear-gradient(135deg,#070707,#111_58%,#050505)]" />
+            <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_center,rgba(255,255,255,.24)_0.7px,transparent_0.7px)] [background-size:8px_8px]" />
+            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7b66b]">Pilot #001 · Events</p>
+                <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/50">Live demo</span>
+              </div>
+              <div>
+                <div className="text-[clamp(54px,7vw,94px)] font-semibold leading-[0.82] tracking-[-0.075em]">OBSIDIAN</div>
+                <p className="mt-5 max-w-md text-sm leading-6 text-white/55">360° · oglindă foto · efecte speciale · disponibilitate live.</p>
+              </div>
+              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/35">Experiențe pentru evenimente</p>
+                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Obsidian Moments</h2>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d7b66b] text-black transition group-hover:rotate-45">↗</span>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/templates/asfaltari-bucuresti" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#17191b] text-white lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(247,184,50,.18),transparent_34%),linear-gradient(180deg,#1d2023,#0f1113)]" />
+            <div className="absolute right-[-12%] top-[12%] h-64 w-64 rounded-full border-[34px] border-[#f1b52f]/15" />
+            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#f1b52f]">Pilot #003 · Infrastructură</p>
+                <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/50">București + Ilfov</span>
+              </div>
+              <div>
+                <div className="text-[clamp(58px,8vw,102px)] font-semibold leading-[0.82] tracking-[-0.075em]">VIAFORTE</div>
+                <p className="mt-5 max-w-md text-sm leading-6 text-white/55">Asfaltări, utilaje grele, lucrări și transparență operațională.</p>
+              </div>
+              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/35">Asfaltări · lucrări demo</p>
+                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Asfaltări București</h2>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f1b52f] text-[#111] transition group-hover:rotate-45">↗</span>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/templates/florarie-bragadiru" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#7b3445]/10 bg-[#f3e8e7] text-[#26372e] lg:min-h-[520px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_18%,rgba(123,52,69,.18),transparent_28%),radial-gradient(circle_at_18%_78%,rgba(55,95,70,.13),transparent_33%),linear-gradient(135deg,#f7efed,#ead8d5)]" />
+            <div className="absolute -right-10 top-10 h-52 w-52 rounded-full border border-[#7b3445]/10" />
+            <div className="absolute right-10 top-28 h-32 w-32 rounded-full border border-[#486d55]/10" />
+            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#7b3445]">Pilot #004 · Florărie</p>
+                <span className="rounded-full border border-[#26372e]/10 bg-white/30 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-[#26372e]/55">Bragadiru</span>
+              </div>
+              <div>
+                <div className="font-serif text-[clamp(54px,7vw,96px)] leading-[0.82] tracking-[-0.065em]">Maison Fleur</div>
+                <p className="mt-5 max-w-md text-sm leading-6 text-[#26372e]/60">Buchete, aranjamente, personalizare, coș și comandă online demo.</p>
+              </div>
+              <div className="flex items-end justify-between gap-5 border-t border-[#26372e]/10 pt-5">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-[#26372e]/40">Flori · livrare locală</p>
+                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Florărie Bragadiru</h2>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#26372e] text-white transition group-hover:rotate-45">↗</span>
+              </div>
+            </div>
+          </Link>
+
           <Link href="/demo/nunta/elegant" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#e9dfcf] lg:min-h-[520px]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,.92),transparent_28%),radial-gradient(circle_at_82%_68%,rgba(178,135,58,.18),transparent_34%),linear-gradient(135deg,#f3ecdf,#ded0ba)]" />
             <motion.div

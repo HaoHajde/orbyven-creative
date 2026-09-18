@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="112" y1="80" x2="398" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0D98B"/>
+      <stop offset="0.48" stop-color="#C79A3B"/>
+      <stop offset="1" stop-color="#8E6420"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <path id="topArc" d="M 96 256 A 160 160 0 0 1 416 256"/>
+    <path id="bottomArc" d="M 416 256 A 160 160 0 0 1 96 256"/>
+  </defs>
+  <circle cx="256" cy="256" r="248" fill="#0B0B0B"/>
+  <circle cx="256" cy="256" r="205" stroke="url(#g)" stroke-width="2.2" opacity="0.9"/>
+  <circle cx="256" cy="256" r="184" stroke="#B98B31" stroke-width="1.2" opacity="0.65"/>
+  <circle cx="256" cy="256" r="148" stroke="#B98B31" stroke-width="1" opacity="0.35"/>
+  <text fill="#E5C46E" font-size="26" font-family="Georgia, 'Times New Roman', serif" letter-spacing="8">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">OBSIDIAN</textPath>
+  </text>
+  <text fill="#E5C46E" font-size="24" font-family="Georgia, 'Times New Roman', serif" letter-spacing="7">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">MOMENTS</textPath>
+  </text>
+  <g filter="url(#glow)" stroke="url(#g)" stroke-width="3" stroke-linejoin="round">
+    <path d="M256 153L309 207L287 323L256 361L225 323L203 207L256 153Z"/>
+    <path d="M256 153L239 224L256 361"/>
+    <path d="M256 153L277 224L256 361"/>
+    <path d="M203 207L239 224L225 323"/>
+    <path d="M309 207L277 224L287 323"/>
+    <path d="M239 224L277 224"/>
+  </g>
+  <g fill="#DDBA59">
+    <circle cx="180" cy="255" r="3"/><circle cx="332" cy="255" r="3"/>
+    <path d="M172 238L176 246L184 250L176 254L172 262L168 254L160 250L168 246L172 238Z" opacity="0.75"/>
+    <path d="M340 238L344 246L352 250L344 254L340 262L336 254L328 250L336 246L340 238Z" opacity="0.75"/>
+  </g>
+</svg>
