@@ -52,8 +52,7 @@ jobs:
             head="$PUSH_HEAD_SHA"
           fi
 
-          git diff --name-only --diff-filter=ACMR "$base" "$head" -- \
-            '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' > /tmp/orbyven-lint-targets.txt
+          git diff --name-only --diff-filter=ACMR "$base" "$head" --             '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' > /tmp/orbyven-lint-targets.txt
 
           echo "Changed lint targets:"
           cat /tmp/orbyven-lint-targets.txt || true
@@ -70,9 +69,11 @@ jobs:
           mapfile -t files < /tmp/orbyven-lint-targets.txt
           npx eslint "${files[@]}"
 
+      - name: Full lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Production build
         run: npm run build
-
-      - name: Full lint baseline report
-        continue-on-error: true
-        run: npm run lint
