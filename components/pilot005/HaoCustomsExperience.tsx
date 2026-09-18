@@ -310,10 +310,6 @@ export function AvailabilityCalendar() {
   ];
   const times = timeSets[selectedIndex % timeSets.length];
 
-  useEffect(() => {
-    if (!times.includes(selectedTime)) setSelectedTime("");
-  }, [selectedDay]);
-
   const activeDay = days.find((day) => day.iso === selectedDay);
 
   return (
@@ -326,7 +322,7 @@ export function AvailabilityCalendar() {
 
         <div className="mt-7 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
           {days.map((day) => (
-            <button key={day.iso} type="button" onClick={() => setSelectedDay(day.iso)} className={`rounded-[16px] border px-2 py-4 text-center transition ${selectedDay === day.iso ? "border-[#d2ad62]/70 bg-[#d2ad62]/12" : "border-white/8 bg-black/18 hover:border-white/18"}`}>
+            <button key={day.iso} type="button" onClick={() => { setSelectedDay(day.iso); setSelectedTime(""); }} className={`rounded-[16px] border px-2 py-4 text-center transition ${selectedDay === day.iso ? "border-[#d2ad62]/70 bg-[#d2ad62]/12" : "border-white/8 bg-black/18 hover:border-white/18"}`}>
               <span className="block text-[9px] uppercase tracking-[.12em] text-white/34">{day.weekday}</span>
               <span className="mt-2 block text-[13px] font-semibold text-white">{day.date}</span>
             </button>
