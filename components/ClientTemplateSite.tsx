@@ -47,14 +47,14 @@ function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
 
       <section id="acasa" className="relative overflow-hidden">
         <div aria-hidden="true" className="absolute left-[-15%] top-[8%] h-[520px] w-[520px] rounded-full bg-[#17415a]/38 blur-[150px]" />
-        <div className="relative mx-auto grid max-w-[1500px] lg:min-h-[760px] lg:grid-cols-[1.04fr_.96fr]">
-          <div className="flex flex-col justify-center px-5 py-16 md:px-10 md:py-24 lg:py-28">
+        <div className="relative mx-auto grid max-w-[1600px] lg:min-h-[92svh] lg:grid-cols-[1.02fr_.98fr]">
+          <div className="flex flex-col justify-center px-5 py-20 md:px-10 md:py-28 lg:py-32">
             <div className="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-[0.14em]">
               <span className="rounded-full border border-[#f09a3e]/30 bg-[#f09a3e]/10 px-3 py-2 text-[#f4aa59]">Fetești</span>
               <span className="rounded-full border border-white/12 px-3 py-2 text-white/48">Echipă profesionistă</span>
               <span className="rounded-full border border-white/12 px-3 py-2 text-white/48">Deplasări la cerere</span>
             </div>
-            <h1 className="mt-8 max-w-[850px] text-[clamp(51px,6.8vw,100px)] font-semibold leading-[0.89] tracking-[-0.067em]">{template.heroTitle}</h1>
+            <h1 className="mt-8 max-w-[930px] text-[clamp(58px,8vw,122px)] font-semibold leading-[0.84] tracking-[-0.074em]">{template.heroTitle}</h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-8 text-white/52 md:text-[18px]">{template.heroCopy}</p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <a href="#contact" className="rounded-full bg-[#f09a3e] px-6 py-4 text-sm font-bold text-[#08131c]">{template.primaryAction}</a>
@@ -207,16 +207,16 @@ function TechnicalSite({ template }: { template: ClientTemplateConfig }) {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#f7f8fa]">
+      <section id="acasa" className="relative min-h-[92svh] overflow-hidden bg-[#f7f8fa]">
         <div aria-hidden="true" className="absolute right-[-12%] top-[-30%] h-[680px] w-[680px] rounded-full bg-[#dfe7ff] blur-[150px]" />
-        <div className="relative mx-auto grid max-w-[1480px] gap-12 px-5 py-16 md:px-9 md:py-24 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+        <div className="relative mx-auto grid min-h-[92svh] max-w-[1560px] gap-12 px-5 py-20 md:px-9 md:py-28 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
           <div>
             <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#315ee8]">
               <span className="rounded-full border border-[#315ee8]/20 bg-white px-3 py-2">Autorizat</span>
               <span className="rounded-full border border-[#315ee8]/20 bg-white px-3 py-2">Garanție lucrare</span>
               <span className="rounded-full border border-[#315ee8]/20 bg-white px-3 py-2">Ofertă transparentă</span>
             </div>
-            <h1 className="mt-7 max-w-[840px] text-[clamp(52px,7vw,102px)] font-black leading-[0.9] tracking-[-0.068em]">{template.heroTitle}</h1>
+            <h1 className="mt-7 max-w-[900px] text-[clamp(60px,8.4vw,124px)] font-black leading-[0.84] tracking-[-0.074em]">{template.heroTitle}</h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-7 text-[#121820]/58 md:text-[18px] md:leading-8">{template.heroCopy}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#contact" className="rounded-[12px] bg-[#315ee8] px-6 py-3.5 text-sm font-bold text-white">{template.primaryAction}</a>
@@ -339,11 +339,11 @@ function EditorialSite({ template }: { template: ClientTemplateConfig }) {
         <a href="#contact" className="border-b border-[#2b211d] pb-1 text-[11px] font-semibold uppercase tracking-[0.12em]">Începe povestea</a>
       </header>
 
-      <section className="mx-auto max-w-[1460px] px-5 pb-20 pt-8 md:px-10 md:pb-28 md:pt-14">
+      <section id="acasa" className="mx-auto flex min-h-[92svh] max-w-[1540px] items-center px-5 pb-20 pt-10 md:px-10 md:pb-28 md:pt-16">
         <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
           <div className="relative z-10">
             <p className="text-[10px] uppercase tracking-[0.24em] text-[#9f5e4b]">{template.eyebrow}</p>
-            <h1 className="mt-7 max-w-[760px] font-serif text-[clamp(58px,7.4vw,112px)] leading-[0.87] tracking-[-0.055em]">{template.heroTitle}</h1>
+            <h1 className="mt-7 max-w-[820px] font-serif text-[clamp(66px,8.6vw,132px)] leading-[0.82] tracking-[-0.062em]">{template.heroTitle}</h1>
             <p className="mt-8 max-w-xl text-[16px] leading-8 text-[#2b211d]/58">{template.heroCopy}</p>
             <div className="mt-9 flex items-center gap-5"><a href="#contact" className="rounded-full bg-[#2b211d] px-6 py-3.5 text-[12px] font-semibold text-[#fffaf5]">{template.primaryAction}</a><a href="#poveste" className="text-[11px] uppercase tracking-[0.13em] text-[#2b211d]/62">{template.secondaryAction} ↓</a></div>
           </div>
@@ -407,11 +407,11 @@ function AirySite({ template }: { template: ClientTemplateConfig }) {
         <a href="#contact" className="rounded-full bg-[#30282c] px-5 py-3 text-[11px] font-semibold text-white">Programare</a>
       </header>
 
-      <section className="relative overflow-hidden px-5 pb-20 pt-10 md:px-10 md:pb-28 md:pt-16">
+      <section id="acasa" className="relative flex min-h-[92svh] items-center overflow-hidden px-5 pb-20 pt-12 md:px-10 md:pb-28 md:pt-18">
         <div className="absolute left-[8%] top-[8%] h-[360px] w-[360px] rounded-full bg-[#f2e4e8] blur-[110px]" />
         <div className="relative mx-auto max-w-[1440px] text-center">
           <p className="text-[9px] uppercase tracking-[0.26em] text-[#8b6a75]">{template.eyebrow}</p>
-          <h1 className="mx-auto mt-7 max-w-[1040px] text-[clamp(54px,7vw,102px)] font-medium leading-[0.91] tracking-[-0.065em]">{template.heroTitle}</h1>
+          <h1 className="mx-auto mt-7 max-w-[1120px] text-[clamp(62px,8.2vw,122px)] font-medium leading-[0.85] tracking-[-0.072em]">{template.heroTitle}</h1>
           <p className="mx-auto mt-7 max-w-2xl text-[16px] leading-8 text-[#30282c]/52">{template.heroCopy}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3"><a href="#contact" className="rounded-full bg-[#30282c] px-6 py-3.5 text-[12px] font-semibold text-white">{template.primaryAction}</a><a href="#ritualuri" className="rounded-full border border-[#30282c]/12 bg-white px-6 py-3.5 text-[12px] font-semibold">{template.secondaryAction}</a></div>
           <div className="mx-auto mt-14 grid max-w-[1120px] gap-3 sm:grid-cols-[0.85fr_1.3fr_0.85fr] sm:items-center">
@@ -468,11 +468,11 @@ function MedicalSite({ template }: { template: ClientTemplateConfig }) {
         <a href="#contact" className="rounded-full bg-[#286d73] px-5 py-3 text-[11px] font-semibold text-white">Programare</a>
       </header>
 
-      <section className="px-5 pb-16 pt-8 md:px-10 md:pb-24 md:pt-12">
+      <section id="acasa" className="flex min-h-[92svh] items-center px-5 pb-16 pt-10 md:px-10 md:pb-24 md:pt-14">
         <div className="mx-auto grid max-w-[1450px] gap-10 overflow-hidden rounded-[34px] bg-white p-6 shadow-[0_28px_100px_rgba(30,77,79,0.08)] md:p-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="py-6 md:py-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#dfeeee] px-3 py-2 text-[9px] font-bold uppercase tracking-[0.14em] text-[#286d73]"><span className="h-2 w-2 rounded-full bg-[#43a393]" />{template.eyebrow}</div>
-            <h1 className="mt-7 max-w-[790px] text-[clamp(50px,6.6vw,94px)] font-semibold leading-[0.91] tracking-[-0.065em]">{template.heroTitle}</h1>
+            <h1 className="mt-7 max-w-[860px] text-[clamp(58px,7.8vw,112px)] font-semibold leading-[0.85] tracking-[-0.071em]">{template.heroTitle}</h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-8 text-[#172627]/52">{template.heroCopy}</p>
             <div className="mt-8 flex flex-wrap gap-3"><a href="#contact" className="rounded-full bg-[#286d73] px-6 py-3.5 text-[12px] font-semibold text-white">{template.primaryAction}</a><a href="#tratamente" className="rounded-full border border-[#172627]/10 px-6 py-3.5 text-[12px] font-semibold">{template.secondaryAction}</a></div>
             <div className="mt-9 flex flex-wrap items-center gap-5 text-[10px] font-semibold text-[#172627]/45"><span>✓ plan de tratament clar</span><span>✓ costuri explicate</span><span>✓ opțiuni pentru anxietate</span></div>

@@ -1,31 +1,88 @@
 "use client";
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
-import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { clientTemplateList } from "@/lib/client-template-catalog";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { useEffect, useState, type CSSProperties } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
-const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
+const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
+const featured = [
+  {
+    href: "/templates/obsidian-moments",
+    label: "Pilot #001 · Events",
+    meta: "360° · foto · efecte",
+    title: "OBSIDIAN",
+    subtitle: "Momente care se simt înainte să fie explicate.",
+    accent: "#d7b66b",
+    bg: "radial-gradient(circle at 78% 16%,rgba(215,182,107,.22),transparent 28%),linear-gradient(135deg,#050505,#121212 58%,#070707)",
+    text: "white",
+  },
+  {
+    href: "/templates/asfaltari-bucuresti",
+    label: "Pilot #003 · Infrastructură",
+    meta: "București + Ilfov",
+    title: "VIAFORTE",
+    subtitle: "Lucrări grele. Mesaj simplu. Încredere rapidă.",
+    accent: "#f1b52f",
+    bg: "radial-gradient(circle at 82% 20%,rgba(241,181,47,.19),transparent 30%),linear-gradient(145deg,#15181a,#0d0f10)",
+    text: "white",
+  },
+  {
+    href: "/templates/florarie-bragadiru",
+    label: "Pilot #004 · Florărie",
+    meta: "Bragadiru",
+    title: "Maison Fleur",
+    subtitle: "Alegi. Personalizezi. Comanzi.",
+    accent: "#7b3445",
+    bg: "radial-gradient(circle at 76% 18%,rgba(123,52,69,.18),transparent 28%),radial-gradient(circle at 20% 80%,rgba(72,109,85,.12),transparent 34%),linear-gradient(135deg,#fbf2f0,#ead8d5)",
+    text: "#26372e",
+  },
+  {
+    href: "/demo/nunta/elegant",
+    label: "Template · Nuntă",
+    meta: "invitație digitală",
+    title: "Mire & Mireasă",
+    subtitle: "Elegant. Personal. Fără aglomerație.",
+    accent: "#9f7730",
+    bg: "radial-gradient(circle at 22% 18%,rgba(255,255,255,.94),transparent 28%),radial-gradient(circle at 82% 68%,rgba(178,135,58,.18),transparent 34%),linear-gradient(135deg,#f3ecdf,#ded0ba)",
+    text: "#261f17",
+  },
+];
+
+function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.992 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.72, delay, ease }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function TemplatesPage() {
   const [theme, setTheme] = useState<Theme>("light");
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const hydrate = () => {
+    const frame = window.requestAnimationFrame(() => {
       const saved = window.localStorage.getItem("studio-theme");
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
       document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
-    };
-    const frame = window.requestAnimationFrame(hydrate);
+    });
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
@@ -40,204 +97,211 @@ export default function TemplatesPage() {
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#000000" : "#ffffff",
-    "--surface": theme === "dark" ? "#0c0c0e" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#151518" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
-    "--accent": "#4b46ee",
+    "--bg": theme === "dark" ? "#050506" : "#f7f7f8",
+    "--surface": theme === "dark" ? "#0d0d0f" : "#ffffff",
+    "--surface-2": theme === "dark" ? "#151518" : "#eeeeF1",
+    "--text": theme === "dark" ? "#f5f5f7" : "#111114",
+    "--muted": theme === "dark" ? "#9a9aa0" : "#6b6b72",
+    "--border": theme === "dark" ? "rgba(255,255,255,.09)" : "rgba(0,0,0,.08)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#111114",
+    "--button-text": theme === "dark" ? "#050506" : "#ffffff",
   } as CSSProperties;
 
   return (
     <main
-      style={{ ...vars, fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}
+      style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
       className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="templates" onToggleTheme={toggleTheme} />
 
-      <section className="relative flex min-h-[78svh] items-end overflow-hidden px-5 pb-16 pt-32 text-white sm:px-6 md:min-h-[86vh] md:px-10 md:pb-24 md:pt-40">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 72% 22%, rgba(116,86,255,.32), transparent 31%), radial-gradient(circle at 30% 34%, rgba(77,54,150,.24), transparent 35%), linear-gradient(180deg, rgba(31,20,55,.99) 0%, rgba(19,11,37,.98) 44%, rgba(8,5,15,.98) 78%, var(--bg) 100%)",
-          }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-[8%] top-[22%] h-52 w-52 rounded-full bg-violet-500/10 blur-[80px]"
-          animate={{ x: [0, 42, -8, 0], y: [0, 16, 42, 0], scale: [1, 1.12, 0.96, 1] }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <OrbitalSystem variant="accent" className="left-[76%] top-[46%] opacity-45" />
-        <div className="relative mx-auto w-full max-w-[1500px]">
-          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
-            ORBYVEN · Templates
-          </motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.08, ease: easeOut }} className="mt-6 max-w-[1200px] text-[clamp(54px,8vw,118px)] font-semibold leading-[0.91] tracking-[-0.068em]">
-            Deschizi. Vezi. Alegi.
-          </motion.h1>
-          <p className="mt-7 max-w-xl text-[16px] leading-7 text-white/58">
-            Fiecare template este și demo. Nu există două liste diferite.
-          </p>
+      <Link
+        href="/"
+        className="fixed left-4 top-[84px] z-40 hidden h-11 items-center gap-2 rounded-full border border-white/12 bg-black/35 px-4 text-[11px] font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,.2)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-black/50 md:inline-flex"
+      >
+        ← Reverse
+      </Link>
+
+      <section className="relative isolate flex min-h-[94svh] items-end overflow-hidden px-5 pb-10 pt-32 text-white sm:px-6 md:px-10 md:pb-16 md:pt-40">
+        <div className="absolute inset-0 -z-30 bg-[#07070a]" />
+        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_68%_25%,rgba(115,83,255,.35),transparent_26%),radial-gradient(circle_at_24%_68%,rgba(70,51,150,.24),transparent_32%),linear-gradient(180deg,#161027_0%,#09080f_68%,#07070a_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:44px_44px]" />
+
+        {!reduceMotion ? (
+          <>
+            <motion.div
+              aria-hidden="true"
+              className="absolute left-[8%] top-[22%] h-52 w-52 rounded-full bg-violet-500/12 blur-[90px]"
+              animate={{ x: [0, 46, -12, 0], y: [0, 22, 42, 0], scale: [1, 1.18, .96, 1] }}
+              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute right-[11%] top-[16%] h-72 w-72 rounded-full border border-white/8"
+              animate={{ rotate: 360, scale: [1, 1.08, 1] }}
+              transition={{ rotate: { duration: 32, repeat: Infinity, ease: "linear" }, scale: { duration: 8, repeat: Infinity, ease: "easeInOut" } }}
+            />
+          </>
+        ) : null}
+
+        <div className="relative mx-auto grid w-full max-w-[1520px] gap-12 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
+          <div>
+            <motion.p
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: .6 }}
+              className="text-[9px] font-semibold uppercase tracking-[.27em] text-white/46"
+            >
+              ORBYVEN · Template system
+            </motion.p>
+            <motion.h1
+              initial={reduceMotion ? false : { opacity: 0, y: 34 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: .9, delay: .06, ease }}
+              className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]"
+            >
+              Vezi.
+              <br />
+              <span className="text-white/35">Înțelegi.</span>
+              <br />
+              Alegi.
+            </motion.h1>
+          </div>
+
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: .75, delay: .18, ease }}
+            className="lg:pb-2"
+          >
+            <p className="max-w-md text-[15px] leading-7 text-white/55">
+              Fără explicații kilometrice. Intră într-un model și vezi imediat dacă ți se potrivește.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {["01 · intri", "02 · explorezi", "03 · alegi"].map((item) => (
+                <span key={item} className="rounded-full border border-white/10 bg-white/[.045] px-4 py-2.5 text-[9px] font-semibold uppercase tracking-[.13em] text-white/55 backdrop-blur">
+                  {item}
+                </span>
+              ))}
+            </div>
+            <a href="#modele" className="mt-8 inline-flex h-12 items-center rounded-full bg-white px-6 text-[12px] font-semibold text-black transition hover:-translate-y-0.5">
+              Vezi modelele ↓
+            </a>
+          </motion.div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <div className="grid gap-5 lg:grid-cols-2">
+      <section id="modele" className="mx-auto max-w-[1520px] px-5 py-14 sm:px-6 md:px-10 md:py-20">
+        <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.22em] text-[var(--muted)]">Alege după senzație</p>
+            <h2 className="mt-4 text-[clamp(42px,6vw,76px)] font-semibold leading-[.9] tracking-[-.062em]">Fiecare business.<br />Altă personalitate.</h2>
+          </div>
+          <p className="max-w-sm text-sm leading-6 text-[var(--muted)]">Structura rămâne simplă. Stilul rămâne al clientului.</p>
+        </div>
 
-          <Link href="/templates/obsidian-moments" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d7b66b]/20 bg-[#080808] text-white lg:min-h-[520px]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_20%,rgba(209,170,88,.18),transparent_30%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,.06),transparent_34%),linear-gradient(135deg,#070707,#111_58%,#050505)]" />
-            <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_center,rgba(255,255,255,.24)_0.7px,transparent_0.7px)] [background-size:8px_8px]" />
-            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7b66b]">Pilot #001 · Events</p>
-                <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/50">Live demo</span>
-              </div>
-              <div>
-                <div className="text-[clamp(54px,7vw,94px)] font-semibold leading-[0.82] tracking-[-0.075em]">OBSIDIAN</div>
-                <p className="mt-5 max-w-md text-sm leading-6 text-white/55">360° · oglindă foto · efecte speciale · disponibilitate live.</p>
-              </div>
-              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
+        <div className="grid gap-4 xl:grid-cols-2">
+          {featured.map((item, index) => (
+            <Reveal key={item.href} delay={index * .04}>
+              <Link
+                href={item.href}
+                className="group relative flex min-h-[390px] overflow-hidden rounded-[34px] border border-[var(--border)] p-7 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)] sm:min-h-[440px] md:p-9"
+                style={{ background: item.bg, color: item.text }}
+              >
+                <div className="relative z-10 flex w-full flex-col justify-between">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-[9px] font-semibold uppercase tracking-[.22em]" style={{ color: item.accent }}>{item.label}</p>
+                    <span className="rounded-full border border-current/10 bg-white/5 px-3 py-2 text-[8px] uppercase tracking-[.14em] opacity-55">{item.meta}</span>
+                  </div>
+
+                  <div>
+                    <h3 className={`max-w-[92%] text-[clamp(54px,8vw,106px)] font-semibold leading-[.80] tracking-[-.075em] ${item.href.includes("florarie") || item.href.includes("nunta") ? "font-serif" : ""}`}>
+                      {item.title}
+                    </h3>
+                    <p className="mt-5 max-w-md text-sm leading-6 opacity-58">{item.subtitle}</p>
+                  </div>
+
+                  <div className="flex items-end justify-between border-t border-current/10 pt-5">
+                    <span className="text-[10px] font-semibold uppercase tracking-[.15em] opacity-48">Deschide demo</span>
+                    <span className="grid h-12 w-12 place-items-center rounded-full text-xl transition duration-300 group-hover:rotate-45" style={{ backgroundColor: item.accent, color: item.href.includes("florarie") || item.href.includes("nunta") ? "white" : "black" }}>↗</span>
+                  </div>
+                </div>
+              </Link>
+            </Reveal>
+          ))}
+
+          <Reveal delay={.06}>
+            <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d9bc82]/18 bg-[#050505] text-white lg:min-h-[520px]">
+              <div
+                className="absolute inset-0 scale-[1.02] bg-cover bg-center transition duration-700 group-hover:scale-[1.045]"
+                style={{ backgroundImage: "linear-gradient(90deg,rgba(0,0,0,.90),rgba(0,0,0,.56) 52%,rgba(0,0,0,.30)),url('https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1200&q=68')" }}
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.18)_50%,rgba(0,0,0,.72))]" />
+              <div className="absolute right-[-60px] top-[-45px] h-56 w-56 rounded-full border border-[#d9bc82]/13 shadow-[0_0_90px_rgba(217,188,130,.06)]" />
+              <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d9bc82]">Pilot #005 · Auto detailing</p>
+                  <span className="rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48 backdrop-blur">Interactive</span>
+                </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/35">Experiențe pentru evenimente</p>
-                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Obsidian Moments</h2>
+                  <div className="flex items-center gap-2"><span className="h-px w-8 bg-[#d9bc82]/65" /><p className="text-[9px] font-semibold uppercase tracking-[.24em] text-[#d9bc82]">Hao&apos;s</p></div>
+                  <div className="mt-3 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
+                  <p className="mt-5 max-w-md text-sm leading-6 text-white/52">Hero cinematic · before/after real · configurator inteligent · calendar interactiv.</p>
                 </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d7b66b] text-black transition group-hover:rotate-45">↗</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/templates/asfaltari-bucuresti" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#17191b] text-white lg:min-h-[520px]">
-            <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(247,184,50,.18),transparent_34%),linear-gradient(180deg,#1d2023,#0f1113)]" />
-            <div className="absolute right-[-12%] top-[12%] h-64 w-64 rounded-full border-[34px] border-[#f1b52f]/15" />
-            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#f1b52f]">Pilot #003 · Infrastructură</p>
-                <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/50">București + Ilfov</span>
-              </div>
-              <div>
-                <div className="text-[clamp(58px,8vw,102px)] font-semibold leading-[0.82] tracking-[-0.075em]">VIAFORTE</div>
-                <p className="mt-5 max-w-md text-sm leading-6 text-white/55">Asfaltări, utilaje grele, lucrări și transparență operațională.</p>
-              </div>
-              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/35">Asfaltări · lucrări demo</p>
-                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Asfaltări București</h2>
+                <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.16em] text-white/30">Luxury black & gold</p>
+                    <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Hao&apos;s Customs</h2>
+                  </div>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9bc82] text-black transition group-hover:rotate-45">↗</span>
                 </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f1b52f] text-[#111] transition group-hover:rotate-45">↗</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/templates/florarie-bragadiru" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#7b3445]/10 bg-[#f3e8e7] text-[#26372e] lg:min-h-[520px]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_18%,rgba(123,52,69,.18),transparent_28%),radial-gradient(circle_at_18%_78%,rgba(55,95,70,.13),transparent_33%),linear-gradient(135deg,#f7efed,#ead8d5)]" />
-            <div className="absolute -right-10 top-10 h-52 w-52 rounded-full border border-[#7b3445]/10" />
-            <div className="absolute right-10 top-28 h-32 w-32 rounded-full border border-[#486d55]/10" />
-            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#7b3445]">Pilot #004 · Florărie</p>
-                <span className="rounded-full border border-[#26372e]/10 bg-white/30 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-[#26372e]/55">Bragadiru</span>
-              </div>
-              <div>
-                <div className="font-serif text-[clamp(54px,7vw,96px)] leading-[0.82] tracking-[-0.065em]">Maison Fleur</div>
-                <p className="mt-5 max-w-md text-sm leading-6 text-[#26372e]/60">Buchete, aranjamente, personalizare, coș și comandă online demo.</p>
-              </div>
-              <div className="flex items-end justify-between gap-5 border-t border-[#26372e]/10 pt-5">
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-[#26372e]/40">Flori · livrare locală</p>
-                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Florărie Bragadiru</h2>
-                </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#26372e] text-white transition group-hover:rotate-45">↗</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/templates/haos-customs" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[#d9bc82]/18 bg-[#050505] text-white lg:min-h-[520px]">
-            <div
-              className="absolute inset-0 scale-[1.02] bg-cover bg-center transition duration-700 group-hover:scale-[1.045]"
-              style={{ backgroundImage: "linear-gradient(90deg,rgba(0,0,0,.90),rgba(0,0,0,.56) 52%,rgba(0,0,0,.30)),url('https://images.unsplash.com/photo-1746593934498-b335e4e04845?auto=format&fit=crop&w=1200&q=68')" }}
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.18)_50%,rgba(0,0,0,.72))]" />
-            <div className="absolute right-[-60px] top-[-45px] h-56 w-56 rounded-full border border-[#d9bc82]/13 shadow-[0_0_90px_rgba(217,188,130,.06)]" />
-            <div className="relative flex min-h-[430px] flex-col justify-between p-7 lg:min-h-[520px] md:p-9">
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d9bc82]">Pilot #005 · Auto detailing</p>
-                <span className="rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-white/48 backdrop-blur">Interactive</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2"><span className="h-px w-8 bg-[#d9bc82]/65" /><p className="text-[9px] font-semibold uppercase tracking-[.24em] text-[#d9bc82]">Hao&apos;s</p></div>
-                <div className="mt-3 text-[clamp(58px,8vw,104px)] font-semibold leading-[0.80] tracking-[-0.078em]">CUSTOMS</div>
-                <p className="mt-5 max-w-md text-sm leading-6 text-white/52">Hero cinematic · before/after real · configurator inteligent · calendar interactiv.</p>
-              </div>
-              <div className="flex items-end justify-between gap-5 border-t border-white/10 pt-5">
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-white/30">Luxury black & gold</p>
-                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">Hao&apos;s Customs</h2>
-                </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9bc82] text-black transition group-hover:rotate-45">↗</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/demo/nunta/elegant" className="group relative min-h-[430px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[#e9dfcf] lg:min-h-[520px]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,.92),transparent_28%),radial-gradient(circle_at_82%_68%,rgba(178,135,58,.18),transparent_34%),linear-gradient(135deg,#f3ecdf,#ded0ba)]" />
-            <motion.div
-              aria-hidden="true"
-              className="absolute -right-24 top-10 h-72 w-72 rounded-full border border-[#9f7730]/20"
-              animate={{ rotate: 360, scale: [1, 1.06, 1] }}
-              transition={{ rotate: { duration: 28, repeat: Infinity, ease: "linear" }, scale: { duration: 7, repeat: Infinity, ease: "easeInOut" } }}
-            />
-            <motion.div
-              aria-hidden="true"
-              className="absolute -left-20 bottom-14 h-64 w-64 rounded-full bg-white/38 blur-3xl"
-              animate={{ x: [0, 36, 0], y: [0, -18, 0] }}
-              transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center px-8 pb-24 text-center text-[#261f17]">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8f6d33]">Template invitație</p>
-                <div className="mt-7 font-serif text-[clamp(56px,7vw,94px)] leading-[0.78] tracking-[-0.07em]">
-                  Mire <span className="italic text-[#ad843c]">&amp;</span> Mireasă
-                </div>
-                <p className="mx-auto mt-7 max-w-sm text-sm leading-6 text-[#655b4f]">Un demo complet, fără date reale, pregătit să fie personalizat pentru fiecare cuplu.</p>
-              </div>
-            </div>
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 border-t border-black/8 bg-white/35 p-6 backdrop-blur-xl md:p-8">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-black/45">Wedding · template</p>
-                <h2 className="mt-2 text-[34px] font-semibold tracking-[-0.055em] text-[#231d17] md:text-[42px]">Invitație elegantă</h2>
-              </div>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#211a14] text-white transition group-hover:rotate-45">↗</span>
-            </div>
-          </Link>
-
-          {clientTemplateList.map((template) => (
-            <Link key={template.slug} href={`/templates/${template.slug}`} className="group overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3">
-              <ClientTemplatePreview template={template} compact />
-              <div className="flex items-end justify-between gap-4 px-3 pb-3 pt-5">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{template.category}</p>
-                  <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.05em]">{template.title}</h2>
-                </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition group-hover:rotate-45">↗</span>
               </div>
             </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1520px] px-5 pb-16 sm:px-6 md:px-10 md:pb-24">
+        <div className="mb-8 flex items-end justify-between gap-5 border-t border-[var(--border)] pt-10">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[var(--muted)]">Alte direcții</p>
+            <h2 className="mt-3 text-[36px] font-semibold tracking-[-.05em] md:text-[48px]">Aceeași logică. Altă industrie.</h2>
+          </div>
+          <span className="hidden text-[10px] uppercase tracking-[.16em] text-[var(--muted)] md:block">max. 3 click-uri</span>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {clientTemplateList.map((template, index) => (
+            <Reveal key={template.slug} delay={Math.min(index * .025, .12)}>
+              <Link
+                href={`/templates/${template.slug}`}
+                className="group grid min-h-[310px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3 transition duration-400 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(0,0,0,.10)] sm:grid-cols-[1.02fr_.98fr]"
+              >
+                <div className="overflow-hidden rounded-[22px]">
+                  <ClientTemplatePreview template={template} compact />
+                </div>
+                <div className="flex min-h-[210px] flex-col justify-between p-5 sm:min-h-full sm:p-6">
+                  <div>
+                    <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
+                    <h3 className="mt-3 text-[34px] font-semibold leading-[.94] tracking-[-.055em]">{template.title}</h3>
+                    <p className="mt-4 max-w-sm text-[12px] leading-6 text-[var(--muted)]">{template.description}</p>
+                  </div>
+                  <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-4">
+                    <span className="text-[10px] font-semibold">Vezi modelul</span>
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition group-hover:rotate-45">↗</span>
+                  </div>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
 
       <section className="px-5 pb-8 sm:px-6 md:px-10">
-        <div className="mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
-          <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="max-w-4xl text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">Îți place direcția? O facem a ta.</h2>
-            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Începe →</Link>
+        <div className="mx-auto max-w-[1520px] overflow-hidden rounded-[36px] bg-[var(--button)] px-7 py-14 text-[var(--button-text)] sm:px-9 md:px-12 md:py-16">
+          <p className="text-[9px] font-bold uppercase tracking-[.2em] opacity-45">De aici devine al tău</p>
+          <div className="mt-5 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="max-w-4xl text-[clamp(44px,6vw,74px)] font-semibold leading-[.9] tracking-[-.06em]">Îți place direcția?<br />O adaptăm business-ului tău.</h2>
+            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[12px] font-semibold text-[var(--text)]">Începe →</Link>
           </div>
         </div>
       </section>
