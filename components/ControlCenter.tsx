@@ -153,7 +153,11 @@ export default function ControlCenter() {
   }, [getAccessToken, router]);
 
   useEffect(() => {
-    void load();
+    const frame = window.requestAnimationFrame(() => {
+      void load();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [load]);
 
   const selectedOrganization = useMemo(
@@ -165,42 +169,46 @@ export default function ControlCenter() {
   );
 
   useEffect(() => {
-    if (!selectedOrganization) {
-      setProfileDraft(null);
-      setModuleDraft({});
-      return;
-    }
+    const frame = window.requestAnimationFrame(() => {
+      if (!selectedOrganization) {
+        setProfileDraft(null);
+        setModuleDraft({});
+        return;
+      }
 
-    setProfileDraft({
-      name: selectedOrganization.name,
-      slug: selectedOrganization.slug,
-      legal_name: selectedOrganization.legal_name ?? "",
-      display_name:
-        selectedOrganization.profile?.display_name ?? selectedOrganization.name,
-      greeting_name: selectedOrganization.profile?.greeting_name ?? "",
-      logo_url: selectedOrganization.profile?.logo_url ?? "",
-      timezone: selectedOrganization.profile?.timezone ?? "Europe/Bucharest",
-      locale: selectedOrganization.profile?.locale ?? "ro-RO",
-      settings_text: JSON.stringify(
-        selectedOrganization.profile?.settings ?? {},
-        null,
-        2
-      ),
+      setProfileDraft({
+        name: selectedOrganization.name,
+        slug: selectedOrganization.slug,
+        legal_name: selectedOrganization.legal_name ?? "",
+        display_name:
+          selectedOrganization.profile?.display_name ?? selectedOrganization.name,
+        greeting_name: selectedOrganization.profile?.greeting_name ?? "",
+        logo_url: selectedOrganization.profile?.logo_url ?? "",
+        timezone: selectedOrganization.profile?.timezone ?? "Europe/Bucharest",
+        locale: selectedOrganization.profile?.locale ?? "ro-RO",
+        settings_text: JSON.stringify(
+          selectedOrganization.profile?.settings ?? {},
+          null,
+          2
+        ),
+      });
+
+      const nextModules: ModuleDraft = {};
+      for (const definition of OPTIONAL_MODULES) {
+        const assignment = selectedOrganization.modules.find(
+          (module) => module.module_id === definition.id
+        );
+        nextModules[definition.id] = {
+          enabled: assignment?.enabled ?? false,
+          settings_text: JSON.stringify(assignment?.settings ?? {}, null, 2),
+        };
+      }
+      setModuleDraft(nextModules);
+      setMemberUserId("");
+      setMemberRole("member");
     });
 
-    const nextModules: ModuleDraft = {};
-    for (const definition of OPTIONAL_MODULES) {
-      const assignment = selectedOrganization.modules.find(
-        (module) => module.module_id === definition.id
-      );
-      nextModules[definition.id] = {
-        enabled: assignment?.enabled ?? false,
-        settings_text: JSON.stringify(assignment?.settings ?? {}, null, 2),
-      };
-    }
-    setModuleDraft(nextModules);
-    setMemberUserId("");
-    setMemberRole("member");
+    return () => window.cancelAnimationFrame(frame);
   }, [selectedOrganization]);
 
   const performAction = async (
