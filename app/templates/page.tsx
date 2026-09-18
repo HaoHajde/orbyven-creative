@@ -129,7 +129,7 @@ const templateCategories = [
   },
 ] as const;
 
-function Reveall({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
   const reduceMotion = useReducedMotion();
   return (
     <motion.div
