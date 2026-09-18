@@ -20,47 +20,47 @@ export default function WorkspaceModuleStore({
   error,
 }: Props) {
   return (
-    <div className="pb-24 md:pb-8">
-      <section className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+    <div className="pb-24 md:pb-0">
+      <section className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Module ORBYVEN</p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">Doar ce îți trebuie.</h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Personalizare</p>
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[0.99] tracking-[-0.05em] sm:text-[44px]">Modulele tale.</h1>
+          <p className="mt-2.5 max-w-2xl text-sm leading-6 text-[var(--muted)]">
             {canManage
-              ? "Aici gestionezi doar modulele active în workspace. Disponibilitatea vine din registry, iar dreptul comercial va fi furnizat separat de sistemul de entitlements."
-              : "Poți vedea instrumentele active ale firmei. Doar un owner sau admin poate schimba configurația workspace-ului."}
+              ? "Alege instrumentele de care ai nevoie. Restul rămân ascunse, ca workspace-ul să fie simplu."
+              : "Aici vezi instrumentele active ale firmei. Doar un owner sau admin le poate schimba."}
           </p>
         </div>
-        <button type="button" onClick={onClose} className="h-11 self-start rounded-full bg-[var(--button)] px-5 text-sm font-medium text-[var(--button-text)]">Gata</button>
+        <button type="button" onClick={onClose} className="h-9 self-start rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] shadow-sm">Gata</button>
       </section>
 
       {error && <div className="mt-6 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
-      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {ORBYVEN_MODULES.map((definition) => {
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
           const saving = savingModule === definition.id;
 
           return (
-            <article key={definition.id} className="flex min-h-[270px] flex-col rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-6">
+            <article key={definition.id} className="flex min-h-[220px] flex-col rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/68 p-5 shadow-[0_12px_38px_rgba(0,0,0,0.025)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] text-sm font-semibold" style={{ backgroundColor: definition.accent, color: definition.color }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-xs font-semibold" style={{ backgroundColor: definition.accent, color: definition.color }}>
                   {definition.shortName.slice(0, 2).toUpperCase()}
                 </div>
-                {definition.badge && <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{definition.badge}</span>}
+                {definition.badge && <span className="rounded-full border border-[var(--border)] bg-[color:var(--bg)]/68 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{definition.badge}</span>}
               </div>
 
-              <h2 className="mt-7 text-2xl font-semibold tracking-[-0.045em]">{definition.name}</h2>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{definition.description}</p>
+              <h2 className="mt-5 text-xl font-semibold tracking-[-0.04em]">{definition.name}</h2>
+              <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">{definition.description}</p>
 
-              <div className="mt-auto flex items-center justify-between gap-4 pt-7">
+              <div className="mt-auto flex items-center justify-between gap-4 pt-5">
                 <span className="text-xs text-[var(--muted)]">{saving ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
                 <button
                   type="button"
                   disabled={locked || !canManage || Boolean(savingModule)}
                   onClick={() => onToggle(definition.id)}
-                  className={`h-10 rounded-full px-4 text-xs font-semibold transition ${enabled ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"} disabled:cursor-default disabled:opacity-60`}
+                  className={`h-9 rounded-full px-3.5 text-[11px] font-semibold transition ${enabled ? "bg-[var(--button)] text-[var(--button-text)] shadow-sm" : "border border-[var(--border-strong)] bg-[color:var(--bg)]/50"} disabled:cursor-default disabled:opacity-60`}
                 >
                   {locked ? "Inclus" : !canManage ? "Blocat" : saving ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                 </button>
