@@ -44,11 +44,11 @@ export default function HaoCustomsGalleryPage() {
               note="Comparație demonstrativă între un interior neîntreținut și unul curat, ordonat și finisat premium."
             />
             <BeforeAfter
-              beforeImage={haoImages.exteriorBefore}
-              afterImage={haoImages.glossAfter}
-              title="Gloss Recovery"
-              subtitle="Paint correction · protecție"
-              note="Pentru corecție de lac și protecție, focusul vizual este pe claritate, reflexie și profunzimea negrului."
+              beforeImage={haoImages.paintBefore}
+              afterImage={haoImages.paintAfter}
+              title="Paint Correction"
+              subtitle="Corecție lac · gloss recovery"
+              note="Diferența este concentrată pe claritatea lacului, reflexie și profunzimea finisajului după corecție."
             />
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function HaoCustomsGalleryPage() {
       <section className="border-y border-white/[.07] bg-[#090909]">
         <div className="mx-auto grid max-w-[1500px] gap-3 px-5 py-16 sm:px-7 md:grid-cols-3 md:px-10 md:py-20">
           {[
-            ["01", "Înainte / după real", "Structura acceptă perechi reale din portofoliul atelierului, fără să schimbăm componenta."],
+            ["01", "Perechi dedicate", "Fiecare slider folosește propriul set before/after, pregătit special pentru experiența demo Hao's Customs."],
             ["02", "Gest natural", "Slider tactil, fără canvas și fără o bibliotecă grea doar pentru un efect."],
             ["03", "Conversie contextuală", "Din orice lucrare, clientul poate continua direct spre pachetul relevant și programare."],
           ].map(([no, title, copy]) => (
