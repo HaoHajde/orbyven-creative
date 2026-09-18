@@ -46,7 +46,9 @@ function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
       </header>
 
       <section id="acasa" className="relative overflow-hidden">
+        <div aria-hidden="true" className="absolute inset-0 opacity-[.08] [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:54px_54px]" />
         <div aria-hidden="true" className="absolute left-[-15%] top-[8%] h-[520px] w-[520px] rounded-full bg-[#17415a]/38 blur-[150px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute bottom-[-7vw] left-[2vw] text-[clamp(180px,28vw,430px)] font-black leading-none tracking-[-.1em] text-white/[.018]">NC</div>
         <div className="relative mx-auto grid max-w-[1600px] lg:min-h-[92svh] lg:grid-cols-[1.02fr_.98fr]">
           <div className="flex flex-col justify-center px-5 py-20 md:px-10 md:py-28 lg:py-32">
             <div className="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-[0.14em]">
@@ -67,6 +69,14 @@ function FieldServiceSite({ template }: { template: ClientTemplateConfig }) {
             {heroImage && <Image src={heroImage} alt="Sistem profesional de încălzire în pardoseală" fill preload sizes="(max-width: 1024px) 100vw, 48vw" className="object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#08131c] via-[#08131c]/5 to-[#08131c]/15" />
             <div className="absolute left-5 top-5 rounded-full border border-white/18 bg-[#08131c]/64 px-4 py-2 text-[9px] font-semibold uppercase tracking-[.15em] text-white/72 backdrop-blur-xl md:left-8 md:top-8">Execuție atentă · zonare corectă</div>
+            <div className="absolute right-5 top-5 rounded-[20px] border border-white/15 bg-[#08131c]/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,.20)] backdrop-blur-2xl md:right-8 md:top-8">
+              <p className="text-[7px] font-bold uppercase tracking-[.16em] text-[#f0a653]">Control pe camere</p>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <span className="rounded-[10px] bg-[#f09a3e] px-2 py-2 text-[8px] font-bold text-[#08131c]">22°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-2 text-[8px] text-white/70">20°</span>
+                <span className="rounded-[10px] bg-white/10 px-2 py-2 text-[8px] text-white/70">23°</span>
+              </div>
+            </div>
             <div className="absolute inset-x-5 bottom-5 grid gap-3 rounded-[24px] border border-white/14 bg-[#08131c]/78 p-5 backdrop-blur-xl sm:grid-cols-[1fr_auto] sm:items-end md:inset-x-8 md:bottom-8 md:p-6">
               <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#f0a653]">Un singur sistem, control complet</p><p className="mt-3 max-w-lg text-[25px] font-semibold leading-[1.05] tracking-[-.04em] md:text-[34px]">Căldură unde ai nevoie, nu în toată casa deodată.</p></div>
               <span className="rounded-full bg-white/10 px-4 py-2 text-[10px] text-white/62">termostat / cameră</span>
