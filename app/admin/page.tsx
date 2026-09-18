@@ -65,14 +65,18 @@ export default function AdminPage() {
   }, [router]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("studio-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialTheme: Theme =
-      saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
+    const frame = window.requestAnimationFrame(() => {
+      const saved = window.localStorage.getItem("studio-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initialTheme: Theme =
+        saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
 
-    setTheme(initialTheme);
-    document.documentElement.style.colorScheme = initialTheme;
-    loadLeads();
+      setTheme(initialTheme);
+      document.documentElement.style.colorScheme = initialTheme;
+      void loadLeads();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [loadLeads]);
 
   const toggleTheme = () => {
