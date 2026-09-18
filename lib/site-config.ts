@@ -3,7 +3,7 @@ export const siteConfig = {
   shortName: "ORBYVEN",
   description:
     "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru branduri și afaceri care vor o prezență greu de ignorat.",
-  defaultUrl: "https://orbyven-creative.vercel.app",
+  defaultUrl: "https://orbyven.ro",
   locale: "ro_RO",
   language: "ro",
 } as const;

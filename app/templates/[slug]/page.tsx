@@ -21,6 +21,13 @@ export async function generateMetadata({
   return {
     title: template.title,
     description: template.description,
+    robots: {
+      index: false,
+      follow: true,
+    },
+    alternates: {
+      canonical: "/templates",
+    },
   };
 }
 

@@ -13,6 +13,15 @@ const navItems: { key: SitePage; href: string; label: string }[] = [
   { key: "contact", href: "/contact", label: "Contact" },
 ];
 
+const seoLinks = [
+  ["/creare-site", "Creare site"],
+  ["/site-prezentare", "Site de prezentare"],
+  ["/web-design-bucuresti", "Web design București"],
+  ["/redesign-site", "Redesign"],
+  ["/studii-de-caz", "Studii de caz"],
+  ["/ghid", "Ghid"],
+] as const;
+
 const legalLinks = [
   ["/legal/terms", "Termeni"],
   ["/legal/privacy", "Confidențialitate"],
@@ -40,7 +49,15 @@ export default function SiteFooter({ theme, activePage }: { theme: Theme; active
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-col gap-4 border-t border-current/15 pt-6 text-[10px] uppercase tracking-[0.14em] opacity-40 sm:flex-row sm:items-center sm:justify-between">
+        <nav className="mt-8 flex flex-wrap gap-x-5 gap-y-3 border-t border-current/15 pt-6 text-[11px] opacity-55">
+          {seoLinks.map(([href, label]) => (
+            <Link key={href} href={href} className="transition hover:opacity-100">
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-6 flex flex-col gap-4 border-t border-current/15 pt-6 text-[10px] uppercase tracking-[0.14em] opacity-40 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span>© 2026 ORBYVEN</span>
             {legalLinks.map(([href, label]) => (

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact pentru web design & proiecte digitale",
   description:
     "Discută cu ORBYVEN CREATIVE despre website-ul, landing page-ul, redesign-ul sau experiența digitală pe care vrei să o construiești.",
   alternates: {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     url: "/contact",
-    title: "Contact | ORBYVEN CREATIVE",
+    title: "Contact web design & proiecte digitale | ORBYVEN",
     description:
       "Ai un proiect în minte? Spune-ne ce vrei să construim și începem de acolo.",
   },

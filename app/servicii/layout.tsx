@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Servicii",
+  title: "Web design, creare site & servicii digitale",
   description:
-    "Website-uri, landing pages, redesign și experiențe digitale construite de ORBYVEN CREATIVE pentru branduri și afaceri care vor o prezență digitală mai puternică.",
+    "Web design, creare site, landing pages și redesign pentru firme. ORBYVEN construiește experiențe digitale clare, rapide și pregătite pentru SEO.",
   alternates: {
     canonical: "/servicii",
   },
   openGraph: {
     url: "/servicii",
-    title: "Servicii | ORBYVEN CREATIVE",
+    title: "Web design, creare site & servicii digitale | ORBYVEN",
     description:
       "Website-uri, landing pages, redesign și experiențe digitale construite cu claritate, atenție la detalii și impact.",
   },
