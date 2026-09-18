@@ -1,142 +1,22 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo, useState } from "react";
 
-const products = [
-  { id: 1, name: "Blush Garden", price: 189, note: "trandafiri · lisianthus · verdeață", tone: "#d88e9c" },
-  { id: 2, name: "Ivory Morning", price: 169, note: "trandafiri crem · eustoma · eucalyptus", tone: "#d8c8a9" },
-  { id: 3, name: "Wild Romance", price: 229, note: "mix sezonier · texturi naturale", tone: "#9c6374" },
-  { id: 4, name: "Soft Peony", price: 249, note: "bujori · flori delicate · satin", tone: "#e6a7b4" },
-  { id: 5, name: "Green Atelier", price: 159, note: "verde decorativ · flori albe", tone: "#78957d" },
-  { id: 6, name: "Noir Rose", price: 279, note: "trandafiri roșu închis · ambalaj premium", tone: "#713746" },
-  { id: 7, name: "Mini Fleur", price: 119, note: "buchet compact · cadou rapid", tone: "#c9938b" },
-  { id: 8, name: "Table Bloom", price: 319, note: "aranjament de masă · vas inclus", tone: "#a3736a" },
-];
+// Keep the standalone Pilot #004 design isolated from the ORBYVEN theme.
+// All checkout interactions are local demonstrations; no payments are submitted.
+const flowerDocument = "<!doctype html>\n<html lang=\"ro\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>Maison Fleur — Florărie în Bragadiru</title>\n  <meta name=\"description\" content=\"Buchete și aranjamente florale cu livrare în Bragadiru și împrejurimi.\" />\n  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n  <link href=\"https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Italiana&display=swap\" rel=\"stylesheet\">\n  <link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%237b2431'/%3E%3Cpath d='M32 48V29m0 3c-15-2-16-17-6-17 5 0 6 5 6 8 1-8 12-12 15-5 4 9-8 15-15 14Zm0 5c-9 0-13 6-13 11 7 1 12-2 13-9Zm0 0c9 0 13 6 13 11-7 1-12-2-13-9Z' fill='none' stroke='%23fff8f1' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\" />\n  <style>\n    :root{--ink:#251b1d;--wine:#7b2431;--rose:#dba2aa;--cream:#fffaf4;--sand:#f2e8dc;--line:#e7d9ce;--white:#fff;--shadow:0 18px 50px rgba(72,35,40,.13)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.55 'DM Sans',sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}.top{background:var(--wine);color:white;text-align:center;padding:9px 16px;font-size:.82rem;letter-spacing:.05em}.nav{height:78px;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;border-bottom:1px solid var(--line);background:rgba(255,250,244,.95);position:sticky;top:0;z-index:20;backdrop-filter:blur(14px)}.brand{display:flex;align-items:center;gap:10px}.brand-mark{width:36px;height:36px;border-radius:50%;background:var(--wine);color:white;display:grid;place-items:center;font-size:20px}.brand b{font-family:Italiana,serif;font-size:1.55rem;font-weight:400;letter-spacing:.04em}.nav-links{display:flex;gap:26px}.nav a{color:inherit;text-decoration:none;font-size:.92rem}.cart-button{border:1px solid var(--wine);background:transparent;color:var(--wine);border-radius:999px;padding:10px 16px;display:flex;gap:9px;align-items:center}.count{background:var(--wine);color:white;width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:.78rem}.hero{min-height:74vh;display:grid;grid-template-columns:1.05fr .95fr;overflow:hidden}.hero-copy{padding:9vh 7vw;display:flex;flex-direction:column;justify-content:center}.eyebrow{text-transform:uppercase;letter-spacing:.16em;color:var(--wine);font-size:.78rem;font-weight:600}.hero h1{font:clamp(3.3rem,6.4vw,7rem)/.92 Italiana,serif;margin:18px 0 24px;max-width:760px}.hero p{max-width:570px;color:#66565a;font-size:1.08rem}.actions{display:flex;gap:12px;margin-top:30px}.primary,.secondary{border-radius:999px;padding:14px 22px;border:1px solid var(--wine);font-weight:600}.primary{background:var(--wine);color:white}.secondary{background:transparent;color:var(--wine)}.hero-image{position:relative;min-height:560px;background:url('https://luxuryflowersmiami.com/cdn/shop/files/3602243250_2000x1616.jpg?v=1733661671') center/cover}.hero-image:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--cream) 0%,transparent 18%)}.hero-note{position:absolute;z-index:2;bottom:30px;left:30px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);padding:16px 20px;border-radius:16px;box-shadow:var(--shadow)}.hero-note strong{display:block}.section{padding:90px 5vw}.section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:34px}.section h2{font:clamp(2.4rem,4vw,4.2rem)/1 Italiana,serif;margin:10px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filter{border:1px solid var(--line);background:white;padding:10px 15px;border-radius:999px;color:#64545a}.filter.active{background:var(--ink);color:white;border-color:var(--ink)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}.card{background:white;border:1px solid var(--line);border-radius:22px;overflow:hidden;transition:.25s}.card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}.image-wrap{position:relative;aspect-ratio:4/4.6;overflow:hidden;background:var(--sand)}.image-wrap img{width:100%;height:100%;object-fit:cover;transition:.4s}.card:hover img{transform:scale(1.04)}.tag{position:absolute;left:14px;top:14px;background:rgba(255,255,255,.88);padding:6px 10px;border-radius:99px;font-size:.75rem}.card-body{padding:18px}.card h3{font:1.5rem Italiana,serif;margin:0 0 6px}.muted{color:#76666a;font-size:.88rem}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:17px}.price{font-weight:600;font-size:1.08rem}.add{border:0;background:var(--wine);color:white;border-radius:50%;width:42px;height:42px;font-size:1.4rem}.promise{margin:0 5vw 90px;background:var(--ink);color:white;border-radius:30px;padding:50px;display:grid;grid-template-columns:1.1fr repeat(3,.7fr);gap:40px}.promise h2{font:2.8rem Italiana,serif;margin:0}.promise p{color:#d9cfd1}.promise-item span{font-size:1.7rem}.promise-item b{display:block;margin:12px 0 5px}.drawer{position:fixed;right:0;top:0;width:min(470px,100%);height:100vh;background:white;z-index:50;transform:translateX(105%);transition:.3s;box-shadow:-20px 0 70px rgba(0,0,0,.2);display:flex;flex-direction:column}.drawer.open{transform:none}.drawer-head{padding:24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.drawer-head h2{font:2rem Italiana;margin:0}.close{border:0;background:transparent;font-size:1.8rem}.drawer-content{padding:20px;overflow:auto;flex:1}.cart-item{display:grid;grid-template-columns:72px 1fr auto;gap:13px;padding:12px 0;border-bottom:1px solid var(--line)}.cart-item img{width:72px;height:80px;object-fit:cover;border-radius:12px}.cart-item h4{margin:4px 0}.remove{border:0;background:none;color:var(--wine);font-size:.78rem;padding:0}.drawer-foot{padding:20px;border-top:1px solid var(--line)}.total{display:flex;justify-content:space-between;font-weight:600;font-size:1.1rem;margin-bottom:14px}.drawer-foot .primary{width:100%}.overlay{position:fixed;inset:0;background:rgba(25,12,15,.45);z-index:40;opacity:0;pointer-events:none;transition:.3s}.overlay.show{opacity:1;pointer-events:auto}.modal{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-46%) scale(.97);width:min(680px,92vw);max-height:90vh;overflow:auto;background:white;border-radius:25px;z-index:60;padding:28px;opacity:0;pointer-events:none;transition:.25s;box-shadow:var(--shadow)}.modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}.modal h2{font:2.2rem Italiana;margin:0 0 8px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:.82rem;font-weight:600}.field input,.field textarea,.field select{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fffdfa}.success{text-align:center;padding:55px 15px}.success .tick{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;margin:auto;background:#e5f4e7;color:#2d7438;font-size:2rem}footer{padding:35px 5vw;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;color:#6c5b5f}@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.promise{grid-template-columns:1fr 1fr}.hero{grid-template-columns:1fr}.hero-copy{padding:65px 6vw}.hero-image{min-height:430px}.nav-links{display:none}}@media(max-width:620px){.nav{height:68px}.brand b{font-size:1.25rem}.cart-button .label{display:none}.hero h1{font-size:3.6rem}.hero-copy{padding:55px 5vw}.hero-image{min-height:350px}.section{padding:65px 4vw}.section-head{display:block}.filters{margin-top:20px}.grid{grid-template-columns:1fr 1fr;gap:10px}.card-body{padding:13px}.card h3{font-size:1.2rem}.promise{margin:0 4vw 65px;padding:30px;grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}footer{display:block}.image-wrap{aspect-ratio:3/4}}\n  </style>\n</head>\n<body>\n  <div class=\"top\">Livrare gratuită în Bragadiru pentru comenzi de peste 250 lei</div>\n  <nav class=\"nav\"><div class=\"brand\"><span class=\"brand-mark\">✿</span><b>Maison Fleur</b></div><div class=\"nav-links\"><a href=\"#colectie\">Colecții</a><a href=\"#promisiune\">Livrare</a><a href=\"tel:07xxxxxxxx\">Contact</a></div><button class=\"cart-button\" onclick=\"openCart()\"><span>🛍</span><span class=\"label\">Coșul meu</span><span class=\"count\" id=\"cartCount\">0</span></button></nav>\n  <main>\n    <section class=\"hero\"><div class=\"hero-copy\"><span class=\"eyebrow\">Flori proaspete · Bragadiru</span><h1>Gesturi care înfloresc.</h1><p>Buchete lucrate manual, aranjamente pentru momente speciale și livrare atentă direct la ușa persoanei dragi.</p><div class=\"actions\"><button class=\"primary\" onclick=\"document.querySelector('#colectie').scrollIntoView()\">Alege un buchet</button><button class=\"secondary\" onclick=\"customOrder()\">Creează ceva unic</button></div></div><div class=\"hero-image\"><div class=\"hero-note\"><strong>Comandă până la 14:00</strong><span>pentru livrare în aceeași zi</span></div></div></section>\n    <section class=\"section\" id=\"colectie\"><div class=\"section-head\"><div><span class=\"eyebrow\">Colecția de azi</span><h2>Flori alese pentru tine</h2></div><div class=\"filters\"><button class=\"filter active\" data-filter=\"all\">Toate</button><button class=\"filter\" data-filter=\"buchet\">Buchete</button><button class=\"filter\" data-filter=\"aranjament\">Aranjamente</button><button class=\"filter\" data-filter=\"premium\">Premium</button></div></div><div class=\"grid\" id=\"productGrid\"></div></section>\n    <section class=\"promise\" id=\"promisiune\"><div><span class=\"eyebrow\" style=\"color:#eab6bd\">Promisiunea noastră</span><h2>Frumusețe, livrată cu grijă.</h2><p>Fiecare comandă este pregătită în atelierul nostru din Bragadiru.</p></div><div class=\"promise-item\"><span>✂</span><b>Lucrate manual</b><p>Fiecare buchet este unic.</p></div><div class=\"promise-item\"><span>⌂</span><b>Livrare locală</b><p>Bragadiru și împrejurimi.</p></div><div class=\"promise-item\"><span>♡</span><b>Mesaj personal</b><p>Felicitare inclusă gratuit.</p></div></section>\n  </main>\n  <footer><div><b>Maison Fleur</b><br>Florărie concept · Bragadiru, Ilfov</div><div>07xx xxx xxx · WhatsApp<br>Luni–Duminică · 09:00–20:00</div><div>Template ORBYVEN · Pilot #004</div></footer>\n  <div class=\"overlay\" id=\"overlay\" onclick=\"closeAll()\"></div>\n  <aside class=\"drawer\" id=\"cart\"><div class=\"drawer-head\"><h2>Coșul tău</h2><button class=\"close\" onclick=\"closeAll()\">×</button></div><div class=\"drawer-content\" id=\"cartItems\"></div><div class=\"drawer-foot\"><div class=\"total\"><span>Total</span><span id=\"total\">0 lei</span></div><button class=\"primary\" onclick=\"checkout()\">Continuă spre checkout</button></div></aside>\n  <div class=\"modal\" id=\"personalize\"><button class=\"close\" style=\"float:right\" onclick=\"closeAll()\">×</button><div id=\"personalizeBody\"></div></div>\n  <div class=\"modal\" id=\"checkout\"><button class=\"close\" style=\"float:right\" onclick=\"closeAll()\">×</button><div id=\"checkoutBody\"></div></div>\n  <script>\n    const products=[\n      {id:1,name:'Dulce Dimineață',price:149,cat:'buchet',tag:'Best seller',img:'https://cvetova.ru/upload/medialibrary/36c/5369xkyu3nhwvqgp8jmaj2s6t2goutrb.jpg',desc:'Bujori, trandafiri și verdeață fină'},\n      {id:2,name:'Poveste în Roz',price:189,cat:'buchet',tag:'Nou',img:'https://static.insales-cdn.com/images/products/1/5417/245126441/vip-2.jpg',desc:'Bujori roz și trandafiri corai'},\n      {id:3,name:'Grădina de Catifea',price:239,cat:'aranjament',tag:'Elegant',img:'https://www.welkes.com/images/itemVariation/v4_webproductimage-19102622855.jpg',desc:'Trandafiri, orhidee și accente verzi'},\n      {id:4,name:'Lumière',price:299,cat:'premium',tag:'Premium',img:'https://luxuryflowersmiami.com/cdn/shop/files/3602243250_2000x1616.jpg?v=1733661671',desc:'Orhidee și trandafiri în cutie premium'},\n      {id:5,name:'Blush',price:169,cat:'buchet',tag:'Delicat',img:'https://i0.wp.com/floresyregalosmx.com/wp-content/uploads/WhatsApp-Image-2024-06-06-at-2.19.37-PM.jpeg?fit=1200%2C1600&ssl=1',desc:'Trandafiri crem, eucalipt și bujori'},\n      {id:6,name:'Amour Rouge',price:349,cat:'premium',tag:'Declarație',img:'https://100roses.co.uk/cdn/shop/files/100-roses-naomi-orchid.webp?v=1770595539&width=1445',desc:'Trandafiri roșii și orhidee albe'},\n      {id:7,name:'Éclat',price:219,cat:'aranjament',tag:'Colorat',img:'https://assets.intleflorist.com/site/0081A/PIM_Images/Regular/CCHTB1100-1.png?impolicy=efcat281',desc:'Mix floral în nuanțe vibrante'},\n      {id:8,name:'Rosé',price:199,cat:'aranjament',tag:'Romantic',img:'https://abrakadabra.fun/uploads/posts/2021-12/1640318767_21-abrakadabra-fun-p-samie-shikarnie-buketi-tsvetov-24.jpg',desc:'Trandafiri pastel și fructe decorative'}\n    ];\n    let cart=[];let selected=null;\n    function render(filter='all'){document.getElementById('productGrid').innerHTML=products.filter(p=>filter==='all'||p.cat===filter).map(p=>`<article class=\"card\"><div class=\"image-wrap\"><img src=\"${p.img}\" alt=\"${p.name}\" loading=\"lazy\"><span class=\"tag\">${p.tag}</span></div><div class=\"card-body\"><h3>${p.name}</h3><div class=\"muted\">${p.desc}</div><div class=\"row\"><div><span class=\"price\">${p.price} lei</span><br><button class=\"remove\" onclick=\"personalize(${p.id})\">Personalizează</button></div><button class=\"add\" aria-label=\"Adaugă ${p.name} în coș\" onclick=\"quickAdd(${p.id})\">+</button></div></div></article>`).join('')}\n    document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');render(b.dataset.filter)});\n    function quickAdd(id){const p=products.find(x=>x.id===id);cart.push({...p,custom:'Standard'});updateCart();openCart()}\n    function personalize(id){selected=products.find(x=>x.id===id);document.getElementById('personalizeBody').innerHTML=`<span class=\"eyebrow\">Fă-l al tău</span><h2>${selected.name}</h2><p>Adaugă detaliile care transformă buchetul într-un cadou personal.</p><div class=\"fields\"><div class=\"field\"><label>Mărime</label><select id=\"size\"><option value=\"0\">Standard · ${selected.price} lei</option><option value=\"50\">Generos · +50 lei</option><option value=\"100\">Spectaculos · +100 lei</option></select></div><div class=\"field\"><label>Paletă preferată</label><select id=\"palette\"><option>Ca în fotografie</option><option>Tonuri pastel</option><option>Alb & verde</option><option>Surprinde-mă</option></select></div><div class=\"field full\"><label>Mesaj pentru felicitare</label><textarea id=\"message\" rows=\"3\" placeholder=\"Scrie mesajul tău...\"></textarea></div><div class=\"field full\"><label>Observații pentru florist</label><input id=\"notes\" placeholder=\"Ex: fără crini, ambalaj ivoire...\" /></div></div><button class=\"primary\" onclick=\"addCustom()\">Adaugă varianta personalizată</button>`;showModal('personalize')}\n    function customOrder(){if(!products.some(p=>p.id===99))products.push({id:99,name:'Creație personalizată',price:180,img:products[0].img,desc:'Creată după preferințele tale'});personalize(99)}\n    function addCustom(){const extra=+document.getElementById('size').value;cart.push({...selected,price:selected.price+extra,custom:`${document.getElementById('palette').value}${document.getElementById('message').value?' · felicitare inclusă':''}`});updateCart();closeAll();openCart()}\n    function updateCart(){document.getElementById('cartCount').textContent=cart.length;document.getElementById('total').textContent=cart.reduce((s,p)=>s+p.price,0)+' lei';document.getElementById('cartItems').innerHTML=cart.length?cart.map((p,i)=>`<div class=\"cart-item\"><img src=\"${p.img}\" alt=\"\"><div><h4>${p.name}</h4><span class=\"muted\">${p.custom}</span><br><button class=\"remove\" onclick=\"removeItem(${i})\">Elimină</button></div><b>${p.price} lei</b></div>`).join(''):'<div style=\"text-align:center;padding:70px 20px\"><div style=\"font-size:3rem\">❀</div><h3>Coșul este gol</h3><p class=\"muted\">Alege florile care îți plac.</p></div>'}\n    function removeItem(i){cart.splice(i,1);updateCart()}\n    function openCart(){document.getElementById('cart').classList.add('open');document.getElementById('overlay').classList.add('show')}\n    function showModal(id){document.getElementById(id).classList.add('show');document.getElementById('overlay').classList.add('show')}\n    function closeAll(){document.getElementById('cart').classList.remove('open');document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'));document.getElementById('overlay').classList.remove('show')}\n    function checkout(){if(!cart.length)return;document.getElementById('cart').classList.remove('open');document.getElementById('checkoutBody').innerHTML=`<span class=\"eyebrow\">Finalizare comandă</span><h2>Unde livrăm florile?</h2><p>Total comandă: <b>${cart.reduce((s,p)=>s+p.price,0)} lei</b></p><div class=\"fields\"><div class=\"field\"><label>Numele tău</label><input required placeholder=\"Nume complet\"></div><div class=\"field\"><label>Telefon</label><input required placeholder=\"07xx xxx xxx\"></div><div class=\"field full\"><label>Adresa de livrare</label><input required placeholder=\"Strada, număr, Bragadiru\"></div><div class=\"field\"><label>Data livrării</label><input type=\"date\" required></div><div class=\"field\"><label>Interval</label><select><option>09:00–12:00</option><option>12:00–16:00</option><option>16:00–20:00</option></select></div><div class=\"field full\"><label>Metoda de plată</label><select><option>Card online</option><option>Numerar la livrare</option></select></div></div><button class=\"primary\" onclick=\"placeOrder()\">Plătește și trimite comanda</button><p class=\"muted\">Plata este demonstrativă în acest template.</p>`;showModal('checkout')}\n    function placeOrder(){const fields=document.querySelectorAll('#checkout input[required]');for(const field of fields){if(!field.reportValidity())return;}document.getElementById('checkoutBody').innerHTML=`<div class=\"success\"><div class=\"tick\">✓</div><h2>Comanda demo a fost finalizată</h2><p>Aceasta este o simulare. Nu s-a efectuat nicio plată și nu s-a trimis nicio comandă reală.</p><button class=\"primary\" onclick=\"finish()\">Înapoi la colecție</button></div>`;cart=[];updateCart()}\n    function finish(){closeAll();document.querySelector('#colectie').scrollIntoView()}\n    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});render();updateCart();\n  </script>\n</body>\n</html>\n";
 
 export default function FlorarieBragadiruTemplate() {
-  const [cart, setCart] = useState<number[]>([]);
-  const [message, setMessage] = useState("");
-  const [wrap, setWrap] = useState("Panglică satinată");
-  const total = useMemo(() => cart.reduce((sum, id) => sum + (products.find((item) => item.id === id)?.price ?? 0), 0), [cart]);
-
   return (
-    <main className="min-h-screen bg-[#f7f1ef] text-[#24352b]">
-      <header className="sticky top-0 z-30 border-b border-[#24352b]/10 bg-[#f7f1ef]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 sm:px-8">
-          <Link href="/templates" className="text-xs font-semibold uppercase tracking-[0.18em] text-[#24352b]/60">← Templates</Link>
-          <div className="font-serif text-2xl tracking-[-0.04em]">Maison Fleur</div>
-          <div className="rounded-full border border-[#24352b]/10 bg-white/55 px-4 py-2 text-xs font-semibold">Coș · {cart.length}</div>
-        </div>
-      </header>
-
-      <section className="relative overflow-hidden px-5 py-20 sm:px-8 md:py-28">
-        <div className="pointer-events-none absolute right-[-8%] top-[-12%] h-[520px] w-[520px] rounded-full bg-[#b76279]/12 blur-[120px]" />
-        <div className="pointer-events-none absolute bottom-[-24%] left-[-10%] h-[460px] w-[460px] rounded-full bg-[#456b53]/10 blur-[120px]" />
-        <div className="relative mx-auto grid max-w-[1440px] gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-center">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#7b3445]">Florărie boutique · Bragadiru</p>
-            <h1 className="mt-6 max-w-4xl font-serif text-[clamp(58px,8vw,118px)] leading-[0.82] tracking-[-0.065em]">Flori care spun ceva înaintea mesajului.</h1>
-            <p className="mt-8 max-w-xl text-[16px] leading-7 text-[#24352b]/62">Buchete și aranjamente pregătite local, cu personalizare simplă și livrare la domiciliu în Bragadiru și împrejurimi.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#shop" className="rounded-full bg-[#24352b] px-6 py-3 text-sm font-semibold text-white">Vezi colecția</a>
-              <a href="#personalizare" className="rounded-full border border-[#24352b]/15 bg-white/45 px-6 py-3 text-sm font-semibold">Personalizează</a>
-            </div>
-          </div>
-
-          <div className="relative min-h-[520px] overflow-hidden rounded-[42px] border border-[#24352b]/10 bg-[#efe1dd] p-7 shadow-[0_30px_90px_rgba(54,35,39,.12)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_22%,rgba(183,98,121,.24),transparent_30%),radial-gradient(circle_at_25%_75%,rgba(69,107,83,.20),transparent_35%)]" />
-            <div className="relative flex h-full min-h-[466px] flex-col justify-between">
-              <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-[#24352b]/50">
-                <span>Seasonal edit</span><span>08 produse</span>
-              </div>
-              <div className="mx-auto flex h-72 w-72 items-center justify-center rounded-full border border-[#7b3445]/10 bg-white/35 shadow-inner">
-                <div className="relative h-48 w-48">
-                  {[0,1,2,3,4,5,6,7,8].map((n) => (
-                    <span key={n} className="absolute h-20 w-20 rounded-full border border-white/55" style={{ backgroundColor: n % 3 === 0 ? "#be7184" : n % 3 === 1 ? "#e4b3bd" : "#78957d", left: 58 + Math.cos(n * 0.7) * 55, top: 58 + Math.sin(n * 0.7) * 55, opacity: .82 }} />
-                  ))}
-                  <span className="absolute left-[76px] top-[74px] h-20 w-20 rounded-full bg-[#f1ded7]" />
-                </div>
-              </div>
-              <div>
-                <p className="font-serif text-4xl tracking-[-0.04em]">Aranjamente create la comandă.</p>
-                <p className="mt-3 text-sm leading-6 text-[#24352b]/55">Alegi direcția, mesajul și ambalajul. Restul rămâne în mâna floristului.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="shop" className="border-y border-[#24352b]/10 bg-white/35 px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-[1440px]">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#7b3445]">Colecție demo</p>
-              <h2 className="mt-4 font-serif text-[clamp(44px,6vw,76px)] leading-[0.9] tracking-[-0.055em]">Alege buchetul.</h2>
-            </div>
-            <p className="max-w-md text-sm leading-6 text-[#24352b]/55">Prețuri și produse demonstrative pentru template-ul ORBYVEN.</p>
-          </div>
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <article key={product.id} className="group overflow-hidden rounded-[28px] border border-[#24352b]/10 bg-[#fbf7f5]">
-                <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden" style={{ background: `radial-gradient(circle at 50% 45%, ${product.tone}55, transparent 48%), linear-gradient(145deg,#f4e8e4,#eee0dc)` }}>
-                  <div className="h-32 w-32 rounded-full border border-white/55" style={{ backgroundColor: product.tone, opacity: .78 }} />
-                  <div className="absolute h-24 w-24 translate-x-10 -translate-y-5 rounded-full border border-white/55 bg-[#f1cbd1]/80" />
-                  <div className="absolute h-20 w-20 -translate-x-12 translate-y-8 rounded-full border border-white/55 bg-[#78957d]/70" />
-                </div>
-                <div className="p-5">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#24352b]/40">Maison Fleur</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.035em]">{product.name}</h3>
-                  <p className="mt-2 min-h-10 text-xs leading-5 text-[#24352b]/55">{product.note}</p>
-                  <div className="mt-5 flex items-center justify-between">
-                    <span className="font-semibold">{product.price} lei</span>
-                    <button onClick={() => setCart((items) => [...items, product.id])} className="rounded-full bg-[#24352b] px-4 py-2 text-xs font-semibold text-white transition group-hover:-translate-y-0.5">Adaugă</button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="personalizare" className="px-5 py-20 sm:px-8 md:py-28">
-        <div className="mx-auto grid max-w-[1440px] gap-8 rounded-[38px] border border-[#24352b]/10 bg-[#eadbd7] p-6 sm:p-9 lg:grid-cols-[.85fr_1.15fr] lg:p-12">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#7b3445]">Personalizare</p>
-            <h2 className="mt-5 max-w-xl font-serif text-[clamp(44px,6vw,74px)] leading-[0.9] tracking-[-0.055em]">Detaliile fac cadoul personal.</h2>
-            <p className="mt-6 max-w-md text-sm leading-7 text-[#24352b]/58">Alege ambalajul, lasă un mesaj și vezi sumarul coșului. Checkout-ul este demonstrativ.</p>
-          </div>
-          <div className="rounded-[28px] bg-[#fbf7f5] p-5 sm:p-7">
-            <label className="text-xs font-semibold">Ambalaj</label>
-            <select value={wrap} onChange={(e) => setWrap(e.target.value)} className="mt-2 w-full rounded-2xl border border-[#24352b]/10 bg-white px-4 py-3 text-sm outline-none">
-              <option>Panglică satinată</option>
-              <option>Hârtie kraft premium</option>
-              <option>Cutie cadou</option>
-            </select>
-            <label className="mt-5 block text-xs font-semibold">Mesaj pe felicitare</label>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrie mesajul..." className="mt-2 min-h-28 w-full resize-y rounded-2xl border border-[#24352b]/10 bg-white px-4 py-3 text-sm outline-none" />
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#24352b]/10 bg-white p-4">
-                <p className="text-[9px] uppercase tracking-[0.14em] text-[#24352b]/40">Livrare</p>
-                <p className="mt-2 text-sm font-semibold">Bragadiru · domiciliu</p>
-              </div>
-              <div className="rounded-2xl border border-[#24352b]/10 bg-white p-4">
-                <p className="text-[9px] uppercase tracking-[0.14em] text-[#24352b]/40">Ambalaj</p>
-                <p className="mt-2 text-sm font-semibold">{wrap}</p>
-              </div>
-            </div>
-            <div className="mt-5 flex items-end justify-between border-t border-[#24352b]/10 pt-5">
-              <div>
-                <p className="text-xs text-[#24352b]/50">{cart.length} produse</p>
-                <p className="mt-1 text-2xl font-semibold">{total} lei</p>
-              </div>
-              <button disabled={!cart.length} className="rounded-full bg-[#7b3445] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-35">Checkout demo →</button>
-            </div>
-            {message && <p className="mt-4 rounded-2xl bg-[#24352b]/5 px-4 py-3 text-xs leading-5 text-[#24352b]/60">Felicitare: „{message}”</p>}
-          </div>
-        </div>
-      </section>
+    <main style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#fffaf4" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "10px 20px", background: "#251b1d", color: "#fffaf4", fontSize: 14, flexShrink: 0 }}>
+        <Link href="/templates" style={{ color: "inherit", textDecoration: "none" }}>← Templates</Link>
+        <span>Pilot #004 · Maison Fleur · Demo</span>
+      </div>
+      <iframe
+        title="Maison Fleur — florărie în Bragadiru"
+        srcDoc={flowerDocument}
+        sandbox="allow-scripts allow-forms allow-popups"
+        style={{ display: "block", width: "100%", flex: 1, minHeight: 0, border: 0 }}
+      />
     </main>
   );
 }
