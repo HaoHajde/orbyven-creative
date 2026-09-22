@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "ORBYVEN CREATIVE",
   shortName: "ORBYVEN",
   description:
-    "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru branduri și afaceri care vor o prezență greu de ignorat.",
+    "ORBYVEN CREATIVE este un studio de web design și software modular pentru afaceri din România: website-uri, landing pages, redesign și instrumente digitale.",
   defaultUrl: "https://orbyven.ro",
   locale: "ro_RO",
   language: "ro",

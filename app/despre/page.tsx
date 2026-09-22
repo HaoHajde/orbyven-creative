@@ -19,7 +19,7 @@ export default function AboutPage() {
             Site public la exterior. Un sistem simplu în spate.
           </h1>
           <p className="mt-8 max-w-3xl text-[17px] leading-8 text-black/55">
-            ORBYVEN CREATIVE este construit în jurul unei idei simple: o firmă mică sau medie nu ar trebui să folosească zece aplicații greoaie ca să își prezinte serviciile și să urmărească munca de zi cu zi.
+            ORBYVEN (ORBYVEN CREATIVE) este un studio de web design și dezvoltare software pentru afaceri din România. Construim website-uri, landing pages și un workspace modular pentru firme mici și medii, pornind de la o idee simplă: o firmă nu ar trebui să folosească zece aplicații greoaie ca să își prezinte serviciile și să urmărească munca de zi cu zi.
           </p>
 
           <div className="mt-14 grid gap-3 md:grid-cols-3">

@@ -271,6 +271,9 @@ export default function HomePage() {
               </motion.span>
             </div>
           </h1>
+          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.65, ease: easeOut }} className="mt-7 max-w-2xl text-balance text-sm leading-6 text-[var(--muted)] sm:mt-9 sm:text-base">
+            ORBYVEN este un studio de web design și software modular pentru afaceri din România.
+          </motion.p>
         </motion.div>
       </section>
 

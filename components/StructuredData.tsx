@@ -10,6 +10,8 @@ export default function StructuredData() {
         "@type": "Organization",
         "@id": `${siteUrl}/#organization`,
         name: siteConfig.name,
+        alternateName: siteConfig.shortName,
+        description: siteConfig.description,
         url: siteUrl,
         logo: `${siteUrl}/branding/orbyven-logo-dark.png`,
       },
@@ -18,6 +20,7 @@ export default function StructuredData() {
         "@id": `${siteUrl}/#website`,
         url: siteUrl,
         name: siteConfig.name,
+        alternateName: siteConfig.shortName,
         description: siteConfig.description,
         inLanguage: siteConfig.language,
         publisher: {
