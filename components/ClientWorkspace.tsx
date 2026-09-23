@@ -7,11 +7,12 @@ import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { getModuleActivationPlan, getModuleDisableBlockers } from "@/lib/orbyven-module-dependencies";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   getCurrentWorkspace,
-  setOrganizationModuleEnabled,
+  setOrganizationModulesEnabled,
   type OrbyvenWorkspace,
 } from "@/lib/orbyven-workspace";
 import { useRouter } from "next/navigation";
@@ -156,9 +157,18 @@ export default function ClientWorkspace() {
 
     const currentlyEnabled = workspace.enabledModules.includes(id);
     const previousModules = workspace.enabledModules;
+    const blockers = currentlyEnabled ? getModuleDisableBlockers(id, previousModules) : [];
+    if (blockers.length) {
+      const labels = blockers.map((moduleId) =>
+        ORBYVEN_MODULES.find((definition) => definition.id === moduleId)?.shortName ?? moduleId
+      );
+      setActionError("Nu poți dezactiva acest modul cât timp sunt active: " + labels.join(", ") + ".");
+      return;
+    }
+    const activationPlan = currentlyEnabled ? [] : getModuleActivationPlan(id, previousModules);
     const nextModules = currentlyEnabled
       ? previousModules.filter((moduleId) => moduleId !== id)
-      : [...previousModules, id];
+      : [...new Set([...previousModules, ...activationPlan])];
 
     setActionError("");
     setSavingModule(id);
@@ -172,7 +182,7 @@ export default function ClientWorkspace() {
     }
 
     try {
-      await setOrganizationModuleEnabled(workspace.organization.id, id, !currentlyEnabled);
+      await setOrganizationModulesEnabled(workspace.organization.id, currentlyEnabled ? [id] : activationPlan, !currentlyEnabled);
     } catch (error) {
       console.error(error);
       setWorkspace((current) =>
