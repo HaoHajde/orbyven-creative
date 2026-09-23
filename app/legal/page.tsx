@@ -15,6 +15,8 @@ const documents = [
   ["/legal/cookies", "Politica Cookies", "Cookie-uri necesare și mecanismul pentru cele opționale."],
   ["/legal/dpa", "DPA", "Cadrul operator–persoană împuternicită pentru datele clienților."],
   ["/legal/acceptable-use", "Acceptable Use Policy", "Reguli pentru folosirea sigură și legală a platformei."],
+  ["/legal/consumer", "Informare consumatori (B2C)", "Informații preliminare pentru invitații și alte produse digitale; nu substituie contractul comercial."],
+  ["/legal/ai", "Transparență AI", "Reguli de utilizare și informare pentru editorul asistat AI."],
 ] as const;
 
 export default function LegalCenterPage() {
