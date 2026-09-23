@@ -56,6 +56,14 @@ const featured: FeaturedTemplate[] = [
     kind: "hao",
   },
   {
+    href: "/templates/barbershop",
+    label: "Pilot #006 · Barbershop",
+    meta: "Booking-first · urban editorial",
+    title: "NOIR CUTS",
+    subtitle: "Programări rapide, servicii, echipă și lookbook.",
+    kind: "barber",
+  },
+  {
     href: "/demo/nunta/elegant",
     label: "Template · Nuntă",
     meta: "Invitație digitală",
@@ -123,7 +131,7 @@ const templateCategories = [
     kicker: "Retail · beauty · lifestyle",
     title: "Retail, beauty & lifestyle",
     description: "Produse și servicii cumpărate cu ochii: imagine puternică, selecție simplă și conversie rapidă.",
-    featuredHrefs: ["/templates/florarie-bragadiru"],
+    featuredHrefs: ["/templates/florarie-bragadiru", "/templates/barbershop"],
     catalogSlugs: ["beauty"],
   },
   {

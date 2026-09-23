@@ -8,7 +8,7 @@ type QuickLink = {
   label: string;
 };
 
-const EXCLUDED_PREFIX = "/templates/haos-customs";
+const EXCLUDED_PREFIXES = ["/templates/haos-customs", "/templates/barbershop"] as const;
 
 function cleanLabel(value: string) {
   const compact = value.replace(/\s+/g, " ").trim();
@@ -25,7 +25,7 @@ export default function TemplateExperienceLayer() {
   const frameRef = useRef<number | null>(null);
 
   const enabled = useMemo(() => {
-    if (!pathname || pathname.startsWith(EXCLUDED_PREFIX)) return false;
+    if (!pathname || EXCLUDED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
     return pathname.startsWith("/templates/") || pathname.startsWith("/demo/nunta/");
   }, [pathname]);
 

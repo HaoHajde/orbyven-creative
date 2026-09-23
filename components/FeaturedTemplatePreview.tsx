@@ -2,8 +2,9 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
+import { BarberHero } from "@/components/pilot006/BarbershopExperience";
 
-export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "birthday18" | "hao";
+export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "birthday18" | "hao" | "barber";
 
 function BrowserFrame({
   children,
@@ -69,6 +70,14 @@ function MiniNav({
 }
 
 export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPreviewKind }) {
+  if (kind === "barber") {
+    return (
+      <BrowserFrame url="noir-cuts.ro" dark>
+        <BarberHero compact />
+      </BrowserFrame>
+    );
+  }
+
   if (kind === "obsidian") {
     return (
       <BrowserFrame url="obsidian-moments.ro" dark>
