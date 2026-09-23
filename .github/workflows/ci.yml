@@ -32,5 +32,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Billing webhook regression tests
+        run: npm run test:billing
+
       - name: Production build
         run: npm run build
