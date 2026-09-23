@@ -1,5 +1,5 @@
 import {
-  applySitePatch, type EditableSite, type SitePatch,
+  applySitePatch, type EditableSite,
 } from "@/lib/ai/site-editor";
 
 /**
@@ -9,7 +9,7 @@ import {
 export function applyLocalPreviewCommand(site: EditableSite, request: string):
   {draft: EditableSite; message: string} | null {
   const prompt = request.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const patch: SitePatch = {};
+  const patch: Partial<EditableSite> = {};
   const changed: string[] = [];
 
   if (/\b(negru|neagra|black)\b/.test(prompt)) {
