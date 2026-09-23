@@ -15,7 +15,7 @@ export default function SiteEditorPage(){
       <div className="flex flex-wrap items-center gap-2"><Link href="/workspace" className="rounded-full border border-black/10 px-4 py-2 text-xs font-medium">Workspace</Link><button type="button" onClick={editor.undo} disabled={editor.history.length<2||editor.busy} className="rounded-full border border-black/10 px-4 py-2 text-xs font-medium disabled:opacity-40">↶ Undo</button><button type="button" onClick={editor.save} disabled={editor.busy} className="rounded-full bg-[#24242a] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40">Salvează draft</button></div>
     </div></header>
     <div className="mx-auto grid max-w-[1680px] gap-4 p-3 md:p-5 lg:h-[calc(100vh-83px)] lg:grid-cols-[minmax(300px,390px)_minmax(0,1fr)]">
-      <SiteEditorChat messages={editor.messages} prompt={editor.prompt} onPrompt={editor.setPrompt} onSend={editor.send} busy={editor.busy} error={editor.error} notice={editor.notice} aiStatus={editor.aiStatus} aiStatusReason={editor.aiStatusReason} onRefreshAi={editor.refreshAiStatus}/>
+      <SiteEditorChat messages={editor.messages} prompt={editor.prompt} onPrompt={editor.setPrompt} onSend={editor.send} busy={editor.busy} error={editor.error} notice={editor.notice} aiStatus={editor.aiStatus} aiStatusReason={editor.aiStatusReason} aiProvider={editor.aiProvider} onRefreshAi={editor.refreshAiStatus}/>
       <SiteEditorPreview site={editor.site} view={editor.view} onView={editor.setView} onPatch={editor.onPatch} onSelectPreset={editor.onSelectPreset}/>
     </div>
   </main>;

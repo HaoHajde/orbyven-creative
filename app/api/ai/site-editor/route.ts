@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { readSiteDraft } from "@/lib/ai/site-editor";
 import { suggestSiteEdit } from "@/lib/ai/openai-server";
+import { suggestCloudflareEdit } from "@/lib/ai/cloudflare-server";
+import { cloudflareAiReady, editorAiProvider } from "@/lib/ai/provider-selection";
 import { claimAiEditorQuota, finishAiEditorQuota } from "@/lib/ai/quota-server";
 
 export const runtime = "nodejs";
@@ -22,8 +24,17 @@ export async function POST(request: Request) {
     return fail("Editorul AI este dezactivat pentru acest mediu.", 503);
   }
 
+  const provider = editorAiProvider();
+  if (provider === "local") {
+    return fail("Motorul Design Engine gratuit este activ. Pentru reformulări creative trebuie configurat separat un model lingvistic.", 503, "LOCAL_ONLY");
+  }
   const credential = process.env.OPENAI_API_KEY?.trim();
-  if (!credential) return fail("Serviciul AI nu este configurat.", 503);
+  if (provider === "openai" && !credential) {
+    return fail("Cheia OpenAI nu este configurată.", 503);
+  }
+  if (provider === "cloudflare" && !cloudflareAiReady()) {
+    return fail("Cloudflare Workers AI nu este configurat pe server.", 503, "CF_NOT_CONFIGURED");
+  }
 
   if (Number(request.headers.get("content-length") || 0) > 12000) {
     return fail("Cerere prea mare.", 413);
@@ -100,7 +111,9 @@ export async function POST(request: Request) {
   let outputTokens = 0;
 
   try {
-    const result = await suggestSiteEdit(draft, prompt, credential);
+    const result = provider === "cloudflare"
+      ? await suggestCloudflareEdit(draft, prompt)
+      : await suggestSiteEdit(draft, prompt, credential ?? "");
     inputTokens = result.usage.inputTokens;
     outputTokens = result.usage.outputTokens;
     success = true;
@@ -114,6 +127,18 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : "";
+    if (reason === "CF_LIMIT") {
+      return fail("Cloudflare a atins limita gratuită zilnică ori o limită temporară de ritm. Motorul local funcționează în continuare fără model AI.", 429, reason);
+    }
+    if (reason === "CF_AUTH" || reason === "CF_NOT_CONFIGURED") {
+      return fail("Tokenul Cloudflare Workers AI sau Account ID trebuie verificat în Vercel Preview, fără a-l trimite în chat.", 503, "CF_AUTH");
+    }
+    if (reason === "CF_OUTPUT") {
+      return fail("Modelul Cloudflare nu a returnat o modificare validă. Poți edita local sau încerca ulterior.", 502, reason);
+    }
+    if (reason === "CF_PROVIDER") {
+      return fail("Cloudflare Workers AI este indisponibil momentan. Nu există transfer automat către un API plătit.", 502, reason);
+    }
     // Provider 429 has several distinct causes. Preserve a safe, actionable
     // classification; do not return raw upstream error text or credentials.
     if (reason === "OPENAI_CREDITS") {

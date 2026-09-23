@@ -13,11 +13,12 @@ type Props = {
   notice: string;
   aiStatus: "loading" | "ready" | "disabled";
   aiStatusReason: string;
+  aiProvider: "local" | "cloudflare" | "openai";
   onRefreshAi: () => void;
 };
 
 export default function SiteEditorChat({
-  messages, prompt, onPrompt, onSend, busy, error, notice, aiStatus, aiStatusReason, onRefreshAi,
+  messages, prompt, onPrompt, onSend, busy, error, notice, aiStatus, aiStatusReason, aiProvider, onRefreshAi,
 }: Props) {
   const aiReady = aiStatus === "ready";
   return <section className="flex min-h-[500px] flex-col overflow-hidden rounded-[26px] border border-black/[0.07] bg-white shadow-sm lg:min-h-0"
@@ -27,7 +28,7 @@ export default function SiteEditorChat({
         <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#7772e8]">ORBYVEN AI</p>
         <span className={aiReady ? "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700" :
           "rounded-full bg-amber-50 px-3 py-1 text-[10px] font-semibold text-amber-800"}>
-          {aiStatus === "loading" ? "Se verifică..." : aiReady ? "AI pentru texte" : "Motor local · gratis"}
+          {aiStatus === "loading" ? "Se verifică..." : aiReady ? (aiProvider === "cloudflare" ? "AI Cloudflare + local" : "AI OpenAI + local") : "Motor local · gratis"}
         </span>
       </div>
       <h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em]">Spune-ne cum îl vezi.</h1>

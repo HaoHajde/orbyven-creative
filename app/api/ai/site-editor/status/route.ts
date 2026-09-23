@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import {
   authenticateBillingActor, createBillingServiceClient,
 } from "@/lib/billing/supabase-server";
+import { cloudflareAiReady, editorAiProvider, type EditorAiProvider } from "@/lib/ai/provider-selection";
 
 export const dynamic = "force-dynamic";
 
-function respond(enabled: boolean, reason: string, status = 200) {
-  return NextResponse.json({enabled, reason}, {
+function respond(enabled: boolean, reason: string, status = 200, provider: EditorAiProvider = "local") {
+  return NextResponse.json({enabled, reason, provider}, {
     status, headers: {"Cache-Control":"no-store"},
   });
 }
@@ -28,14 +29,21 @@ export async function GET(request: Request) {
     return respond(false, needsLogin ? "Sesiunea a expirat." : "Acces restricționat.", needsLogin ? 401 : 403);
   }
 
+  const provider = editorAiProvider();
+  if (provider === "local") {
+    return respond(false, "Design Engine gratuit este activ. Textele noi pot fi introduse manual; pentru copywriting AI poți conecta ulterior Cloudflare Workers AI sau OpenAI.", 200, "local");
+  }
   if (process.env.VERCEL_ENV === "production") {
-    return respond(false, "AI-ul este închis în Production pe durata etapei Alpha.");
+    return respond(false, "Modelele lingvistice sunt închise în Production pe durata etapei Alpha.");
   }
   if (process.env.ORBYVEN_AI_EDITOR_ENABLED?.trim().toLowerCase() !== "true") {
-    return respond(false, "Poți personaliza manual preview-ul. Deploymentul citește ORBYVEN_AI_EDITOR_ENABLED ca dezactivat sau absent. Verifică valoarea true în Vercel Preview, apoi fă Redeploy pe branch-ul editorului.");
+    return respond(false, "Modelul lingvistic este dezactivat în Preview. Motorul local funcționează gratuit.");
   }
-  if (!process.env.OPENAI_API_KEY?.trim()) {
-    return respond(false, "Cheia AI nu este configurată pe server.");
+  if (provider === "openai" && !process.env.OPENAI_API_KEY?.trim()) {
+    return respond(false, "Cheia OpenAI nu este configurată pe server.", 200, provider);
+  }
+  if (provider === "cloudflare" && !cloudflareAiReady()) {
+    return respond(false, "Configurează Cloudflare Account ID și tokenul Workers AI în Vercel Preview. Motorul local funcționează gratuit.", 200, provider);
   }
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
     return respond(false, "Contorul de consum AI nu are cheia server Supabase.");
@@ -60,5 +68,9 @@ export async function GET(request: Request) {
     return respond(false, "Migrarea contorului AI trebuie verificată în Supabase.");
   }
 
-  return respond(true, "Configurația serverului este validă; disponibilitatea creditelor și limitelor OpenAI API se verifică la trimiterea cererii.");
+  return respond(true,
+    provider === "cloudflare"
+      ? "Modelul Cloudflare este configurat. Cota sa gratuită poate fi limitată; designul local nu consumă Neurons."
+      : "Modelul OpenAI este configurat. Creditele API sunt verificate la trimiterea cererii; designul local nu consumă tokenuri.",
+    200, provider);
 }

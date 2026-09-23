@@ -11,7 +11,7 @@ import type { SiteEditorMessage } from "@/components/ai/SiteEditorChat";
 import { applyLocalPreviewCommand } from "@/lib/ai/local-preview-commands";
 
 type AiStatus = "loading" | "ready" | "disabled";
-type AiStatusResponse = { enabled?: boolean; reason?: string };
+type AiStatusResponse = { enabled?: boolean; reason?: string; provider?: "local" | "cloudflare" | "openai" };
 
 export function useSiteEditor() {
   const router = useRouter();
@@ -28,6 +28,7 @@ export function useSiteEditor() {
   const [view, setView] = useState<"desktop" | "mobile">("desktop");
   const [aiStatus, setAiStatus] = useState<AiStatus>("loading");
   const [aiStatusReason, setAiStatusReason] = useState("");
+  const [aiProvider, setAiProvider] = useState<"local" | "cloudflare" | "openai">("local");
   const site = history[history.length - 1];
   const allowed = workspace?.membership.role === "owner" || workspace?.membership.role === "admin";
 
@@ -63,7 +64,8 @@ export function useSiteEditor() {
         const status = await response.json() as AiStatusResponse;
         if (!cancelled) {
           setAiStatus(response.ok && status.enabled ? "ready" : "disabled");
-          setAiStatusReason(status.reason || "Chatul AI este în pregătire pentru pilot.");
+          setAiProvider(status.provider || "local");
+          setAiStatusReason(status.reason || "Motorul local este disponibil.");
         }
       } catch {
         if (!cancelled) {
@@ -133,7 +135,8 @@ export function useSiteEditor() {
       );
       const result = await response.json() as AiStatusResponse;
       setAiStatus(response.ok && result.enabled ? "ready" : "disabled");
-      setAiStatusReason(result.reason || "Chatul AI nu este încă disponibil.");
+      setAiProvider(result.provider || "local");
+      setAiStatusReason(result.reason || "Motorul local este disponibil.");
     } catch {
       setAiStatus("disabled");
       setAiStatusReason("Nu am putut verifica AI-ul. Comenzile locale rămân disponibile.");
@@ -206,6 +209,6 @@ export function useSiteEditor() {
 
   return {
     workspace, ready, allowed, error, notice, history, messages, prompt, setPrompt,
-    busy, view, setView, site, save, undo, send, onPatch, onSelectPreset, aiStatus, aiStatusReason, refreshAiStatus,
+    busy, view, setView, site, save, undo, send, onPatch, onSelectPreset, aiStatus, aiStatusReason, aiProvider, refreshAiStatus,
   };
 }
