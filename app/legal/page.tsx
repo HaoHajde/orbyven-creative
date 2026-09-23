@@ -17,6 +17,8 @@ const documents = [
   ["/legal/acceptable-use", "Acceptable Use Policy", "Reguli pentru folosirea sigură și legală a platformei."],
   ["/legal/consumer", "Informare pentru consumatori", "Cadru precontractual orientativ pentru invitații digitale; nu activează vânzarea B2C."],
   ["/legal/ai", "Informare AI", "Transparență privind funcțiile asistate de inteligență artificială."],
+  ["/legal/data-rights", "Drepturile asupra datelor", "Cum trimiți o solicitare GDPR și cum este verificată."],
+  ["/legal/complaints", "Reclamații și retragere", "Punctul de contact și procedura preliminară B2C."],
 ] as const;
 
 export default function LegalCenterPage() {
