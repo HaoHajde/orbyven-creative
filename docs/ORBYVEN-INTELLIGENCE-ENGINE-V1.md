@@ -36,3 +36,5 @@ No real Cloudflare model call or live browser E2E is claimed until the user conn
 ## Next milestones
 
 Cloud-stored draft history + publish authorization; template-specific sections/components; infra/usage telemetry per provider; self-hosted inference behind authenticated gateway; pricing and capacity tests before allowing general customer traffic.
+
+Checkpoint verification: keep paid provider access explicitly opt-in and preserve the production lock.
