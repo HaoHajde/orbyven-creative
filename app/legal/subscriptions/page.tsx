@@ -57,7 +57,11 @@ export default function SubscriptionTermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Ordinea documentelor">
+      <LegalSection title="8. Identitatea comerciantului și tranziția între entități">
+        <p>ORBYVEN este denumirea produsului; contractul este încheiat cu profesionistul identificat în oferta sau comanda acceptată. O eventuală schimbare ulterioară de la PFA la SRL nu transferă automat contractul, plățile ori obligațiile. Clientului îi vor fi comunicate identitatea noului comerciant și procedura contractuală aplicabilă, cu respectarea drepturilor sale și a legislației privind datele personale.</p>
+      </LegalSection>
+
+      <LegalSection title="9. Ordinea documentelor">
         <p>
           Dacă există contradicții, un Order Form semnat sau o ofertă acceptată prevalează pentru elementele comerciale specifice, urmată de Termenii de abonament și apoi de Termenii și Condițiile generale.
         </p>
