@@ -7,6 +7,7 @@ import {
   type BillingPlanId,
 } from "@/lib/billing/public-config";
 import { billingServerConfig } from "@/lib/billing/server-config";
+import { reconcileInvoiceDelivery } from "@/lib/billing/webhook-state";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
   booleanValue,
@@ -230,10 +231,7 @@ export async function syncStripeInvoice(
   if (existingInvoiceError) throw existingInvoiceError;
 
   // Delivery order is not guaranteed. A delayed failure must not overwrite a paid invoice.
-  const paid = eventType === "invoice.paid" || existingInvoice?.status === "paid";
-  const fiscalStatus = (["issued", "processing", "failed"].includes(
-    existingInvoice?.fiscal_status ?? ""
-  ) ? existingInvoice?.fiscal_status : paid ? "pending" : "skipped");
+  const { paid, fiscalStatus } = reconcileInvoiceDelivery(eventType, existingInvoice);
 
   const { error: invoiceError } = await client.from("billing_invoices").upsert(
     {
