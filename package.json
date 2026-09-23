@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs",
     "validate": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
