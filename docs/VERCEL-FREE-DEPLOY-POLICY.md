@@ -8,6 +8,16 @@ Regulă activă de la etapa dashboard Alpha 0.2. Nu schimbă checkpointul Alpha 
 Astfel, după ce integrarea Vercel aplică configurația, branch-urile de lucru și checkpoint nu ar trebui să creeze automat Preview deployments;
 `main` continuă să declanșeze deploymentul de producție.
 
+## Regula temporară Preview First (23.09.2026)
+
+Până la ridicarea restricției Vercel și acordul explicit al proprietarului
+ORBYVEN: doar prototipuri în chat, fișiere offline, lucru local și CI GitHub.
+**Nu facem merge în `main`, deploymenturi de preview/producție Vercel sau
+redeploy manual** în urma unui simplu „go” / „continuă” / „implementează”.
+Un branch de dezvoltare și un PR draft pentru CI nu autorizează publicarea.
+Înainte de release confirmăm build-ul, migrațiile, testele pilot și abia apoi
+cerem permisiunea explicită pentru un singur merge/deploy.
+
 ## Mod de lucru obligatoriu
 
 1. Începem un branch de feature din ultimul `main`, separat de checkpoint-uri.
