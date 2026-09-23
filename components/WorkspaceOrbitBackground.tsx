@@ -1,7 +1,7 @@
 /** The same CSS-only orbital backdrop for login and authenticated workspace. */
 export default function WorkspaceOrbitBackground({ fixed = false }: { fixed?: boolean }) {
   return (
-      <div aria-hidden="true" className={fixed ? "pointer-events-none fixed inset-0 z-0 overflow-hidden" : "pointer-events-none absolute inset-0 z-0 overflow-hidden"}
+      <div aria-hidden="true" className={fixed ? "pointer-events-none fixed inset-0 z-0 overflow-hidden" : "pointer-events-none absolute inset-0 z-0 overflow-hidden"}>
         <div className="absolute inset-0" style={{
           background: [
             "radial-gradient(ellipse 48% 43% at 12% 35%, rgba(29,78,235,0.27), transparent 83%)",
