@@ -16,6 +16,7 @@ import {
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -132,6 +133,7 @@ export default function LeadsModule({
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
   );
+  useWorkspaceRecordFocus(initialRecordId, selectedLeadId, loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -517,7 +519,7 @@ export default function LeadsModule({
           </div>
         </article>
 
-        <article className="min-h-[520px] rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
+        <article data-workspace-record-focus={initialRecordId && selectedLead?.id === initialRecordId ? "true" : undefined} className="min-h-[520px] scroll-mt-28 rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
           {selectedLead ? (
             <>
               <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
