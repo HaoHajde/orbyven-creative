@@ -68,11 +68,10 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: "/branding/orbyven-favicon-96.png", type: "image/png", sizes: "96x96" },
-      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/favicon.ico?v=oc-orbit-2", type: "image/x-icon", sizes: "16x16 32x32" },
+      { url: "/icon.svg?v=oc-orbit-2", type: "image/svg+xml", sizes: "any" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/favicon.ico?v=oc-orbit-2",
   },
 };
 

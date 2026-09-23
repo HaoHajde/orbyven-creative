@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: siteConfig.language,
     icons: [
       {
-        src: "/icon.svg",
+        src: "/icon.svg?v=oc-orbit-2",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
