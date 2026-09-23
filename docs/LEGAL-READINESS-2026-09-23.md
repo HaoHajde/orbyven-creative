@@ -31,4 +31,5 @@ Sources: https://legislatie.just.ro/Public/DetaliiDocument/215866 and https://le
 - Cookie preference reopening in footer, category checkboxes when optional-cookie feature flag is enabled; optional trackers still require their own consent gates.
 - Corrected contact/project form language from accepting a privacy policy to acknowledging an information notice; marketing choice stays separate.
 - SAL ANPC text link in common footer; official pictogram still outstanding.
-- Kept billing/Oblio configuration and deployments unchanged. Do not enable production Stripe or Oblio until all gates close.
+- PFA → SRL transition work: merchant type/key independent of brand, checkout default-paused, historical merchant snapshots in Terms/Stripe/Subscription/Invoice, fiscal issuer matching and no accidental issue under SRL of old PFA invoices. See docs/ORBYVEN-PFA-SRL-TRANSITION.md.
+- Additive SQL migration committed but not applied to live Supabase. New checkout will require the migration before activation. Current live Stripe/Oblio variables and deployment remain unchanged. Do not enable production billing until all gates close.
