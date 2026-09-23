@@ -2,29 +2,121 @@ import { NextResponse } from "next/server";
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { readSiteDraft } from "@/lib/ai/site-editor";
 import { suggestSiteEdit } from "@/lib/ai/openai-server";
+import { claimAiEditorQuota, finishAiEditorQuota } from "@/lib/ai/quota-server";
 
-export const runtime="nodejs";
-export const dynamic="force-dynamic";
-const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export async function POST(request:Request){
-  if(process.env.ORBYVEN_AI_EDITOR_ENABLED!=="true")return fail("Editorul AI este dezactivat.",503);
-  const credential=process.env.OPENAI_API_KEY?.trim();
-  if(!credential)return fail("Serviciul AI nu este configurat.",503);
-  if(Number(request.headers.get("content-length")||0)>12000)return fail("Cerere prea mare.",413);
-  let body:Record<string,unknown>;
-  try{
-    const raw=await request.text();
-    if(raw.length>12000)return fail("Cerere prea mare.",413);
-    body=JSON.parse(raw);
-    if(!body||typeof body!=="object"||Array.isArray(body))throw Error("Invalid");
-  }catch{return fail("Cerere invalidă.",400);}
-  const org=body.organizationId;
-  const draft=readSiteDraft(body.draft);
-  const prompt=typeof body.prompt==="string"?body.prompt.trim():"";
-  if(!draft||typeof org!=="string"||!/^[0-9a-f-]{36}$/i.test(org)||prompt.length<4||prompt.length>600)return fail("Date invalide.",400);
-  try{await authenticateBillingActor(request,org,true);}
-  catch(e){return fail(e instanceof Error&&e.message==="AUTH_REQUIRED"?"Autentifică-te din nou.":"Nu ai drept de editare pentru această organizație.",e instanceof Error&&e.message==="AUTH_REQUIRED"?401:403);}
-  try{return NextResponse.json(await suggestSiteEdit(draft,prompt,credential),{headers:{"Cache-Control":"no-store"}});}
-  catch(e){return fail(e instanceof Error&&e.message==="AI_RATE_LIMIT"?"Serviciul AI a atins limita de utilizare.":"Solicitarea AI a eșuat.",e instanceof Error&&e.message==="AI_RATE_LIMIT"?429:502);}
+const fail = (error: string, status: number) =>
+  NextResponse.json(
+    { error },
+    { status, headers: { "Cache-Control": "no-store" } }
+  );
+
+export async function POST(request: Request) {
+  // Alpha is only for a controlled Preview deployment; never bill production accidentally.
+  if (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.ORBYVEN_AI_EDITOR_ENABLED !== "true"
+  ) {
+    return fail("Editorul AI este dezactivat pentru acest mediu.", 503);
+  }
+
+  const credential = process.env.OPENAI_API_KEY?.trim();
+  if (!credential) return fail("Serviciul AI nu este configurat.", 503);
+
+  if (Number(request.headers.get("content-length") || 0) > 12000) {
+    return fail("Cerere prea mare.", 413);
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    const raw = await request.text();
+    if (raw.length > 12000) return fail("Cerere prea mare.", 413);
+    body = JSON.parse(raw) as Record<string, unknown>;
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw Error("Invalid input");
+    }
+  } catch {
+    return fail("Cerere invalidă.", 400);
+  }
+
+  const organizationId = body.organizationId;
+  const draft = readSiteDraft(body.draft);
+  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+
+  if (
+    !draft ||
+    typeof organizationId !== "string" ||
+    !/^[0-9a-f-]{36}$/i.test(organizationId) ||
+    prompt.length < 4 ||
+    prompt.length > 600
+  ) {
+    return fail("Date invalide.", 400);
+  }
+
+  let actor;
+  try {
+    actor = await authenticateBillingActor(request, organizationId, true);
+  } catch (error) {
+    const needsLogin = error instanceof Error && error.message === "AUTH_REQUIRED";
+    return fail(
+      needsLogin
+        ? "Autentifică-te din nou."
+        : "Nu ai drept de editare pentru această organizație.",
+      needsLogin ? 401 : 403
+    );
+  }
+
+  let claim;
+  try {
+    claim = await claimAiEditorQuota(actor);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "";
+    if (reason === "AI_QUOTA_DAY") {
+      return fail("Limita de 8 solicitări AI pe zi pentru firmă a fost atinsă.", 429);
+    }
+    if (reason === "AI_QUOTA_MINUTE") {
+      return fail("Așteaptă un minut înainte de următoarea modificare AI.", 429);
+    }
+    if (reason === "AI_ACCESS_REVOKED") {
+      return fail("Accesul la această organizație nu mai este activ.", 403);
+    }
+    return fail("Controlul de consum AI nu este pregătit. Editorul rămâne oprit.", 503);
+  }
+
+  let success = false;
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  try {
+    const result = await suggestSiteEdit(draft, prompt, credential);
+    inputTokens = result.usage.inputTokens;
+    outputTokens = result.usage.outputTokens;
+    success = true;
+    return NextResponse.json(
+      {
+        draft: result.draft,
+        message: result.message,
+        remainingToday: claim.remainingToday,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "";
+    if (reason === "AI_RATE_LIMIT") {
+      return fail("Limita furnizorului AI a fost atinsă. Încearcă mai târziu.", 429);
+    }
+    return fail("Solicitarea AI a eșuat. Încearcă mai târziu.", 502);
+  } finally {
+    // Keep request reserved if worker crashes; failed requests also consume quota.
+    try {
+      await finishAiEditorQuota(claim.requestId, success, {
+        inputTokens,
+        outputTokens,
+      });
+    } catch {
+      console.error("ORBYVEN AI finalize unavailable");
+    }
+  }
 }
