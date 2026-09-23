@@ -57,7 +57,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "leads") {
-    return <LeadsModule key={navigation.token} organizationId={organizationId} locale={locale} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} />;
+    return <LeadsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} />;
   }
 
   if (activeModule === "tasks") {
