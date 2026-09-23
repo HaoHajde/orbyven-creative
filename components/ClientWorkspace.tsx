@@ -277,6 +277,9 @@ export default function ClientWorkspace() {
           </div>
 
           <div className="flex items-center gap-2">
+            {canManageModules && (
+              <button type="button" onClick={() => router.push("/workspace/site-editor")} className="hidden h-9 rounded-full bg-[var(--accent)] px-4 text-[11px] font-semibold text-white transition hover:opacity-90 sm:inline-flex sm:items-center">Editor AI · Alpha</button>
+            )}
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-4 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:block">{panel === "modules" ? "Înapoi la dashboard" : "Personalizează"}</button>
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
             <button type="button" onClick={logout} className="hidden h-9 rounded-full px-3 text-[11px] font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] sm:block">Ieșire</button>
@@ -350,6 +353,7 @@ export default function ClientWorkspace() {
       <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
         {mobileModuleMenuOpen && (
           <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[color:var(--bg)]/78 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+            {canManageModules && <button type="button" onClick={() => { setMobileModuleMenuOpen(false); router.push("/workspace/site-editor"); }} className="mb-3 w-full rounded-[16px] bg-[var(--accent)] px-4 py-3 text-xs font-semibold text-white">Deschide Editor AI · Alpha</button>}
             <div className="grid grid-cols-4 gap-2">
               {enabledDefinitions.map((definition) => {
                 const active = panel === "workspace" && activeModule === definition.id;
