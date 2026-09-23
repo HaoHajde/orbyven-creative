@@ -4,6 +4,7 @@ import { ModuleError } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Props = {
@@ -14,12 +15,13 @@ type Props = {
   dateLabel: string;
   enabledModules: OrbyvenModuleId[];
   role: OrbyvenWorkspace["membership"]["role"];
-  onOpenModule: (moduleId: OrbyvenModuleId) => void;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
 type Attention = {
   key: string;
   module: OrbyvenModuleId;
+  recordId: string;
   title: string;
   meta: string;
   level: "urgent" | "normal";
@@ -32,10 +34,10 @@ type QuickAction = {
 };
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "leads", label: "Cereri", hint: "Clienți noi" },
-  { id: "tasks", label: "Lucrări", hint: "Ce ai de făcut" },
-  { id: "calendar", label: "Calendar", hint: "Programul zilei" },
-  { id: "estimates", label: "Oferte", hint: "Devize trimise" },
+  { id: "leads", label: "+ Cerere", hint: "Client nou" },
+  { id: "tasks", label: "+ Lucrare", hint: "De planificat" },
+  { id: "calendar", label: "+ Programare", hint: "În calendar" },
+  { id: "estimates", label: "+ Ofertă", hint: "Deviz nou" },
 ];
 
 function zonedParts(date: Date, timeZone: string) {
@@ -137,6 +139,7 @@ export default function OverviewModule({
         attention.push({
           key: `lead-${lead.id}`,
           module: "leads",
+          recordId: lead.id,
           title: `${lead.name} așteaptă follow-up`,
           meta: "Termenul de revenire a trecut.",
           level: "urgent",
@@ -149,6 +152,7 @@ export default function OverviewModule({
         attention.push({
           key: `task-${task.id}`,
           module: "tasks",
+          recordId: task.id,
           title: task.title,
           meta: "Lucrare sau task întârziat.",
           level: "urgent",
@@ -157,6 +161,7 @@ export default function OverviewModule({
         attention.push({
           key: `urgent-${task.id}`,
           module: "tasks",
+          recordId: task.id,
           title: task.title,
           meta: "Prioritate urgentă.",
           level: "urgent",
@@ -164,7 +169,7 @@ export default function OverviewModule({
       }
     }
 
-    for (const estimate of sentEstimates.slice(0, 4)) {
+    for (const estimate of sentEstimates) {
       const ageDays = Math.floor(
         (snapshotNow - new Date(estimate.updated_at).getTime()) / 86400000
       );
@@ -172,6 +177,7 @@ export default function OverviewModule({
         attention.push({
           key: `estimate-${estimate.id}`,
           module: "estimates",
+          recordId: estimate.id,
           title: `${estimate.reference} · ${estimate.title}`,
           meta: `Trimisă de ${ageDays} zile fără răspuns.`,
           level: "normal",
@@ -185,9 +191,9 @@ export default function OverviewModule({
       todayEvents,
       sentEstimates,
       monthExpenses,
-      attention: attention.slice(0, 6),
+      attention: attention.filter((item) => enabledModules.includes(item.module)).slice(0, 6),
     };
-  }, [snapshot, snapshotNow, timeZone]);
+  }, [snapshot, snapshotNow, timeZone, enabledModules]);
 
   if (loading) {
     return (
@@ -199,9 +205,9 @@ export default function OverviewModule({
     );
   }
 
-  const activeQuickActions = QUICK_ACTIONS.filter((action) =>
-    enabledModules.includes(action.id)
-  );
+  const activeQuickActions = role === "viewer"
+    ? []
+    : QUICK_ACTIONS.filter((action) => enabledModules.includes(action.id));
 
   return (
     <div className="pb-24 md:pb-0">
@@ -246,7 +252,7 @@ export default function OverviewModule({
             <button
               key={action.id}
               type="button"
-              onClick={() => onOpenModule(action.id)}
+              onClick={() => onOpenModule(action.id, { create: true })}
               className="group inline-flex h-9 items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/62 px-3.5 text-left transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
             >
               <span className="text-[11px] font-semibold">{action.label}</span>
@@ -316,7 +322,7 @@ export default function OverviewModule({
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() => onOpenModule(item.module)}
+                      onClick={() => onOpenModule(item.module, { recordId: item.recordId })}
                       className="group flex w-full items-center justify-between gap-4 rounded-[16px] border border-transparent bg-[color:var(--bg)]/72 px-3.5 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--bg)]"
                     >
                       <div className="min-w-0">
