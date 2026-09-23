@@ -51,7 +51,8 @@ export async function suggestCloudflareEdit(draft: EditableSite, prompt: string)
     };
     const output = data.result?.response?.trim();
     if (data.success === false || !output || output.length > 7000) throw Error("CF_OUTPUT");
-    const json = output.replace(/^<think>[\s\S]*?<\/think>\s*/i, "")\n      .replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
+    const json = output.replace(/^<think>[\s\S]*?<\/think>\s*/i, "")
+      .replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
     let proposed: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(json);
