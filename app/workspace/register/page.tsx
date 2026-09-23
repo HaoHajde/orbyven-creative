@@ -236,6 +236,7 @@ export default function WorkspaceRegisterPage() {
           </button>
         ) : null}
 
+        <p className="mt-5 text-xs leading-5 text-white/60">Contul oferă acces la spațiul de lucru; nu activează o plată. Consultă <Link href="/legal/terms" className="underline">Termenii</Link> și <Link href="/legal/privacy" className="underline">informarea privind datele personale</Link>.</p>
         <AuthPrimaryButton loading={loading} loadingLabel="Se creează contul...">
           Creează cont
         </AuthPrimaryButton>
