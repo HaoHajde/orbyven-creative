@@ -107,6 +107,10 @@ export default function ExpensesModule({
       setExpenses(nextExpenses);
       setClients(contexts.clients);
       setTasks(contexts.tasks);
+      if (initialCreate && initialTaskId) {
+        const task = contexts.tasks.find((item) => item.id === initialTaskId);
+        if (task?.client_id) setForm((current) => ({ ...current, clientId: task.client_id! }));
+      }
       setDocuments(contexts.documents);
     } catch (loadError) {
       console.error(loadError);
@@ -114,7 +118,7 @@ export default function ExpensesModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, initialCreate, initialTaskId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -143,6 +147,11 @@ export default function ExpensesModule({
     const linked = expenses.filter((item) => item.client_id || item.task_id).length;
     return { monthTotal, total, linked, count: expenses.length };
   }, [expenses]);
+
+  const chooseTask = (taskId: string) => {
+    const task = tasks.find((item) => item.id === taskId);
+    setForm((current) => ({ ...current, taskId, clientId: task?.client_id || current.clientId }));
+  };
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -226,10 +235,10 @@ export default function ExpensesModule({
               </select>
             </Field>
             <Field label="Client">
-              <select value={form.clientId} onChange={(e) => setForm((c) => ({ ...c, clientId: e.target.value }))} className={moduleInputClass}><option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <select value={form.clientId} disabled={Boolean(tasks.find((item) => item.id === form.taskId)?.client_id)} onChange={(e) => setForm((c) => ({ ...c, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </Field>
             <Field label="Lucrare">
-              <select value={form.taskId} onChange={(e) => setForm((c) => ({ ...c, taskId: e.target.value }))} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
+              <select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
             </Field>
             <Field label="Document justificativ">
               <select value={form.documentId} onChange={(e) => setForm((c) => ({ ...c, documentId: e.target.value }))} className={moduleInputClass}><option value="">Fără document</option>{documents.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
