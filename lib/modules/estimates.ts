@@ -38,7 +38,7 @@ export type EstimateItem = {
 };
 
 export type EstimateLink = { id: string; name: string; company?: string | null };
-export type EstimateTaskLink = { id: string; title: string; status: string };
+export type EstimateTaskLink = { id: string; title: string; status: string; client_id: string | null };
 
 export type EstimateItemInput = {
   description: string;
@@ -136,7 +136,7 @@ export async function listEstimateTasks(organizationId: string): Promise<Estimat
   requireOrganizationId(organizationId);
   const { data, error } = await orbyvenSupabase
     .from("ops_tasks")
-    .select("id,title,status")
+    .select("id,title,status,client_id")
     .eq("organization_id", organizationId)
     .eq("kind", "work")
     .order("updated_at", { ascending: false });
@@ -161,6 +161,33 @@ export async function createEstimate(
   if (!title) throw new Error("Titlul ofertei este obligatoriu.");
   if (!items.length) throw new Error("Adaugă cel puțin o poziție în deviz.");
 
+  // Keep links consistent even for callers that bypass the form.
+  let linkedClientId = input.clientId || null;
+  if (input.taskId) {
+    const { data: task, error: taskError } = await orbyvenSupabase
+      .from("ops_tasks")
+      .select("id,client_id,kind")
+      .eq("organization_id", organizationId)
+      .eq("id", input.taskId)
+      .single();
+    if (taskError || !task || task.kind !== "work") {
+      throw new Error("Lucrarea nu există în această firmă.");
+    }
+    if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
+      throw new Error("Clientul ales nu corespunde lucrării.");
+    }
+    linkedClientId = task.client_id || linkedClientId;
+  }
+  if (linkedClientId) {
+    const { data: client, error: clientError } = await orbyvenSupabase
+      .from("crm_leads")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedClientId)
+      .single();
+    if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
+  }
+
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const calculated = totals(items, input.discountLei ?? 0, input.taxRate ?? null);
 
@@ -169,7 +196,7 @@ export async function createEstimate(
     .insert({
       organization_id: organizationId,
       title,
-      client_id: input.clientId || null,
+      client_id: linkedClientId,
       task_id: input.taskId || null,
       currency: (input.currency?.trim() || "RON").toUpperCase(),
       subtotal_cents: calculated.subtotalCents,
