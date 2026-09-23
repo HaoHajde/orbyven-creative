@@ -3,7 +3,7 @@ import InvitationServiceLanding from "@/components/InvitationServiceLanding";
 import InvitationStructuredData from "@/components/InvitationStructuredData";
 
 export const metadata: Metadata = {
-  title: "Invitații de botez digitale pentru fetițe și băieței",
+  title: "Invitații digitale de botez · fetiță și băiețel",
   description: "Invitații de botez digitale ORBYVEN CREATIVE, pentru fetiță sau băiețel: modele personalizabile, detalii de eveniment și confirmare RSVP. Vezi exemple.",
   alternates: { canonical: "/invitatii-botez" },
   openGraph: {

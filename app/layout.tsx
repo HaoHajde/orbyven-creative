@@ -68,10 +68,10 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: "/favicon.ico?v=oc-orbit-2", type: "image/x-icon", sizes: "16x16 32x32" },
-      { url: "/icon.svg?v=oc-orbit-2", type: "image/svg+xml", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
     ],
-    shortcut: "/favicon.ico?v=oc-orbit-2",
+    shortcut: "/favicon.ico",
   },
 };
 
