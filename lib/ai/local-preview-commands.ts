@@ -113,7 +113,7 @@ export function applyLocalPreviewCommand(
     && !has(/\b(?:titlu|descriere|buton|cta|brand)\s*:/);
   return {
     draft:next,
-    message:"Design Engine gratuit, fără API: am aplicat " + changed.join(", ") + "." +
+    message:"Design Engine gratuit, fără AI/API: am aplicat " + changed.join(", ") + "." +
       (creativeCopy
         ? " Textul creativ cerut separat nu a fost generat; pentru reformulare este necesar un model lingvistic sau editarea manuală."
         : " Modificarea apare imediat în preview și poate fi anulată cu Undo."),
