@@ -1,7 +1,7 @@
 # ORBYVEN — Billing & Entitlements Contract
 
 ## Canonical identity
-Billing belongs to `organization_id`, never directly to a user.
+Billing belongs to the **customer** `organization_id`, never directly to a user. The **seller/issuer** is separately identified by a historical `merchant_key` (PFA era vs SRL era); changing the seller must not rename, rekey, or transfer customers automatically.
 
 Existing tenant tables remain canonical and are not duplicated:
 - `organizations`
@@ -37,8 +37,8 @@ This prevents the billing foundation from breaking existing pilots before commer
 This map is a product assumption and must be validated before entitlement enforcement is enabled.
 
 ## Stripe safety gates
-Commercial billing cannot start unless all of the following are configured:
-- legal operator data
+Commercial billing cannot start unless all of the following are configured (checkout also requires ORBYVEN_COMMERCIAL_CHECKOUT_PAUSED=false):
+- legal operator data, explicit PFA/SRL type and a new unique key per issuing entity
 - explicit VAT label
 - `ORBYVEN_BILLING_ENABLED=true`
 - Stripe secret + webhook secret
@@ -57,7 +57,7 @@ Checkout metadata includes:
 - `organization_id`
 - `plan_id`
 
-The webhook is the source of truth for Stripe customer/subscription state.
+The webhook is the source of truth for Stripe customer/subscription state. Each new acceptance records the legal merchant snapshot; Checkout/Subscription metadata includes the immutable merchant key and the subscription/invoice records retain that historical issuer.
 
 ## Webhook events
 Handled idempotently through `billing_webhook_events`:
@@ -74,7 +74,7 @@ Duplicate Stripe events are ignored safely.
 `invoice.payment_failed` creates a 7-day grace window. Entitlements stay valid until `grace_until`; after that, entitlement checks naturally fail even before another database update.
 
 ## Fiscal handoff: Oblio / RO e-Factura
-Paid Stripe invoices are recorded in `billing_invoices` with `fiscal_status='pending'`.
+Paid Stripe invoices are recorded in `billing_invoices` with `fiscal_status='pending'`. The merchant snapshot determines which fiscal worker is allowed to process them; old/unknown merchants must not be reissued under the currently configured new merchant. Migration/dual Stripe account operation requires a separate tested cutover plan: docs/ORBYVEN-PFA-SRL-TRANSITION.md.
 
 The fiscal worker is intentionally separate from the Stripe webhook. It claims pending records, issues the Romanian invoice through the Oblio API using the Stripe invoice id as Oblio `idempotencyKey`, records the Oblio series/number/link and can optionally submit the emitted invoice to SPV.
 
