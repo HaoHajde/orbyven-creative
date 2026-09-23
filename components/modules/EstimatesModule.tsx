@@ -17,6 +17,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -128,6 +129,7 @@ export default function EstimatesModule({
   }, [organizationId, selectedId]);
 
   const selected = useMemo(() => estimates.find((estimate) => estimate.id === selectedId) ?? null, [estimates, selectedId]);
+  useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
 
@@ -279,7 +281,7 @@ export default function EstimatesModule({
           ))}</div> : <ModuleEmpty title="Nicio ofertă încă" description="Prima ofertă poate porni direct de la un client și o lucrare existente." />}
         </div>
 
-        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
+        <div data-workspace-record-focus={initialRecordId && selected?.id === initialRecordId ? "true" : undefined} className="scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
           {selected ? <>
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
