@@ -40,6 +40,27 @@ export default function StructuredData() {
         provider: {
           "@id": `${siteUrl}/#organization`,
         },
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Servicii ORBYVEN CREATIVE",
+          itemListElement: [
+            {
+              "@type": "OfferCatalog",
+              name: "Web design și creare website",
+              url: `${siteUrl}/servicii`,
+            },
+            {
+              "@type": "OfferCatalog",
+              name: "Invitații de nuntă digitale",
+              url: `${siteUrl}/invitatii-nunta`,
+            },
+            {
+              "@type": "OfferCatalog",
+              name: "Invitații de botez digitale",
+              url: `${siteUrl}/invitatii-botez`,
+            },
+          ],
+        },
       },
     ],
   };
