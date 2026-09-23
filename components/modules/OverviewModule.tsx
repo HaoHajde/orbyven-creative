@@ -191,7 +191,7 @@ export default function OverviewModule({
       todayEvents,
       sentEstimates,
       monthExpenses,
-      attention: attention.filter((item) => enabledModules.includes(item.module)).slice(0, 6),
+      attention: attention.filter((item) => enabledModules.includes(item.module)).sort((a, b) => (a.level === b.level ? 0 : a.level === "urgent" ? -1 : 1)),
     };
   }, [snapshot, snapshotNow, timeZone, enabledModules]);
 
@@ -209,18 +209,36 @@ export default function OverviewModule({
     ? []
     : QUICK_ACTIONS.filter((action) => enabledModules.includes(action.id));
 
+  // The ring is based only on this organization's actual task statuses.
+  const workStages = [
+    { label: "De făcut", count: snapshot?.tasks.filter((task) => task.status === "planned").length ?? 0, color: "#738bff" },
+    { label: "În lucru", count: snapshot?.tasks.filter((task) => task.status === "in_progress").length ?? 0, color: "#66bff0" },
+    { label: "Blocate", count: snapshot?.tasks.filter((task) => task.status === "blocked").length ?? 0, color: "#efad77" },
+    { label: "Finalizate", count: snapshot?.tasks.filter((task) => task.status === "done").length ?? 0, color: "#6ed3ae" },
+  ];
+  const workTotal = workStages.reduce((sum, stage) => sum + stage.count, 0);
+  let currentAngle = 0;
+  const ringSlices = workStages.filter((stage) => stage.count > 0).map((stage) => {
+    const start = currentAngle;
+    currentAngle += (stage.count / workTotal) * 360;
+    return stage.color + " " + start + "deg " + currentAngle + "deg";
+  });
+  const workRing = workTotal
+    ? "conic-gradient(" + ringSlices.join(",") + ")"
+    : "conic-gradient(#2a405e 0deg 360deg)";
+
   return (
     <div className="pb-24 md:pb-0">
-      <section className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
+      <section className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
         <div className="max-w-3xl">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
             {dateLabel}
           </p>
-          <h1 className="mt-2.5 text-[38px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[48px] lg:text-[54px]">
+          <h1 className="mt-2 text-[36px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[43px] lg:text-[46px]">
             Bună, {greetingName || "acolo"}.
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
-            Tot ce contează azi, într-un singur loc.
+          <p className="mt-2 max-w-xl text-[13px] leading-5 text-[var(--muted)]">
+            Priorități clare. Activitatea firmei, dintr-o privire.
           </p>
         </div>
 
@@ -253,7 +271,7 @@ export default function OverviewModule({
               key={action.id}
               type="button"
               onClick={() => onOpenModule(action.id, { create: true })}
-              className="group inline-flex h-9 items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/62 px-3.5 text-left transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
+              className="group inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)] px-3.5 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
             >
               <span className="text-[11px] font-semibold">{action.label}</span>
               <span className="hidden text-[10px] text-[var(--muted-2)] lg:inline">
@@ -269,7 +287,7 @@ export default function OverviewModule({
 
       {snapshot && computed ? (
         <>
-          <section className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <section className="mt-5 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
             <MetricCard
               label="Cereri active"
               value={String(computed.activeLeads.length)}
@@ -300,8 +318,8 @@ export default function OverviewModule({
             />
           </section>
 
-          <section className="mt-3 grid gap-3 xl:grid-cols-[1.18fr_0.82fr]">
-            <article className="rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/72 p-4 shadow-[0_14px_45px_rgba(0,0,0,0.035)] backdrop-blur-xl sm:p-5">
+          <section className="mt-3 grid gap-3 lg:grid-cols-[1.12fr_0.88fr]">
+            <article className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
@@ -318,12 +336,12 @@ export default function OverviewModule({
 
               {computed.attention.length ? (
                 <div className="mt-4 grid gap-2">
-                  {computed.attention.map((item) => (
+                  {computed.attention.slice(0, 4).map((item) => (
                     <button
                       key={item.key}
                       type="button"
                       onClick={() => onOpenModule(item.module, { recordId: item.recordId })}
-                      className="group flex w-full items-center justify-between gap-4 rounded-[16px] border border-transparent bg-[color:var(--bg)]/72 px-3.5 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--bg)]"
+                      className="group flex w-full items-center justify-between gap-4 rounded-[13px] border border-[var(--border)] bg-[var(--surface)]/65 px-3.5 py-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-semibold">
@@ -349,7 +367,7 @@ export default function OverviewModule({
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 flex min-h-[136px] items-center justify-center rounded-[17px] border border-dashed border-[var(--border-strong)] bg-[color:var(--bg)]/44 px-5 text-center">
+                <div className="mt-4 flex min-h-[150px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)]/50 px-5 text-center">
                   <div>
                     <p className="text-sm font-semibold">Totul e în regulă.</p>
                     <p className="mt-1.5 text-xs leading-5 text-[var(--muted)]">
@@ -360,42 +378,56 @@ export default function OverviewModule({
               )}
             </article>
 
-            <article className="rounded-[22px] border border-[var(--border)] bg-[color:var(--surface-2)]/68 p-4 shadow-[0_14px_45px_rgba(0,0,0,0.03)] backdrop-blur-xl sm:p-5">
+            <article className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-4 sm:p-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-                Business snapshot
+                Activitate
               </p>
               <h2 className="mt-1.5 text-xl font-semibold tracking-[-0.035em]">
-                Imaginea de ansamblu
+                Lucrările, pe scurt
               </h2>
 
-              <div className="mt-4 grid gap-2">
-                <SnapshotRow
-                  label="Cheltuieli luna curentă"
-                  value={formatMoney(computed.monthExpenses, locale)}
-                  onClick={() => onOpenModule("expenses")}
-                  enabled={enabledModules.includes("expenses")}
-                />
-                <SnapshotRow
-                  label="Documente"
-                  value={String(snapshot.documentCount)}
-                  onClick={() => onOpenModule("documents")}
-                  enabled={enabledModules.includes("documents")}
-                />
-                <SnapshotRow
-                  label="Echipă activă"
-                  value={String(snapshot.activeTeamCount)}
-                  onClick={() => onOpenModule("team")}
-                  enabled={enabledModules.includes("team")}
-                />
-                <SnapshotRow
-                  label="Module active"
-                  value={String(
-                    enabledModules.filter((id) => id !== "overview").length
-                  )}
-                  enabled
-                />
-              </div>
+              {enabledModules.includes("tasks") ? (
+                <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={() => onOpenModule("tasks")}
+                    aria-label={"Deschide lucrările. Total: " + workTotal}
+                    className="relative flex h-[152px] w-[152px] shrink-0 items-center justify-center rounded-full transition hover:scale-[1.02]"
+                    style={{ background: workRing }}
+                  >
+                    <span className="flex h-[112px] w-[112px] flex-col items-center justify-center rounded-full bg-[var(--surface)] text-center">
+                      <span className="text-[29px] font-semibold tracking-[-0.05em]">{workTotal}</span>
+                      <span className="text-[10px] text-[var(--muted)]">lucrări / taskuri</span>
+                    </span>
+                  </button>
+                  <div className="grid w-full gap-3">
+                    {workStages.map((stage) => (
+                      <div key={stage.label} className="flex items-center justify-between gap-3 text-[12px]">
+                        <span className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: stage.color }} />
+                          {stage.label}
+                        </span>
+                        <span className="font-semibold tabular-nums">{stage.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 flex min-h-[150px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border-strong)] px-5 text-center text-sm text-[var(--muted)]">
+                  Modulul Lucrări nu este activ.
+                </div>
+              )}
+              <p className="mt-4 text-[11px] leading-5 text-[var(--muted-2)]">
+                Distribuție după status, din datele firmei. Fără valori demonstrative.
+              </p>
             </article>
+          </section>
+
+          <section className="mt-3 grid gap-2.5 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />
+            <SnapshotRow label="Documente" value={String(snapshot.documentCount)} onClick={() => onOpenModule("documents")} enabled={enabledModules.includes("documents")} />
+            <SnapshotRow label="Echipă activă" value={String(snapshot.activeTeamCount)} onClick={() => onOpenModule("team")} enabled={enabledModules.includes("team")} />
+            <SnapshotRow label="Module active" value={String(enabledModules.filter((id) => id !== "overview").length)} enabled />
           </section>
         </>
       ) : null}
@@ -429,7 +461,7 @@ function MetricCard({
         />
       </div>
       <div className="mt-3 flex items-end justify-between gap-3">
-        <p className="text-[28px] font-semibold leading-none tracking-[-0.05em]">
+        <p className="text-[30px] font-semibold leading-none tracking-[-0.05em] tabular-nums">
           {enabled ? value : "—"}
         </p>
         <p className="text-[10px] text-[var(--muted-2)]">
@@ -441,7 +473,7 @@ function MetricCard({
 
   if (!enabled) {
     return (
-      <div className="rounded-[18px] border border-[var(--border)] bg-[color:var(--surface-2)]/44 p-4 opacity-65">
+      <div className="rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-4 opacity-65">
         {content}
       </div>
     );
@@ -451,7 +483,7 @@ function MetricCard({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-[18px] border border-[var(--border)] bg-[color:var(--surface)]/72 p-4 text-left shadow-[0_10px_35px_rgba(0,0,0,0.025)] transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.05)]"
+      className="rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)]/70 p-4 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
     >
       {content}
     </button>
@@ -484,12 +516,12 @@ function SnapshotRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-transparent bg-[color:var(--bg)]/68 px-3.5 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--bg)]"
+      className="flex w-full items-center justify-between gap-4 rounded-[12px] border border-transparent bg-[var(--surface)]/65 px-3.5 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--accent-soft)]"
     >
       {content}
     </button>
   ) : (
-    <div className="flex items-center justify-between gap-4 rounded-[15px] bg-[color:var(--bg)]/55 px-3.5 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-[12px] bg-[var(--surface)]/65 px-3.5 py-3">
       {content}
     </div>
   );
