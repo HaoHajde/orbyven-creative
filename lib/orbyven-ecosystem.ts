@@ -37,7 +37,7 @@ export const ECOSYSTEM_STEPS: readonly EcosystemStep[] = [
   },
   {
     id: "offer", title: "Ofertă pentru client", description: "Versiune comercială din deviz, cu termeni și acceptare explicită.",
-    dependsOn: ["estimate"], existingModules: ["estimates", "leads"], implementation: "prototype",
+    dependsOn: ["estimate", "materials"], existingModules: ["estimates", "leads"], implementation: "prototype",
     releaseGate: "Revizii imuabile și dovada acceptării ofertei.",
   },
   {
