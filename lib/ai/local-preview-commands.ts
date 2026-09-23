@@ -1,4 +1,5 @@
 import { applySitePatch, type EditableSite } from "@/lib/ai/site-editor";
+import { applySectionCommand } from "@/lib/ai/site-sections-controls";
 
 export type DesignEngineResult = {
   draft: EditableSite;
@@ -16,6 +17,9 @@ export function applyLocalPreviewCommand(
 ): DesignEngineResult | null {
   const prompt = request.toLowerCase().normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+
+  const sectionChange = applySectionCommand(site, request);
+  if (sectionChange) return sectionChange;
 
   // Prefer no operation over confidently doing the opposite of a negation.
   if (/\b(nu vreau|nu pune|nu face|fara|elimina|scoate|renunta la)\b/.test(prompt)) {
