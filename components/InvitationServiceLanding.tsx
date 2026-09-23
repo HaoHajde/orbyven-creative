@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 type Preview = { href: string; title: string; description: string };
 
