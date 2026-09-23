@@ -206,6 +206,7 @@ export default function WorkspaceBillingPage() {
                   <span className="pb-1 text-xs text-[#6e6e73]">lei / lună</span>
                 </div>
                 <p className="mt-2 text-xs text-[#86868b]">{PUBLIC_PRICE_TAX_LABEL}</p>
+                <p className="mt-2 text-xs font-medium text-[#6e6e73]">Angajament inițial: 12 luni · valoare de referință: {(plan.priceLei * 12).toLocaleString("ro-RO")} lei, cu tratamentul TVA afișat mai sus. Plata este lunară.</p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-[#6e6e73]">{plan.description}</p>
                 <p className="mt-5 text-xs leading-5 text-[#86868b]">Include: {plan.entitlements.join(", ")}</p>
                 <button
