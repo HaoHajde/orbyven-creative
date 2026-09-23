@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
 
   title: {
-    default: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
+    default: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
     template: "%s | ORBYVEN CREATIVE",
   },
 
@@ -46,6 +46,9 @@ export const metadata: Metadata = {
     "landing page",
     "redesign website",
     "experiențe digitale",
+    "invitații nuntă digitale",
+    "invitații botez digitale",
+    "invitații online personalizate",
   ],
 
   authors: [{ name: siteConfig.name }],
@@ -70,24 +73,23 @@ export const metadata: Metadata = {
     locale: siteConfig.locale,
     siteName: siteConfig.name,
     url: "/",
-    title: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
+    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
     description:
-      "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru o prezență care rămâne în minte.",
+      siteConfig.description,
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
+        alt: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "ORBYVEN CREATIVE — Web Design & Digital Experiences",
-    description:
-      "Website-uri, landing pages, redesign-uri și experiențe digitale construite pentru o prezență care rămâne în minte.",
+    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
+    description: siteConfig.description,
     images: ["/opengraph-image"],
   },
 
@@ -95,8 +97,8 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
     ],
     shortcut: "/favicon.ico",
   },
