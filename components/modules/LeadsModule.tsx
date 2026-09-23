@@ -138,7 +138,7 @@ export default function LeadsModule({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setFollowUpLocal(selectedLead?.next_follow_up_at
-        ? new Date(new Date(selectedLead.next_follow_up_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+        ? new Date(new Date(selectedLead.next_follow_up_at).getTime() - new Date(selectedLead.next_follow_up_at).getTimezoneOffset() * 60000).toISOString().slice(0, 16)
         : "");
     }, 0);
     return () => window.clearTimeout(timer);
