@@ -7,9 +7,9 @@ import { claimAiEditorQuota, finishAiEditorQuota } from "@/lib/ai/quota-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const fail = (error: string, status: number) =>
+const fail = (error: string, status: number, code?: string) =>
   NextResponse.json(
-    { error },
+    code ? { error, code } : { error },
     { status, headers: { "Cache-Control": "no-store" } }
   );
 
@@ -114,10 +114,30 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : "";
-    if (reason === "AI_RATE_LIMIT") {
-      return fail("Limita furnizorului AI a fost atinsă. Încearcă mai târziu.", 429);
+    // Provider 429 has several distinct causes. Preserve a safe, actionable
+    // classification; do not return raw upstream error text or credentials.
+    if (reason === "OPENAI_CREDITS") {
+      return fail("Contul OpenAI API nu mai are credite disponibile sau cota API este insuficientă. Verifică Billing din platform.openai.com; abonamentul ChatGPT este separat.", 503, reason);
     }
-    return fail("Solicitarea AI a eșuat. Încearcă mai târziu.", 502);
+    if (reason === "OPENAI_BILLING_LIMIT") {
+      return fail("OpenAI API a atins o limită de cheltuieli a organizației sau proiectului. Verifică limitele și Billing în OpenAI Platform.", 503, reason);
+    }
+    if (reason === "OPENAI_USAGE_LIMIT") {
+      return fail("OpenAI API a atins limita aprobată de utilizare. Verifică pagina Limits din OpenAI Platform.", 503, reason);
+    }
+    if (reason === "OPENAI_TEMP_LIMIT" || reason === "AI_RATE_LIMIT") {
+      return fail("OpenAI API limitează temporar viteza cererilor. Așteaptă și încearcă din nou o singură dată.", 429, "OPENAI_TEMP_LIMIT");
+    }
+    if (reason === "OPENAI_BAD_KEY") {
+      return fail("Cheia OpenAI API din Vercel Preview este invalidă ori revocată. Verifică setarea fără să trimiți cheia în chat.", 503, reason);
+    }
+    if (reason === "OPENAI_ACCESS_DENIED") {
+      return fail("Cheia/proiectul OpenAI nu are permisiunea necesară pentru acest model sau API.", 503, reason);
+    }
+    if (reason === "OPENAI_BAD_REQUEST" || reason === "AI_MODEL_INVALID") {
+      return fail("OpenAI a respins modelul sau formatul cererii. Verifică ORBYVEN_AI_MODEL și configurația API.", 502, "OPENAI_BAD_REQUEST");
+    }
+    return fail("Serviciul OpenAI nu a putut procesa solicitarea acum. Editorul local rămâne disponibil.", 502, "OPENAI_PROVIDER_UNAVAILABLE");
   } finally {
     // Keep request reserved if worker crashes; failed requests also consume quota.
     try {

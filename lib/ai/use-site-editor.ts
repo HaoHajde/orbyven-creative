@@ -171,9 +171,22 @@ export function useSiteEditor() {
         body:JSON.stringify({organizationId:workspace.organization.id,prompt:requestText,draft:validDraft}),
       });
       const result = await response.json() as {
-        message?:string; draft?:EditableSite; error?:string; remainingToday?:number;
+        message?:string; draft?:EditableSite; error?:string; code?:string; remainingToday?:number;
       };
-      if (!response.ok || !result.draft) throw Error(result.error || "AI-ul este indisponibil.");
+      if (!response.ok || !result.draft) {
+        // Explicitly labeled local preview fallback for known provider errors.
+        // It never makes an extra paid OpenAI request or invents marketing copy.
+        if (result.code?.startsWith("OPENAI_")) {
+          const local = applyLocalPreviewCommand(validDraft, requestText);
+          if (local) {
+            changeDraft(local.draft);
+            setMessages(current => [...current, {role:"assistant",text:local.message}]);
+            setError(result.error || "OpenAI API este indisponibil; s-a aplicat numai modificarea locală.");
+            return;
+          }
+        }
+        throw Error(result.error || "AI-ul este indisponibil.");
+      }
       const next = readSiteDraft(result.draft);
       if (!next) throw Error("Modificarea primită nu este validă.");
       changeDraft(next);

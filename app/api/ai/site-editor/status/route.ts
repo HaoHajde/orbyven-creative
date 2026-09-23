@@ -60,5 +60,5 @@ export async function GET(request: Request) {
     return respond(false, "Migrarea contorului AI trebuie verificată în Supabase.");
   }
 
-  return respond(true, "AI este pregătit pentru un test limitat în Preview.");
+  return respond(true, "Configurația serverului este validă; disponibilitatea creditelor și limitelor OpenAI API se verifică la trimiterea cererii.");
 }

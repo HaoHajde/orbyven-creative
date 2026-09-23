@@ -27,7 +27,7 @@ export default function SiteEditorChat({
         <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#7772e8]">ORBYVEN AI</p>
         <span className={aiReady ? "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700" :
           "rounded-full bg-amber-50 px-3 py-1 text-[10px] font-semibold text-amber-800"}>
-          {aiStatus === "loading" ? "Se verifică..." : aiReady ? "AI gata pentru test" : "Preview manual"}
+          {aiStatus === "loading" ? "Se verifică..." : aiReady ? "AI configurat" : "Preview manual"}
         </span>
       </div>
       <h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em]">Spune-ne cum îl vezi.</h1>

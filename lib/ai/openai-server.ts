@@ -1,4 +1,5 @@
 import { applySitePatch, type EditableSite } from "@/lib/ai/site-editor";
+import { classifyOpenAiError } from "@/lib/ai/provider-errors";
 
 const FIELDS = ["brand","eyebrow","headline","description","cta","accent","background","surface","textColor"];
 const properties: Record<string,unknown> = {message:{type:"string"}};
@@ -22,7 +23,7 @@ export async function suggestSiteEdit(draft:EditableSite,prompt:string,credentia
         text:{format:{type:"json_schema",name:"orbyven_site_patch",strict:true,schema:{type:"object",properties,required:["message",...FIELDS,"layout"],additionalProperties:false}}}
       })
     });
-    if(!response.ok) throw new Error(response.status===429?"AI_RATE_LIMIT":"AI_UNAVAILABLE");
+    if(!response.ok) throw new Error(await classifyOpenAiError(response));
     const data=await response.json() as {output?:Array<{content?:Array<{type?:string;text?:string}>}>;usage?:{input_tokens?:number;output_tokens?:number}};
     const text=data.output?.flatMap(x=>x.content||[]).find(x=>x.type==="output_text")?.text;
     if(!text)throw new Error("AI_EMPTY");

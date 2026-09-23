@@ -19,7 +19,7 @@ function route(opts={}){
       if(name==="next/server")return{NextResponse:{json:(v,init={})=>({status:init.status||200,json:async()=>v})}};
       if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");return{organizationId:org,userId:"33333333-3333-4333-8333-333333333333",role:"owner"};}};
       if(name==="@/lib/ai/site-editor")return{readSiteDraft};
-      if(name==="@/lib/ai/openai-server")return{suggestSiteEdit:async(...args)=>{calls.push(["ai",...args]);if(opts.failAi)throw Error("AI_UNAVAILABLE");return{draft:applySitePatch(args[0],{headline:"Titlu nou"}),message:"Gata.",usage:{inputTokens:100,outputTokens:20}};}};
+      if(name==="@/lib/ai/openai-server")return{suggestSiteEdit:async(...args)=>{calls.push(["ai",...args]);if(opts.failAi)throw Error(opts.failAi===true?"AI_UNAVAILABLE":opts.failAi);return{draft:applySitePatch(args[0],{headline:"Titlu nou"}),message:"Gata.",usage:{inputTokens:100,outputTokens:20}};}};
       if(name==="@/lib/ai/quota-server")return{
         claimAiEditorQuota:async(...args)=>{calls.push(["claim",...args]);if(opts.quotaError)throw Error(opts.quotaError);return{requestId:"22222222-2222-4222-8222-222222222222",remainingToday:6};},
         finishAiEditorQuota:async(...args)=>{calls.push(["finish",...args]);}
@@ -100,4 +100,50 @@ test("local explicit title preserves user-supplied wording",()=>{
 test("disabled AI flag tolerates harmless surrounding whitespace",async()=>{
   const a=route({env:{ORBYVEN_AI_EDITOR_ENABLED:" true "}});
   assert.equal((await a.post(good)).status,200);
+});
+
+const providerModule={exports:{}};
+vm.runInNewContext(compile("lib/ai/provider-errors.ts"),{
+  module:providerModule,exports:providerModule.exports
+});
+const {classifyOpenAiError}=providerModule.exports;
+test("provider 429 credit exhaustion is not mislabeled a temporary rate limit",async()=>{
+  assert.equal(await classifyOpenAiError({
+    status:429,json:async()=>({error:{type:"insufficient_quota",code:"credit_balance_exhausted"}})
+  }),"OPENAI_CREDITS");
+});
+test("provider 429 project spend limit receives a billing diagnosis",async()=>{
+  assert.equal(await classifyOpenAiError({
+    status:429,json:async()=>({error:{code:"project_spend_limit_exceeded"}})
+  }),"OPENAI_BILLING_LIMIT");
+});
+test("provider transient 429 remains a rate limit",async()=>{
+  assert.equal(await classifyOpenAiError({
+    status:429,json:async()=>({error:{code:"rate_limit_exceeded"}})
+  }),"OPENAI_TEMP_LIMIT");
+});
+test("provider 401 is diagnosed as invalid API credential",async()=>{
+  assert.equal(await classifyOpenAiError({
+    status:401,json:async()=>({error:{code:"invalid_api_key"}})
+  }),"OPENAI_BAD_KEY");
+});
+test("provider 429 with non JSON body stays safe and generic",async()=>{
+  assert.equal(await classifyOpenAiError({
+    status:429,json:async()=>{throw Error("upstream body hidden")}
+  }),"OPENAI_TEMP_LIMIT");
+});
+test("billing issue is actionable and tagged without leaking raw provider payload",async()=>{
+  const a=route({failAi:"OPENAI_CREDITS"});
+  const res=await a.post(good);
+  assert.equal(res.status,503);
+  const body=await res.json();
+  assert.equal(body.code,"OPENAI_CREDITS");
+  assert.match(body.error,/Billing/);
+  assert.equal(a.calls.filter(x=>x[0]==="finish")[0][2],false);
+});
+test("temporary upstream rate limit is distinct from billing issues",async()=>{
+  const a=route({failAi:"OPENAI_TEMP_LIMIT"});
+  const res=await a.post(good);
+  assert.equal(res.status,429);
+  assert.equal((await res.json()).code,"OPENAI_TEMP_LIMIT");
 });
