@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateBillingActor, createBillingServiceClient } from "@/lib/billing/supabase-server";
-import { isStudioTemplate, sanitizeStudioDraft, studioSeed, type StudioDraft } from "@/lib/site-studio";
+import { isStudioTemplate, sanitizeStudioDraft, studioSeed } from "@/lib/site-studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
