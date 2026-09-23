@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ORBYVEN
 
-## Getting Started
+**ORBYVEN Alpha 0.1 — 23.09.2026** · web design și software modular pentru afaceri din România.
 
-First, run the development server:
+ORBYVEN combină site-uri publice și template-uri personalizabile cu un workspace pentru firme. Produsul este în **Alpha / pilot validation**: prezența codului sau a rutelor nu echivalează cu un test complet pe un client real.
+
+## Release și checkpoint-uri
+
+- **[Alpha 0.1 — 23.09.2026](docs/releases/ORBYVEN-ALPHA-0.1-2026-09-23.md)** — raport consolidat: curățare, dashboard, SEO, securitate, teste, limite și pașii următori.
+- [Alpha Foundation — 18.09.2026](ALPHA-FOUNDATION.md) — baseline-ul istoric, păstrat pentru rollback.
+- `checkpoint/orbyven-alpha-0.1-2026-09-23` — snapshot de release; dezvoltarea continuă din `main`.
+
+## Ce include repository-ul
+
+- **Public:** homepage, servicii, contact, ofertare/cerere proiect, template-uri și demo-uri pentru piloți.
+- **SEO:** landing pages, ghiduri și studii de caz; vezi [SEO Foundation v2](docs/seo/SEO-FOUNDATION-V2.md).
+- **Workspace:** autentificare, onboarding, Control Center și modulele Overview, Clienți, Lucrări, Calendar, Oferte, Documente, Cheltuieli și Echipă.
+- **Platform Core:** multi-tenancy Supabase, RLS, permisiuni, provisionare și lifecycle; vezi [Platform Core v2](docs/platform-core-v2.md).
+- **Billing/Legal:** infrastructură și rute de abonare, nu o atestare a validării fiscale sau juridice.
+
+## Dezvoltare locală
+
+Necesită Node.js 22 și npm. Configurează variabilele de mediu necesare pentru Supabase, billing și celelalte servicii folosite de funcțiile pe care le testezi, fără să comiți secrete.
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Validare înainte de PR:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run validate
+npm audit --audit-level=high
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npm run validate` execută lint complet, `tsc --noEmit` și build-ul Next.js.
 
-## Learn More
+## Reguli
 
-To learn more about Next.js, take a look at the following resources:
+Lucrează pe un branch nou din ultimul `main`. Păstrează o singură versiune responsive pentru paginile publice, respectă limitele între module și folosește `organization_id` + RLS pentru datele clienților. Nu reutiliza branch-uri de checkpoint pentru dezvoltare activă și nu integra automat PR-uri vechi fără comparație cu `main`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Pentru starea exactă, validarea efectuată și testele pilot încă necesare, citește [raportul Alpha 0.1](docs/releases/ORBYVEN-ALPHA-0.1-2026-09-23.md).
