@@ -87,13 +87,13 @@ export default function ExpensesModule({
     clientId: initialClientId ?? "",
     taskId: initialTaskId ?? "",
   }));
-  const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
+  const [createOpen, setCreateOpen] = useState(initialCreate && ["owner", "admin", "manager"].includes(role));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const canWrite = role !== "viewer";
+  const canWrite = role === "owner" || role === "admin" || role === "manager";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
 
   const load = useCallback(async () => {
