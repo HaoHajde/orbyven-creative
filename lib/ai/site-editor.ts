@@ -8,6 +8,7 @@ export type SiteLayout = "split" | "centered" | "editorial";
 export type EditableSite = {
   preset: SitePresetId;
   layout: SiteLayout;
+  headlineSize: "normal" | "large";
   brand: string;
   eyebrow: string;
   headline: string;
@@ -28,28 +29,28 @@ export const SITE_PRESET_LABELS: Record<SitePresetId, string> = {
 
 export const SITE_PRESETS: Record<SitePresetId, EditableSite> = {
   studio: {
-    preset: "studio", layout: "split", brand: "Atelier Studio",
+    preset: "studio", layout: "split", headlineSize: "normal", brand: "Atelier Studio",
     eyebrow: "BINE AI VENIT", headline: "Un site care spune povestea afacerii tale.",
     description: "Un spațiu digital elegant, construit în jurul serviciilor și clienților tăi.",
     cta: "Cere o ofertă", accent: "#6058e8",
     background: "#f6f5f2", surface: "#ffffff", textColor: "#24242a",
   },
   instalatii: {
-    preset: "instalatii", layout: "split", brand: "Atelier Instalații",
+    preset: "instalatii", layout: "split", headlineSize: "normal", brand: "Atelier Instalații",
     eyebrow: "INSTALAȚII ȘI CONFORT", headline: "Mai mult confort, de la proiect la ultimul detaliu.",
     description: "Soluții pentru instalații termice și sanitare. Descoperă serviciile și cere o ofertă adaptată proiectului.",
     cta: "Solicită o ofertă", accent: "#176c79",
     background: "#f4f7f7", surface: "#ffffff", textColor: "#162b31",
   },
   detailing: {
-    preset: "detailing", layout: "editorial", brand: "Hao's Customs",
+    preset: "detailing", layout: "editorial", headlineSize: "normal", brand: "Hao's Customs",
     eyebrow: "DETAILING PROFESIONIST", headline: "Fiecare detaliu schimbă totul.",
     description: "Îngrijire atentă pentru interiorul și exteriorul mașinii tale. Explorează lucrările și alege serviciul potrivit.",
     cta: "Vezi serviciile", accent: "#d4af37",
     background: "#101113", surface: "#1a1b1f", textColor: "#f7f5f0",
   },
   florarie: {
-    preset: "florarie", layout: "centered", brand: "Maison Fleur",
+    preset: "florarie", layout: "centered", headlineSize: "normal", brand: "Maison Fleur",
     eyebrow: "FLORI PENTRU MOMENTELE TALE", headline: "Un gest mic. O emoție care rămâne.",
     description: "Buchete și aranjamente florale pregătite cu atenție pentru fiecare ocazie.",
     cta: "Descoperă buchetele", accent: "#a44975",
@@ -95,8 +96,9 @@ export function readSiteDraft(value: unknown): EditableSite | null {
   const record = value as Record<string, unknown>;
   const preset = record.preset === undefined ? "studio" : record.preset;
   const layout = record.layout === undefined ? "split" : record.layout;
-  if (!PRESET_IDS.includes(preset as SitePresetId) || !LAYOUTS.includes(layout as SiteLayout)) return null;
-  const draft: EditableSite = { ...SITE_PRESETS[preset as SitePresetId], layout: layout as SiteLayout };
+  const headlineSize = record.headlineSize === undefined ? "normal" : record.headlineSize;
+  if (!PRESET_IDS.includes(preset as SitePresetId) || !LAYOUTS.includes(layout as SiteLayout) || !["normal", "large"].includes(headlineSize as string)) return null;
+  const draft: EditableSite = { ...SITE_PRESETS[preset as SitePresetId], layout: layout as SiteLayout, headlineSize: headlineSize as "normal" | "large" };
   for (const field of TEXT_FIELDS) {
     const text = record[field];
     if (typeof text !== "string" || !text.trim() || text.length > TEXT_LIMITS[field]) return null;
@@ -125,6 +127,7 @@ export function applySitePatch(current: EditableSite, value: unknown): EditableS
     if (isHex(patch[field])) next[field] = patch[field];
   }
   if (LAYOUTS.includes(patch.layout as SiteLayout)) next.layout = patch.layout as SiteLayout;
+  if (patch.headlineSize === "normal" || patch.headlineSize === "large") next.headlineSize = patch.headlineSize;
   if (contrast(next.background, next.textColor) < 4.5) next.textColor = readableText(next.background);
   return next;
 }
