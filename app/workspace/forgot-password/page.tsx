@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
       title="Recuperează accesul."
       description="Îți trimitem un link securizat. După schimbarea parolei vei continua direct către workspace."
       footer={
-        <Link href="/workspace/login" className="font-semibold text-[#4b46ee]">
+        <Link href="/workspace/login" className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
           ← Înapoi la autentificare
         </Link>
       }
