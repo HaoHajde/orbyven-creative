@@ -36,22 +36,22 @@ export default function WorkspaceModuleStore({
 
       {error && <div className="mt-6 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {ORBYVEN_MODULES.map((definition) => {
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
           const saving = savingModule === definition.id;
 
           return (
-            <article key={definition.id} className="flex min-h-[220px] flex-col rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/68 p-5 shadow-[0_12px_38px_rgba(0,0,0,0.025)] backdrop-blur-xl">
+            <article key={definition.id} className="flex min-h-[190px] flex-col rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/68 p-5 shadow-[0_12px_38px_rgba(0,0,0,0.025)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-xs font-semibold" style={{ backgroundColor: definition.accent, color: definition.color }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-[13px] text-xs font-semibold" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}>
                   {definition.shortName.slice(0, 2).toUpperCase()}
                 </div>
                 {definition.badge && <span className="rounded-full border border-[var(--border)] bg-[color:var(--bg)]/68 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{definition.badge}</span>}
               </div>
 
-              <h2 className="mt-5 text-xl font-semibold tracking-[-0.04em]">{definition.name}</h2>
+              <h2 className="mt-4 text-lg font-semibold tracking-[-0.04em]">{definition.name}</h2>
               <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">{definition.description}</p>
 
               <div className="mt-auto flex items-center justify-between gap-4 pt-5">

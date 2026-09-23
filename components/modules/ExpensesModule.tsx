@@ -19,6 +19,9 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialCreate?: boolean;
+  initialClientId?: string;
+  initialTaskId?: string;
 };
 
 type FormState = {
@@ -72,13 +75,19 @@ function monthKey(value: string) {
   return value.slice(0, 7);
 }
 
-export default function ExpensesModule({ organizationId, locale, role }: Props) {
+export default function ExpensesModule({
+  organizationId, locale, role, initialCreate = false, initialClientId, initialTaskId,
+}: Props) {
   const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
   const [clients, setClients] = useState<ExpenseClientLink[]>([]);
   const [tasks, setTasks] = useState<ExpenseTaskLink[]>([]);
   const [documents, setDocuments] = useState<ExpenseDocumentLink[]>([]);
-  const [form, setForm] = useState<FormState>(() => emptyForm());
-  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...emptyForm(),
+    clientId: initialClientId ?? "",
+    taskId: initialTaskId ?? "",
+  }));
+  const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

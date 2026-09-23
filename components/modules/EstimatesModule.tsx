@@ -22,6 +22,10 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialCreate?: boolean;
+  initialRecordId?: string;
+  initialClientId?: string;
+  initialTaskId?: string;
 };
 
 type DraftLine = { key: string; description: string; quantity: string; price: string };
@@ -52,14 +56,21 @@ function formatMoney(cents: number, currency: string, locale: string) {
   return new Intl.NumberFormat(locale, { style: "currency", currency: currency || "RON", maximumFractionDigits: 2 }).format((cents || 0) / 100);
 }
 
-export default function EstimatesModule({ organizationId, locale, role }: Props) {
+export default function EstimatesModule({
+  organizationId, locale, role, initialCreate = false, initialRecordId,
+  initialClientId, initialTaskId,
+}: Props) {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [clients, setClients] = useState<EstimateLink[]>([]);
   const [tasks, setTasks] = useState<EstimateTaskLink[]>([]);
   const [items, setItems] = useState<EstimateItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [selectedId, setSelectedId] = useState<string | null>(initialRecordId ?? null);
+  const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
+  const [form, setForm] = useState<FormState>(() => ({
+    ...emptyForm,
+    clientId: initialClientId ?? "",
+    taskId: initialTaskId ?? "",
+  }));
   const [lines, setLines] = useState<DraftLine[]>(() => [newLine()]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

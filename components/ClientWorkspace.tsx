@@ -6,6 +6,7 @@ import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   getCurrentWorkspace,
   setOrganizationModuleEnabled,
@@ -34,9 +35,11 @@ const roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string> = {
 
 export default function ClientWorkspace() {
   const router = useRouter();
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const [panel, setPanel] = useState<Panel>("workspace");
   const [activeModule, setActiveModule] = useState<OrbyvenModuleId>("overview");
+  const [navigation, setNavigation] = useState<WorkspaceNavigationIntent>({ module: "overview", token: 0 });
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [workspace, setWorkspace] = useState<OrbyvenWorkspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -75,14 +78,11 @@ export default function ClientWorkspace() {
   }, [router]);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("studio-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const savedTheme = window.localStorage.getItem("orbyven-dashboard-theme");
     const nextTheme: Theme =
       savedTheme === "dark" || savedTheme === "light"
         ? savedTheme
-        : prefersDark
-          ? "dark"
-          : "light";
+        : "dark";
 
     document.documentElement.style.colorScheme = nextTheme;
     const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
@@ -167,17 +167,20 @@ export default function ClientWorkspace() {
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
-      window.localStorage.setItem("studio-theme", next);
+      window.localStorage.setItem("orbyven-dashboard-theme", next);
       document.documentElement.style.colorScheme = next;
       return next;
     });
   };
 
-  const openModule = useCallback((id: OrbyvenModuleId) => {
+  const openModule = useCallback((id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) => {
+    if (!enabledModules.includes(id)) return;
     setPanel("workspace");
     setActiveModule(id);
+    setNavigation((current) => ({ module: id, token: current.token + 1, ...options }));
     setMobileModuleMenuOpen(false);
-  }, []);
+    setCreateMenuOpen(false);
+  }, [enabledModules]);
 
   const toggleModule = async (id: OrbyvenModuleId) => {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
@@ -194,7 +197,10 @@ export default function ClientWorkspace() {
       current ? { ...current, enabledModules: nextModules } : current
     );
 
-    if (currentlyEnabled && activeModule === id) setActiveModule("overview");
+    if (currentlyEnabled && activeModule === id) {
+      setActiveModule("overview");
+      setNavigation((current) => ({ module: "overview", token: current.token + 1 }));
+    }
 
     try {
       await setOrganizationModuleEnabled(workspace.organization.id, id, !currentlyEnabled);
@@ -209,24 +215,30 @@ export default function ClientWorkspace() {
     }
   };
 
+  const createOptions = ORBYVEN_MODULES.filter((definition) =>
+    ["leads", "tasks", "calendar", "estimates", "expenses"].includes(definition.id)
+      && enabledModules.includes(definition.id)
+  );
+  const canCreate = workspace?.membership.role !== "viewer" && createOptions.length > 0;
+
   const logout = async () => {
     await orbyvenSupabase.auth.signOut();
     router.replace("/workspace/login");
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#09090a" : "#ffffff",
-    "--surface": theme === "dark" ? "#111113" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#19191b" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#85858a" : "#86868b",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.20)" : "rgba(75,70,238,0.08)",
+    "--bg": theme === "dark" ? "#080f1e" : "#f1f5fd",
+    "--surface": theme === "dark" ? "#101d32" : "#ffffff",
+    "--surface-2": theme === "dark" ? "#15243b" : "#eaf1fd",
+    "--text": theme === "dark" ? "#eef4ff" : "#142746",
+    "--muted": theme === "dark" ? "#a2b1cb" : "#596d8c",
+    "--muted-2": theme === "dark" ? "#8296b4" : "#7183a1",
+    "--border": theme === "dark" ? "rgba(157,190,249,0.13)" : "rgba(46,82,146,0.12)",
+    "--border-strong": theme === "dark" ? "rgba(157,190,249,0.25)" : "rgba(46,82,146,0.24)",
+    "--button": theme === "dark" ? "#477af3" : "#244caa",
+    "--button-text": "#ffffff",
+    "--accent": theme === "dark" ? "#82adff" : "#3561d8",
+    "--accent-soft": theme === "dark" ? "rgba(86,134,244,0.17)" : "rgba(65,105,208,0.11)",
   } as CSSProperties;
 
   if (loading) {
@@ -257,15 +269,19 @@ export default function ClientWorkspace() {
       }}
       className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-32 top-24 h-[420px] w-[420px] rounded-full bg-[#6d68ff]/[0.10] blur-[110px] dark:bg-[#6d68ff]/[0.14]" />
-        <div className="absolute -right-40 top-[18%] h-[480px] w-[480px] rounded-full bg-[#3b82f6]/[0.07] blur-[130px] dark:bg-[#3b82f6]/[0.10]" />
-        <div className="absolute bottom-[-180px] left-[36%] h-[420px] w-[520px] rounded-full bg-[#8b5cf6]/[0.06] blur-[140px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.82),transparent_45%)] opacity-50 dark:opacity-[0.04]" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: theme === "dark"
+              ? "radial-gradient(ellipse 58% 46% at 36% 1%,rgba(31,95,189,0.26),transparent 76%),radial-gradient(ellipse 44% 38% at 100% 54%,rgba(17,70,145,0.14),transparent 82%)"
+              : "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
+          }}
+        />
       </div>
 
       <header
-        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/72 shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl transition-transform duration-300 ease-out ${
+        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/95 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-transform duration-300 ease-out ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -273,10 +289,23 @@ export default function ClientWorkspace() {
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
             <div className="hidden h-6 w-px bg-[var(--border)] md:block" />
-            <button type="button" onClick={() => setPanel("workspace")} className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-3 py-2 text-[11px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)] md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />Workspace</button>
+            <button type="button" onClick={() => openModule("overview")} className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2 text-[11px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)] md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Dashboard</button>
           </div>
 
           <div className="flex items-center gap-2">
+            {canCreate && (
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded={createMenuOpen}
+                onClick={() => setCreateMenuOpen(true)}
+                className="flex h-9 items-center justify-center rounded-full bg-[var(--button)] px-3 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:px-4"
+              >
+                <span className="sm:hidden" aria-hidden="true">+</span>
+                <span className="hidden sm:inline">+ Creează</span>
+                <span className="sr-only sm:hidden">Creează o înregistrare</span>
+              </button>
+            )}
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-4 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:block">{panel === "modules" ? "Înapoi la dashboard" : "Personalizează"}</button>
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
             <button type="button" onClick={logout} className="hidden h-9 rounded-full px-3 text-[11px] font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] sm:block">Ieșire</button>
@@ -285,9 +314,9 @@ export default function ClientWorkspace() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-4 px-3 pb-4 pt-4 md:grid-cols-[224px_minmax(0,1fr)] md:px-5 md:pb-6">
-        <aside className="sticky top-[84px] hidden h-[calc(100vh-100px)] rounded-[24px] border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-3 py-4 shadow-[0_18px_55px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:flex md:flex-col">
-          <div className="rounded-[18px] border border-[var(--border)] bg-[color:var(--bg)]/54 px-3.5 py-3.5">
+      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-4 px-3 pb-4 pt-4 md:grid-cols-[216px_minmax(0,1fr)] md:px-5 md:pb-6">
+        <aside className="sticky top-[84px] hidden h-[calc(100vh-100px)] rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-3 py-4 shadow-[0_15px_50px_rgba(0,0,0,0.08)] md:flex md:flex-col">
+          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-3.5">
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{organizationName}</p>
             <div className="mt-2 flex items-center justify-between gap-3">
               <p className="text-sm font-semibold">Dashboard</p>
@@ -304,9 +333,9 @@ export default function ClientWorkspace() {
                   key={definition.id}
                   type="button"
                   onClick={() => openModule(definition.id)}
-                  className={`flex w-full items-center gap-3 rounded-[13px] border px-3 py-2.5 text-left text-[13px] transition ${active ? "border-[var(--border)] bg-[color:var(--bg)]/74 font-semibold shadow-sm" : "border-transparent text-[var(--muted)] hover:bg-[color:var(--bg)]/52 hover:text-[var(--text)]"}`}
+                  className={`flex w-full items-center gap-3 rounded-[13px] border px-3 py-2.5 text-left text-[13px] transition ${active ? "border-[var(--border)] bg-[var(--accent-soft)] font-semibold text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"}`}
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[10px] font-bold" style={{ backgroundColor: definition.accent, color: definition.color }}>{definition.shortName.slice(0, 1)}</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[10px] font-bold" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}>{definition.shortName.slice(0, 1)}</span>
                   <span className="truncate">{definition.shortName}</span>
                 </button>
               );
@@ -321,7 +350,7 @@ export default function ClientWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[28px] border border-[var(--border)] bg-[color:var(--bg)]/66 px-5 py-6 pb-28 shadow-[0_22px_70px_rgba(0,0,0,0.05)] backdrop-blur-xl sm:px-7 md:min-h-[calc(100vh-100px)] md:px-8 md:py-7 md:pb-7 lg:px-9 xl:px-10">
+        <section className="min-w-0 rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-4 py-5 pb-28 shadow-[0_18px_60px_rgba(0,0,0,0.06)] sm:px-6 md:min-h-[calc(100vh-100px)] md:px-7 md:py-6 md:pb-7 lg:px-8 xl:px-9">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
@@ -334,6 +363,7 @@ export default function ClientWorkspace() {
           ) : (
             <WorkspaceContent
               activeModule={activeDefinition.id}
+              navigation={navigation}
               organizationId={workspace.organization.id}
               locale={locale}
               timeZone={timeZone}
@@ -347,9 +377,42 @@ export default function ClientWorkspace() {
         </section>
       </div>
 
+      {createMenuOpen && canCreate && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0">
+          <button
+            type="button"
+            aria-label="Închide meniul de creare"
+            onClick={() => setCreateMenuOpen(false)}
+            className="absolute inset-0 bg-[#020814]/70"
+          />
+          <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 w-full max-w-md rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Acțiune nouă</p>
+                <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Ce vrei să creezi?</h2>
+              </div>
+              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label="Închide" className="h-9 w-9 shrink-0 rounded-full border border-[var(--border)] text-lg">×</button>
+            </div>
+            <div className="mt-5 grid gap-2">
+              {createOptions.map((definition) => (
+                <button
+                  key={definition.id}
+                  type="button"
+                  onClick={() => openModule(definition.id, { create: true })}
+                  className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
+                >
+                  <span>{definition.id === "leads" ? "Cerere nouă" : definition.id === "tasks" ? "Lucrare nouă" : definition.id === "calendar" ? "Programare nouă" : definition.id === "estimates" ? "Ofertă nouă" : "Cheltuială nouă"}</span>
+                  <span aria-hidden="true" className="text-[var(--muted)]">→</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
       <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
         {mobileModuleMenuOpen && (
-          <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[color:var(--bg)]/78 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+          <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
             <div className="grid grid-cols-4 gap-2">
               {enabledDefinitions.map((definition) => {
                 const active = panel === "workspace" && activeModule === definition.id;
@@ -394,7 +457,7 @@ export default function ClientWorkspace() {
           aria-expanded={mobileModuleMenuOpen}
           aria-label={mobileModuleMenuOpen ? "Închide meniul modulelor" : "Deschide meniul modulelor"}
           onClick={() => setMobileModuleMenuOpen((current) => !current)}
-          className="flex h-12 min-w-[124px] items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-[color:var(--bg)]/84 px-5 text-xs font-semibold shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-2xl active:scale-[0.97]"
+          className="flex h-12 min-w-[124px] items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-xs font-semibold shadow-[0_12px_40px_rgba(0,0,0,0.18)] active:scale-[0.97]"
         >
           <span className="grid grid-cols-2 gap-[2px]" aria-hidden="true">
             <span className="h-1.5 w-1.5 rounded-[2px] bg-current" />
