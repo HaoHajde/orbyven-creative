@@ -1,0 +1,26 @@
+/* The outer auth field owns the only visible keyboard-focus indicator.
+   Do not show the global :focus-visible outline on its nested input. */
+.authInput:focus,
+.authInput:focus-visible {
+  outline: none !important;
+  outline-offset: 0;
+}
+
+/* Chrome / Edge / Safari paint stored credentials with their own opaque
+   autofill surface. Override it to match the whole input row exactly. */
+.authInput:-webkit-autofill,
+.authInput:-webkit-autofill:hover,
+.authInput:-webkit-autofill:focus,
+.authInput:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0c1221 inset !important;
+  box-shadow: 0 0 0 1000px #0c1221 inset !important;
+  -webkit-text-fill-color: #f3f6ff !important;
+  caret-color: #f3f6ff;
+}
+
+/* Standard autofill styling for browsers that implement :autofill. */
+.authInput:autofill {
+  box-shadow: 0 0 0 1000px #0c1221 inset !important;
+  -webkit-text-fill-color: #f3f6ff !important;
+  caret-color: #f3f6ff;
+}

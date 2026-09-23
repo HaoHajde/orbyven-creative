@@ -2,6 +2,7 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
+import styles from "./WorkspaceAuthShell.module.css";
 import { useId, useState, type ReactNode } from "react";
 
 /**
@@ -130,7 +131,7 @@ export function AuthField({
       <label htmlFor={fieldId} className="mb-2.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a2abc2]">
         {label}
       </label>
-      <div className="group flex h-[53px] items-center gap-3 rounded-[15px] border border-white/[0.15] bg-[#080c18]/70 px-4 transition focus-within:border-[#7089ff] focus-within:ring-[3px] focus-within:ring-[#5778ff]/20">
+      <div className="group flex h-[53px] items-center gap-3 rounded-[15px] border border-white/[0.15] bg-[#0c1221] px-4 transition focus-within:border-[#7089ff] focus-within:ring-[3px] focus-within:ring-[#5778ff]/20">
         {emailField ? (
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-[17px] w-[17px] shrink-0 text-[#a2abc2]">
             <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" />
@@ -149,7 +150,7 @@ export function AuthField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="h-full w-full min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#8995af]"
+          className={`${styles.authInput} h-full w-full min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#8995af]`}
         />
         {passwordField && (
           <button
