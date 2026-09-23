@@ -114,6 +114,8 @@ export default function InvitationServiceLanding({
           <Link href="/invitatii-botez">Invitații de botez</Link>
           <Link href="/servicii">Web design</Link>
           <Link href="/legal/privacy">Confidențialitate</Link>
+          <Link href="/legal/consumer">Drepturile consumatorului</Link>
+          <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer">SAL ANPC ↗</a>
         </nav>
       </footer>
     </main>
