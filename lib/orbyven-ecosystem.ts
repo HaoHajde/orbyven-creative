@@ -54,7 +54,7 @@ export const ECOSYSTEM_STEPS: readonly EcosystemStep[] = [
 
 export const MODULE_RELATIONS: Partial<Record<OrbyvenModuleId, readonly OrbyvenModuleId[]>> = {
   leads: [],
-  tasks: ["leads", "calendar", "team"],
+  tasks: ["leads"],
   calendar: ["tasks", "leads"],
   estimates: ["leads", "tasks", "documents", "expenses"],
   documents: ["leads", "tasks", "estimates"],
