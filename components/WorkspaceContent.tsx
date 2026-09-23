@@ -10,9 +10,11 @@ import TasksModule from "@/components/modules/TasksModule";
 import TeamModule from "@/components/modules/TeamModule";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 
 type Props = {
   activeModule: OrbyvenModuleId;
+  navigation: WorkspaceNavigationIntent;
   organizationId: string;
   locale: string;
   timeZone: string;
@@ -20,11 +22,12 @@ type Props = {
   dateLabel: string;
   enabledModules: OrbyvenModuleId[];
   role: OrbyvenWorkspace["membership"]["role"];
-  onOpenModule: (moduleId: OrbyvenModuleId) => void;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
 export default function WorkspaceContent({
   activeModule,
+  navigation,
   organizationId,
   locale,
   timeZone,
@@ -34,9 +37,13 @@ export default function WorkspaceContent({
   role,
   onOpenModule,
 }: Props) {
+  const intent = navigation.module === activeModule ? navigation : null;
+  const initialCreate = Boolean(intent?.create);
+
   if (activeModule === "overview") {
     return (
       <OverviewModule
+        key={navigation.token}
         organizationId={organizationId}
         locale={locale}
         timeZone={timeZone}
@@ -50,16 +57,20 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "leads") {
-    return <LeadsModule organizationId={organizationId} locale={locale} />;
+    return <LeadsModule key={navigation.token} organizationId={organizationId} locale={locale} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} />;
   }
 
   if (activeModule === "tasks") {
-    return <TasksModule organizationId={organizationId} locale={locale} role={role} />;
+    return <TasksModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} />;
   }
 
   if (activeModule === "calendar") {
     return (
       <CalendarModule
+        key={navigation.token}
+        initialCreate={initialCreate}
+        initialClientId={intent?.clientId}
+        initialTaskId={intent?.taskId}
         organizationId={organizationId}
         locale={locale}
         timeZone={timeZone}
@@ -69,7 +80,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "estimates") {
-    return <EstimatesModule organizationId={organizationId} locale={locale} role={role} />;
+    return <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "documents") {
@@ -77,7 +88,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "expenses") {
-    return <ExpensesModule organizationId={organizationId} locale={locale} role={role} />;
+    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   }
 
   return <TeamModule organizationId={organizationId} role={role} />;
