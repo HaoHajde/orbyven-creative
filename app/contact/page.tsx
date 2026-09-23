@@ -344,7 +344,7 @@ export default function ContactPage() {
                   className="mt-1 h-4 w-4 accent-[var(--accent)]"
                 />
                 <span>
-                  Am citit și accept{" "}
+                  Am citit{" "}
                   <Link
                     href="/legal/privacy"
                     className="text-[var(--text)] underline underline-offset-4"
