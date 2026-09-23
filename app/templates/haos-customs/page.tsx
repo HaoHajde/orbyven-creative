@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { BeforeAfter, HaoShell, haoImages } from "@/components/pilot005/HaoCustomsExperience";
+import { BeforeAfter, HaoShell } from "@/components/pilot005/HaoCustomsExperience";
+import { haoImages } from "@/components/pilot005/haoMedia";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 
 export const metadata: Metadata = {
