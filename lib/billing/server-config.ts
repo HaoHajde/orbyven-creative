@@ -1,4 +1,5 @@
 import { legalConfig } from "@/lib/legal-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
 import type { BillingPlanId } from "@/lib/billing/public-config";
 
 const env = (name: string) => process.env[name]?.trim() ?? "";
@@ -55,7 +56,7 @@ export function getBillingReadiness() {
     if (!billingServerConfig.stripeLiveConfirmed) {
       missing.push("ORBYVEN_BILLING_LIVE_CONFIRMED");
     }
-    if (!legalConfig.isComplete) missing.push("legal operator data");
+    if (!legalConfig.isComplete) missing.push("legal operator data / merchant entity type / immutable key");
     if (!process.env.NEXT_PUBLIC_ORBYVEN_PRICE_TAX_LABEL?.trim()) {
       missing.push("NEXT_PUBLIC_ORBYVEN_PRICE_TAX_LABEL");
     }
@@ -73,6 +74,15 @@ export function requireBillingReady() {
   const readiness = getBillingReadiness();
   if (!readiness.ready) {
     throw new Error("ORBYVEN billing is not configured for commercial use.");
+  }
+  return readiness;
+}
+
+/** A transition pauses NEW contracts, but not existing subscriptions or portal access. */
+export function requireCheckoutReady() {
+  const readiness = requireBillingReady();
+  if (commercialIdentity.checkoutPaused) {
+    throw new Error("ORBYVEN commercial checkout is paused.");
   }
   return readiness;
 }

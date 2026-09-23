@@ -26,6 +26,12 @@ Ask the accountant to confirm:
 
 Only after confirmation set `ORBYVEN_OBLIO_ENABLED=true`.
 
+## PFA → SRL historical issuer protection
+- Check that the Oblio CIF matches ORBYVEN_TAX_ID for the current verified merchant.
+- Each pending invoice has an issuer snapshot and merchant key captured from original subscription acceptance. The worker selects ONLY invoices belonging to ORBYVEN_COMMERCIAL_ENTITY_KEY; never backfill old invoices using today’s legal identity.
+- Keep a separate reconciliation procedure and old Oblio/Stripe evidence for the PFA when switching to SRL. Null merchant keys and mismatched old invoices require manual review, not automatic issuance.
+- The additive SQL migration in the repository is NOT automatically applied to the live database by creating a PR. Apply/test the schema before running the revised billing code.
+
 ## Worker security
 `POST /api/billing/fiscal/process` requires `Authorization: Bearer <CRON_SECRET>`.
 

@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 
 type BillingSummary = {
   configured: boolean;
+  checkoutPaused?: boolean;
   message?: string;
   billingAccount?: { hasStripeCustomer: boolean; billingEmail: string | null } | null;
   subscription?: {
@@ -173,6 +174,12 @@ export default function WorkspaceBillingPage() {
           </div>
         )}
 
+        {summary?.configured && summary.checkoutPaused && (
+          <div className="mt-8 rounded-[24px] border border-amber-500/20 bg-amber-500/[0.08] p-5 text-sm leading-6">
+            Contractarea abonamentelor noi este suspendată temporar. Abonamentele existente rămân înregistrate; nu iniția o plată nouă până la finalizarea verificării comerciantului.
+          </div>
+        )}
+
         {error && (
           <div className="mt-6 rounded-[20px] border border-red-500/20 bg-red-500/[0.06] p-4 text-sm text-red-600">{error}</div>
         )}
@@ -210,7 +217,7 @@ export default function WorkspaceBillingPage() {
                 <p className="mt-5 text-xs leading-5 text-[#86868b]">Include: {plan.entitlements.join(", ")}</p>
                 <button
                   type="button"
-                  disabled={!summary?.configured || !accepted || hasSubscription || action !== null}
+                  disabled={!summary?.configured || summary.checkoutPaused || !accepted || hasSubscription || action !== null}
                   onClick={() => startCheckout(plan.id)}
                   className="mt-6 h-11 w-full rounded-full bg-[#1d1d1f] px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-35"
                 >

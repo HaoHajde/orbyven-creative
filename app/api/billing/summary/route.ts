@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getBillingReadiness } from "@/lib/billing/server-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
 import {
   authenticateBillingActor,
   createBillingServiceClient,
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
   if (!readiness.ready) {
     return NextResponse.json({
       configured: false,
+      checkoutPaused: commercialIdentity.checkoutPaused,
       message: "Billing-ul ORBYVEN este pregătit în cod, dar nu este activat comercial.",
     });
   }
@@ -51,6 +53,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       configured: true,
+      checkoutPaused: commercialIdentity.checkoutPaused,
       organizationId: actor.organizationId,
       role: actor.role,
       billingAccount: accountResult.data

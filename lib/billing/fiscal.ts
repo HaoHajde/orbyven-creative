@@ -1,4 +1,6 @@
 import { BILLING_PLANS, isBillingPlanId } from "@/lib/billing/public-config";
+import { normalizeRomanianTaxId } from "@/lib/commercial-identity";
+import { legalConfig } from "@/lib/legal-config";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
   issueOblioInvoice,
@@ -36,13 +38,18 @@ function bucharestDate(date: Date) {
 }
 
 export async function processPendingFiscalInvoices(limit = 10) {
+  if (!legalConfig.isComplete) {
+    throw new Error("Verified commercial issuer is required before fiscal processing.");
+  }
   const client = createBillingServiceClient();
   const { data: invoices, error } = await client
     .from("billing_invoices")
     .select(
-      "id,organization_id,stripe_invoice_id,stripe_subscription_id,amount_paid,currency,created_at"
+      "id,organization_id,stripe_invoice_id,stripe_subscription_id,amount_paid,currency,created_at,merchant_key,merchant_type,merchant_legal_name,merchant_tax_id"
     )
     .eq("fiscal_status", "pending")
+    // Previous PFA invoices remain pending for their original PFA worker/account.
+    .eq("merchant_key", legalConfig.entityKey)
     .order("created_at", { ascending: true })
     .limit(limit);
   if (error) throw error;
@@ -61,6 +68,13 @@ export async function processPendingFiscalInvoices(limit = 10) {
     if (!claim) continue;
 
     try {
+      if (!invoice.merchant_key || invoice.merchant_key !== legalConfig.entityKey ||
+          !invoice.merchant_legal_name || !invoice.merchant_tax_id ||
+          invoice.merchant_type !== legalConfig.entityType ||
+          invoice.merchant_legal_name !== legalConfig.legalName ||
+          normalizeRomanianTaxId(invoice.merchant_tax_id) !== normalizeRomanianTaxId(legalConfig.taxId)) {
+        throw new Error("Historical invoice issuer does not match active verified merchant.");
+      }
       if ((invoice.currency as string | null)?.toLowerCase() !== "ron") {
         throw new Error("Fiscal adapter v1 only supports RON invoices.");
       }
