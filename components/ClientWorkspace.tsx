@@ -2,6 +2,7 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import WorkspaceContent from "@/components/WorkspaceContent";
+import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -17,7 +18,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -46,9 +46,7 @@ export default function ClientWorkspace() {
   const [actionError, setActionError] = useState("");
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const scrollFrame = useRef<number | null>(null);
+
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -94,36 +92,6 @@ export default function ClientWorkspace() {
     };
   }, [loadWorkspace]);
 
-  useEffect(() => {
-    lastScrollY.current = window.scrollY;
-
-    const updateVisibility = () => {
-      const current = window.scrollY;
-      const delta = current - lastScrollY.current;
-
-      if (current < 40) {
-        setHeaderVisible(true);
-      } else if (delta > 6) {
-        setHeaderVisible(false);
-      } else if (delta < -6) {
-        setHeaderVisible(true);
-      }
-
-      lastScrollY.current = current;
-      scrollFrame.current = null;
-    };
-
-    const onScroll = () => {
-      if (scrollFrame.current !== null) return;
-      scrollFrame.current = window.requestAnimationFrame(updateVisibility);
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (scrollFrame.current !== null) window.cancelAnimationFrame(scrollFrame.current);
-    };
-  }, []);
 
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
@@ -227,17 +195,17 @@ export default function ClientWorkspace() {
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#080f1e" : "#f1f5fd",
-    "--surface": theme === "dark" ? "#101d32" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#15243b" : "#eaf1fd",
+    "--bg": theme === "dark" ? "#07101f" : "#f1f5fd",
+    "--surface": theme === "dark" ? "#0d1728" : "#ffffff",
+    "--surface-2": theme === "dark" ? "#15233a" : "#eaf1fd",
     "--text": theme === "dark" ? "#eef4ff" : "#142746",
     "--muted": theme === "dark" ? "#a2b1cb" : "#596d8c",
     "--muted-2": theme === "dark" ? "#8296b4" : "#7183a1",
-    "--border": theme === "dark" ? "rgba(157,190,249,0.13)" : "rgba(46,82,146,0.12)",
+    "--border": theme === "dark" ? "rgba(167,190,246,0.16)" : "rgba(46,82,146,0.12)",
     "--border-strong": theme === "dark" ? "rgba(157,190,249,0.25)" : "rgba(46,82,146,0.24)",
     "--button": theme === "dark" ? "#477af3" : "#244caa",
     "--button-text": "#ffffff",
-    "--accent": theme === "dark" ? "#82adff" : "#3561d8",
+    "--accent": theme === "dark" ? "#7ba9ff" : "#3561d8",
     "--accent-soft": theme === "dark" ? "rgba(86,134,244,0.17)" : "rgba(65,105,208,0.11)",
   } as CSSProperties;
 
@@ -274,25 +242,30 @@ export default function ClientWorkspace() {
           className="absolute inset-0"
           style={{
             background: theme === "dark"
-              ? "radial-gradient(ellipse 58% 46% at 36% 1%,rgba(31,95,189,0.26),transparent 76%),radial-gradient(ellipse 44% 38% at 100% 54%,rgba(17,70,145,0.14),transparent 82%)"
+              ? "radial-gradient(ellipse 53% 34% at 30% 0%,rgba(17,95,223,0.32),transparent 78%),radial-gradient(ellipse 38% 45% at 93% 59%,rgba(8,91,187,0.19),transparent 82%)"
               : "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
           }}
         />
       </div>
 
       <header
-        className={`sticky top-0 z-50 transform-gpu border-b border-[var(--border)] bg-[color:var(--bg)]/95 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-transform duration-300 ease-out ${
-          headerVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
+        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/95 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
-        <div className="mx-auto flex h-[68px] max-w-[1520px] items-center justify-between px-5 md:px-7">
+        <div className="mx-auto flex h-[65px] max-w-[1520px] items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
-            <div className="hidden h-6 w-px bg-[var(--border)] md:block" />
-            <button type="button" onClick={() => openModule("overview")} className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2 text-[11px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)] md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Dashboard</button>
+            <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
+            <div className="hidden min-w-0 lg:block">
+              <span className="block max-w-[180px] truncate text-[11px] font-semibold">{organizationName}</span>
+              <span className="block text-[10px] text-[var(--muted-2)]">Business workspace</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden min-w-0 flex-1 justify-center sm:flex">
+            <WorkspaceSearch organizationId={workspace.organization.id} enabledModules={enabledModules} onOpenModule={openModule} />
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
             {canCreate && (
               <button
                 type="button"
@@ -306,51 +279,65 @@ export default function ClientWorkspace() {
                 <span className="sr-only sm:hidden">Creează o înregistrare</span>
               </button>
             )}
-            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-4 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:block">{panel === "modules" ? "Înapoi la dashboard" : "Personalizează"}</button>
+            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
-            <button type="button" onClick={logout} className="hidden h-9 rounded-full px-3 text-[11px] font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] sm:block">Ieșire</button>
-            <button type="button" onClick={logout} aria-label="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--button)] text-[11px] font-semibold text-[var(--button-text)] shadow-sm">{initials || "OR"}</button>
+            <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm">{initials || "OR"}</button>
           </div>
+        </div>
+        <div className="mx-auto max-w-[1520px] px-4 pb-3 sm:hidden">
+          <WorkspaceSearch organizationId={workspace.organization.id} enabledModules={enabledModules} onOpenModule={openModule} />
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-4 px-3 pb-4 pt-4 md:grid-cols-[216px_minmax(0,1fr)] md:px-5 md:pb-6">
-        <aside className="sticky top-[84px] hidden h-[calc(100vh-100px)] rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-3 py-4 shadow-[0_15px_50px_rgba(0,0,0,0.08)] md:flex md:flex-col">
-          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-3.5">
-            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{organizationName}</p>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold">Dashboard</p>
-              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[9px] font-semibold text-[var(--accent)]">{roleLabels[workspace.membership.role]}</span>
-            </div>
+      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
+        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/95 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+          <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+            <p className="truncate text-[11px] font-semibold">{organizationName}</p>
+            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
           </div>
 
-          <p className="mt-6 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">Navigare</p>
-          <nav className="mt-2 space-y-1">
-            {enabledDefinitions.map((definition) => {
-              const active = panel === "workspace" && activeModule === definition.id;
-              return (
-                <button
-                  key={definition.id}
-                  type="button"
-                  onClick={() => openModule(definition.id)}
-                  className={`flex w-full items-center gap-3 rounded-[13px] border px-3 py-2.5 text-left text-[13px] transition ${active ? "border-[var(--border)] bg-[var(--accent-soft)] font-semibold text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"}`}
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[10px] font-bold" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}>{definition.shortName.slice(0, 1)}</span>
-                  <span className="truncate">{definition.shortName}</span>
-                </button>
-              );
-            })}
-          </nav>
+          {([
+            { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
+            { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
+            { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
+          ]).map((group) => {
+            const items = enabledDefinitions.filter((definition) => group.ids.includes(definition.id));
+            if (!items.length) return null;
+            return (
+              <div key={group.label} className="mt-5 border-b border-[var(--border)] pb-4 last:border-b-0">
+                <p className="mb-2 px-3 text-[9px] font-bold tracking-[0.15em] text-[var(--muted-2)]">{group.label}</p>
+                <nav className="space-y-0.5" aria-label={group.label}>
+                  {items.map((definition) => {
+                    const active = panel === "workspace" && activeModule === definition.id;
+                    return (
+                      <button
+                        key={definition.id}
+                        type="button"
+                        onClick={() => openModule(definition.id)}
+                        aria-current={active ? "page" : undefined}
+                        className={active
+                          ? "flex w-full items-center gap-3 rounded-[9px] border border-[#7797ff]/20 bg-[linear-gradient(95deg,rgba(76,104,237,0.33),rgba(75,99,204,0.16))] px-3 py-2.5 text-left text-[12px] font-semibold text-[var(--text)]"
+                          : "flex w-full items-center gap-3 rounded-[9px] border border-transparent px-3 py-2.5 text-left text-[12px] text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)]"}
+                      >
+                        <ModuleGlyph id={definition.id} />
+                        <span className="truncate">{definition.shortName}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            );
+          })}
 
           <div className="mt-auto pt-6">
-            <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[15px] border border-[var(--border)] bg-[color:var(--bg)]/58 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
+            <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
               <span className="block text-[var(--text)]">{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</span>
               <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</span>
             </button>
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-4 py-5 pb-28 shadow-[0_18px_60px_rgba(0,0,0,0.06)] sm:px-6 md:min-h-[calc(100vh-100px)] md:px-7 md:py-6 md:pb-7 lg:px-8 xl:px-9">
+        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/90 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
@@ -470,4 +457,19 @@ export default function ClientWorkspace() {
       </div>
     </main>
   );
+}
+
+const modulePaths: Record<OrbyvenModuleId, string> = {
+  overview: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
+  leads: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2z M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
+  tasks: "M8 3h8v3H8z M8 5H5v16h14V5h-3 M9 12l2 2 4-4 M9 18h6",
+  calendar: "M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6 M8 15h3 M8 18h3",
+  estimates: "M5 2h10l4 4v16H5z M15 2v5h4 M8 12h8 M8 16h8 M8 19h5",
+  documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
+  expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
+  team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
+};
+
+function ModuleGlyph({ id }: { id: OrbyvenModuleId }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-[16px] w-[16px] shrink-0"><path d={modulePaths[id]} /></svg>;
 }
