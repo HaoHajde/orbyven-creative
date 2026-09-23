@@ -13,6 +13,8 @@ import {
   type CrmLeadKind,
   type CrmLeadStage,
 } from "@/lib/modules/leads";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   useCallback,
   useEffect,
@@ -41,6 +43,10 @@ const ACTIVITY_LABELS: Record<CrmActivityKind, string> = {
 type Props = {
   organizationId: string;
   locale?: string;
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  initialCreate?: boolean;
+  initialRecordId?: string;
 };
 
 type LeadDraft = {
@@ -76,9 +82,11 @@ function emptyDraft(locale: string): LeadDraft {
   };
 }
 
-export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props) {
+export default function LeadsModule({
+  organizationId, locale = "ro-RO", enabledModules, onOpenModule, initialCreate = false, initialRecordId,
+}: Props) {
   const [leads, setLeads] = useState<CrmLead[]>([]);
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialRecordId ?? null);
   const [activities, setActivities] = useState<CrmLeadActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
@@ -87,7 +95,7 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<CrmLeadStage | "all">("all");
   const [kindFilter, setKindFilter] = useState<CrmLeadKind | "all">("all");
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(initialCreate);
   const [draft, setDraft] = useState<LeadDraft>(() => emptyDraft(locale));
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
   const [activityBody, setActivityBody] = useState("");
@@ -350,7 +358,7 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
               </h2>
             </div>
             <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold text-[var(--muted)]">
-              tenant scoped
+              Contact nou
             </span>
           </div>
 
@@ -492,6 +500,15 @@ export default function LeadsModule({ organizationId, locale = "ro-RO" }: Props)
                   >
                     Transformă în client
                   </button>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {enabledModules.includes("tasks") && (
+                  <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-white">+ Lucrare pentru acest client</button>
+                )}
+                {enabledModules.includes("estimates") && (
+                  <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă pentru acest client</button>
                 )}
               </div>
 
