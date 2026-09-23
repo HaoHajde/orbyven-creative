@@ -17,8 +17,9 @@ modifică `main`, baza de producție, Vercel sau ANAF. Nu există facturi emise.
 - Există deja `ops_material_recipes`, `ops_material_recipe_items` și
   `sales_material_requirements`: recetă de materiale, poziții cu unități
   și costuri, respectiv necesar legat de `sales_estimates` și opțional
-  de `sales_estimate_items`. Au politici RLS și `organization_id`, dar nu
-  există încă servicii/module UI integrate cu fluxul principal din dashboard.
+  de `sales_estimate_items`. Au politici RLS și `organization_id`.
+  **Acest branch adaugă primul serviciu și panoul de necesar materiale în
+  detaliul devizului**; integrarea cu rețetele automate rămâne următoarea fază.
 - `billing_invoices` există DOAR pentru abonamentele Stripe ORBYVEN,
   inclusiv câmpuri de reconciliere fiscală a abonamentelor; nu reutilizăm
   acest tabel pentru facturile pe care firmele cliente le emit clienților lor.
@@ -72,7 +73,7 @@ emitere, iar facturile nu sunt suprascrise dacă se schimbă ulterior devizul.
 | Client | CRM activ | Există |
 | Lucrare | Context client | Există; legătură în UI |
 | Deviz | Client + lucrare în fluxul complet | Există, fără structurarea tuturor liniilor |
-| Necesar materiale | Deviz; reutilizare `ops_material_recipes`, `ops_material_recipe_items`, `sales_material_requirements`; revizie și sincronizare | Structură DB existentă; UI neconectat |
+| Necesar materiale | Deviz; `sales_material_requirements`; apoi rețete, revizie și sincronizare | UI + serviciu în branch, nepublicate; automatizarea rețetelor lipsă |
 | Ofertă client | Deviz + necesar revizuit + acceptare/versiune | Prototip local |
 | Factură | Ofertă acceptată, client și emitent fiscal validați | Doar proiectare |
 | ANAF | Factură emisă, XML RO-CIUS, OAuth/SPV, răspuns | Doar proiectare |
@@ -122,6 +123,8 @@ aprobarea modelului de date și după crearea unui mediu de test izolat.
   server/RPC + RLS sunt autoritatea, nu filtrele din browser.
 - Schimbarea reviziei devizului invalidează lista de materiale generată și
   oferta nesemnată; oferta deja acceptată rămâne snapshot istoric.
+  **Această regulă nu este încă implementată în schema actuală și este
+  condiție obligatorie înainte de emiterea facturilor.**
 - Costul furnizorului nu ajunge implicit în oferta văzută de client.
 - Nicio factură emisă fără profil fiscal, identificator fiscal cumpărător,
   seria/numărul și regulile de taxare aplicabile.
