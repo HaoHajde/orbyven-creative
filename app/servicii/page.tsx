@@ -179,6 +179,31 @@ export default function ServicesPage() {
         </div>
       </section>
 
+      <section aria-labelledby="web-design-orbyven" className="mx-auto max-w-[1500px] px-5 pb-16 sm:px-6 md:px-10 md:pb-24">
+        <div className="grid gap-9 rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-7 md:grid-cols-[.88fr_1.12fr] md:p-12">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[var(--muted-2)]">Web design · România</p>
+            <h2 id="web-design-orbyven" className="mt-5 text-[38px] font-semibold leading-[1.04] tracking-[-.06em] sm:text-[52px]">Un website construit pentru ce face firma ta.</h2>
+          </div>
+          <div className="flex flex-col justify-between gap-7">
+            <div className="space-y-4 text-[14px] leading-7 text-[var(--muted)]">
+              <p>Un site de prezentare poate reuni serviciile, lucrările și contactul într-un traseu clar, inclusiv pe telefon. Pentru o campanie sau o ofertă punctuală, o pagină de destinație poate avea un singur obiectiv și un formular scurt.</p>
+              <p>Începem cu informațiile pe care un client trebuie să le găsească: ce oferi, cui te adresezi, unde lucrezi și cum primești o cerere. Alegem apoi designul, paginile și funcțiile potrivite. Un proiect poate porni simplu și se poate extinde când apare nevoia.</p>
+            </div>
+            <nav aria-label="Află mai mult despre web design" className="flex flex-wrap gap-2">
+              {[
+                { href: "/creare-site", label: "Creare site pentru firme" },
+                { href: "/site-prezentare", label: "Site de prezentare" },
+                { href: "/web-design-bucuresti", label: "Web design București" },
+                { href: "/redesign-site", label: "Redesign website" },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 py-3 text-xs font-semibold transition hover:border-[var(--accent)]">{item.label} ↗</Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </section>
+
       <section aria-labelledby="servicii-invitatii" className="px-5 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-[1500px]">
           <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[var(--muted)]">Evenimente · invitații digitale</p>
