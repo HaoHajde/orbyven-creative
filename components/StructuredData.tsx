@@ -44,21 +44,10 @@ export default function StructuredData() {
           "@type": "OfferCatalog",
           name: "Servicii ORBYVEN CREATIVE",
           itemListElement: [
-            {
-              "@type": "OfferCatalog",
-              name: "Web design și creare website",
-              url: `${siteUrl}/servicii`,
-            },
-            {
-              "@type": "OfferCatalog",
-              name: "Invitații de nuntă digitale",
-              url: `${siteUrl}/invitatii-nunta`,
-            },
-            {
-              "@type": "OfferCatalog",
-              name: "Invitații de botez digitale",
-              url: `${siteUrl}/invitatii-botez`,
-            },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Web design și creare website", url: `${siteUrl}/servicii` } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de nuntă digitale", url: `${siteUrl}/invitatii-nunta` } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de botez digitale", url: `${siteUrl}/invitatii-botez` } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de majorat digitale", url: `${siteUrl}/invitatii-majorat` } },
           ],
         },
       },
