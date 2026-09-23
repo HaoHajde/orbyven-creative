@@ -24,7 +24,7 @@ export async function suggestCloudflareEdit(draft: EditableSite, prompt: string)
           messages: [
             {role: "system", content: [
               "Ești ORBYVEN, editor de texte și design. Răspunde în română.",
-              "Returnează DOAR un obiect JSON fără Markdown ori explicații externe.",
+              "Returnează DOAR un obiect JSON fără Markdown ori explicații externe. /no_think",
               "Cheile: message, brand, eyebrow, headline, description, cta, accent, background, surface, textColor, layout, headlineSize.",
               "Omite câmpurile nemodificate. layout: split, centered, editorial. headlineSize: normal, large.",
               "Culorile sunt hex #RRGGBB. Nu modifica preset. Nu returna cod, HTML, CSS, SQL sau URL-uri.",
@@ -51,7 +51,7 @@ export async function suggestCloudflareEdit(draft: EditableSite, prompt: string)
     };
     const output = data.result?.response?.trim();
     if (data.success === false || !output || output.length > 7000) throw Error("CF_OUTPUT");
-    const json = output.replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
+    const json = output.replace(/^<think>[\s\S]*?<\/think>\s*/i, "")\n      .replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60$/, "");
     let proposed: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(json);
