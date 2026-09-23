@@ -14,7 +14,7 @@ function route(opts={}){
   const calls=[];const exports={};const routeModule={exports};
   const env={ORBYVEN_AI_EDITOR_ENABLED:"true",OPENAI_API_KEY:"test-placeholder",ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:org,...opts.env};
   vm.runInNewContext(compile("app/api/ai/site-editor/route.ts"),{
-    exports,module:routeModule,process:{env},Number,JSON,Array,Request,
+    exports,module:routeModule,process:{env},Number,JSON,Array,Request,Error,
     require(name){
       if(name==="next/server")return{NextResponse:{json:(v,init={})=>({status:init.status||200,json:async()=>v})}};
       if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");return{organizationId:org,userId:"33333333-3333-4333-8333-333333333333",role:"owner"};}};
