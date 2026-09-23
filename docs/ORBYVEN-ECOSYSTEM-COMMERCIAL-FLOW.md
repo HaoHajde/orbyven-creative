@@ -14,8 +14,16 @@ modifică `main`, baza de producție, Vercel sau ANAF. Nu există facturi emise.
 - `finance_expenses`: cheltuială operațională; nu este factură de vânzare.
 - `organization_modules`: activări pe firmă; entitlements/billing rămân
   într-un strat separat și nu pot fi ocolite din interfața modulelor.
-- Nu există în baza verificată tabele canonice pentru necesar materiale,
-  oferte versionate, facturi emise sau tranzacții e-Factura.
+- Există deja `ops_material_recipes`, `ops_material_recipe_items` și
+  `sales_material_requirements`: recetă de materiale, poziții cu unități
+  și costuri, respectiv necesar legat de `sales_estimates` și opțional
+  de `sales_estimate_items`. Au politici RLS și `organization_id`, dar nu
+  există încă servicii/module UI integrate cu fluxul principal din dashboard.
+- `billing_invoices` există DOAR pentru abonamentele Stripe ORBYVEN,
+  inclusiv câmpuri de reconciliere fiscală a abonamentelor; nu reutilizăm
+  acest tabel pentru facturile pe care firmele cliente le emit clienților lor.
+- Nu există încă tabele pentru oferte client versionate, facturi de vânzare
+  emise de clienții ORBYVEN sau tranzacții e-Factura pentru acele facturi.
 
 Nu redenumim o ofertă PDF în factură și nu prezentăm o trimitere simulată
 ca transmitere către ANAF.
@@ -64,7 +72,7 @@ emitere, iar facturile nu sunt suprascrise dacă se schimbă ulterior devizul.
 | Client | CRM activ | Există |
 | Lucrare | Context client | Există; legătură în UI |
 | Deviz | Client + lucrare în fluxul complet | Există, fără structurarea tuturor liniilor |
-| Necesar materiale | Revizie deviz; clasificare linii, unități | Prototip local |
+| Necesar materiale | Deviz; reutilizare `ops_material_recipes`, `ops_material_recipe_items`, `sales_material_requirements`; revizie și sincronizare | Structură DB existentă; UI neconectat |
 | Ofertă client | Deviz + necesar revizuit + acceptare/versiune | Prototip local |
 | Factură | Ofertă acceptată, client și emitent fiscal validați | Doar proiectare |
 | ANAF | Factură emisă, XML RO-CIUS, OAuth/SPV, răspuns | Doar proiectare |
@@ -82,12 +90,14 @@ RLS de organizație + rol. Atributele importante:
 
 1. `commercial_estimate_revisions`: estimate_id, revision_no, snapshot_lines,
    subtotal/taxes/total, currency, created_by, created_at, locked_at.
-2. `commercial_line_items`: revision_id, kind, SKU opțional, description,
-   quantity numeric, unit, cost_cents (privat), sale_price_cents, tax category,
-   supplier_ref opțional, position.
-3. `commercial_material_requirements`: revision_id, material_line_id, required,
-   reserved, procured, price_snapshot, vendor_ref, supply_status. Pentru
-   bunuri similare se pot agrega doar cu aceeași unitate/SKU.
+2. **Extindere** `sales_estimate_items` ori tabel de poziții versionate:
+   revision_id, kind, SKU opțional, description, quantity numeric, unit,
+   cost_cents (privat), sale_price_cents, tax category, position.
+3. **Extindere, fără duplicare** `sales_material_requirements`:
+   revision_id, material_line_id, required, reserved, procured, price_snapshot,
+   supplier_ref, supply_status. Refolosim `ops_material_recipes` și
+   `ops_material_recipe_items` pentru necesarul repetabil al unui serviciu.
+   Pentru bunuri similare agregăm doar cu aceeași unitate/SKU.
 4. `commercial_offers`: revision_id, client_id, task_id, terms_snapshot,
    valid_until, sent_at, accepted_at, acceptance_proof, version.
 5. `fiscal_issuer_profiles`: date legale, adresă, CUI/CIF, statut TVA,
