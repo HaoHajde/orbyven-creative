@@ -110,7 +110,7 @@ export default function ContactPage() {
     }
 
     if (!privacyAccepted) {
-      setSubmitError("Acceptă Politica de Confidențialitate pentru a trimite cererea.");
+      setSubmitError("Confirmă că ai citit informarea privind prelucrarea datelor.");
       return;
     }
 
@@ -344,14 +344,14 @@ export default function ContactPage() {
                   className="mt-1 h-4 w-4 accent-[var(--accent)]"
                 />
                 <span>
-                  Am citit și accept{" "}
+                  Am citit{" "}
                   <Link
                     href="/legal/privacy"
                     className="text-[var(--text)] underline underline-offset-4"
                   >
                     Politica de Confidențialitate
                   </Link>{" "}
-                  pentru prelucrarea acestei cereri.
+                  privind prelucrarea datelor acestei cereri.
                 </span>
               </label>
 
