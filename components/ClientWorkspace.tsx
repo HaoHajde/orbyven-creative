@@ -78,7 +78,7 @@ export default function ClientWorkspace() {
   }, [router]);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("studio-theme");
+    const savedTheme = window.localStorage.getItem("orbyven-dashboard-theme");
     const nextTheme: Theme =
       savedTheme === "dark" || savedTheme === "light"
         ? savedTheme
@@ -167,7 +167,7 @@ export default function ClientWorkspace() {
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
-      window.localStorage.setItem("studio-theme", next);
+      window.localStorage.setItem("orbyven-dashboard-theme", next);
       document.documentElement.style.colorScheme = next;
       return next;
     });
