@@ -60,7 +60,8 @@ export function useSiteEditor(){
       const next=readSiteDraft(result.draft);
       if(!next)throw Error("Modificarea primită nu este validă.");
       if(JSON.stringify(next)!==JSON.stringify(site))setHistory(current=>[...current.slice(-14),next]);
-      setMessages(current=>[...current,{role:"assistant",text:result.message||"Preview actualizat."}]);\n      if(typeof result.remainingToday==="number"){setNotice("Mai ai "+result.remainingToday+" cereri AI disponibile astăzi pentru firmă (UTC).");}
+      setMessages(current=>[...current,{role:"assistant",text:result.message||"Preview actualizat."}]);
+      if(typeof result.remainingToday==="number"){setNotice("Mai ai "+result.remainingToday+" cereri AI disponibile astăzi pentru firmă (UTC).");}
     }catch(e){const message=e instanceof Error?e.message:"Nu am putut procesa cererea.";setError(message);setMessages(current=>[...current,{role:"assistant",text:message}]);}
     finally{setBusy(false);}
   };
