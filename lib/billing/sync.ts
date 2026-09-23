@@ -222,15 +222,25 @@ export async function syncStripeInvoice(
   });
   if (!organizationId) throw new Error("Unable to resolve organization for Stripe invoice.");
 
-  const paid = eventType === "invoice.paid";
-  const fiscalStatus = paid ? "pending" : "skipped";
+  const { data: existingInvoice, error: existingInvoiceError } = await client
+    .from("billing_invoices")
+    .select("status,fiscal_status")
+    .eq("stripe_invoice_id", invoiceId)
+    .maybeSingle();
+  if (existingInvoiceError) throw existingInvoiceError;
+
+  // Delivery order is not guaranteed. A delayed failure must not overwrite a paid invoice.
+  const paid = eventType === "invoice.paid" || existingInvoice?.status === "paid";
+  const fiscalStatus = (["issued", "processing", "failed"].includes(
+    existingInvoice?.fiscal_status ?? ""
+  ) ? existingInvoice?.fiscal_status : paid ? "pending" : "skipped");
 
   const { error: invoiceError } = await client.from("billing_invoices").upsert(
     {
       organization_id: organizationId,
       stripe_invoice_id: invoiceId,
       stripe_subscription_id: subscriptionId,
-      status: stringValue(object.status) || (paid ? "paid" : "open"),
+      status: paid ? "paid" : stringValue(object.status) || "open",
       amount_due: numberValue(object.amount_due),
       amount_paid: numberValue(object.amount_paid),
       currency: stringValue(object.currency),
@@ -253,7 +263,7 @@ export async function syncStripeInvoice(
 
   if (!subscription || !isBillingPlanId(subscription.plan_id)) return;
 
-  if (eventType === "invoice.payment_failed") {
+  if (eventType === "invoice.payment_failed" && !paid) {
     const graceUntil = addDays(new Date(), BILLING_GRACE_DAYS);
     const { error } = await client
       .from("subscriptions")
