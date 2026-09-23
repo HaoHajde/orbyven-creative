@@ -76,7 +76,9 @@ export default function SiteFooter({ theme, activePage }: { theme: Theme; active
               </Link>
             ))}
             <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-100">SAL · ANPC ↗</a>
-            <button type="button" onClick={() => window.dispatchEvent(new Event("orbyven:open-cookie-preferences"))} className="transition hover:opacity-100 normal-case tracking-normal">Preferințe cookies</button>
+            {process.env.NEXT_PUBLIC_OPTIONAL_COOKIES_ENABLED === "true" && (
+              <button type="button" onClick={() => window.dispatchEvent(new Event("orbyven:open-cookie-preferences"))} className="transition hover:opacity-100 normal-case tracking-normal">Preferințe cookies</button>
+            )}
           </div>
           <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="self-start sm:self-auto">
             Sus ↑
