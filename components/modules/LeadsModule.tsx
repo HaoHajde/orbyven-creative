@@ -15,6 +15,7 @@ import {
 } from "@/lib/modules/leads";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import {
   useCallback,
   useEffect,
@@ -47,6 +48,7 @@ type Props = {
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialRecordId?: string;
+  role: OrbyvenWorkspace["membership"]["role"];
 };
 
 type LeadDraft = {
@@ -83,7 +85,7 @@ function emptyDraft(locale: string): LeadDraft {
 }
 
 export default function LeadsModule({
-  organizationId, locale = "ro-RO", enabledModules, onOpenModule, initialCreate = false, initialRecordId,
+  organizationId, locale = "ro-RO", enabledModules, onOpenModule, initialCreate = false, initialRecordId, role,
 }: Props) {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialRecordId ?? null);
@@ -95,7 +97,8 @@ export default function LeadsModule({
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<CrmLeadStage | "all">("all");
   const [kindFilter, setKindFilter] = useState<CrmLeadKind | "all">("all");
-  const [showCreate, setShowCreate] = useState(initialCreate);
+  const [showCreate, setShowCreate] = useState(initialCreate && role !== "viewer");
+  const canWrite = role !== "viewer";
   const [draft, setDraft] = useState<LeadDraft>(() => emptyDraft(locale));
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
   const [activityBody, setActivityBody] = useState("");
@@ -204,7 +207,7 @@ export default function LeadsModule({
 
   const handleCreateLead = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!draft.name.trim() || saving) return;
+    if (!canWrite || !draft.name.trim() || saving) return;
 
     setSaving(true);
     setError("");
@@ -235,7 +238,7 @@ export default function LeadsModule({
   };
 
   const changeStage = async (stage: CrmLeadStage) => {
-    if (!selectedLead || saving || selectedLead.stage === stage) return;
+    if (!canWrite || !selectedLead || saving || selectedLead.stage === stage) return;
 
     const previous = selectedLead;
     setSaving(true);
@@ -269,7 +272,7 @@ export default function LeadsModule({
   };
 
   const convertToClient = async () => {
-    if (!selectedLead || selectedLead.kind === "client" || saving) return;
+    if (!canWrite || !selectedLead || selectedLead.kind === "client" || saving) return;
 
     setSaving(true);
     setError("");
@@ -295,7 +298,7 @@ export default function LeadsModule({
 
   const addActivity = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedLead || !activityBody.trim() || saving) return;
+    if (!canWrite || !selectedLead || !activityBody.trim() || saving) return;
 
     setSaving(true);
     setError("");
@@ -330,13 +333,13 @@ export default function LeadsModule({
             Cereri noi, clienți, status și istoricul conversațiilor într-un singur loc.
           </p>
         </div>
-        <button
+        {canWrite && <button
           type="button"
           onClick={() => setShowCreate((current) => !current)}
           className="h-11 self-start rounded-full bg-[var(--button)] px-5 text-sm font-medium text-[var(--button-text)]"
         >
           {showCreate ? "Închide" : "+ Cerere nouă"}
-        </button>
+        </button>}
       </section>
 
       {error && (
@@ -345,7 +348,7 @@ export default function LeadsModule({
         </div>
       )}
 
-      {showCreate && (
+      {showCreate && canWrite && (
         <form
           onSubmit={handleCreateLead}
           className="mt-8 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
@@ -491,7 +494,7 @@ export default function LeadsModule({
                     {selectedLead.company || "Persoană / companie nespecificată"}
                   </p>
                 </div>
-                {selectedLead.kind === "lead" && (
+                {canWrite && selectedLead.kind === "lead" && (
                   <button
                     type="button"
                     onClick={convertToClient}
@@ -503,14 +506,14 @@ export default function LeadsModule({
                 )}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              {canWrite && <div className="mt-4 flex flex-wrap gap-2">
                 {enabledModules.includes("tasks") && (
                   <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-white">+ Lucrare pentru acest client</button>
                 )}
                 {enabledModules.includes("estimates") && (
                   <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă pentru acest client</button>
                 )}
-              </div>
+              </div>}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <Detail label="Telefon" value={selectedLead.phone || "—"} />
@@ -538,7 +541,7 @@ export default function LeadsModule({
                   <select
                     value={selectedLead.stage}
                     onChange={(event) => void changeStage(event.target.value as CrmLeadStage)}
-                    disabled={saving}
+                    disabled={saving || !canWrite}
                     className="h-10 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-semibold outline-none disabled:opacity-50"
                   >
                     {STAGES.map((stage) => (
@@ -566,7 +569,7 @@ export default function LeadsModule({
                 )}
               </div>
 
-              <form onSubmit={addActivity} className="mt-4 flex flex-col gap-2 sm:flex-row">
+              {canWrite && <form onSubmit={addActivity} className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <select
                   value={activityKind}
                   onChange={(event) => setActivityKind(event.target.value as CrmActivityKind)}
@@ -589,7 +592,7 @@ export default function LeadsModule({
                 >
                   Adaugă
                 </button>
-              </form>
+              </form>}
 
               <div className="mt-4 space-y-2">
                 {activitiesLoading ? (
