@@ -3,8 +3,8 @@ import InvitationServiceLanding from "@/components/InvitationServiceLanding";
 import InvitationStructuredData from "@/components/InvitationStructuredData";
 
 export const metadata: Metadata = {
-  title: "Invitații de majorat digitale și personalizate",
-  description: "Invitații digitale pentru majorat și aniversarea de 18 ani. Vezi un model interactiv ORBYVEN CREATIVE, personalizabil cu data, locația, programul și dress code-ul petrecerii.",
+  title: "Invitații digitale de majorat personalizate",
+  description: "Invitații digitale de majorat ORBYVEN CREATIVE: model interactiv personalizabil cu data, locația, programul și dress code-ul petrecerii.",
   alternates: { canonical: "/invitatii-majorat" },
   openGraph: {
     url: "/invitatii-majorat",
