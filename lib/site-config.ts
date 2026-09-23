@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "ORBYVEN CREATIVE",
   shortName: "ORBYVEN",
   description:
-    "ORBYVEN CREATIVE: web design modern, website-uri pentru afaceri și invitații digitale de nuntă și botez personalizabile. Descoperă modelele și serviciile noastre.",
+    "ORBYVEN CREATIVE: web design pentru afaceri și invitații digitale personalizate de nuntă, botez și majorat. Descoperă modelele și serviciile noastre.",
   defaultUrl: "https://orbyven.ro",
   locale: "ro_RO",
   language: "ro",
