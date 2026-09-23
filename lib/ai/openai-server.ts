@@ -5,7 +5,10 @@ const properties: Record<string,unknown> = {message:{type:"string"}};
 for(const field of FIELDS) properties[field]={type:["string","null"]};
 
 export async function suggestSiteEdit(draft:EditableSite,prompt:string,credential:string){
-  // Allowlist prevents a misconfigured environment from selecting an expensive model.\n  const model=process.env.ORBYVEN_AI_MODEL?.trim() || "gpt-4.1-mini";\n  if(model!=="gpt-4.1-mini" && model!=="gpt-4.1-nano")throw new Error("AI_MODEL_INVALID");\n  const controller=new AbortController();
+  // Allowlist prevents a misconfigured environment from selecting an expensive model.
+  const model=process.env.ORBYVEN_AI_MODEL?.trim() || "gpt-4.1-mini";
+  if(model!=="gpt-4.1-mini" && model!=="gpt-4.1-nano")throw new Error("AI_MODEL_INVALID");
+  const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),22000);
   try {
     const response=await fetch("https://api.openai.com/v1/responses",{
