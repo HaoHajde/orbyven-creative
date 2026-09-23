@@ -42,6 +42,7 @@ export default function SiteEditorPreview({
 }: Props) {
   const mobile = view === "mobile";
   const centered = site.layout === "centered";
+  const bigHeadline = site.headlineSize === "large";
   const image = HERO_IMAGES[site.preset];
   const buttonText = readableText(site.accent);
   const serviceLabels: Record<SitePresetId, string[]> = {
@@ -85,6 +86,19 @@ export default function SiteEditorPreview({
       </label>
     </div>
 
+    <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] font-medium text-[#65656e]">
+      <span>Dimensiune titlu:</span>
+      <button type="button" onClick={() => onPatch({headlineSize: "normal"})}
+        aria-pressed={site.headlineSize === "normal"}
+        className={site.headlineSize === "normal" ? "rounded-full bg-[#6058e8] px-3 py-1.5 text-white" : "rounded-full border border-black/10 px-3 py-1.5"}>
+        Normal
+      </button>
+      <button type="button" onClick={() => onPatch({headlineSize: "large"})}
+        aria-pressed={site.headlineSize === "large"}
+        className={site.headlineSize === "large" ? "rounded-full bg-[#6058e8] px-3 py-1.5 text-white" : "rounded-full border border-black/10 px-3 py-1.5"}>
+        Mare
+      </button>
+    </div>
     <details className="mb-4 rounded-[17px] border border-black/[0.08] bg-[#f8f8fb] p-3">
       <summary className="cursor-pointer px-1 text-xs font-semibold">Ajustări rapide · fără AI</summary>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -113,8 +127,9 @@ export default function SiteEditorPreview({
           <section className={centered ? "px-6 pb-14 pt-14 text-center md:px-12 md:pb-20 md:pt-20" :
             "px-6 pb-12 pt-16 md:px-12 md:pb-24 md:pt-24"}>
             <p className="text-[10px] font-bold tracking-[0.20em]" style={{color: site.accent}}>{site.eyebrow}</p>
-            <h3 className={centered ? "mx-auto mt-6 max-w-3xl text-[clamp(34px,4vw,70px)] font-semibold leading-[1.07] tracking-[-0.06em]" :
-              "mt-7 max-w-3xl text-[clamp(34px,4vw,70px)] font-semibold leading-[1.06] tracking-[-0.06em]"}>
+            <h3 className={(centered ? "mx-auto mt-6 max-w-3xl " : "mt-7 max-w-3xl ") +
+              (bigHeadline ? "text-[clamp(44px,5.4vw,92px)] " : "text-[clamp(34px,4vw,70px)] ") +
+              "font-semibold leading-[1.06] tracking-[-0.06em]"}>
               {site.headline}
             </h3>
             <p className={centered ? "mx-auto mt-7 max-w-xl text-sm leading-7 opacity-80" :

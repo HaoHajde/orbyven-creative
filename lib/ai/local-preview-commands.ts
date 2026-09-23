@@ -28,7 +28,7 @@ export function applyLocalPreviewCommand(
   const dark = has(/\b(negru|neagra|black|dark|intunecat[ae]?)\b/);
   const light = has(/\b(alb|alba|white|light|luminos|luminoasa)\b/);
   const isBackground = has(/\b(fundal|background|tema|tematica|site|design|stil|paleta)\b/);
-  if (dark && (!light || has(/\b(gold|auriu|aurii|aurie)\b/))) {
+  if (dark) {
     patch.background = "#101113";
     patch.surface = "#1a1b1f";
     patch.textColor = "#f7f5f0";
@@ -97,7 +97,7 @@ export function applyLocalPreviewCommand(
     {pattern:/\b(?:eyebrow|supratitlu)\s*:\s*["„]?([^\n"”]{3,90})["”]?/i,field:"eyebrow",label:"supratitlu specificat"},
   ];
   for (const field of copyFields) {
-    const match = request.normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(field.pattern);
+    const match = request.match(field.pattern);
     if (match?.[1]) {
       patch[field.field] = match[1].trim();
       changed.push(field.label);

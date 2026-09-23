@@ -148,17 +148,20 @@ export function useSiteEditor() {
     const requestText = prompt.trim();
     setPrompt(""); setNotice(""); setError("");
     setMessages(current => [...current, {role:"user",text:requestText}]);
+
+    // ZERO-COST ROUTER: interpret supported design commands before reserving
+    // any model quota, even if a remote provider is configured and ready.
+    const local = applyLocalPreviewCommand(validDraft, requestText);
+    if (local) {
+      changeDraft(local.draft);
+      setMessages(current => [...current, {role:"assistant",text:local.message}]);
+      return;
+    }
     if (aiStatus !== "ready") {
-      const local = applyLocalPreviewCommand(validDraft, requestText);
-      if (local) {
-        changeDraft(local.draft);
-        setMessages(current => [...current, {role:"assistant",text:local.message}]);
-      } else {
-        setMessages(current => [...current, {
-          role:"assistant",
-          text:"Mod local, fără AI: această cerere necesită chatul AI activ. Poți folosi între timp „Fă site-ul negru cu accent auriu”, „layout centrat”, „layout editorial” sau „Titlu: textul meu”."
-        }]);
-      }
+      setMessages(current => [...current, {
+        role:"assistant",
+        text:"Motorul gratuit nu poate rescrie creativ cererea. Încearcă „Titlu: textul tău”, „negru cu auriu” sau „layout editorial”. Pentru formulări noi este necesar un model lingvistic activ."
+      }]);
       return;
     }
     setBusy(true);
