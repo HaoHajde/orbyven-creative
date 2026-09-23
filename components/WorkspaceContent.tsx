@@ -75,6 +75,8 @@ export default function WorkspaceContent({
         locale={locale}
         timeZone={timeZone}
         role={role}
+        enabledModules={enabledModules}
+        onOpenModule={onOpenModule}
       />
     );
   }
