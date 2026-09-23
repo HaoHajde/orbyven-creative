@@ -18,6 +18,10 @@ ORBYVEN combină site-uri publice și template-uri personalizabile cu un workspa
 - **Platform Core:** multi-tenancy Supabase, RLS, permisiuni, provisionare și lifecycle; vezi [Platform Core v2](docs/platform-core-v2.md).
 - **Billing/Legal:** infrastructură și rute de abonare, nu o atestare a validării fiscale sau juridice.
 
+## Politica Vercel Hobby
+
+Branch-urile de dezvoltare nu declanșează Preview deployments automat; doar `main` declanșează producția, iar modificările se livrează grupat după CI. Vezi [politica de deploy Vercel Free](docs/VERCEL-FREE-DEPLOY-POLICY.md) și `vercel.json`.
+
 ## Dezvoltare locală
 
 Necesită Node.js 22 și npm. Configurează variabilele de mediu necesare pentru Supabase, billing și celelalte servicii folosite de funcțiile pe care le testezi, fără să comiți secrete.
