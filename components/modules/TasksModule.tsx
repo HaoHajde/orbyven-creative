@@ -715,7 +715,7 @@ export default function TasksModule({
       {selectedTask && canWrite && (
         <div className="mt-4 flex flex-wrap gap-2">
           {enabledModules.includes("estimates") && (
-            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-white">+ Ofertă pentru lucrare</button>
+            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă pentru lucrare</button>
           )}
           {enabledModules.includes("calendar") && (
             <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare pentru lucrare</button>
