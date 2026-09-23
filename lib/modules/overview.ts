@@ -6,6 +6,7 @@ export type OverviewLead = {
   kind: "lead" | "client";
   stage: string;
   next_follow_up_at: string | null;
+  created_at: string;
 };
 
 export type OverviewTask = {
@@ -15,6 +16,7 @@ export type OverviewTask = {
   priority: string;
   due_at: string | null;
   scheduled_at: string | null;
+  created_at: string;
 };
 
 export type OverviewEvent = {
@@ -32,6 +34,7 @@ export type OverviewEstimate = {
   total_cents: number;
   currency: string;
   updated_at: string;
+  created_at: string;
 };
 
 export type OverviewExpense = {
@@ -57,21 +60,22 @@ export async function loadOverviewSnapshot(organizationId: string): Promise<Over
   const [leads, tasks, events, estimates, expenses, documents, team] = await Promise.all([
     orbyvenSupabase
       .from("crm_leads")
-      .select("id,name,kind,stage,next_follow_up_at")
+      .select("id,name,kind,stage,next_follow_up_at,created_at")
       .eq("organization_id", organizationId),
     orbyvenSupabase
       .from("ops_tasks")
-      .select("id,title,status,priority,due_at,scheduled_at")
+      .select("id,title,status,priority,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId),
     orbyvenSupabase
       .from("calendar_events")
       .select("id,title,status,start_at")
       .eq("organization_id", organizationId)
+      .gte("start_at", new Date(Date.now() - 86400000).toISOString())
       .order("start_at", { ascending: true })
-      .limit(50),
+      .limit(500),
     orbyvenSupabase
       .from("sales_estimates")
-      .select("id,reference,title,status,total_cents,currency,updated_at")
+      .select("id,reference,title,status,total_cents,currency,updated_at,created_at")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     orbyvenSupabase

@@ -185,13 +185,30 @@ export default function OverviewModule({
       }
     }
 
+    const days = Array.from({ length: 7 }, (_, index) =>
+      dateKey(new Date(snapshotNow - (6 - index) * 86400000).toISOString(), timeZone)
+    );
+    const trend = (values: string[]) => days.map((day) => values.filter((value) => dateKey(value, timeZone) === day).length);
+    const recent = [
+      ...snapshot.leads.filter((item) => enabledModules.includes("leads")).map((item) => ({ id: item.id, module: "leads" as const, title: item.name, when: item.created_at, label: "Client / cerere" })),
+      ...snapshot.tasks.filter((item) => enabledModules.includes("tasks")).map((item) => ({ id: item.id, module: "tasks" as const, title: item.title, when: item.created_at, label: "Lucrare" })),
+      ...snapshot.estimates.filter((item) => enabledModules.includes("estimates")).map((item) => ({ id: item.id, module: "estimates" as const, title: item.title, when: item.created_at, label: "Ofertă" })),
+    ].sort((left, right) => right.when.localeCompare(left.when)).slice(0, 4);
+
     return {
       activeLeads,
       openTasks,
       todayEvents,
       sentEstimates,
       monthExpenses,
-      attention: attention.filter((item) => enabledModules.includes(item.module)).sort((a, b) => (a.level === b.level ? 0 : a.level === "urgent" ? -1 : 1)),
+      trends: {
+        leads: trend(activeLeads.map((item) => item.created_at)),
+        tasks: trend(openTasks.map((item) => item.created_at)),
+        calendar: trend(snapshot.events.filter((item) => item.status !== "cancelled").map((item) => item.start_at)),
+        estimates: trend(sentEstimates.map((item) => item.created_at)),
+      },
+      recent,
+      attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
     };
   }, [snapshot, snapshotNow, timeZone, enabledModules]);
 
@@ -215,6 +232,7 @@ export default function OverviewModule({
     { label: "În lucru", count: snapshot?.tasks.filter((task) => task.status === "in_progress").length ?? 0, color: "#66bff0" },
     { label: "Blocate", count: snapshot?.tasks.filter((task) => task.status === "blocked").length ?? 0, color: "#efad77" },
     { label: "Finalizate", count: snapshot?.tasks.filter((task) => task.status === "done").length ?? 0, color: "#6ed3ae" },
+    { label: "Anulate", count: snapshot?.tasks.filter((task) => task.status === "cancelled").length ?? 0, color: "#64748b" },
   ];
   const workTotal = workStages.reduce((sum, stage) => sum + stage.count, 0);
   let currentAngle = 0;
@@ -227,184 +245,78 @@ export default function OverviewModule({
     ? "conic-gradient(" + ringSlices.join(",") + ")"
     : "conic-gradient(#2a405e 0deg 360deg)";
 
+  const workflow = [
+    { id: "leads" as const, label: "Cereri active", count: computed?.activeLeads.length ?? 0, color: "#7376f8" },
+    { id: "tasks" as const, label: "Lucrări deschise", count: computed?.openTasks.length ?? 0, color: "#5b9cf9" },
+    { id: "estimates" as const, label: "Oferte trimise", count: computed?.sentEstimates.length ?? 0, color: "#7bd1f6" },
+    { id: "calendar" as const, label: "Programări astăzi", count: computed?.todayEvents.length ?? 0, color: "#7ad8b7" },
+  ].filter((step) => enabledModules.includes(step.id));
+  const maxWorkflow = Math.max(1, ...workflow.map((step) => step.count));
+
   return (
     <div className="pb-24 md:pb-0">
-      <section className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
-        <div className="max-w-3xl">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-2)]">
-            {dateLabel}
-          </p>
-          <h1 className="mt-2 text-[36px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[43px] lg:text-[46px]">
+      <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">ORBYVEN / OVERVIEW</p>
+          <h1 className="mt-1.5 text-[29px] font-semibold leading-[1.08] tracking-[-0.055em] sm:text-[34px]">
             Bună, {greetingName || "acolo"}.
           </h1>
-          <p className="mt-2 max-w-xl text-[13px] leading-5 text-[var(--muted)]">
-            Priorități clare. Activitatea firmei, dintr-o privire.
-          </p>
+          <p className="mt-1.5 text-[12px] text-[var(--muted)]">{dateLabel} · Rezumatul firmei</p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-3.5 text-[11px] font-semibold text-[var(--muted)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="inline-flex h-8 items-center gap-2 rounded-[9px] border border-emerald-400/15 bg-emerald-400/[0.07] px-3 text-[10px] font-semibold text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             {roleLabels[role]}
           </span>
           <button
             type="button"
             onClick={() => void load()}
-            className="h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/70 px-4 text-[11px] font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
+            className="h-8 rounded-[9px] border border-[var(--border)] bg-[var(--surface-2)] px-3 text-[10px] font-semibold transition hover:border-[var(--border-strong)]"
           >
-            Actualizează
+            ↻ Actualizează
           </button>
         </div>
       </section>
 
-      <div className="mt-4">
-        <ModuleError message={error} />
-      </div>
-
-      {activeQuickActions.length ? (
-        <section className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-            Acțiuni rapide
-          </span>
-          {activeQuickActions.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              onClick={() => onOpenModule(action.id, { create: true })}
-              className="group inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)] px-3.5 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-            >
-              <span className="text-[11px] font-semibold">{action.label}</span>
-              <span className="hidden text-[10px] text-[var(--muted-2)] lg:inline">
-                {action.hint}
-              </span>
-              <span className="text-[12px] text-[var(--muted)] transition group-hover:translate-x-0.5">
-                →
-              </span>
-            </button>
-          ))}
-        </section>
-      ) : null}
+      <div className="mt-3"><ModuleError message={error} /></div>
 
       {snapshot && computed ? (
         <>
-          <section className="mt-5 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            <MetricCard
-              label="Cereri active"
-              value={String(computed.activeLeads.length)}
-              note="de urmărit"
-              enabled={enabledModules.includes("leads")}
-              onClick={() => onOpenModule("leads")}
-            />
-            <MetricCard
-              label="Lucrări deschise"
-              value={String(computed.openTasks.length)}
-              note="în lucru"
-              enabled={enabledModules.includes("tasks")}
-              onClick={() => onOpenModule("tasks")}
-            />
-            <MetricCard
-              label="Astăzi"
-              value={String(computed.todayEvents.length)}
-              note="programări"
-              enabled={enabledModules.includes("calendar")}
-              onClick={() => onOpenModule("calendar")}
-            />
-            <MetricCard
-              label="Oferte trimise"
-              value={String(computed.sentEstimates.length)}
-              note="în așteptare"
-              enabled={enabledModules.includes("estimates")}
-              onClick={() => onOpenModule("estimates")}
-            />
+          <section aria-label="Indicatori business" className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+            <MetricCard label="Cereri active" value={computed.activeLeads.length} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
+            <MetricCard label="Lucrări deschise" value={computed.openTasks.length} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
+            <MetricCard label="Programări astăzi" value={computed.todayEvents.length} note="Programate în ultimele 7 zile" trend={computed.trends.calendar} color="#70d1eb" enabled={enabledModules.includes("calendar")} onClick={() => onOpenModule("calendar")} />
+            <MetricCard label="Oferte trimise" value={computed.sentEstimates.length} note="Create în ultimele 7 zile" trend={computed.trends.estimates} color="#7ad5b4" enabled={enabledModules.includes("estimates")} onClick={() => onOpenModule("estimates")} />
           </section>
 
-          <section className="mt-3 grid gap-3 lg:grid-cols-[1.12fr_0.88fr]">
-            <article className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-4">
+          <section className="mt-2.5 grid gap-2.5 xl:grid-cols-[1fr_1.04fr]">
+            <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(27,54,91,0.33),transparent_52%)] p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-                    Priorități
-                  </p>
-                  <h2 className="mt-1.5 text-xl font-semibold tracking-[-0.035em]">
-                    Ce necesită atenție
-                  </h2>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">OPERATIONS</p>
+                  <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.03em]">Lucrări după status</h2>
                 </div>
-                <span className="rounded-full border border-[var(--border)] bg-[color:var(--bg)]/72 px-2.5 py-1 text-[10px] font-semibold text-[var(--muted)]">
-                  {computed.attention.length}
-                </span>
+                <span className="rounded-[7px] border border-[var(--border)] px-2 py-1 text-[10px] text-[var(--muted)]">În timp real</span>
               </div>
-
-              {computed.attention.length ? (
-                <div className="mt-4 grid gap-2">
-                  {computed.attention.slice(0, 4).map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => onOpenModule(item.module, { recordId: item.recordId })}
-                      className="group flex w-full items-center justify-between gap-4 rounded-[13px] border border-[var(--border)] bg-[var(--surface)]/65 px-3.5 py-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold">
-                          {item.title}
-                        </p>
-                        <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
-                          {item.meta}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            item.level === "urgent"
-                              ? "bg-red-500"
-                              : "bg-amber-500"
-                          }`}
-                        />
-                        <span className="text-xs text-[var(--muted)] transition group-hover:translate-x-0.5">
-                          →
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4 flex min-h-[150px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)]/50 px-5 text-center">
-                  <div>
-                    <p className="text-sm font-semibold">Totul e în regulă.</p>
-                    <p className="mt-1.5 text-xs leading-5 text-[var(--muted)]">
-                      Nu ai follow-up-uri sau lucrări întârziate.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </article>
-
-            <article className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-4 sm:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-                Activitate
-              </p>
-              <h2 className="mt-1.5 text-xl font-semibold tracking-[-0.035em]">
-                Lucrările, pe scurt
-              </h2>
-
               {enabledModules.includes("tasks") ? (
-                <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
                   <button
                     type="button"
                     onClick={() => onOpenModule("tasks")}
                     aria-label={"Deschide lucrările. Total: " + workTotal}
-                    className="relative flex h-[152px] w-[152px] shrink-0 items-center justify-center rounded-full transition hover:scale-[1.02]"
+                    className="relative flex h-[180px] w-[180px] shrink-0 items-center justify-center rounded-full transition hover:scale-[1.02]"
                     style={{ background: workRing }}
                   >
-                    <span className="flex h-[112px] w-[112px] flex-col items-center justify-center rounded-full bg-[var(--surface)] text-center">
-                      <span className="text-[29px] font-semibold tracking-[-0.05em]">{workTotal}</span>
-                      <span className="text-[10px] text-[var(--muted)]">lucrări / taskuri</span>
+                    <span className="flex h-[135px] w-[135px] flex-col items-center justify-center rounded-full bg-[var(--surface)] text-center">
+                      <span className="text-[29px] font-semibold tracking-[-0.05em] tabular-nums">{workTotal}</span>
+                      <span className="mt-0.5 text-[10px] text-[var(--muted)]">total înregistrări</span>
                     </span>
                   </button>
-                  <div className="grid w-full gap-3">
+                  <div className="grid w-full gap-3.5">
                     {workStages.map((stage) => (
                       <div key={stage.label} className="flex items-center justify-between gap-3 text-[12px]">
                         <span className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: stage.color }} />
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stage.color }} />
                           {stage.label}
                         </span>
                         <span className="font-semibold tabular-nums">{stage.count}</span>
@@ -413,79 +325,127 @@ export default function OverviewModule({
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 flex min-h-[150px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border-strong)] px-5 text-center text-sm text-[var(--muted)]">
-                  Modulul Lucrări nu este activ.
-                </div>
+                <div className="mt-5 flex min-h-[185px] items-center justify-center rounded-[12px] border border-dashed border-[var(--border-strong)] text-sm text-[var(--muted)]">Activează modulul Lucrări pentru grafic.</div>
               )}
-              <p className="mt-4 text-[11px] leading-5 text-[var(--muted-2)]">
-                Distribuție după status, din datele firmei. Fără valori demonstrative.
-              </p>
+              <p className="mt-5 text-[10px] text-[var(--muted-2)]">Distribuție reală a lucrărilor și taskurilor din firma ta.</p>
+            </article>
+
+            <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(24,54,100,0.34),transparent_65%)] p-4 sm:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">BUSINESS FLOW</p>
+              <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.03em]">Activitate pe etape</h2>
+              <p className="mt-1 text-[11px] text-[var(--muted)]">Volumul curent din modulele active</p>
+              {workflow.length ? (
+                <div className="mt-6 grid gap-4">
+                  {workflow.map((step, index) => (
+                    <button key={step.id} type="button" onClick={() => onOpenModule(step.id)}
+                      className="group block w-full rounded-[9px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]">
+                      <div className="mb-1.5 flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium text-[var(--text)]"><span className="mr-2 text-[10px] text-[var(--muted-2)]">{String(index + 1).padStart(2, "0")}</span>{step.label}</span>
+                        <span className="text-[13px] font-semibold tabular-nums">{step.count}</span>
+                      </div>
+                      <div className="h-[14px] overflow-hidden rounded-[5px] bg-[var(--surface-2)]">
+                        <div className="h-full min-w-[3px] rounded-[5px] transition-[width] duration-300" style={{ width: step.count ? (step.count / maxWorkflow * 100) + "%" : "0%", background: "linear-gradient(90deg," + step.color + "b0," + step.color + ")" }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="mt-8 text-sm text-[var(--muted)]">Activează un modul pentru a vedea activitatea.</p>}
+              <p className="mt-6 border-t border-[var(--border)] pt-3 text-[10px] leading-4 text-[var(--muted-2)]">Etape comparate ca volum, nu rată de conversie sau traseu complet al aceluiași client.</p>
             </article>
           </section>
 
-          <section className="mt-3 grid gap-2.5 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-3 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="mt-2.5 grid gap-2.5 lg:grid-cols-[1.04fr_0.96fr]">
+            <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
+              <div className="flex items-center justify-between">
+                <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">FOLLOW-UP</p><h2 className="mt-1 text-[15px] font-semibold">Ce necesită atenție</h2></div>
+                <span className="rounded-[7px] bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">{computed.attention.length}</span>
+              </div>
+              {computed.attention.length ? (
+                <div className="mt-3 grid gap-1.5">
+                  {computed.attention.slice(0, 4).map((item) => (
+                    <button key={item.key} type="button" onClick={() => onOpenModule(item.module, { recordId: item.recordId })}
+                      className="group flex w-full items-center justify-between gap-3 rounded-[9px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-2.5 text-left hover:border-[var(--border-strong)]">
+                      <div className="min-w-0"><p className="truncate text-[12px] font-semibold">{item.title}</p><p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">{item.meta}</p></div>
+                      <span className={item.level === "urgent" ? "h-2 w-2 shrink-0 rounded-full bg-rose-400" : "h-2 w-2 shrink-0 rounded-full bg-amber-400"} />
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="mt-4 rounded-[9px] border border-dashed border-[var(--border)] px-4 py-7 text-center text-[12px] text-[var(--muted)]">Nicio urgență înregistrată.</p>}
+              {computed.attention.length > 4 && <p className="mt-2 text-[10px] text-[var(--muted)]">Încă {computed.attention.length - 4} atenționări · deschide modulele pentru detalii.</p>}
+            </article>
+
+            <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">ACTIVITY</p>
+              <h2 className="mt-1 text-[15px] font-semibold">Înregistrări recente</h2>
+              {computed.recent.length ? (
+                <div className="mt-3 grid gap-1.5">
+                  {computed.recent.map((item) => (
+                    <button key={item.module + item.id} type="button" onClick={() => onOpenModule(item.module, { recordId: item.id })}
+                      className="flex items-center justify-between gap-3 rounded-[9px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-2.5 text-left hover:border-[var(--border-strong)]">
+                      <span className="min-w-0"><span className="block truncate text-[12px] font-semibold">{item.title}</span><span className="mt-0.5 block text-[10px] text-[var(--muted)]">{item.label}</span></span>
+                      <span className="shrink-0 text-[10px] text-[var(--muted-2)]">{new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone }).format(new Date(item.when))}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="mt-4 rounded-[9px] border border-dashed border-[var(--border)] px-4 py-7 text-center text-[12px] text-[var(--muted)]">Încă nu există înregistrări.</p>}
+            </article>
+          </section>
+
+          <section aria-label="Rezumat operațional" className="mt-2.5 grid gap-2 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-2 sm:grid-cols-2 xl:grid-cols-4">
             <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />
             <SnapshotRow label="Documente" value={String(snapshot.documentCount)} onClick={() => onOpenModule("documents")} enabled={enabledModules.includes("documents")} />
             <SnapshotRow label="Echipă activă" value={String(snapshot.activeTeamCount)} onClick={() => onOpenModule("team")} enabled={enabledModules.includes("team")} />
             <SnapshotRow label="Module active" value={String(enabledModules.filter((id) => id !== "overview").length)} enabled />
           </section>
+
+          {activeQuickActions.length ? (
+            <section aria-label="Acțiuni rapide" className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">ACȚIUNI RAPIDE</span>
+              {activeQuickActions.map((action) => (
+                <button key={action.id} type="button" onClick={() => onOpenModule(action.id, { create: true })}
+                  className="h-8 rounded-[9px] border border-[var(--border)] bg-[var(--surface-2)] px-3 text-[11px] font-semibold hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]">
+                  {action.label}
+                </button>
+              ))}
+            </section>
+          ) : null}
         </>
       ) : null}
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  note,
-  enabled,
-  onClick,
-}: {
+function MiniTrend({ values, color }: { values: number[]; color: string }) {
+  const high = Math.max(1, ...values);
+  const points = values.map((value, index) => {
+    const x = 2 + index * 16;
+    const y = 43 - value / high * 34;
+    return x + "," + y.toFixed(1);
+  }).join(" ");
+  return (
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true" className="h-[48px] w-full overflow-visible">
+      <polygon points={points + " 98,48 2,48"} fill={color} opacity="0.06" />
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {values.map((value, index) => <circle key={index} cx={2 + index * 16} cy={43 - value / high * 34} r="1.7" fill={color} />)}
+    </svg>
+  );
+}
+
+function MetricCard({ label, value, note, trend, color, enabled, onClick }: {
   label: string;
-  value: string;
+  value: number;
   note: string;
+  trend: number[];
+  color: string;
   enabled: boolean;
   onClick: () => void;
 }) {
-  const content = (
-    <>
-      <div className="flex items-center justify-between gap-3">
-        <p className="truncate text-[11px] font-medium text-[var(--muted)]">
-          {label}
-        </p>
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            enabled ? "bg-[var(--accent)]" : "bg-[var(--muted-2)]/50"
-          }`}
-        />
-      </div>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <p className="text-[30px] font-semibold leading-none tracking-[-0.05em] tabular-nums">
-          {enabled ? value : "—"}
-        </p>
-        <p className="text-[10px] text-[var(--muted-2)]">
-          {enabled ? note : "inactiv"}
-        </p>
-      </div>
-    </>
-  );
-
-  if (!enabled) {
-    return (
-      <div className="rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-4 opacity-65">
-        {content}
-      </div>
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)]/70 p-4 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-    >
-      {content}
+    <button type="button" disabled={!enabled} onClick={onClick} className="relative min-w-0 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3.5 pb-2.5 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)] disabled:cursor-default disabled:opacity-50 sm:px-4">
+      <span className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-semibold text-[var(--muted)]">{label}</span><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: enabled ? color : "var(--muted-2)" }} /></span>
+      <span className="mt-2.5 block text-[28px] font-semibold leading-none tracking-[-0.045em] tabular-nums sm:text-[31px]">{enabled ? value : "—"}</span>
+      <span className="mt-1.5 block text-[10px] text-[var(--muted-2)]">{enabled ? note : "Modul inactiv"}</span>
+      <span className="mt-2 block h-[48px] w-full">{enabled ? <MiniTrend values={trend} color={color} /> : null}</span>
     </button>
   );
 }
