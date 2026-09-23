@@ -69,11 +69,12 @@ export default function WorkspaceLoginPage() {
     <WorkspaceAuthShell
       eyebrow="ORBYVEN · WORKSPACE"
       title="Bine ai revenit."
+      titleAccent="revenit."
       description="Intră în spațiul firmei tale. Sesiunea rămâne activă pe dispozitivul tău până când alegi să te deconectezi."
       footer={
         <>
           Nu ai cont?{" "}
-          <Link href="/workspace/register" className="font-semibold text-[#4b46ee]">
+          <Link href="/workspace/register" className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
             Creează unul
           </Link>
         </>
@@ -109,7 +110,7 @@ export default function WorkspaceLoginPage() {
         <div className="mt-3 text-right">
           <Link
             href="/workspace/forgot-password"
-            className="text-xs font-medium text-[#4b46ee]"
+            className="text-[11px] font-medium text-[#98a7ff] transition hover:text-[#bdc9ff]"
           >
             Ai uitat parola?
           </Link>
