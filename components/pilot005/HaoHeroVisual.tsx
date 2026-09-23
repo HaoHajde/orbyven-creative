@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-const heroImage = "/hao-customs/hero.webp";
+const heroImage = "/hao-customs/hero.avif";
 
 type HaoHeroVisualProps = {
   compact?: boolean;
@@ -18,7 +18,7 @@ export default function HaoHeroVisual({ compact = false }: HaoHeroVisualProps) {
           style={{ backgroundImage: `url("${heroImage}")` }}
         />
         <div
-          className="absolute inset-0 bg-cover bg-center contrast-[1.09] saturate-[1.04] opacity-70 [mask-image:linear-gradient(90deg,rgba(0,0,0,.55)_0%,rgba(0,0,0,.80)_40%,#000_78%)]"
+          className="absolute inset-0 bg-cover bg-center contrast-[1.09] saturate-[1.04] opacity-85 [mask-image:linear-gradient(90deg,rgba(0,0,0,.55)_0%,rgba(0,0,0,.80)_40%,#000_78%)]"
           style={{ backgroundImage: `url("${heroImage}")` }}
         />
       </div>
