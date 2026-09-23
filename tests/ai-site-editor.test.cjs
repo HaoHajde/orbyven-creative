@@ -8,7 +8,7 @@ const root=process.cwd();
 function compile(path){const result=ts.transpileModule(fs.readFileSync(root+"/"+path,"utf8"),{fileName:path,reportDiagnostics:true,compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}});assert.equal((result.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);return result.outputText;}
 const draftModule={exports:{}};
 vm.runInNewContext(compile("lib/ai/site-editor.ts"),{module:draftModule,exports:draftModule.exports});
-const {DEFAULT_SITE,readSiteDraft,applySitePatch}=draftModule.exports;
+const {DEFAULT_SITE,SITE_PRESETS,readableText,readSiteDraft,applySitePatch}=draftModule.exports;
 const org="11111111-1111-4111-8111-111111111111";
 function route(opts={}){
   const calls=[];const exports={};const routeModule={exports};
@@ -36,7 +36,7 @@ test("default-disabled endpoint calls neither auth nor AI",async()=>{const a=rou
 test("invalid organization rejected before external call",async()=>{const a=route();assert.equal((await a.post({...good,organizationId:""})).status,400);assert.equal(a.calls.length,0);});
 test("different/unauthorized tenant never invokes AI",async()=>{const a=route({deny:true});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
 test("authorized owner/admin reaches model with scoped org",async()=>{const a=route();const res=await a.post(good);assert.equal(res.status,200);assert.equal((await res.json()).draft.headline,"Titlu nou");assert.equal(a.calls[0][2],org);assert.equal(a.calls[0][3],true);assert.equal(a.calls.filter(x=>x[0]==="ai").length,1);});
-test("client and server editor files parse as TypeScript",()=>{for(const p of ["lib/ai/openai-server.ts","lib/ai/use-site-editor.ts","components/ai/SiteEditorChat.tsx","components/ai/SiteEditorPreview.tsx","app/workspace/site-editor/page.tsx"])assert.ok(compile(p).length>0);});
+test("client and server editor files parse as TypeScript",()=>{for(const p of ["lib/ai/openai-server.ts","lib/ai/use-site-editor.ts","components/ai/SiteEditorChat.tsx","components/ai/SiteEditorPreview.tsx","app/workspace/site-editor/page.tsx","app/api/ai/site-editor/status/route.ts"])assert.ok(compile(p).length>0);});
 
 test("production deployment remains disabled even if AI flag is true",async()=>{const a=route({env:{VERCEL_ENV:"production"}});assert.equal((await a.post(good)).status,503);assert.equal(a.calls.length,0);});
 test("missing quota migration fails closed before spending tokens",async()=>{const a=route({quotaError:"AI_QUOTA_UNAVAILABLE"});assert.equal((await a.post(good)).status,503);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
@@ -47,3 +47,30 @@ test("successful request records provider token usage once",async()=>{const a=ro
 test("failed model call consumes a reservation and is finalized failed",async()=>{const a=route({failAi:true});assert.equal((await a.post(good)).status,502);assert.equal(a.calls.filter(x=>x[0]==="finish")[0][2],false);});
 
 test("unlisted pilot organization never reaches quota or model",async()=>{const a=route({env:{ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:""}});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="claim"||x[0]==="ai").length,0);});
+
+test("four site presets are valid drafts",()=>{
+  assert.equal(Object.keys(SITE_PRESETS).length,4);
+  for(const item of Object.values(SITE_PRESETS))assert.equal(readSiteDraft(item)?.brand,item.brand);
+});
+test("older Alpha browser drafts are migrated without discarding custom copy",()=>{
+  const previous={...DEFAULT_SITE,headline:"Text personalizat"};
+  delete previous.layout;delete previous.preset;
+  const draft=readSiteDraft(previous);
+  assert.equal(draft?.headline,"Text personalizat");
+  assert.equal(draft?.layout,"split");
+  assert.equal(draft?.preset,"studio");
+});
+test("AI can adjust layout but cannot switch business category",()=>{
+  const result=applySitePatch(DEFAULT_SITE,{layout:"centered",preset:"detailing"});
+  assert.equal(result.layout,"centered");
+  assert.equal(result.preset,"studio");
+});
+test("AI color changes preserve readable foreground contrast",()=>{
+  const result=applySitePatch(DEFAULT_SITE,{background:"#08090b"});
+  assert.equal(result.textColor,readableText("#08090b"));
+});
+test("invalid manual draft cannot be sent to model",async()=>{
+  const a=route();
+  assert.equal((await a.post({...good,draft:{...DEFAULT_SITE,headline:""}})).status,400);
+  assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);
+});
