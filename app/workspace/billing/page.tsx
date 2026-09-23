@@ -177,6 +177,10 @@ export default function WorkspaceBillingPage() {
           <div className="mt-6 rounded-[20px] border border-red-500/20 bg-red-500/[0.06] p-4 text-sm text-red-600">{error}</div>
         )}
 
+        {summary?.subscription && (["active", "trialing"].includes(summary.subscription.status)) && (
+          <Link href="/workspace/site-studio" className="mt-7 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[#4b46ee]/20 bg-[#4b46ee]/[.06] p-6 transition hover:bg-[#4b46ee]/[.1]"><span><strong className="block text-xl">Personalizează website-ul</strong><span className="mt-2 block text-sm text-[#6e6e73]">Discută cu asistentul AI și vezi schimbările înainte de publicare.</span></span><span className="rounded-full bg-[#4b46ee] px-5 py-3 text-xs font-semibold text-white">Deschide Website Studio ↗</span></Link>
+        )}
+
         {summary?.subscription && (
           <section className="mt-8 rounded-[28px] bg-[#f5f5f7] p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
