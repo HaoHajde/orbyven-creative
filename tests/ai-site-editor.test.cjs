@@ -19,7 +19,11 @@ function route(opts={}){
       if(name==="next/server")return{NextResponse:{json:(v,init={})=>({status:init.status||200,json:async()=>v})}};
       if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");}};
       if(name==="@/lib/ai/site-editor")return{readSiteDraft};
-      if(name==="@/lib/ai/openai-server")return{suggestSiteEdit:async(...args)=>{calls.push(["ai",...args]);return{draft:applySitePatch(args[0],{headline:"Titlu nou"}),message:"Gata."};}};
+      if(name==="@/lib/ai/openai-server")return{suggestSiteEdit:async(...args)=>{calls.push(["ai",...args]);if(opts.failAi)throw Error("AI_UNAVAILABLE");return{draft:applySitePatch(args[0],{headline:"Titlu nou"}),message:"Gata.",usage:{inputTokens:100,outputTokens:20}};}};
+      if(name==="@/lib/ai/quota-server")return{
+        claimAiEditorQuota:async(...args)=>{calls.push(["claim",...args]);if(opts.quotaError)throw Error(opts.quotaError);return{requestId:"22222222-2222-4222-8222-222222222222",remainingToday:6};},
+        finishAiEditorQuota:async(...args)=>{calls.push(["finish",...args]);}
+      };
       throw Error(name);
     }
   });
@@ -33,3 +37,11 @@ test("invalid organization rejected before external call",async()=>{const a=rout
 test("different/unauthorized tenant never invokes AI",async()=>{const a=route({deny:true});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
 test("authorized owner/admin reaches model with scoped org",async()=>{const a=route();const res=await a.post(good);assert.equal(res.status,200);assert.equal((await res.json()).draft.headline,"Titlu nou");assert.equal(a.calls[0][2],org);assert.equal(a.calls[0][3],true);assert.equal(a.calls.filter(x=>x[0]==="ai").length,1);});
 test("client and server editor files parse as TypeScript",()=>{for(const p of ["lib/ai/openai-server.ts","lib/ai/use-site-editor.ts","components/ai/SiteEditorChat.tsx","components/ai/SiteEditorPreview.tsx","app/workspace/site-editor/page.tsx"])assert.ok(compile(p).length>0);});
+
+test("production deployment remains disabled even if AI flag is true",async()=>{const a=route({env:{VERCEL_ENV:"production"}});assert.equal((await a.post(good)).status,503);assert.equal(a.calls.length,0);});
+test("missing quota migration fails closed before spending tokens",async()=>{const a=route({quotaError:"AI_QUOTA_UNAVAILABLE"});assert.equal((await a.post(good)).status,503);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
+test("8/day quota blocks model calls with 429",async()=>{const a=route({quotaError:"AI_QUOTA_DAY"});assert.equal((await a.post(good)).status,429);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
+test("minute cap blocks model calls with 429",async()=>{const a=route({quotaError:"AI_QUOTA_MINUTE"});assert.equal((await a.post(good)).status,429);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
+test("disabled or suspended tenant blocks before model call",async()=>{const a=route({quotaError:"AI_ACCESS_REVOKED"});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
+test("successful request records provider token usage once",async()=>{const a=route();const res=await a.post(good);assert.equal((await res.json()).remainingToday,6);const finishes=a.calls.filter(x=>x[0]==="finish");assert.equal(finishes.length,1);assert.equal(finishes[0][2],true);assert.equal(finishes[0][3].inputTokens,100);});
+test("failed model call consumes a reservation and is finalized failed",async()=>{const a=route({failAi:true});assert.equal((await a.post(good)).status,502);assert.equal(a.calls.filter(x=>x[0]==="finish")[0][2],false);});
