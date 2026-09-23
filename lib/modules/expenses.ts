@@ -21,7 +21,7 @@ export type BusinessExpense = {
 };
 
 export type ExpenseClientLink = { id: string; name: string };
-export type ExpenseTaskLink = { id: string; title: string };
+export type ExpenseTaskLink = { id: string; title: string; client_id: string | null };
 export type ExpenseDocumentLink = { id: string; name: string };
 
 export type CreateExpenseInput = {
@@ -71,7 +71,7 @@ export async function listExpenseContexts(organizationId: string) {
       .order("name", { ascending: true }),
     orbyvenSupabase
       .from("ops_tasks")
-      .select("id,title")
+      .select("id,title,client_id")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
@@ -101,6 +101,39 @@ export async function createExpense(
   if (!description) throw new Error("Descrierea cheltuielii este obligatorie.");
   if (amountCents <= 0) throw new Error("Valoarea trebuie să fie mai mare decât zero.");
 
+  let linkedClientId = input.clientId || null;
+  if (input.taskId) {
+    const { data: task, error: taskError } = await orbyvenSupabase
+      .from("ops_tasks")
+      .select("id,client_id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.taskId)
+      .single();
+    if (taskError || !task) throw new Error("Lucrarea nu există în această firmă.");
+    if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
+      throw new Error("Clientul ales nu corespunde lucrării.");
+    }
+    linkedClientId = task.client_id || linkedClientId;
+  }
+  if (linkedClientId) {
+    const { data: client, error: clientError } = await orbyvenSupabase
+      .from("crm_leads")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedClientId)
+      .single();
+    if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
+  }
+  if (input.documentId) {
+    const { data: document, error: documentError } = await orbyvenSupabase
+      .from("ops_documents")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.documentId)
+      .single();
+    if (documentError || !document) throw new Error("Documentul nu există în această firmă.");
+  }
+
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const { data, error } = await orbyvenSupabase
     .from("finance_expenses")
@@ -113,7 +146,7 @@ export async function createExpense(
       amount_cents: amountCents,
       currency: (input.currency?.trim() || "RON").toUpperCase(),
       payment_method: input.paymentMethod || null,
-      client_id: input.clientId || null,
+      client_id: linkedClientId,
       task_id: input.taskId || null,
       document_id: input.documentId || null,
       created_by: authData.user?.id ?? null,
