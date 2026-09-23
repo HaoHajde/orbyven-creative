@@ -41,7 +41,7 @@
 - Codul public este responsiv într-o singură versiune; CSS-ul de performanță mobilă este centralizat; există optimizări pentru conținut off-screen și `prefers-reduced-motion`.
 - Au fost corectate 6 erori de full ESLint (admin, Control Center, cookie consent și Pilot #005), plus navigația internă în Pilot #005.
 - CI include lint complet, `tsc --noEmit` și `next build`; `npm run validate` le rulează împreună.
-- Arboreul de dependințe din `main` verificat pentru release: Next.js `16.3.3`, eslint-config-next `16.3.3`, Sharp `0.35.4`, js-yaml `4.3.2`. Patch job-ul din 18.09 a trecut `npm audit --audit-level=high`; nu îl prezentăm drept audit de penetrare.
+- Arborele de dependințe din `main` verificat pentru release: Next.js `16.3.3`, eslint-config-next `16.3.3`, Sharp `0.35.4`, js-yaml `4.3.2`. Patch job-ul din 18.09 a trecut `npm audit --audit-level=high`; nu îl prezentăm drept audit de penetrare.
 
 ## 4. Validare verificată la 23.09.2026
 
