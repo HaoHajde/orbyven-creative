@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 export const haoImages = {
-  hero: "/hao-customs/hero.webp",
-  exteriorBefore: "/hao-customs/exterior-before.webp",
-  exteriorAfter: "/hao-customs/exterior-after.webp",
-  interiorBefore: "/hao-customs/interior-before.webp",
-  interiorAfter: "/hao-customs/interior-after.webp",
-  paintBefore: "/hao-customs/paint-before.webp",
-  paintAfter: "/hao-customs/paint-after.webp",
+  hero: "/hao-customs/hero.avif",
+  exteriorBefore: "/hao-customs/exterior-before.avif",
+  exteriorAfter: "/hao-customs/exterior-after.avif",
+  interiorBefore: "/hao-customs/interior-before.avif",
+  interiorAfter: "/hao-customs/interior-after.avif",
+  paintBefore: "/hao-customs/paint-before.avif",
+  paintAfter: "/hao-customs/paint-after.avif",
 };
 
 const navItems = [
@@ -150,6 +150,7 @@ export function BeforeAfter({
             sizes={imageSizes}
             className="object-cover object-center"
             loading="lazy"
+            unoptimized
             draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-black/10" />
@@ -165,6 +166,7 @@ export function BeforeAfter({
             sizes={imageSizes}
             className="object-cover object-center"
             loading="lazy"
+            unoptimized
             draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
