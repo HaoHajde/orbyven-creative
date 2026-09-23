@@ -186,6 +186,7 @@ export default function ClientWorkspace() {
   const createOptions = ORBYVEN_MODULES.filter((definition) =>
     ["leads", "tasks", "calendar", "estimates", "expenses"].includes(definition.id)
       && enabledModules.includes(definition.id)
+      && (definition.id !== "expenses" || ["owner", "admin", "manager"].includes(workspace?.membership.role ?? "viewer"))
   );
   const canCreate = workspace?.membership.role !== "viewer" && createOptions.length > 0;
 
