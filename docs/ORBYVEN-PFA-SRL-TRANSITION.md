@@ -57,4 +57,4 @@ Variabilele publice sunt doar etichete publice fără secrete. Stripe, Oblio, se
 - Oblio mock: factură PFA cu config SRL nu trebuie selectată/emisă; factură fără cheie nu se emite automat.
 - Manual: comparație CUI / RO prefix și denumire completă pe emitent; backup, rollback, comunicarea către client.
 
-Surse: https://supabase.com/docs/guides/deployment/database-migrations ; https://docs.stripe.com/get-started/account/stripe-account-transfers
+Surse: https://supabase.com/docs/guides/deployment/database-migrations ; https://docs.stripe.com/implementation-guides/core-payments/migration
