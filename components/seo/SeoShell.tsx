@@ -14,6 +14,9 @@ const footerLinks = [
   { href: "/site-prezentare", label: "Site de prezentare" },
   { href: "/web-design-bucuresti", label: "Web design București" },
   { href: "/redesign-site", label: "Redesign site" },
+  { href: "/invitatii-nunta", label: "Invitații digitale nuntă" },
+  { href: "/invitatii-botez", label: "Invitații digitale botez" },
+  { href: "/invitatii-majorat", label: "Invitații digitale majorat" },
   { href: "/despre", label: "Despre ORBYVEN" },
   { href: "/contact", label: "Contact" },
 ];
