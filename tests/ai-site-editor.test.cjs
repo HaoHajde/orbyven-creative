@@ -45,4 +45,5 @@ test("minute cap blocks model calls with 429",async()=>{const a=route({quotaErro
 test("disabled or suspended tenant blocks before model call",async()=>{const a=route({quotaError:"AI_ACCESS_REVOKED"});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
 test("successful request records provider token usage once",async()=>{const a=route();const res=await a.post(good);assert.equal((await res.json()).remainingToday,6);const finishes=a.calls.filter(x=>x[0]==="finish");assert.equal(finishes.length,1);assert.equal(finishes[0][2],true);assert.equal(finishes[0][3].inputTokens,100);});
 test("failed model call consumes a reservation and is finalized failed",async()=>{const a=route({failAi:true});assert.equal((await a.post(good)).status,502);assert.equal(a.calls.filter(x=>x[0]==="finish")[0][2],false);});
-\ntest("unlisted pilot organization never reaches quota or model",async()=>{const a=route({env:{ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:""}});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="claim"||x[0]==="ai").length,0);});\n
+
+test("unlisted pilot organization never reaches quota or model",async()=>{const a=route({env:{ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:""}});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="claim"||x[0]==="ai").length,0);});
