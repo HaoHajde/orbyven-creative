@@ -150,6 +150,10 @@ export default function TasksModule({
       ]);
       setTasks(nextTasks);
       setClients(nextClients);
+      if (initialCreate && initialClientId) {
+        const client = nextClients.find((item) => item.id === initialClientId);
+        if (client) setForm((current) => ({ ...current, title: current.title || "Lucrare · " + (client.company || client.name) }));
+      }
       setSnapshotIso(new Date().toISOString());
       setSelectedId((current) =>
         current && nextTasks.some((task) => task.id === current)
@@ -162,7 +166,7 @@ export default function TasksModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, initialCreate, initialClientId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -712,12 +716,18 @@ export default function TasksModule({
         </div>
       )}
 
-      {selectedTask && canWrite && (
+      {selectedTask && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {enabledModules.includes("estimates") && (
+          {enabledModules.includes("leads") && selectedTask.client_id && (
+            <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
+          )}
+          {canWrite && enabledModules.includes("expenses") && (
+            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială pentru lucrare</button>
+          )}
+          {canWrite && selectedTask.kind === "work" && enabledModules.includes("estimates") && (
             <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă pentru lucrare</button>
           )}
-          {enabledModules.includes("calendar") && (
+          {canWrite && enabledModules.includes("calendar") && (
             <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare pentru lucrare</button>
           )}
         </div>
