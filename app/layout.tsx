@@ -30,10 +30,6 @@ export const metadata: Metadata = {
 
   description: siteConfig.description,
 
-  alternates: {
-    canonical: "/",
-  },
-
   applicationName: siteConfig.name,
 
   keywords: [
@@ -68,35 +64,11 @@ export const metadata: Metadata = {
     },
   },
 
-  openGraph: {
-    type: "website",
-    locale: siteConfig.locale,
-    siteName: siteConfig.name,
-    url: "/",
-    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
-    description:
-      siteConfig.description,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
-    description: siteConfig.description,
-    images: ["/opengraph-image"],
-  },
-
   manifest: "/manifest.webmanifest",
 
   icons: {
     icon: [
+      { url: "/branding/orbyven-favicon-96.png", type: "image/png", sizes: "96x96" },
       { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
       { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
     ],
