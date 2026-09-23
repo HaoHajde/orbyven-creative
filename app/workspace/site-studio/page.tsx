@@ -13,6 +13,7 @@ import { useEffect, useState, type FormEvent } from "react";
 type TemplateSlug = (typeof studioTemplateSlugs)[number];
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type Device = "desktop" | "tablet" | "mobile";
+type StudioSnapshot = { draft: StudioDraft; slug: TemplateSlug };
 
 const examples = [
   "Fă site-ul mai elegant, cu fundal închis și accente aurii.",
@@ -40,6 +41,7 @@ export default function WebsiteStudioPage() {
   const [draft, setDraft] = useState<StudioDraft | null>(null);
   const [saved, setSaved] = useState<StudioDraft | null>(null);
   const [templateSlug, setTemplateSlug] = useState<TemplateSlug>("instalatii");
+  const [savedTemplateSlug, setSavedTemplateSlug] = useState<TemplateSlug>("instalatii");
   const [device, setDevice] = useState<Device>("desktop");
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("preview");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -52,8 +54,8 @@ export default function WebsiteStudioPage() {
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
-  const [undoStack, setUndoStack] = useState<StudioDraft[]>([]);
-  const [redoStack, setRedoStack] = useState<StudioDraft[]>([]);
+  const [undoStack, setUndoStack] = useState<StudioSnapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<StudioSnapshot[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -78,6 +80,7 @@ export default function WebsiteStudioPage() {
           setDraft(body.draft);
           setSaved(body.draft);
           setTemplateSlug(body.templateSlug || "instalatii");
+          setSavedTemplateSlug(body.templateSlug || "instalatii");
         }
       } catch {
         if (active) setBlocked("Nu am putut încărca proiectul. Verifică sesiunea și conexiunea.");
@@ -90,11 +93,11 @@ export default function WebsiteStudioPage() {
   }, [router]);
 
   const canEdit = workspace ? ["owner", "admin", "manager"].includes(workspace.membership.role) : false;
-  const changed = Boolean(draft && saved && JSON.stringify(draft) !== JSON.stringify(saved));
+  const changed = Boolean(draft && saved && (templateSlug !== savedTemplateSlug || JSON.stringify(draft) !== JSON.stringify(saved)));
 
   const changeDraft = (next: StudioDraft) => {
     if (!draft || !canEdit || JSON.stringify(draft) === JSON.stringify(next)) return;
-    setUndoStack((stack) => [...stack.slice(-19), draft]);
+    setUndoStack((stack) => [...stack.slice(-19), { draft, slug: templateSlug }]);
     setRedoStack([]);
     setDraft(next);
     setNotice("");
@@ -105,8 +108,9 @@ export default function WebsiteStudioPage() {
     if (!draft || !undoStack.length) return;
     const previous = undoStack[undoStack.length - 1];
     setUndoStack((stack) => stack.slice(0, -1));
-    setRedoStack((stack) => [...stack, draft]);
-    setDraft(previous);
+    setRedoStack((stack) => [...stack, { draft, slug: templateSlug }]);
+    setDraft(previous.draft);
+    setTemplateSlug(previous.slug);
     setNotice("");
   };
 
@@ -114,8 +118,9 @@ export default function WebsiteStudioPage() {
     if (!draft || !redoStack.length) return;
     const next = redoStack[redoStack.length - 1];
     setRedoStack((stack) => stack.slice(0, -1));
-    setUndoStack((stack) => [...stack, draft]);
-    setDraft(next);
+    setUndoStack((stack) => [...stack, { draft, slug: templateSlug }]);
+    setDraft(next.draft);
+    setTemplateSlug(next.slug);
     setNotice("");
   };
 
@@ -171,6 +176,7 @@ export default function WebsiteStudioPage() {
       if (!response.ok || !body.draft) throw new Error(body.error || "Salvarea nu a reușit.");
       setDraft(body.draft);
       setSaved(body.draft);
+      setSavedTemplateSlug(templateSlug);
       setNotice("Draft salvat pentru organizația ta. Site-ul public nu a fost modificat.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Salvarea nu a reușit.");
@@ -181,8 +187,9 @@ export default function WebsiteStudioPage() {
 
   const changeTemplate = (slug: TemplateSlug) => {
     if (!workspace || !canEdit) return;
-    setTemplateSlug(slug);
+    if (slug === templateSlug) return;
     changeDraft(studioSeed(slug, workspace.organization.name));
+    setTemplateSlug(slug);
     setNotice("Template schimbat în preview. Salvează când ești mulțumit.");
   };
 
@@ -306,7 +313,7 @@ export default function WebsiteStudioPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-4">
             <span className="text-[10px] text-white/45">Modificările AI rămân draft până apeși Salvează.</span>
             <div className="flex items-center gap-2">
-              {changed && <button type="button" onClick={() => { if (saved) changeDraft(saved); }} className="rounded-full border border-white/15 px-4 py-2 text-[10px]">Revino la salvat</button>}
+              {changed && <button type="button" onClick={() => { if (saved) { changeDraft(saved); setTemplateSlug(savedTemplateSlug); } }} className="rounded-full border border-white/15 px-4 py-2 text-[10px]">Revino la salvat</button>}
               <button type="button" disabled={!changed || !canEdit || saving} onClick={() => void save()} className="rounded-full bg-[#dcd7ff] px-5 py-2.5 text-[11px] font-semibold text-[#201b4a] disabled:opacity-35">{saving ? "Se salvează..." : "Salvează draft"}</button>
             </div>
           </div>
