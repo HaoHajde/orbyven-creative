@@ -1,6 +1,7 @@
 "use client";
 
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { missingRecommendedModules } from "@/lib/orbyven-ecosystem";
 
 type Props = {
   enabledModules: OrbyvenModuleId[];
@@ -41,6 +42,7 @@ export default function WorkspaceModuleStore({
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
           const saving = savingModule === definition.id;
+          const recommended = missingRecommendedModules(definition.id, enabledModules);
 
           return (
             <article key={definition.id} className="flex min-h-[190px] flex-col rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/68 p-5 shadow-[0_12px_38px_rgba(0,0,0,0.025)] backdrop-blur-xl">
@@ -53,6 +55,12 @@ export default function WorkspaceModuleStore({
 
               <h2 className="mt-4 text-lg font-semibold tracking-[-0.04em]">{definition.name}</h2>
               <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">{definition.description}</p>
+              {recommended.length ? (
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted-2)]">
+                  Se conectează cu: {recommended.map((id) => ORBYVEN_MODULES.find((item) => item.id === id)?.shortName ?? id).join(", ")}.
+                  <span className="block">Module opționale, nu se activează automat.</span>
+                </p>
+              ) : null}
 
               <div className="mt-auto flex items-center justify-between gap-4 pt-5">
                 <span className="text-xs text-[var(--muted)]">{saving ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
