@@ -127,7 +127,7 @@ const HAO_MEDIA_FALLBACK_REF = "79350f280335e53ec6ba63ac9a1cf0672afbfe07";
 
 /** Avoid a blank comparison if a CDN alias serves a stale 404 or AVIF decoding fails. */
 function HaoGalleryPhoto({ src, alt }: { src: string; alt: string }) {
-  const webp = src.replace(/\\.avif$/i, ".webp");
+  const webp = src.replace(/\.avif$/i, ".webp");
   const candidates = [
     `${src}?v=79350f2`,
     `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${src}`,
