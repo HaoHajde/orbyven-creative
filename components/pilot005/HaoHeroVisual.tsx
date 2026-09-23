@@ -11,12 +11,18 @@ type HaoHeroVisualProps = {
 export default function HaoHeroVisual({ compact = false }: HaoHeroVisualProps) {
   const content = (
     <>
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `linear-gradient(90deg,rgba(0,0,0,.93) 0%,rgba(0,0,0,.74) 37%,rgba(0,0,0,.24) 74%,rgba(0,0,0,.48) 100%),url("${heroImage}")`,
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* A blurred atmosphere behind a separately rendered, sharper car/wordmark. */}
+        <div
+          className="absolute -inset-5 bg-cover bg-center blur-[11px] brightness-[.75] saturate-[.90] md:blur-[16px]"
+          style={{ backgroundImage: `url("${heroImage}")` }}
+        />
+        <div
+          className="absolute inset-0 bg-cover bg-center contrast-[1.09] saturate-[1.04] opacity-70 [mask-image:linear-gradient(90deg,rgba(0,0,0,.55)_0%,rgba(0,0,0,.80)_40%,#000_78%)]"
+          style={{ backgroundImage: `url("${heroImage}")` }}
+        />
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.82)_0%,rgba(0,0,0,.60)_40%,rgba(0,0,0,.14)_74%,rgba(0,0,0,.40)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,5,.03),rgba(5,5,5,.02)_54%,rgba(5,5,5,.95)_100%)]" />
       <div
         className={`absolute inset-0 opacity-[.10] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] ${
