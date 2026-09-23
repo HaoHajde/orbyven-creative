@@ -1,29 +1,41 @@
-# ORBYVEN AI Website Editor — Alpha 0.2 candidate
+# ORBYVEN AI Website Preview — Alpha 0.2 pilot
 
-An opt-in **private Preview prototype**, not a post-purchase site builder, live CMS, or automatic publishing.
+**Private, authenticated PREVIEW.** This is a working generic web-design sandbox, not a hosted client's existing site editor, checkout entitlement or publication flow.
 
-## Implemented
-- `/workspace/site-editor`: chat, live React demo preview desktop/mobile, Undo, and localStorage draft scoped to org AND user.
-- `POST /api/ai/site-editor`: model called only from Node server. Finite text/color JSON patch; validated lengths and hex values. Does not execute model-provided code.
-- Supabase Auth verifies user; tenant membership/role requires owner/admin. SQL claim separately rechecks `access_status=active` and `lifecycle_status=active`.
-- Pilot tenant allowlist `ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS`; Production is always disabled for Alpha, even if the flag is accidentally set.
-- Supabase atomic quota: **8 attempts/organization/UTC day, maximum 2 attempts/organization in rolling 60 seconds**. Attempts count even when model fails to prevent unbounded retry spend. OpenAI model allowlist: gpt-4.1-mini or gpt-4.1-nano; output cap 650 tokens per attempt.
-- Service-only quota tables log token counts and request IDs, never prompts, API keys or chat transcript. No browser access to quota tables or RPC functions.
+## What can be tried immediately (no billable AI calls)
 
-## Vercel Preview prerequisites (owner actions)
-1. Revoked any OpenAI key previously shared in chat. Add a NEW `OPENAI_API_KEY` as **Secret** in Preview only.
-2. Add `ORBYVEN_AI_MODEL=gpt-4.1-mini` as Config in Preview.
-3. Add `ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS=<TEST_ORG_UUID>` as Config in Preview. Keep it empty while not testing.
-4. Confirm `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` target the intended test workspace and `SUPABASE_SERVICE_ROLE_KEY` is set as **server-only Secret** in the same Preview project. Do not paste service role credentials into chat or GitHub.
-5. Review and deploy the additive SQL migration `supabase/migrations/20260923112000_ai_editor_usage_guard.sql` to the exact Supabase project connected to Preview. Do not infer it from a project name alone.
-6. Run Preview CI, test sign-in using a designated pilot owner/admin, test forbidden member and a different organization, inspect quota RPC and request counts. **Only after that** temporarily set `ORBYVEN_AI_EDITOR_ENABLED=true` for controlled Preview. A new deployment is needed for environment changes.
-7. Keep Production and general client access disabled. Add cost/budget alerts in the OpenAI Platform.
+Visit `/workspace/site-editor` as a workspace Owner/Admin. Pick one of four example website types (Studio, Instalații, Detailing, Florărie), switch between 3 hero layouts and Desktop/Mobil, expand **Ajustări rapide · fără AI**, change the text/color fields, undo a change and **Salvează draft**. The draft remains only in this browser, scoped by user + organization. Changing a preset is undoable. Preview image sources reuse existing pilot #002/#005 assets without changing pilot code.
 
-If `SUPABASE_SERVICE_ROLE_KEY` or the migration is missing, quota claims fail closed (HTTP 503); no unmetered model call occurs.
+A blocked/disabled AI configuration shows **Preview manual** rather than a nonworking chat. The status endpoint checks auth, explicit org allowlist, server key and a reachable usage ledger, without spending tokens or exposing credentials.
 
-## Testing and limits
-CI runs `node --test tests/ai-site-editor.test.cjs`, lint, TypeScript and production build. Tests use mocked provider results and mocked quotas; they do **not** validate the user's new API key or a full browser E2E. The SQL migration is additive and can be parsed in a transaction rolled back before application.
+## AI chat (controlled Vercel Preview only)
 
-Not included: checkout entitlements, durable design drafts/cloud history, per-client domain publishing, image generation, adapting existing pilot #002/#005 actual TSX, email alerts for spend, and account-wide API provider budgets.
+- OpenAI Responses API is called on the server only; the client cannot read `OPENAI_API_KEY`.
+- Structured Output schema supports short copy, hex colors and split/centered/editorial layout. AI cannot change the selected industry template, execute code or deploy.
+- Server checks owner/admin, approved pilot org, active member/organization and an atomic shared Supabase quota.
+- Maximum **8 claims per org/UTC day and 2 per org/rolling 60s**; even a failed model request consumes a claim to prevent unbounded retries. Token counts (no prompts) are recorded server-side.
+- `VERCEL_ENV=production` always blocks the AI route. Missing flags, service key, allowlist or quota migration fail closed.
 
-**Do not merge as an Alpha production launch or enable general clients until these are addressed.**
+### Database migration
+
+`supabase/migrations/20260923112000_ai_editor_usage_guard.sql` has been installed and verified on the connected Supabase project **orbita-creative** (project ref `vgudmrxuoplaimmathix`) on 23 September 2026. Tables `ai_editor_daily_usage` and `ai_editor_calls` deny direct anon/authenticated access, and RPC `ai_editor_claim` is only callable via service role. Independently verify that **Vercel Preview** uses this same project before enabling calls; the connection could not be read from Vercel by this integration.
+
+### Required Vercel Preview variables
+
+| Name | Type | Value |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Secret | New, unshared key; never paste into chats |
+| `ORBYVEN_AI_MODEL` | Config | `gpt-4.1-mini` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret | Supabase service-role credential for the **same Preview project**, never `NEXT_PUBLIC_` |
+| `ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS` | Config | A single explicit test organization's UUID |
+| `ORBYVEN_AI_EDITOR_ENABLED` | Config | `true` only after all gates are verified |
+
+Existing `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must refer to that same project. Do **not** put the API or service-role key into screenshots or GitHub. Set OpenAI Platform usage budget alerts. Do not add secrets to `.env.example` values.
+
+Vercel Git Preview builds for `feature/ai-site-editor-alpha-02` are temporarily paused via `vercel.json` while iterating. Flip that rule for **one** checkpoint deployment when CI passes and the settings are ready; env updates require a new deployment. Never merge this temporary preview-skip rule to main.
+
+## Verification gates
+
+CI: isolated AI editor tests, full lint, TypeScript, Next production build and architecture guard. Tests mock OpenAI and the quota service; they are not a live model test. The SQL migration and daily/minute quotas were transaction-tested prior to its installation. At first live pilot, manually verify Preview login, allowed and unapproved tenant, saving/reloading, undo, one model edit and no changes to public sites.
+
+Not in this Alpha: automated after-purchase access, cloud-stored drafts, collaborative history, image generation, editing original pilot template source, PDF export, or publication to client domains.
