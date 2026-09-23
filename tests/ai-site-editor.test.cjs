@@ -12,7 +12,7 @@ const {DEFAULT_SITE,readSiteDraft,applySitePatch}=draftModule.exports;
 const org="11111111-1111-4111-8111-111111111111";
 function route(opts={}){
   const calls=[];const exports={};const routeModule={exports};
-  const env={ORBYVEN_AI_EDITOR_ENABLED:"true",OPENAI_API_KEY:"test-placeholder",...opts.env};
+  const env={ORBYVEN_AI_EDITOR_ENABLED:"true",OPENAI_API_KEY:"test-placeholder",ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:org,...opts.env};
   vm.runInNewContext(compile("app/api/ai/site-editor/route.ts"),{
     exports,module:routeModule,process:{env},Number,JSON,Array,Request,
     require(name){
@@ -45,3 +45,4 @@ test("minute cap blocks model calls with 429",async()=>{const a=route({quotaErro
 test("disabled or suspended tenant blocks before model call",async()=>{const a=route({quotaError:"AI_ACCESS_REVOKED"});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);});
 test("successful request records provider token usage once",async()=>{const a=route();const res=await a.post(good);assert.equal((await res.json()).remainingToday,6);const finishes=a.calls.filter(x=>x[0]==="finish");assert.equal(finishes.length,1);assert.equal(finishes[0][2],true);assert.equal(finishes[0][3].inputTokens,100);});
 test("failed model call consumes a reservation and is finalized failed",async()=>{const a=route({failAi:true});assert.equal((await a.post(good)).status,502);assert.equal(a.calls.filter(x=>x[0]==="finish")[0][2],false);});
+\ntest("unlisted pilot organization never reaches quota or model",async()=>{const a=route({env:{ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS:""}});assert.equal((await a.post(good)).status,403);assert.equal(a.calls.filter(x=>x[0]==="claim"||x[0]==="ai").length,0);});\n
