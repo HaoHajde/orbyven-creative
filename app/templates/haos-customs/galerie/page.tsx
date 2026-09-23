@@ -5,7 +5,7 @@ import { BeforeAfter, HaoShell, haoImages } from "@/components/pilot005/HaoCusto
 
 export const metadata: Metadata = {
   title: "Galerie · Hao's Customs",
-  description: "Galerie before/after interactivă pentru Pilot #005 Hao's Customs.",
+  description: "Galerie demonstrativă before/after cu 3 comparații interactive: exterior, interior și corecție lac.",
 };
 
 export default function HaoCustomsGalleryPage() {
@@ -18,7 +18,7 @@ export default function HaoCustomsGalleryPage() {
           <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_.52fr] lg:items-end">
             <h1 className="text-[clamp(60px,9.2vw,126px)] font-semibold leading-[.80] tracking-[-.074em]">Rezultatul nu are nevoie de filtru.</h1>
             <div>
-              <p className="max-w-md text-sm leading-7 text-white/38">Galeria este construită pentru gest: tragi, compari și vezi instant diferența. Pe mobil rămâne la fel de simplă și tactilă.</p>
+              <p className="max-w-md text-sm leading-7 text-white/38">Trei comparații dedicate: exterior, interior și corecție lac. Tragi separatorul sau apeși Înainte / După, inclusiv pe mobil.</p>
               <div className="mt-5 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[.13em] text-white/24"><span className="h-px w-8 bg-[#caa45b]/45" />drag to compare</div>
             </div>
           </div>
@@ -27,13 +27,15 @@ export default function HaoCustomsGalleryPage() {
 
       <section className="mx-auto max-w-[1500px] px-5 py-16 sm:px-7 md:px-10 md:py-24">
         <div className="grid gap-5">
-          <BeforeAfter
+          <div className="mx-auto w-full max-w-[1120px]">
+            <BeforeAfter
             beforeImage={haoImages.exteriorBefore}
             afterImage={haoImages.exteriorAfter}
             title="Exterior Reset"
             subtitle="Wash · decontaminare · finisaj"
-            note="De la suprafață acoperită de spumă și contaminare la un finisaj de studio, cu reflexie controlată."
-          />
+            note="De la praf și urme de utilizare la un finisaj curat, cu reflexii mai clare."
+            />
+          </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
             <BeforeAfter
@@ -51,6 +53,7 @@ export default function HaoCustomsGalleryPage() {
               note="Diferența este concentrată pe claritatea lacului, reflexie și profunzimea finisajului după corecție."
             />
           </div>
+          <p className="pt-2 text-center text-[11px] leading-5 text-white/30">Imagini ilustrative generate pentru prezentarea template-ului; nu sunt fotografii ale unor lucrări reale ale atelierului.</p>
         </div>
       </section>
 
