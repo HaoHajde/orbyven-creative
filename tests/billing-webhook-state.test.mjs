@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyBillingWebhookRecord } from "../lib/billing/webhook-state.ts";
+import {
+  classifyBillingWebhookRecord,
+  reconcileInvoiceDelivery,
+} from "../lib/billing/webhook-state.ts";
 
 test("completed webhook is safe to acknowledge as duplicate", () => {
   assert.equal(
@@ -37,5 +40,42 @@ test("processed_at takes precedence over stale error text", () => {
       processing_error: "old failure",
     }),
     "processed"
+  );
+});
+
+test("new paid invoice is queued for fiscal issuance", () => {
+  assert.deepEqual(reconcileInvoiceDelivery("invoice.paid", null), {
+    paid: true,
+    fiscalStatus: "pending",
+  });
+});
+
+test("repeated paid invoice cannot requeue an already issued fiscal document", () => {
+  assert.deepEqual(
+    reconcileInvoiceDelivery("invoice.paid", {
+      status: "paid",
+      fiscal_status: "issued",
+    }),
+    { paid: true, fiscalStatus: "issued" }
+  );
+});
+
+test("out-of-order payment failure cannot downgrade a paid invoice", () => {
+  assert.deepEqual(
+    reconcileInvoiceDelivery("invoice.payment_failed", {
+      status: "paid",
+      fiscal_status: "issued",
+    }),
+    { paid: true, fiscalStatus: "issued" }
+  );
+});
+
+test("a failed fiscal issuance requires explicit recovery, not Stripe redelivery", () => {
+  assert.deepEqual(
+    reconcileInvoiceDelivery("invoice.paid", {
+      status: "paid",
+      fiscal_status: "failed",
+    }),
+    { paid: true, fiscalStatus: "failed" }
   );
 });
