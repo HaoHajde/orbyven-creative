@@ -6,6 +6,7 @@ import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   getCurrentWorkspace,
   setOrganizationModuleEnabled,
@@ -37,6 +38,8 @@ export default function ClientWorkspace() {
   const [theme, setTheme] = useState<Theme>("light");
   const [panel, setPanel] = useState<Panel>("workspace");
   const [activeModule, setActiveModule] = useState<OrbyvenModuleId>("overview");
+  const [navigation, setNavigation] = useState<WorkspaceNavigationIntent>({ module: "overview", token: 0 });
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [workspace, setWorkspace] = useState<OrbyvenWorkspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -173,11 +176,14 @@ export default function ClientWorkspace() {
     });
   };
 
-  const openModule = useCallback((id: OrbyvenModuleId) => {
+  const openModule = useCallback((id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) => {
+    if (!enabledModules.includes(id)) return;
     setPanel("workspace");
     setActiveModule(id);
+    setNavigation((current) => ({ module: id, token: current.token + 1, ...options }));
     setMobileModuleMenuOpen(false);
-  }, []);
+    setCreateMenuOpen(false);
+  }, [enabledModules]);
 
   const toggleModule = async (id: OrbyvenModuleId) => {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
@@ -194,7 +200,10 @@ export default function ClientWorkspace() {
       current ? { ...current, enabledModules: nextModules } : current
     );
 
-    if (currentlyEnabled && activeModule === id) setActiveModule("overview");
+    if (currentlyEnabled && activeModule === id) {
+      setActiveModule("overview");
+      setNavigation((current) => ({ module: "overview", token: current.token + 1 }));
+    }
 
     try {
       await setOrganizationModuleEnabled(workspace.organization.id, id, !currentlyEnabled);
@@ -208,6 +217,12 @@ export default function ClientWorkspace() {
       setSavingModule(null);
     }
   };
+
+  const createOptions = ORBYVEN_MODULES.filter((definition) =>
+    ["leads", "tasks", "calendar", "estimates", "expenses"].includes(definition.id)
+      && enabledModules.includes(definition.id)
+  );
+  const canCreate = workspace?.membership.role !== "viewer" && createOptions.length > 0;
 
   const logout = async () => {
     await orbyvenSupabase.auth.signOut();
@@ -277,6 +292,19 @@ export default function ClientWorkspace() {
           </div>
 
           <div className="flex items-center gap-2">
+            {canCreate && (
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded={createMenuOpen}
+                onClick={() => setCreateMenuOpen(true)}
+                className="flex h-9 items-center justify-center rounded-full bg-[var(--accent)] px-3 text-[11px] font-semibold text-white shadow-sm transition hover:opacity-90 sm:px-4"
+              >
+                <span className="sm:hidden" aria-hidden="true">+</span>
+                <span className="hidden sm:inline">+ Creează</span>
+                <span className="sr-only sm:hidden">Creează o înregistrare</span>
+              </button>
+            )}
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-4 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:block">{panel === "modules" ? "Înapoi la dashboard" : "Personalizează"}</button>
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
             <button type="button" onClick={logout} className="hidden h-9 rounded-full px-3 text-[11px] font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] sm:block">Ieșire</button>
@@ -334,6 +362,7 @@ export default function ClientWorkspace() {
           ) : (
             <WorkspaceContent
               activeModule={activeDefinition.id}
+              navigation={navigation}
               organizationId={workspace.organization.id}
               locale={locale}
               timeZone={timeZone}
@@ -346,6 +375,39 @@ export default function ClientWorkspace() {
           )}
         </section>
       </div>
+
+      {createMenuOpen && canCreate && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0">
+          <button
+            type="button"
+            aria-label="Închide meniul de creare"
+            onClick={() => setCreateMenuOpen(false)}
+            className="absolute inset-0 bg-black/35"
+          />
+          <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 w-full max-w-md rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Acțiune nouă</p>
+                <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Ce vrei să creezi?</h2>
+              </div>
+              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label="Închide" className="h-9 w-9 shrink-0 rounded-full border border-[var(--border)] text-lg">×</button>
+            </div>
+            <div className="mt-5 grid gap-2">
+              {createOptions.map((definition) => (
+                <button
+                  key={definition.id}
+                  type="button"
+                  onClick={() => openModule(definition.id, { create: true })}
+                  className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
+                >
+                  <span>{definition.id === "leads" ? "Cerere nouă" : definition.id === "tasks" ? "Lucrare nouă" : definition.id === "calendar" ? "Programare nouă" : definition.id === "estimates" ? "Ofertă nouă" : "Cheltuială nouă"}</span>
+                  <span aria-hidden="true" className="text-[var(--muted)]">→</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
         {mobileModuleMenuOpen && (
