@@ -508,7 +508,7 @@ export default function LeadsModule({
 
               {canWrite && <div className="mt-4 flex flex-wrap gap-2">
                 {enabledModules.includes("tasks") && (
-                  <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-white">+ Lucrare pentru acest client</button>
+                  <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Lucrare pentru acest client</button>
                 )}
                 {enabledModules.includes("estimates") && (
                   <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă pentru acest client</button>
