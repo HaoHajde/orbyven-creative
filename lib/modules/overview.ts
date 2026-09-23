@@ -70,8 +70,9 @@ export async function loadOverviewSnapshot(organizationId: string): Promise<Over
       .from("calendar_events")
       .select("id,title,status,start_at")
       .eq("organization_id", organizationId)
+      .gte("start_at", new Date(Date.now() - 86400000).toISOString())
       .order("start_at", { ascending: true })
-      .limit(50),
+      .limit(500),
     orbyvenSupabase
       .from("sales_estimates")
       .select("id,reference,title,status,total_cents,currency,updated_at,created_at")
