@@ -19,6 +19,8 @@ import {
   type WorkTaskStatus,
 } from "@/lib/modules/tasks";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   useCallback,
   useEffect,
@@ -32,6 +34,11 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  initialCreate?: boolean;
+  initialRecordId?: string;
+  initialClientId?: string;
 };
 
 type ViewMode = "board" | "list";
@@ -111,19 +118,22 @@ function dayKey(value: string | null) {
   return value ? value.slice(0, 10) : "";
 }
 
-export default function TasksModule({ organizationId, locale, role }: Props) {
+export default function TasksModule({
+  organizationId, locale, role, enabledModules, onOpenModule,
+  initialCreate = false, initialRecordId, initialClientId,
+}: Props) {
   const [tasks, setTasks] = useState<WorkTask[]>([]);
   const [clients, setClients] = useState<WorkTaskClient[]>([]);
   const [checklist, setChecklist] = useState<WorkTaskChecklistItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialRecordId ?? null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("board");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<CreateForm>(emptyForm);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialRecordId ? "list" : "board");
+  const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
+  const [form, setForm] = useState<CreateForm>(() => ({ ...emptyForm, clientId: initialClientId ?? "" }));
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
 
@@ -702,6 +712,16 @@ export default function TasksModule({ organizationId, locale, role }: Props) {
         </div>
       )}
 
+      {selectedTask && canWrite && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {enabledModules.includes("estimates") && (
+            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-white">+ Ofertă pentru lucrare</button>
+          )}
+          {enabledModules.includes("calendar") && (
+            <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare pentru lucrare</button>
+          )}
+        </div>
+      )}
       {selectedTask && (
         <TaskDetail
           task={selectedTask}
