@@ -32,7 +32,7 @@ A blocked/disabled AI configuration shows **Preview manual** rather than a nonwo
 
 Existing `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must refer to that same project. Do **not** put the API or service-role key into screenshots or GitHub. Set OpenAI Platform usage budget alerts. Do not add secrets to `.env.example` values.
 
-Vercel Git Preview builds for `feature/ai-site-editor-alpha-02` are temporarily paused via `vercel.json` while iterating. Flip that rule for **one** checkpoint deployment when CI passes and the settings are ready; env updates require a new deployment. Never merge this temporary preview-skip rule to main.
+The branch's automatic Vercel builds were paused during editing to avoid unnecessary deployments. One final Preview checkpoint deployment is enabled after CI validation. Avoid pushing cosmetic commits after this checkpoint. Environment updates may require a new deployment. Do not merge branch-specific deployment controls into main.
 
 ## Verification gates
 
