@@ -393,10 +393,10 @@ export default function TasksModule({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
             Operations · Live
           </p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">
-            Lucrările, fără haos.
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">
+            Lucrări
           </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+          <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">
             Vezi ce urmează, cine se ocupă, unde trebuie ajuns și ce mai lipsește
             până la finalizare.
           </p>
