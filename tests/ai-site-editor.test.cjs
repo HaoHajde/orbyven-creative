@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node test runner and VM need CommonJS mocks. */
 const test=require("node:test");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
@@ -10,10 +11,10 @@ vm.runInNewContext(compile("lib/ai/site-editor.ts"),{module:draftModule,exports:
 const {DEFAULT_SITE,readSiteDraft,applySitePatch}=draftModule.exports;
 const org="11111111-1111-4111-8111-111111111111";
 function route(opts={}){
-  const calls=[];const exports={};const module={exports};
+  const calls=[];const exports={};const routeModule={exports};
   const env={ORBYVEN_AI_EDITOR_ENABLED:"true",OPENAI_API_KEY:"test-placeholder",...opts.env};
   vm.runInNewContext(compile("app/api/ai/site-editor/route.ts"),{
-    exports,module,process:{env},Number,JSON,Array,Request,
+    exports,module:routeModule,process:{env},Number,JSON,Array,Request,
     require(name){
       if(name==="next/server")return{NextResponse:{json:(v,init={})=>({status:init.status||200,json:async()=>v})}};
       if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");}};
@@ -22,7 +23,7 @@ function route(opts={}){
       throw Error(name);
     }
   });
-  return{calls,post:(body)=>module.exports.POST(new Request("https://example.invalid/api/ai/site-editor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}))};
+  return{calls,post:(body)=>routeModule.exports.POST(new Request("https://example.invalid/api/ai/site-editor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}))};
 }
 const good={organizationId:org,prompt:"Schimbă titlul",draft:DEFAULT_SITE};
 test("contract: rejects unknown colors",()=>{assert.equal(readSiteDraft(DEFAULT_SITE).brand,DEFAULT_SITE.brand);assert.equal(readSiteDraft({...DEFAULT_SITE,accent:"red"}),null);});
