@@ -118,7 +118,7 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
       return;
     }
     if (!privacyAccepted) {
-      setError("Acceptă Politica de Confidențialitate.");
+      setError("Confirmă că ai citit informarea privind prelucrarea datelor.");
       return;
     }
 
@@ -256,7 +256,7 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
             <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-5">
               <label className="flex items-start gap-3 text-sm leading-6">
                 <input type="checkbox" checked={privacyAccepted} onChange={(event) => setPrivacyAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
-                <span>Accept <Link href="/legal/privacy" className="font-medium underline underline-offset-4">Politica de Confidențialitate</Link>.</span>
+                <span>Am citit <Link href="/legal/privacy" className="font-medium underline underline-offset-4">Politica de Confidențialitate</Link>.</span>
               </label>
               <label className="mt-4 flex items-start gap-3 text-sm leading-6 text-[var(--muted)]">
                 <input type="checkbox" checked={marketingConsent} onChange={(event) => setMarketingConsent(event.target.checked)} className="mt-1 h-4 w-4" />
