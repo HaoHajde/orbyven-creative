@@ -68,8 +68,8 @@ export async function loadCommercialWorkflow(
     documents: typedDocuments,
     budget: (budget.data ?? []) as WorkflowOverview["budget"],
     sourceIsStale: typedDocuments.some((document) =>
-      document.generated_from_updated_at !== null
-      && new Date(document.generated_from_updated_at).getTime() < new Date(typedEstimate.updated_at).getTime()
+      document.generated_from_updated_at === null
+      || new Date(document.generated_from_updated_at).getTime() < new Date(typedEstimate.updated_at).getTime()
     ),
   };
 }
