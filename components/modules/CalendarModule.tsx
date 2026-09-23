@@ -441,8 +441,8 @@ export default function CalendarModule({
       <section className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Calendar · Live</p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.97] tracking-[-0.06em] sm:text-[60px]">Săptămâna, la vedere.</h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">Programări, lucrări și follow-up-uri într-un singur loc, legate de clienții și taskurile firmei.</p>
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">Programări</h1>
+          <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">Programări, lucrări și follow-up-uri într-un singur loc, legate de clienții și taskurile firmei.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setViewMode("week")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "week" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Săptămână</button>
