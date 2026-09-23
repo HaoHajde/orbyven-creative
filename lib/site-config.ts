@@ -10,8 +10,7 @@ export const siteConfig = {
 
 export function getSiteUrl() {
   const configuredUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
   if (!configuredUrl) {
     return siteConfig.defaultUrl;

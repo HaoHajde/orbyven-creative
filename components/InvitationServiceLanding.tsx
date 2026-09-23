@@ -10,6 +10,7 @@ export default function InvitationServiceLanding({
   previews,
   relatedHref,
   relatedLabel,
+  faq,
 }: {
   label: string;
   title: string;
@@ -18,6 +19,7 @@ export default function InvitationServiceLanding({
   previews: Preview[];
   relatedHref: string;
   relatedLabel: string;
+  faq: { question: string; answer: string }[];
 }) {
   return (
     <main className="min-h-screen bg-[#080912] text-[#f5f5fc]">
@@ -35,7 +37,8 @@ export default function InvitationServiceLanding({
       <section className="relative isolate overflow-hidden border-y border-white/10 px-5 py-24 sm:px-8 sm:py-32">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_20%,rgba(92,75,238,.23),transparent_55%),radial-gradient(ellipse_at_15%_85%,rgba(87,44,144,.20),transparent_55%)]" />
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[.24em] text-[#bcb6ff]">{label} · ORBYVEN CREATIVE</p>
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-white/55"><Link href="/" className="hover:text-white">ORBYVEN CREATIVE</Link><span aria-hidden="true">/</span><span aria-current="page">{label}</span></nav>
+          <p className="mt-10 text-xs font-semibold uppercase tracking-[.24em] text-[#bcb6ff]">{label} · ORBYVEN CREATIVE</p>
           <h1 className="mt-7 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-[-.06em] sm:text-7xl">{title}</h1>
           <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">{introduction}</p>
           <div className="mt-10 flex flex-wrap gap-3">
@@ -80,6 +83,19 @@ export default function InvitationServiceLanding({
           <p className="mt-8 text-sm leading-7 text-white/60">
             Cauți și alte opțiuni? <Link href={relatedHref} className="font-semibold text-[#c9c5ff] underline underline-offset-4">{relatedLabel}</Link>.
           </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="intrebari-frecvente" className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#bcb6ff]">Întrebări frecvente</p>
+        <h2 id="intrebari-frecvente" className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">Ce merită să știi înainte să alegi.</h2>
+        <div className="mt-9 divide-y divide-white/10 border-y border-white/10">
+          {faq.map(({ question, answer }) => (
+            <article key={question} className="grid gap-3 py-6 md:grid-cols-[.9fr_1.1fr] md:gap-10">
+              <h3 className="text-base font-semibold">{question}</h3>
+              <p className="text-sm leading-7 text-white/65">{answer}</p>
+            </article>
+          ))}
         </div>
       </section>
 

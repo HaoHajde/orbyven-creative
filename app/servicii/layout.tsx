@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Web design, creare site & servicii digitale",
+  title: "Web design, creare site și invitații digitale",
   description:
-    "Web design, creare site, landing pages și redesign pentru firme. ORBYVEN construiește experiențe digitale clare, rapide și pregătite pentru SEO.",
+    "Web design și creare site pentru firme, invitații digitale de nuntă, botez și majorat. ORBYVEN CREATIVE construiește experiențe online personalizate.",
   alternates: {
     canonical: "/servicii",
   },

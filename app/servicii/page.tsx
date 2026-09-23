@@ -179,6 +179,26 @@ export default function ServicesPage() {
         </div>
       </section>
 
+      <section aria-labelledby="servicii-invitatii" className="px-5 py-14 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-[1500px]">
+          <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[var(--muted)]">Evenimente · invitații digitale</p>
+          <h2 id="servicii-invitatii" className="mt-4 text-[40px] font-semibold tracking-[-.055em] sm:text-[54px]">Invitații online create pentru moment.</h2>
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--muted)]">Personalizăm invitații digitale cu datele evenimentului, modele interactive și opțiune de confirmare RSVP.</p>
+          <nav aria-label="Servicii de invitații" className="mt-8 grid gap-3 sm:grid-cols-3">
+            {[
+              { href: "/invitatii-nunta", label: "Invitații de nuntă", description: "Model elegant, program și locații." },
+              { href: "/invitatii-botez", label: "Invitații de botez", description: "Modele pentru fetiță și băiețel." },
+              { href: "/invitatii-majorat", label: "Invitații de majorat", description: "Experiență digitală pentru 18 ani." },
+            ].map((item) => (
+              <Link key={item.href} href={item.href} className="rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-7 transition hover:border-[var(--border-strong)]">
+                <h3 className="text-xl font-semibold">{item.label} ↗</h3>
+                <p className="mt-4 text-sm text-[var(--muted)]">{item.description}</p>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
+
       <section className="px-5 pb-8 sm:px-6 md:px-10">
         <div className="mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
           <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
