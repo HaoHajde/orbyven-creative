@@ -326,10 +326,10 @@ export default function LeadsModule({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
             Clienți & cereri
           </p>
-          <h1 className="mt-4 text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[60px]">
-            Relațiile, fără haos.
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">
+            Clienți & cereri
           </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base">
+          <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">
             Cereri noi, clienți, status și istoricul conversațiilor într-un singur loc.
           </p>
         </div>
