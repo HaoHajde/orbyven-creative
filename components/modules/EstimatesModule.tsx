@@ -15,6 +15,8 @@ import {
   type EstimateTaskLink,
 } from "@/lib/modules/estimates";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -22,6 +24,8 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialRecordId?: string;
   initialClientId?: string;
@@ -57,7 +61,7 @@ function formatMoney(cents: number, currency: string, locale: string) {
 }
 
 export default function EstimatesModule({
-  organizationId, locale, role, initialCreate = false, initialRecordId,
+  organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId,
   initialClientId, initialTaskId,
 }: Props) {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -91,6 +95,10 @@ export default function EstimatesModule({
       setEstimates(nextEstimates);
       setClients(nextClients);
       setTasks(nextTasks);
+      if (initialCreate && initialTaskId) {
+        const task = nextTasks.find((item) => item.id === initialTaskId);
+        if (task) setForm((current) => ({ ...current, title: current.title || task.title, clientId: task.client_id || current.clientId }));
+      }
       setSelectedId((current) => current && nextEstimates.some((item) => item.id === current) ? current : nextEstimates[0]?.id ?? null);
     } catch (loadError) {
       console.error(loadError);
@@ -98,7 +106,7 @@ export default function EstimatesModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, initialCreate, initialTaskId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -122,6 +130,16 @@ export default function EstimatesModule({
   const selected = useMemo(() => estimates.find((estimate) => estimate.id === selectedId) ?? null, [estimates, selectedId]);
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
+
+  const chooseTask = (taskId: string) => {
+    const task = tasks.find((item) => item.id === taskId);
+    setForm((current) => ({
+      ...current,
+      taskId,
+      clientId: task?.client_id || current.clientId,
+      title: !current.title.trim() && task ? task.title : current.title,
+    }));
+  };
 
   const metrics = useMemo(() => {
     const accepted = estimates.filter((item) => item.status === "accepted");
@@ -225,7 +243,7 @@ export default function EstimatesModule({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Titlu ofertă *"><input value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} className={moduleInputClass} placeholder="Ex. Înlocuire centrală + montaj" /></Field>
             <Field label="Client"><select value={form.clientId} onChange={(e) => setForm((c) => ({ ...c, clientId: e.target.value }))} className={moduleInputClass}><option value="">Fără client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.company ? ` · ${client.company}` : ""}</option>)}</select></Field>
-            <Field label="Lucrare"><select value={form.taskId} onChange={(e) => setForm((c) => ({ ...c, taskId: e.target.value }))} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
+            <Field label="Lucrare"><select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
             <Field label="Valabil până la"><input type="date" value={form.validUntil} onChange={(e) => setForm((c) => ({ ...c, validUntil: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Discount (lei)"><input type="number" min="0" step="0.01" value={form.discount} onChange={(e) => setForm((c) => ({ ...c, discount: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
             <Field label="Taxă / TVA (%) opțional"><input type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={(e) => setForm((c) => ({ ...c, taxRate: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
@@ -267,6 +285,12 @@ export default function EstimatesModule({
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
             {selected.notes ? <p className="mt-5 rounded-[18px] bg-[var(--bg)] p-4 text-sm leading-6 text-[var(--muted)]">{selected.notes}</p> : null}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
+              {enabledModules.includes("tasks") && selected.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selected.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+              {canWrite && enabledModules.includes("calendar") && (selected.client_id || selected.task_id) && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+              {canWrite && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
+            </div>
             {canWrite ? <div className="mt-6 flex flex-wrap gap-2">{(["draft", "sent", "accepted", "rejected"] as EstimateStatus[]).map((status) => <button key={status} type="button" disabled={saving || selected.status === status} onClick={() => void changeStatus(status)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">{statusLabels[status]}</button>)}{canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-35">Șterge</button> : null}</div> : null}
           </> : <ModuleEmpty title="Selectează o ofertă" description="Detaliile, pozițiile și statusul apar aici." />}
         </div>
