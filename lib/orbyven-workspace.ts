@@ -185,6 +185,31 @@ export async function setOrganizationModuleEnabled(
   if (error) throw error;
 }
 
+/**
+ * Save a dependency activation plan as one Supabase upsert, rather than
+ * publishing half-enabled modules through one request per prerequisite.
+ */
+export async function setOrganizationModulesEnabled(
+  organizationId: string,
+  moduleIds: readonly OrbyvenModuleId[],
+  enabled: boolean
+) {
+  if (!organizationId.trim()) throw new Error("organization_id is required.");
+  const rows = [...new Set(moduleIds)]
+    .filter((id) => id !== "overview")
+    .map((id) => ({
+      organization_id: organizationId,
+      module_id: id,
+      enabled,
+      updated_at: new Date().toISOString(),
+    }));
+  if (!rows.length) return;
+  const { error } = await orbyvenSupabase
+    .from("organization_modules")
+    .upsert(rows, { onConflict: "organization_id,module_id" });
+  if (error) throw error;
+}
+
 export async function ensureDefaultModules(
   organizationId: string,
   moduleIds: OrbyvenModuleId[]
