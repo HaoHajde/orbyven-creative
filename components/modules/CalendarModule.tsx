@@ -28,6 +28,9 @@ type Props = {
   locale: string;
   timeZone: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialCreate?: boolean;
+  initialClientId?: string;
+  initialTaskId?: string;
 };
 
 type ViewMode = "week" | "agenda";
@@ -205,10 +208,8 @@ function toEventTimes(form: CreateForm, timeZone: string) {
 }
 
 export default function CalendarModule({
-  organizationId,
-  locale,
-  timeZone,
-  role,
+  organizationId, locale, timeZone, role,
+  initialCreate = false, initialClientId, initialTaskId,
 }: Props) {
   const [weekStartKey, setWeekStartKey] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
@@ -221,8 +222,13 @@ export default function CalendarModule({
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<CreateForm>(emptyForm);
+  const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
+  const [form, setForm] = useState<CreateForm>(() => ({
+    ...emptyForm,
+    clientId: initialClientId ?? "",
+    taskId: initialTaskId ?? "",
+    eventType: initialTaskId ? "work" : emptyForm.eventType,
+  }));
 
   const canWrite = role !== "viewer";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -233,9 +239,12 @@ export default function CalendarModule({
       const today = dateKeyInTimeZone(nowIso, timeZone);
       setWeekStartKey(startOfWeekKey(today));
       setSnapshotIso(nowIso);
+      if (initialCreate) {
+        setForm((current) => ({ ...current, date: current.date || today }));
+      }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [timeZone]);
+  }, [timeZone, initialCreate]);
 
   const weekDayKeys = useMemo(
     () =>
