@@ -33,7 +33,12 @@ export default function SiteFooter({ theme, activePage }: { theme: Theme; active
     <footer className="px-5 pb-6 sm:px-6 md:px-10 md:pb-8">
       <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-8 text-[var(--button-text)] sm:px-8 md:px-12 md:py-10">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-          <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
+          <div className="flex flex-col items-start gap-3">
+            <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
+            <a href="mailto:contact@orbyven.ro" className="text-sm opacity-75 transition hover:opacity-100">
+              contact@orbyven.ro
+            </a>
+          </div>
 
           <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm">
             {navItems.map((item) => (
