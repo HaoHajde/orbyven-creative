@@ -3,7 +3,7 @@ import InvitationServiceLanding from "@/components/InvitationServiceLanding";
 import InvitationStructuredData from "@/components/InvitationStructuredData";
 
 export const metadata: Metadata = {
-  title: "Invitații de nuntă digitale și personalizate",
+  title: "Invitații digitale de nuntă personalizate",
   description: "Invitații de nuntă digitale ORBYVEN CREATIVE: design elegant, detalii despre eveniment, confirmare RSVP și personalizare. Descoperă un model interactiv.",
   alternates: { canonical: "/invitatii-nunta" },
   openGraph: {
