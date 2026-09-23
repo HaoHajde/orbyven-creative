@@ -26,6 +26,9 @@ const seoLinks = [
 ] as const;
 
 const legalLinks = [
+  ["/legal", "Centrul juridic"],
+  ["/legal/consumer", "Drepturile consumatorului"],
+  ["/legal/ai", "Transparență AI"],
   ["/legal/terms", "Termeni"],
   ["/legal/privacy", "Confidențialitate"],
   ["/legal/cookies", "Cookies"],
@@ -74,6 +77,7 @@ export default function SiteFooter({ theme, activePage }: { theme: Theme; active
               </Link>
             ))}
           </div>
+          <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[50px] w-[250px] max-w-full items-center justify-center rounded-lg border border-current/30 px-3 text-center text-[11px] font-semibold tracking-normal opacity-100" aria-label="Soluționarea alternativă a litigiilor – platforma ANPC">SAL – Soluționarea alternativă a litigiilor · ANPC ↗</a>
           <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="self-start sm:self-auto">
             Sus ↑
           </button>
