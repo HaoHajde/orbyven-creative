@@ -232,6 +232,7 @@ export default function OverviewModule({
     { label: "În lucru", count: snapshot?.tasks.filter((task) => task.status === "in_progress").length ?? 0, color: "#66bff0" },
     { label: "Blocate", count: snapshot?.tasks.filter((task) => task.status === "blocked").length ?? 0, color: "#efad77" },
     { label: "Finalizate", count: snapshot?.tasks.filter((task) => task.status === "done").length ?? 0, color: "#6ed3ae" },
+    { label: "Anulate", count: snapshot?.tasks.filter((task) => task.status === "cancelled").length ?? 0, color: "#64748b" },
   ];
   const workTotal = workStages.reduce((sum, stage) => sum + stage.count, 0);
   let currentAngle = 0;
@@ -285,7 +286,7 @@ export default function OverviewModule({
             <MetricCard label="Cereri active" value={computed.activeLeads.length} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
             <MetricCard label="Lucrări deschise" value={computed.openTasks.length} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
             <MetricCard label="Programări astăzi" value={computed.todayEvents.length} note="Programate în ultimele 7 zile" trend={computed.trends.calendar} color="#70d1eb" enabled={enabledModules.includes("calendar")} onClick={() => onOpenModule("calendar")} />
-            <MetricCard label="Oferte trimise" value={computed.sentEstimates.length} note="Noi în ultimele 7 zile" trend={computed.trends.estimates} color="#7ad5b4" enabled={enabledModules.includes("estimates")} onClick={() => onOpenModule("estimates")} />
+            <MetricCard label="Oferte trimise" value={computed.sentEstimates.length} note="Create în ultimele 7 zile" trend={computed.trends.estimates} color="#7ad5b4" enabled={enabledModules.includes("estimates")} onClick={() => onOpenModule("estimates")} />
           </section>
 
           <section className="mt-2.5 grid gap-2.5 xl:grid-cols-[1fr_1.04fr]">
@@ -421,11 +422,9 @@ function MiniTrend({ values, color }: { values: number[]; color: string }) {
     const y = 43 - value / high * 34;
     return x + "," + y.toFixed(1);
   }).join(" ");
-  const first = points.split(" ")[0];
-  const last = points.split(" ").at(-1);
   return (
     <svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true" className="h-[48px] w-full overflow-visible">
-      <polygon points={first + " 98,48 2,48 " + last} fill={color} opacity="0.05" />
+      <polygon points={points + " 98,48 2,48"} fill={color} opacity="0.06" />
       <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {values.map((value, index) => <circle key={index} cx={2 + index * 16} cy={43 - value / high * 34} r="1.7" fill={color} />)}
     </svg>
