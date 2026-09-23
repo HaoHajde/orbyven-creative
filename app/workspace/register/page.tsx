@@ -177,7 +177,7 @@ export default function WorkspaceRegisterPage() {
       footer={
         <>
           Ai deja cont?{" "}
-          <Link href="/workspace/login" className="font-semibold text-[#4b46ee]">
+          <Link href="/workspace/login" className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
             Intră în workspace
           </Link>
         </>
@@ -230,7 +230,7 @@ export default function WorkspaceRegisterPage() {
             type="button"
             onClick={resendConfirmation}
             disabled={resending}
-            className="mt-3 w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-sm font-semibold text-[#4b46ee] transition hover:bg-[#f5f5f7] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#3a3a3c] dark:hover:bg-[#1c1c1e]"
+            className="mt-3 w-full rounded-[13px] border border-white/[0.15] bg-white/[0.04] px-4 py-3 text-[12px] font-semibold text-[#a5b5ff] transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {resending ? "Se retrimite..." : "Retrimite emailul de confirmare"}
           </button>
