@@ -55,12 +55,12 @@ export function useSiteEditor(){
       const {data}=await orbyvenSupabase.auth.getSession();
       if(!data.session?.access_token)throw Error("Sesiunea a expirat. Autentifică-te din nou.");
       const response=await fetch("/api/ai/site-editor",{method:"POST",cache:"no-store",headers:{Authorization:"Bearer "+data.session.access_token,"Content-Type":"application/json"},body:JSON.stringify({organizationId:workspace.organization.id,prompt:requestText,draft:site})});
-      const result=await response.json() as {message?:string;draft?:EditableSite;error?:string};
+      const result=await response.json() as {message?:string;draft?:EditableSite;error?:string;remainingToday?:number};
       if(!response.ok||!result.draft)throw Error(result.error||"AI-ul este indisponibil.");
       const next=readSiteDraft(result.draft);
       if(!next)throw Error("Modificarea primită nu este validă.");
       if(JSON.stringify(next)!==JSON.stringify(site))setHistory(current=>[...current.slice(-14),next]);
-      setMessages(current=>[...current,{role:"assistant",text:result.message||"Preview actualizat."}]);
+      setMessages(current=>[...current,{role:"assistant",text:result.message||"Preview actualizat."}]);\n      if(typeof result.remainingToday==="number"){setNotice("Mai ai "+result.remainingToday+" cereri AI disponibile astăzi pentru firmă (UTC).");}
     }catch(e){const message=e instanceof Error?e.message:"Nu am putut procesa cererea.";setError(message);setMessages(current=>[...current,{role:"assistant",text:message}]);}
     finally{setBusy(false);}
   };
