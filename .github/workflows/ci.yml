@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: AI editor unit tests
+        run: node --test tests/ai-site-editor.test.cjs
+
       - name: Lint
         run: npm run lint
 
