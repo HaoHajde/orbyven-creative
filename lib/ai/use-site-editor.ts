@@ -55,7 +55,7 @@ export function useSiteEditor() {
           if (!cancelled) {setAiStatus("disabled"); setAiStatusReason("Sesiunea a expirat.");}
           return;
         }
-        const response = await fetch("/api/ai/site-editor/status", {
+        const response = await fetch("/api/ai/site-editor/status?organizationId=" + encodeURIComponent(current.organization.id), {
           cache:"no-store",
           headers:{Authorization:"Bearer " + data.session.access_token},
         });
