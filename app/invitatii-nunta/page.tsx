@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import InvitationServiceLanding from "@/components/InvitationServiceLanding";
+import InvitationStructuredData from "@/components/InvitationStructuredData";
 
 export const metadata: Metadata = {
   title: "Invitații de nuntă digitale și personalizate",
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 
 export default function WeddingInvitationsPage() {
   return (
+    <>
+    <InvitationStructuredData path="/invitatii-nunta" name="Invitații de nuntă digitale personalizate" description="Invitații digitale de nuntă cu design personalizat, locații, program și opțiune de confirmare RSVP." />
     <InvitationServiceLanding
       label="Invitații de nuntă"
       title="Invitații de nuntă digitale, cu povestea voastră."
@@ -29,6 +32,8 @@ export default function WeddingInvitationsPage() {
       ]}
       relatedHref="/invitatii-botez"
       relatedLabel="Vezi invitațiile de botez"
+      faq={[{"question":"Cum trimit invitația digitală?","answer":"Primești un link către invitația online, pe care îl poți distribui prin WhatsApp, mesaj sau e-mail. Invitații o pot deschide de pe telefon sau calculator."},{"question":"Putem modifica un model existent?","answer":"Da. Putem adapta textele, culorile, imaginile, locațiile și structura evenimentului. Stabilim ce elemente rămân din modelul ales și ce se schimbă."},{"question":"Poate invitația să aibă confirmare RSVP?","answer":"Da, invitația poate include un formular de confirmare a participării. Detaliile colectate se stabilesc în funcție de eveniment și de modelul ales."},{"question":"Trebuie să avem deja toate detaliile nunții?","answer":"Nu neapărat. Putem porni de la model și putem completa programul, adresele și informațiile finale înainte de distribuire."}]}
     />
+    </>
   );
 }
