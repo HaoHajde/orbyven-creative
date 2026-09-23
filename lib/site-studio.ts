@@ -61,9 +61,10 @@ export function sanitizeStudioDraft(candidate: unknown, fallback: StudioDraft): 
     }
   }
 
-  if (Array.isArray(object.services)) {
+  const incomingServices = object.services;
+  if (Array.isArray(incomingServices)) {
     next.services = fallback.services.map((service, index) => {
-      const incoming = object.services[index];
+      const incoming = incomingServices[index];
       if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return service;
       const candidateService = incoming as Record<string, unknown>;
       const title = typeof candidateService.title === "string" ? candidateService.title.trim().slice(0, 70) : "";
