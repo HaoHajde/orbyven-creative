@@ -14,6 +14,8 @@ import {
   type CalendarTask,
 } from "@/lib/modules/calendar";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   useCallback,
   useEffect,
@@ -28,6 +30,8 @@ type Props = {
   locale: string;
   timeZone: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialClientId?: string;
   initialTaskId?: string;
@@ -208,7 +212,7 @@ function toEventTimes(form: CreateForm, timeZone: string) {
 }
 
 export default function CalendarModule({
-  organizationId, locale, timeZone, role,
+  organizationId, locale, timeZone, role, enabledModules, onOpenModule,
   initialCreate = false, initialClientId, initialTaskId,
 }: Props) {
   const [weekStartKey, setWeekStartKey] = useState("");
@@ -270,6 +274,15 @@ export default function CalendarModule({
       setEvents(nextEvents);
       setClients(nextClients);
       setTasks(nextTasks);
+      if (initialCreate && (initialTaskId || initialClientId)) {
+        const task = nextTasks.find((item) => item.id === initialTaskId);
+        const client = nextClients.find((item) => item.id === (task?.client_id || initialClientId));
+        setForm((current) => ({
+          ...current,
+          title: current.title || (task ? "Programare · " + task.title : client ? "Programare · " + (client.company || client.name) : ""),
+          clientId: task?.client_id || current.clientId,
+        }));
+      }
       setSnapshotIso(new Date().toISOString());
       setSelectedId((current) =>
         current && nextEvents.some((calendarEvent) => calendarEvent.id === current)
@@ -282,7 +295,7 @@ export default function CalendarModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, timeZone, weekStartKey]);
+  }, [organizationId, timeZone, weekStartKey, initialCreate, initialClientId, initialTaskId]);
 
   useEffect(() => {
     if (!weekStartKey) return;
@@ -353,6 +366,7 @@ export default function CalendarModule({
       ...current,
       taskId,
       clientId: task?.client_id ?? current.clientId,
+      title: !current.title.trim() && task ? "Programare · " + task.title : current.title,
       eventType: taskId ? "work" : current.eventType,
     }));
   };
@@ -447,7 +461,7 @@ export default function CalendarModule({
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setViewMode("week")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "week" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Săptămână</button>
           <button type="button" onClick={() => setViewMode("agenda")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "agenda" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Agenda</button>
-          {canWrite && <button type="button" onClick={() => openCreate()} className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white">+ Programare</button>}
+          {canWrite && <button type="button" onClick={() => openCreate()} className="h-11 rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">+ Programare</button>}
         </div>
       </section>
 
@@ -484,7 +498,7 @@ export default function CalendarModule({
             <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
             <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
             <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
-            <Field label="Client"><select value={form.clientId} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
+            <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
             <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
             <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
             <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
@@ -529,6 +543,12 @@ export default function CalendarModule({
         </div>
       )}
 
+      {selectedEvent && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
+          {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+        </div>
+      )}
       {selectedEvent && <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />}
 
       <style jsx>{`.calendar-input { height: 44px; width: 100%; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; outline: none; color: var(--text); }`}</style>

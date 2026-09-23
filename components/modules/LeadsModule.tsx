@@ -16,6 +16,7 @@ import {
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -102,6 +103,7 @@ export default function LeadsModule({
   const [draft, setDraft] = useState<LeadDraft>(() => emptyDraft(locale));
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
   const [activityBody, setActivityBody] = useState("");
+  const [followUpLocal, setFollowUpLocal] = useState("");
 
   const loadLeads = useCallback(async () => {
     setLoading(true);
@@ -131,6 +133,16 @@ export default function LeadsModule({
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
   );
+  useWorkspaceRecordFocus(initialRecordId, selectedLeadId, loading);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setFollowUpLocal(selectedLead?.next_follow_up_at
+        ? new Date(new Date(selectedLead.next_follow_up_at).getTime() - new Date(selectedLead.next_follow_up_at).getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+        : "");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [selectedLeadId, selectedLead?.next_follow_up_at]);
 
   useEffect(() => {
     if (!selectedLeadId) {
@@ -291,6 +303,34 @@ export default function LeadsModule({
     } catch (convertError) {
       console.error(convertError);
       setError("Conversia în client nu a putut fi finalizată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateFollowUp = async (done: boolean) => {
+    if (!canWrite || !selectedLead || saving) return;
+    if (!done && (!followUpLocal || !Number.isFinite(new Date(followUpLocal).getTime()))) {
+      setError("Alege data și ora următoarei reveniri.");
+      return;
+    }
+    const when = done ? null : new Date(followUpLocal).toISOString();
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await updateCrmLead(organizationId, selectedLead.id, { next_follow_up_at: when });
+      setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead));
+      try {
+        const note = await createCrmLeadActivity(organizationId, updated.id, "status",
+          done ? "Follow-up marcat ca rezolvat." : "Follow-up reprogramat.");
+        setActivities((current) => [note, ...current]);
+      } catch (historyError) {
+        console.error(historyError);
+        setError("Termenul a fost salvat, dar istoricul nu a putut fi actualizat.");
+      }
+    } catch (followUpError) {
+      console.error(followUpError);
+      setError("Follow-up-ul nu a putut fi actualizat.");
     } finally {
       setSaving(false);
     }
@@ -479,7 +519,7 @@ export default function LeadsModule({
           </div>
         </article>
 
-        <article className="min-h-[520px] rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
+        <article data-workspace-record-focus={initialRecordId && selectedLead?.id === initialRecordId ? "true" : undefined} className="min-h-[520px] scroll-mt-28 rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
           {selectedLead ? (
             <>
               <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
@@ -512,6 +552,9 @@ export default function LeadsModule({
                 )}
                 {enabledModules.includes("estimates") && (
                   <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă pentru acest client</button>
+                )}
+                {enabledModules.includes("calendar") && (
+                  <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>
                 )}
               </div>}
 
@@ -554,6 +597,20 @@ export default function LeadsModule({
               {selectedLead.note && (
                 <div className="mt-4 rounded-[22px] border border-[var(--border)] p-4 text-sm leading-6 text-[var(--muted)]">
                   {selectedLead.note}
+                </div>
+              )}
+
+              {canWrite && (
+                <div className="mt-5 rounded-[16px] border border-[var(--border)] bg-[var(--surface)]/70 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Următoarea revenire</p>
+                  <div className="mt-3 flex flex-wrap items-end gap-2">
+                    <label className="min-w-[190px] flex-1 text-xs text-[var(--muted)]">
+                      Data și ora locală
+                      <input type="datetime-local" value={followUpLocal} onChange={(event) => setFollowUpLocal(event.target.value)} className="mt-1 block h-10 w-full rounded-[10px] border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text)]" />
+                    </label>
+                    <button type="button" onClick={() => void updateFollowUp(false)} disabled={saving || !followUpLocal} className="h-10 rounded-[10px] border border-[var(--border-strong)] px-3 text-xs font-semibold disabled:opacity-50">Salvează termenul</button>
+                    {selectedLead.next_follow_up_at && <button type="button" onClick={() => void updateFollowUp(true)} disabled={saving} className="h-10 rounded-[10px] bg-[var(--button)] px-3 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Follow-up rezolvat ✓</button>}
+                  </div>
                 </div>
               )}
 
