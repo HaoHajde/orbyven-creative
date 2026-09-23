@@ -212,3 +212,42 @@ test("Cloudflare missing token fails closed before quota or fetch",async()=>{
   assert.equal(res.status,503);
   assert.equal(r.calls.length,0);
 });
+
+test("invalid provider name defaults to no-cost local, even if OpenAI key exists",async()=>{
+  const r=route({env:{ORBYVEN_AI_PROVIDER:"auto"}});
+  const res=await r.post(good);
+  assert.equal(res.status,503);
+  assert.equal(r.calls.filter(x=>x[0]==="ai"||x[0]==="claim").length,0);
+});
+test("local design router is checked before remote readiness in editor hook",()=>{
+  const source=fs.readFileSync(root+"/lib/ai/use-site-editor.ts","utf8");
+  const localCall=source.indexOf("const local = applyLocalPreviewCommand(validDraft, requestText);");
+  const remoteCheck=source.indexOf('if (aiStatus !== "ready")',localCall);
+  assert.ok(localCall>0&&remoteCheck>localCall);
+});
+test("Cloudflare Qwen parser accepts safe JSON and never fetches a user-provided URL",async()=>{
+  const cfModule={exports:{}};const requests=[];
+  vm.runInNewContext(compile("lib/ai/cloudflare-server.ts"),{
+    module:cfModule,exports:cfModule.exports,JSON,Math,Error,AbortController,setTimeout,clearTimeout,
+    process:{env:{CLOUDFLARE_AI_ACCOUNT_ID:"a".repeat(32),CLOUDFLARE_AI_API_TOKEN:"mock-token"}},
+    require(name){
+      if(name==="@/lib/ai/site-editor")return{applySitePatch};
+      throw Error(name);
+    },
+    fetch:async(url,opts)=>{
+      requests.push([url,opts.headers.Authorization]);
+      return{ok:true,json:async()=>({
+        success:true,
+        result:{response:'{"message":"Text rescris","headline":"Un titlu creativ","preset":"florarie"}',
+          usage:{prompt_tokens:44,completion_tokens:21}}
+      })};
+    }
+  });
+  const response=await cfModule.exports.suggestCloudflareEdit(DEFAULT_SITE,"rescrie titlul");
+  assert.equal(response.draft.headline,"Un titlu creativ");
+  assert.equal(response.draft.preset,"studio");
+  assert.equal(response.usage.inputTokens,44);
+  assert.equal(response.usage.outputTokens,21);
+  assert.match(requests[0][0],/^https:\/\/api\.cloudflare\.com\/client\/v4\/accounts\/a{32}\/ai\/run\/@cf\//);
+  assert.equal(requests[0][1],"Bearer mock-token");
+});
