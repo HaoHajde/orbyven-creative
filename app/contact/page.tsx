@@ -232,6 +232,12 @@ export default function ContactPage() {
               <InfoRow label="Răspuns" value="În cel mai scurt timp" />
               <InfoRow label="Lucrăm" value="Remote · România" />
               <InfoRow label="Flux" value="Cerere → ofertă → proiect" />
+              <a
+                href="mailto:contact@orbyven.ro"
+                className="block py-4 text-sm font-medium text-[var(--text)] underline underline-offset-4"
+              >
+                contact@orbyven.ro
+              </a>
             </div>
 
             <Link

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { isBillingPlanId } from "@/lib/billing/public-config";
+import { notifyNewProjectRequest } from "@/lib/email/project-request-notification";
 import {
   isProjectPaymentMode,
   type PublicProjectRequestInput,
@@ -136,10 +137,28 @@ export async function POST(request: Request) {
       throw new Error("PROJECT_REQUEST_GATEWAY_EMPTY_RESPONSE");
     }
 
+    const requestNumber = publicRequestNumber(Number(row.request_no));
+
+    // Only notify after the database confirms the request was persisted.
+    // Mail failures must not block the customer's successful submission.
+    await notifyNewProjectRequest({
+      requestId: String(row.id),
+      requestNumber,
+      contactName,
+      email,
+      phone,
+      companyName,
+      paymentMode,
+      planId,
+      projectTitle,
+      projectDetails,
+      source,
+    });
+
     return NextResponse.json({
       ok: true,
       id: row.id,
-      requestNumber: publicRequestNumber(Number(row.request_no)),
+      requestNumber,
       next: paymentMode === "subscription" ? "/workspace" : null,
     });
   } catch (error) {
