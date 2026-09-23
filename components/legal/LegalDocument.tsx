@@ -17,6 +17,8 @@ const legalLinks = [
   ["/legal/cookies", "Cookies"],
   ["/legal/dpa", "DPA"],
   ["/legal/acceptable-use", "Utilizare acceptabilă"],
+  ["/legal/consumer", "Consumatori"],
+  ["/legal/ai", "Transparență AI"],
 ] as const;
 
 export default function LegalDocument({
