@@ -6,7 +6,7 @@ import TemplateExperienceLayer from "@/components/TemplateExperienceLayer";
 export const metadata: Metadata = {
   title: "Templates & Portofoliu",
   description:
-    "Explorează proiectele și direcțiile vizuale ORBYVEN CREATIVE pentru website-uri, landing pages și experiențe digitale personalizabile.",
+    "Explorează template-uri ORBYVEN CREATIVE pentru website-uri, invitații digitale de nuntă, botez și majorat, landing pages și experiențe personalizabile.",
   alternates: {
     canonical: "/templates",
   },
