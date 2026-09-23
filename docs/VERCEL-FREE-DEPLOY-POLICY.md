@@ -4,8 +4,8 @@ Regulă activă de la etapa dashboard Alpha 0.2. Nu schimbă checkpointul Alpha 
 
 ## Configurația aplicată
 
-În `vercel.json`, `git.deploymentEnabled` are `"*": false` și `"main": true`.
-Astfel, branch-urile de lucru și checkpoint nu mai creează automat Preview deployments;
+În `vercel.json`, `git.deploymentEnabled` are `"**": false` și `"main": true` (tiparul `**` acoperă și branch-uri cu `/`, de exemplu `feature/dashboard-*`).
+Astfel, după ce integrarea Vercel aplică configurația, branch-urile de lucru și checkpoint nu ar trebui să creeze automat Preview deployments;
 `main` continuă să declanșeze deploymentul de producție.
 
 ## Mod de lucru obligatoriu
