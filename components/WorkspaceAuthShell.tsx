@@ -2,7 +2,7 @@
 
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 /**
  * Shared workspace authentication presentation only.
@@ -121,15 +121,16 @@ export function AuthField({
   minLength?: number;
 }) {
   const [showPassword, setShowPassword] = useState(false);
+  const fieldId = useId();
   const passwordField = type === "password";
   const emailField = type === "email";
 
   return (
-    <label className="block">
-      <span className="mb-2.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a2abc2]">
+    <div className="block">
+      <label htmlFor={fieldId} className="mb-2.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a2abc2]">
         {label}
-      </span>
-      <span className="group flex h-[53px] items-center gap-3 rounded-[15px] border border-white/[0.15] bg-[#080c18]/70 px-4 transition focus-within:border-[#7089ff] focus-within:ring-[3px] focus-within:ring-[#5778ff]/20">
+      </label>
+      <div className="group flex h-[53px] items-center gap-3 rounded-[15px] border border-white/[0.15] bg-[#080c18]/70 px-4 transition focus-within:border-[#7089ff] focus-within:ring-[3px] focus-within:ring-[#5778ff]/20">
         {emailField ? (
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-[17px] w-[17px] shrink-0 text-[#a2abc2]">
             <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" />
@@ -140,6 +141,7 @@ export function AuthField({
           </svg>
         ) : null}
         <input
+          id={fieldId}
           type={passwordField && showPassword ? "text" : type}
           required
           minLength={minLength}
@@ -168,8 +170,8 @@ export function AuthField({
             )}
           </button>
         )}
-      </span>
-    </label>
+      </div>
+    </div>
   );
 }
 
