@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
@@ -136,52 +137,83 @@ export function BeforeAfter({
   note?: string;
 }) {
   const [position, setPosition] = useState(50);
+  const imageSizes = "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1536px) 60vw, 1100px";
 
   return (
     <article className="overflow-hidden rounded-[30px] border border-white/[.09] bg-[#0a0a0a] shadow-[0_28px_90px_rgba(0,0,0,.28)]">
-      <div className="relative aspect-[4/3] min-h-[320px] overflow-hidden sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] min-h-[280px] overflow-hidden sm:aspect-[16/10]">
+        <div className="absolute inset-0">
+          <Image
+            src={beforeImage}
+            alt={`${title} — înainte de detailing, imagine demonstrativă`}
+            fill
+            sizes={imageSizes}
+            className="object-cover object-center"
+            loading="lazy"
+            quality={90}
+            draggable={false}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-black/10" />
+        </div>
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `linear-gradient(rgba(0,0,0,.16),rgba(0,0,0,.28)),url("${beforeImage}")` }}
-        />
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,.02),rgba(0,0,0,.10)),url("${afterImage}")`,
-            clipPath: `inset(0 ${100 - position}% 0 0)`,
-          }}
-        />
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/12" />
-        <div className="pointer-events-none absolute inset-y-0 w-px bg-white/90 shadow-[0_0_24px_rgba(255,255,255,.45)]" style={{ left: `${position}%` }}>
-          <div className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/28 bg-black/72 text-[13px] text-[#e0c58f] shadow-[0_8px_30px_rgba(0,0,0,.35)] backdrop-blur-xl">↔</div>
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
+        >
+          <Image
+            src={afterImage}
+            alt={`${title} — după detailing, imagine demonstrativă`}
+            fill
+            sizes={imageSizes}
+            className="object-cover object-center"
+            loading="lazy"
+            quality={90}
+            draggable={false}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
         </div>
 
+        <div
+          className="pointer-events-none absolute inset-y-0 w-px bg-white/95 shadow-[0_0_20px_rgba(255,255,255,.48)]"
+          style={{ left: `${position}%` }}
+        >
+          <div className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-black/75 text-[15px] text-[#e0c58f] shadow-[0_8px_30px_rgba(0,0,0,.38)] backdrop-blur-lg">↔</div>
+        </div>
         <input
           aria-label={`Compară înainte și după pentru ${title}`}
           type="range"
-          min="6"
-          max="94"
+          min="0"
+          max="100"
           value={position}
           onChange={(event) => setPosition(Number(event.target.value))}
-          className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0"
+          className="absolute inset-0 z-10 h-full w-full cursor-ew-resize touch-pan-y opacity-0"
         />
-
-        <span className="pointer-events-none absolute left-4 top-4 rounded-full border border-white/12 bg-black/58 px-3 py-2 text-[8px] font-bold uppercase tracking-[.16em] text-white/65 backdrop-blur-xl">Înainte</span>
-        <span className="pointer-events-none absolute right-4 top-4 rounded-full border border-[#d9bc82]/24 bg-black/58 px-3 py-2 text-[8px] font-bold uppercase tracking-[.16em] text-[#e2c991] backdrop-blur-xl">După</span>
-
-        <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-full border border-white/[.08] bg-black/46 px-4 py-2.5 text-[8px] uppercase tracking-[.13em] text-white/40 backdrop-blur-xl">
-          <span>trage sliderul</span><span>{position}%</span>
+        <span className="pointer-events-none absolute left-4 top-4 z-20 rounded-full border border-white/12 bg-black/65 px-3 py-2 text-[8px] font-bold uppercase tracking-[.16em] text-white/80 backdrop-blur-lg">Înainte</span>
+        <span className="pointer-events-none absolute right-4 top-4 z-20 rounded-full border border-[#d9bc82]/24 bg-black/65 px-3 py-2 text-[8px] font-bold uppercase tracking-[.16em] text-[#e2c991] backdrop-blur-lg">După</span>
+        <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between rounded-full border border-white/[.08] bg-black/55 px-4 py-2.5 text-[8px] uppercase tracking-[.13em] text-white/60 backdrop-blur-lg">
+          <span>Trage pentru a compara</span><span>{position}%</span>
         </div>
       </div>
 
-      <div className="flex items-end justify-between gap-5 p-5 sm:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-5 p-5 sm:p-6">
         <div>
           <p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#caa45b]">{subtitle}</p>
           <h3 className="mt-2 text-[27px] font-semibold tracking-[-.048em] text-white">{title}</h3>
-          {note && <p className="mt-2 max-w-xl text-[11px] leading-5 text-white/34">{note}</p>}
+          {note && <p className="mt-2 max-w-xl text-[11px] leading-5 text-white/47">{note}</p>}
         </div>
-        <span className="hidden rounded-full border border-white/[.08] px-3 py-2 text-[8px] uppercase tracking-[.14em] text-white/28 sm:block">interactive</span>
+        <div className="flex gap-2" aria-label={`Afișare rapidă ${title}`}>
+          <button
+            type="button"
+            onClick={() => setPosition(0)}
+            aria-pressed={position === 0}
+            className={`rounded-full border px-3 py-2 text-[10px] font-semibold transition ${position === 0 ? "border-[#d9bc82] bg-[#d9bc82] text-black" : "border-white/15 text-white/60 hover:border-white/35 hover:text-white"}`}
+          >Înainte</button>
+          <button
+            type="button"
+            onClick={() => setPosition(100)}
+            aria-pressed={position === 100}
+            className={`rounded-full border px-3 py-2 text-[10px] font-semibold transition ${position === 100 ? "border-[#d9bc82] bg-[#d9bc82] text-black" : "border-white/15 text-white/60 hover:border-white/35 hover:text-white"}`}
+          >După</button>
+        </div>
       </div>
     </article>
   );
