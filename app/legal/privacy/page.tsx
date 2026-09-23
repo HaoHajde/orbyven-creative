@@ -54,11 +54,13 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Drepturile persoanei vizate">
+      <LegalSection title="8. Interacțiunile AI și datele introduse în editor"><p>Editorul asistat AI poate procesa instrucțiuni și conținut de website pentru a genera propuneri de modificare. Configurația concretă a furnizorului AI, retenția prompturilor, transferurile și orice folosire în scop de antrenare trebuie verificate înainte de lansarea comercială. Nu introduce date sensibile sau date ale terților fără temei legal. Vezi și pagina <a href="/legal/ai" className="underline">Transparență AI</a>.</p></LegalSection>
+      <LegalSection title="9. Drepturile persoanei vizate">
         <p>
           În condițiile GDPR poți solicita acces, rectificare, ștergere, restricționare, portabilitate sau opoziție și îți poți retrage consimțământul atunci când prelucrarea se bazează pe consimțământ. Ai și dreptul de a depune o plângere la autoritatea de supraveghere competentă.
         </p>
       </LegalSection>
+      <LegalSection title="10. Informare preliminară și actualizare"><p>Duratele de retenție detaliate, identitatea completă a operatorului și lista concretă de destinatari/subprocesori vor fi completate și validate înainte de activarea serviciilor comerciale. Această pagină nu este o dovadă a activării unor transferuri sau integrări neconfigurate.</p></LegalSection>
     </LegalDocument>
   );
 }
