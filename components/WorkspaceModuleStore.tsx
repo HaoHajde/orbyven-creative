@@ -1,6 +1,7 @@
 "use client";
 
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { getModuleActivationPlan, getModuleDisableBlockers, findMissingDependencies } from "@/lib/orbyven-module-dependencies";
 
 type Props = {
   enabledModules: OrbyvenModuleId[];
@@ -19,6 +20,8 @@ export default function WorkspaceModuleStore({
   savingModule,
   error,
 }: Props) {
+  const inconsistent = findMissingDependencies(enabledModules);
+  const nameFor = (id: OrbyvenModuleId) => ORBYVEN_MODULES.find((entry) => entry.id === id)?.shortName ?? id;
   return (
     <div className="pb-24 md:pb-0">
       <section className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -36,11 +39,16 @@ export default function WorkspaceModuleStore({
 
       {error && <div className="mt-6 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
+      {inconsistent.length > 0 && <div role="status" className="mt-4 rounded-[14px] border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3 text-[12px] leading-5 text-amber-200">Există module active fără toate dependențele: {inconsistent.map((entry) => `${nameFor(entry.module)} → ${entry.missing.map(nameFor).join(", ")}`).join("; ")}. Activează dependențele înainte de utilizare.</div>}
+
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {ORBYVEN_MODULES.map((definition) => {
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
           const saving = savingModule === definition.id;
+          const needs = getModuleActivationPlan(definition.id, enabledModules).filter((id) => id !== definition.id);
+          const blockers = getModuleDisableBlockers(definition.id, enabledModules);
+          const blocked = enabled && blockers.length > 0;
 
           return (
             <article key={definition.id} className="flex min-h-[190px] flex-col rounded-[22px] border border-[var(--border)] bg-[color:var(--surface)]/68 p-5 shadow-[0_12px_38px_rgba(0,0,0,0.025)] backdrop-blur-xl">
@@ -54,15 +62,16 @@ export default function WorkspaceModuleStore({
               <h2 className="mt-4 text-lg font-semibold tracking-[-0.04em]">{definition.name}</h2>
               <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">{definition.description}</p>
 
+              <p className="mt-3 text-[11px] leading-5 text-[var(--muted-2)]">{blocked ? `Necesar pentru: ${blockers.map(nameFor).join(", ")}` : needs.length ? `Activează și: ${needs.map(nameFor).join(", ")}` : definition.id === "overview" ? "Fundația tuturor modulelor" : "Independent de alte module inactive"}</p>
               <div className="mt-auto flex items-center justify-between gap-4 pt-5">
                 <span className="text-xs text-[var(--muted)]">{saving ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
                 <button
                   type="button"
-                  disabled={locked || !canManage || Boolean(savingModule)}
+                  disabled={locked || blocked || !canManage || Boolean(savingModule)}
                   onClick={() => onToggle(definition.id)}
                   className={`h-9 rounded-full px-3.5 text-[11px] font-semibold transition ${enabled ? "bg-[var(--button)] text-[var(--button-text)] shadow-sm" : "border border-[var(--border-strong)] bg-[color:var(--bg)]/50"} disabled:cursor-default disabled:opacity-60`}
                 >
-                  {locked ? "Inclus" : !canManage ? "Blocat" : saving ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                  {locked ? "Inclus" : blocked ? "Necesar" : !canManage ? "Blocat" : saving ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                 </button>
               </div>
             </article>
