@@ -1,6 +1,7 @@
 "use client";
 
 import BrandLogo from "@/components/BrandLogo";
+import WorkspaceOrbitBackground from "@/components/WorkspaceOrbitBackground";
 import WorkspaceContent from "@/components/WorkspaceContent";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
@@ -196,7 +197,7 @@ export default function ClientWorkspace() {
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#07101f" : "#f1f5fd",
+    "--bg": theme === "dark" ? "#070b16" : "#f1f5fd",
     "--surface": theme === "dark" ? "#0d1728" : "#ffffff",
     "--surface-2": theme === "dark" ? "#15233a" : "#eaf1fd",
     "--text": theme === "dark" ? "#eef4ff" : "#142746",
@@ -236,21 +237,20 @@ export default function ClientWorkspace() {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="relative isolate min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: theme === "dark"
-              ? "radial-gradient(ellipse 53% 34% at 30% 0%,rgba(17,95,223,0.32),transparent 78%),radial-gradient(ellipse 38% 45% at 93% 59%,rgba(8,91,187,0.19),transparent 82%)"
-              : "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
-          }}
-        />
-      </div>
+      {theme === "dark" ? (
+        <WorkspaceOrbitBackground fixed />
+      ) : (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
+          }} />
+        </div>
+      )}
 
       <header
-        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/95 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
+        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
         <div className="mx-auto flex h-[65px] max-w-[1520px] items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
@@ -291,7 +291,7 @@ export default function ClientWorkspace() {
       </header>
 
       <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/95 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
@@ -338,7 +338,7 @@ export default function ClientWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/90 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
+        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
