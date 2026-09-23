@@ -123,6 +123,45 @@ export function HeroSpotlight() {
   );
 }
 
+const HAO_MEDIA_FALLBACK_REF = "79350f280335e53ec6ba63ac9a1cf0672afbfe07";
+
+/** Avoid a blank comparison if a CDN alias serves a stale 404 or AVIF decoding fails. */
+function HaoGalleryPhoto({ src, alt }: { src: string; alt: string }) {
+  const webp = src.replace(/\\.avif$/i, ".webp");
+  const candidates = [
+    `${src}?v=79350f2`,
+    `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${src}`,
+    `${webp}?v=79350f2`,
+    `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${webp}`,
+  ];
+  const [attempt, setAttempt] = useState(0);
+
+  if (attempt >= candidates.length) {
+    return (
+      <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_40%,rgba(217,188,130,.12),transparent_60%),#0a0a0a] px-6 text-center">
+        <p className="max-w-xs text-xs leading-6 text-[#d9bc82]/75">
+          Imaginea demonstrativă nu s-a încărcat. Reîncarcă pagina pentru a reîncerca.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      key={candidates[attempt]}
+      src={candidates[attempt]}
+      alt={alt}
+      fill
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1536px) 60vw, 1100px"
+      className="object-cover object-center"
+      loading="eager"
+      unoptimized
+      draggable={false}
+      onError={() => setAttempt((current) => Math.min(current + 1, candidates.length))}
+    />
+  );
+}
+
 export function BeforeAfter({
   beforeImage,
   afterImage,
@@ -137,21 +176,15 @@ export function BeforeAfter({
   note?: string;
 }) {
   const [position, setPosition] = useState(50);
-  const imageSizes = "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1536px) 60vw, 1100px";
 
   return (
     <article className="overflow-hidden rounded-[30px] border border-white/[.09] bg-[#0a0a0a] shadow-[0_28px_90px_rgba(0,0,0,.28)]">
       <div className="relative aspect-[4/3] min-h-[280px] overflow-hidden sm:aspect-[16/10]">
         <div className="absolute inset-0">
-          <Image
+          <HaoGalleryPhoto
+            key={beforeImage}
             src={beforeImage}
             alt={`${title} — înainte de detailing, imagine demonstrativă`}
-            fill
-            sizes={imageSizes}
-            className="object-cover object-center"
-            loading="lazy"
-            unoptimized
-            draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-black/10" />
         </div>
@@ -159,15 +192,10 @@ export function BeforeAfter({
           className="absolute inset-0"
           style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
         >
-          <Image
+          <HaoGalleryPhoto
+            key={afterImage}
             src={afterImage}
             alt={`${title} — după detailing, imagine demonstrativă`}
-            fill
-            sizes={imageSizes}
-            className="object-cover object-center"
-            loading="lazy"
-            unoptimized
-            draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
         </div>
