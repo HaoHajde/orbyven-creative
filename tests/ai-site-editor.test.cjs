@@ -17,7 +17,7 @@ function route(opts={}){
     exports,module:routeModule,process:{env},Number,JSON,Array,Request,
     require(name){
       if(name==="next/server")return{NextResponse:{json:(v,init={})=>({status:init.status||200,json:async()=>v})}};
-      if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");}};
+      if(name==="@/lib/billing/supabase-server")return{authenticateBillingActor:async(...args)=>{calls.push(["auth",...args]);if(opts.deny)throw Error("ORG_ACCESS_REQUIRED");return{organizationId:org,userId:"33333333-3333-4333-8333-333333333333",role:"owner"};}};
       if(name==="@/lib/ai/site-editor")return{readSiteDraft};
       if(name==="@/lib/ai/openai-server")return{suggestSiteEdit:async(...args)=>{calls.push(["ai",...args]);if(opts.failAi)throw Error("AI_UNAVAILABLE");return{draft:applySitePatch(args[0],{headline:"Titlu nou"}),message:"Gata.",usage:{inputTokens:100,outputTokens:20}};}};
       if(name==="@/lib/ai/quota-server")return{
