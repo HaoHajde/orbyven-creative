@@ -157,6 +157,30 @@ export async function createCalendarEvent(
   }
   if (endAt <= startAt) throw new Error("Event end must be after start.");
 
+  let linkedClientId = input.clientId || null;
+  if (input.taskId) {
+    const { data: task, error: taskError } = await orbyvenSupabase
+      .from("ops_tasks")
+      .select("id,client_id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.taskId)
+      .single();
+    if (taskError || !task) throw new Error("Lucrarea nu există în această firmă.");
+    if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
+      throw new Error("Clientul ales nu corespunde lucrării.");
+    }
+    linkedClientId = task.client_id || linkedClientId;
+  }
+  if (linkedClientId) {
+    const { data: client, error: clientError } = await orbyvenSupabase
+      .from("crm_leads")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedClientId)
+      .single();
+    if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
+  }
+
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const { data, error } = await orbyvenSupabase
     .from("calendar_events")
@@ -167,7 +191,7 @@ export async function createCalendarEvent(
       start_at: startAt.toISOString(),
       end_at: endAt.toISOString(),
       all_day: input.allDay ?? false,
-      client_id: input.clientId || null,
+      client_id: linkedClientId,
       task_id: input.taskId || null,
       assignee: cleanOptional(input.assignee),
       location: cleanOptional(input.location),
