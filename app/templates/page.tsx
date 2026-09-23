@@ -407,6 +407,14 @@ export default function TemplatesPage() {
             </div>
           </div>
 
+          {group.id === "evenimente-invitatii" ? (
+            <nav aria-label="Invitații digitale ORBYVEN" className="mb-7 flex flex-wrap gap-2">
+              <Link href="/invitatii-nunta" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații nuntă ↗</Link>
+              <Link href="/invitatii-botez" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații botez ↗</Link>
+              <Link href="/invitatii-majorat" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații majorat ↗</Link>
+            </nav>
+          ) : null}
+
           <div className="grid gap-4 xl:grid-cols-2">
             {group.featured.map((item, index) => (
               <FeaturedCard key={item.href} item={item} delay={Math.min(index * .035, .12)} />
