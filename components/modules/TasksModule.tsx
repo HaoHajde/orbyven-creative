@@ -721,7 +721,7 @@ export default function TasksModule({
           {enabledModules.includes("leads") && selectedTask.client_id && (
             <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
           )}
-          {canWrite && enabledModules.includes("expenses") && (
+          {canDelete && enabledModules.includes("expenses") && (
             <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială pentru lucrare</button>
           )}
           {canWrite && selectedTask.kind === "work" && enabledModules.includes("estimates") && (
