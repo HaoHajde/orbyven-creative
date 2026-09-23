@@ -21,6 +21,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -179,6 +180,7 @@ export default function TasksModule({
     () => tasks.find((task) => task.id === selectedId) ?? null,
     [selectedId, tasks]
   );
+  useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
 
   useEffect(() => {
     if (!selectedTask) return;
@@ -733,6 +735,7 @@ export default function TasksModule({
         </div>
       )}
       {selectedTask && (
+        <div data-workspace-record-focus={initialRecordId && selectedTask.id === initialRecordId ? "true" : undefined} className="scroll-mt-28">
         <TaskDetail
           task={selectedTask}
           client={
@@ -752,6 +755,7 @@ export default function TasksModule({
           onProgress={(progress) => void changeProgress(selectedTask, progress)}
           onDelete={() => void removeTask(selectedTask)}
         />
+        </div>
       )}
 
       <style jsx>{`
