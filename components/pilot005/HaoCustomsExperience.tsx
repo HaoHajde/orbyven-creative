@@ -150,7 +150,6 @@ export function BeforeAfter({
             sizes={imageSizes}
             className="object-cover object-center"
             loading="lazy"
-            quality={90}
             draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-black/10" />
@@ -166,7 +165,6 @@ export function BeforeAfter({
             sizes={imageSizes}
             className="object-cover object-center"
             loading="lazy"
-            quality={90}
             draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
