@@ -13,10 +13,11 @@ type Props = {
   notice: string;
   aiStatus: "loading" | "ready" | "disabled";
   aiStatusReason: string;
+  onRefreshAi: () => void;
 };
 
 export default function SiteEditorChat({
-  messages, prompt, onPrompt, onSend, busy, error, notice, aiStatus, aiStatusReason,
+  messages, prompt, onPrompt, onSend, busy, error, notice, aiStatus, aiStatusReason, onRefreshAi,
 }: Props) {
   const aiReady = aiStatus === "ready";
   return <section className="flex min-h-[500px] flex-col overflow-hidden rounded-[26px] border border-black/[0.07] bg-white shadow-sm lg:min-h-0"
@@ -33,11 +34,15 @@ export default function SiteEditorChat({
       <p className="mt-2 text-xs leading-5 text-[#777780]">
         {aiReady
           ? "Cere o schimbare. Voi modifica în siguranță textele, culorile sau layoutul din preview."
-          : "Editează fără costuri în panoul din dreapta; chatul se activează separat pentru pilot."}
+          : "Poți scrie și trimite comenzi simple pentru culori și layout fără costuri. AI-ul real se activează separat."}
       </p>
-      {!aiReady && aiStatusReason && <p role="status" className="mt-3 rounded-[12px] bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-900">
-        {aiStatusReason}
-      </p>}
+      {!aiReady && <div className="mt-3 rounded-[12px] bg-amber-50 p-3 text-[11px] leading-5 text-amber-900">
+        <p role="status">{aiStatusReason || "Se verifică disponibilitatea chatului AI..."}</p>
+        <button type="button" disabled={aiStatus === "loading" || busy} onClick={onRefreshAi}
+          className="mt-2 rounded-full border border-amber-300 bg-white px-3 py-1.5 font-semibold disabled:opacity-50">
+          {aiStatus === "loading" ? "Se verifică..." : "↻ Reverifică AI"}
+        </button>
+      </div>}
     </div>
     <div aria-live="polite" className="flex min-h-[180px] flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 lg:min-h-0">
       {messages.map((message, index) =>
@@ -52,7 +57,7 @@ export default function SiteEditorChat({
     <div className="border-t border-black/[0.07] p-4">
       <div className="mb-3 flex flex-wrap gap-2">
         {["Fă site-ul negru cu accent auriu", "Vreau un titlu mai scurt", "Schimbă layoutul în centrat"].map(example =>
-          <button key={example} type="button" onClick={() => onPrompt(example)} disabled={busy || !aiReady}
+          <button key={example} type="button" onClick={() => onPrompt(example)} disabled={busy}
             className="rounded-full border border-black/10 px-3 py-2 text-[11px] text-[#595961] hover:bg-[#f7f7fa] disabled:cursor-not-allowed disabled:opacity-40">
             {example}
           </button>
@@ -61,14 +66,14 @@ export default function SiteEditorChat({
       <form onSubmit={onSend} className="rounded-[20px] border border-black/10 bg-[#f7f7fa] p-2">
         <label htmlFor="editor-prompt" className="sr-only">Ce dorești să modifici?</label>
         <textarea id="editor-prompt" value={prompt} maxLength={600} rows={3}
-          disabled={busy || !aiReady} onChange={event => onPrompt(event.target.value)}
-          placeholder={aiReady ? "Ex.: Fă titlul mai scurt și schimbă fundalul în negru..." : "Chatul AI este dezactivat. Încearcă ajustările manuale din dreapta."}
+          disabled={busy} onChange={event => onPrompt(event.target.value)}
+          placeholder={aiReady ? "Ex.: Fă titlul mai scurt și schimbă fundalul în negru..." : "Ex.: Fă site-ul negru cu accent auriu și layout editorial (mod local fără AI)."}
           className="w-full resize-none bg-transparent p-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-55"/>
         <div className="flex items-center justify-between gap-2 px-2 pb-1">
           <span className="text-[10px] text-[#86868b]">{prompt.length}/600 · fără publicare</span>
-          <button type="submit" disabled={busy || !aiReady || prompt.trim().length < 4}
+          <button type="submit" disabled={busy || prompt.trim().length < 4}
             className="rounded-full bg-[#6058e8] px-5 py-2.5 text-xs font-semibold text-white disabled:opacity-40">
-            {busy ? "Se generează..." : "Modifică preview-ul →"}
+            {busy ? "Se generează..." : aiReady ? "Modifică cu AI →" : "Aplică local →"}
           </button>
         </div>
       </form>

@@ -31,8 +31,8 @@ export async function GET(request: Request) {
   if (process.env.VERCEL_ENV === "production") {
     return respond(false, "AI-ul este închis în Production pe durata etapei Alpha.");
   }
-  if (process.env.ORBYVEN_AI_EDITOR_ENABLED !== "true") {
-    return respond(false, "Poți personaliza manual preview-ul. Chatul AI nu este încă activat în Preview.");
+  if (process.env.ORBYVEN_AI_EDITOR_ENABLED?.trim().toLowerCase() !== "true") {
+    return respond(false, "Poți personaliza manual preview-ul. Deploymentul citește ORBYVEN_AI_EDITOR_ENABLED ca dezactivat sau absent. Verifică valoarea true în Vercel Preview, apoi fă Redeploy pe branch-ul editorului.");
   }
   if (!process.env.OPENAI_API_KEY?.trim()) {
     return respond(false, "Cheia AI nu este configurată pe server.");

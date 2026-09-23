@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   // Alpha is only for a controlled Preview deployment; never bill production accidentally.
   if (
     process.env.VERCEL_ENV === "production" ||
-    process.env.ORBYVEN_AI_EDITOR_ENABLED !== "true"
+    process.env.ORBYVEN_AI_EDITOR_ENABLED?.trim().toLowerCase() !== "true"
   ) {
     return fail("Editorul AI este dezactivat pentru acest mediu.", 503);
   }

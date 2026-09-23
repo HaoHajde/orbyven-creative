@@ -74,3 +74,30 @@ test("invalid manual draft cannot be sent to model",async()=>{
   assert.equal((await a.post({...good,draft:{...DEFAULT_SITE,headline:""}})).status,400);
   assert.equal(a.calls.filter(x=>x[0]==="ai").length,0);
 });
+
+const localModule={exports:{}};
+vm.runInNewContext(compile("lib/ai/local-preview-commands.ts"),{
+  module:localModule,exports:localModule.exports,
+  require(name){
+    if(name==="@/lib/ai/site-editor")return{applySitePatch};
+    throw Error(name);
+  }
+});
+const {applyLocalPreviewCommand}=localModule.exports;
+test("disabled AI supports transparent local black and gold style request",()=>{
+  const result=applyLocalPreviewCommand(DEFAULT_SITE,"Fă site-ul negru cu accente aurii și layout editorial");
+  assert.equal(result.draft.background,"#101113");
+  assert.equal(result.draft.accent,"#d4af37");
+  assert.equal(result.draft.layout,"editorial");
+  assert.match(result.message,/fără AI/);
+});
+test("local command does not invent text for unsupported copywriting",()=>{
+  assert.equal(applyLocalPreviewCommand(DEFAULT_SITE,"Scrie un text premium nou"),null);
+});
+test("local explicit title preserves user-supplied wording",()=>{
+  assert.equal(applyLocalPreviewCommand(DEFAULT_SITE,"Titlu: Acasă la tine, mai confortabil").draft.headline,"Acasă la tine, mai confortabil");
+});
+test("disabled AI flag tolerates harmless surrounding whitespace",async()=>{
+  const a=route({env:{ORBYVEN_AI_EDITOR_ENABLED:" true "}});
+  assert.equal((await a.post(good)).status,200);
+});

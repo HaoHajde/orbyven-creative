@@ -8,6 +8,7 @@ import {
 import { getCurrentWorkspace, getWorkspaceEntryPath, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { SiteEditorMessage } from "@/components/ai/SiteEditorChat";
+import { applyLocalPreviewCommand } from "@/lib/ai/local-preview-commands";
 
 type AiStatus = "loading" | "ready" | "disabled";
 type AiStatusResponse = { enabled?: boolean; reason?: string };
@@ -119,14 +120,47 @@ export function useSiteEditor() {
     setError("");
   };
 
+  const refreshAiStatus = async () => {
+    if (!workspace || !allowed || busy) return;
+    setAiStatus("loading");
+    setAiStatusReason("Verificăm disponibilitatea serverului AI...");
+    try {
+      const {data} = await orbyvenSupabase.auth.getSession();
+      if (!data.session?.access_token) throw Error("Sesiunea a expirat. Autentifică-te din nou.");
+      const response = await fetch(
+        "/api/ai/site-editor/status?organizationId=" + encodeURIComponent(workspace.organization.id),
+        {cache:"no-store",headers:{Authorization:"Bearer " + data.session.access_token}}
+      );
+      const result = await response.json() as AiStatusResponse;
+      setAiStatus(response.ok && result.enabled ? "ready" : "disabled");
+      setAiStatusReason(result.reason || "Chatul AI nu este încă disponibil.");
+    } catch {
+      setAiStatus("disabled");
+      setAiStatusReason("Nu am putut verifica AI-ul. Comenzile locale rămân disponibile.");
+    }
+  };
+
   const send = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!workspace || !allowed || busy || aiStatus !== "ready" || prompt.trim().length < 4) return;
+    if (!workspace || !allowed || busy || prompt.trim().length < 4) return;
     const validDraft = readSiteDraft(site);
     if (!validDraft) {setError("Completează toate câmpurile înainte de a cere o modificare AI.");return;}
     const requestText = prompt.trim();
     setPrompt(""); setNotice(""); setError("");
     setMessages(current => [...current, {role:"user",text:requestText}]);
+    if (aiStatus !== "ready") {
+      const local = applyLocalPreviewCommand(validDraft, requestText);
+      if (local) {
+        changeDraft(local.draft);
+        setMessages(current => [...current, {role:"assistant",text:local.message}]);
+      } else {
+        setMessages(current => [...current, {
+          role:"assistant",
+          text:"Mod local, fără AI: această cerere necesită chatul AI activ. Poți folosi între timp „Fă site-ul negru cu accent auriu”, „layout centrat”, „layout editorial” sau „Titlu: textul meu”."
+        }]);
+      }
+      return;
+    }
     setBusy(true);
     try {
       const {data} = await orbyvenSupabase.auth.getSession();
@@ -156,6 +190,6 @@ export function useSiteEditor() {
 
   return {
     workspace, ready, allowed, error, notice, history, messages, prompt, setPrompt,
-    busy, view, setView, site, save, undo, send, onPatch, onSelectPreset, aiStatus, aiStatusReason,
+    busy, view, setView, site, save, undo, send, onPatch, onSelectPreset, aiStatus, aiStatusReason, refreshAiStatus,
   };
 }
