@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import InvitationServiceLanding from "@/components/InvitationServiceLanding";
+import InvitationStructuredData from "@/components/InvitationStructuredData";
 
 export const metadata: Metadata = {
   title: "Invitații de botez digitale pentru fetițe și băieței",
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 
 export default function BaptismInvitationsPage() {
   return (
+    <>
+    <InvitationStructuredData path="/invitatii-botez" name="Invitații de botez digitale personalizate" description="Invitații online pentru botezul fetiței sau băiețelului, cu modele personalizabile și detaliile evenimentului." />
     <InvitationServiceLanding
       label="Invitații de botez"
       title="Invitații de botez digitale, create pentru ziua voastră specială."
@@ -29,6 +32,8 @@ export default function BaptismInvitationsPage() {
       ]}
       relatedHref="/invitatii-nunta"
       relatedLabel="Vezi invitațiile de nuntă"
+      faq={[{"question":"Aveți modele diferite pentru fetiță și băiețel?","answer":"Da. Poți porni de la două direcții vizuale distincte, apoi adaptăm paleta cromatică, fotografiile și textele la stilul familiei."},{"question":"Ce informații pot include în invitația de botez?","answer":"De obicei, numele copilului, data, biserica, restaurantul, programul și un mod simplu de a confirma prezența. Alegem numai informațiile utile invitaților."},{"question":"Invitații trebuie să instaleze o aplicație?","answer":"Nu. Invitația se deschide într-un browser folosind linkul primit, inclusiv pe telefon."},{"question":"Pot cere o variantă fără model prestabilit?","answer":"Da. Putem discuta o invitație personalizată pornind de la stilul și nevoile evenimentului."}]}
     />
+    </>
   );
 }
