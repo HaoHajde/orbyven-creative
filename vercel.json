@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "feature/ai-site-editor-alpha-02": false
+      "feature/ai-site-editor-alpha-02": true
     }
   },
   "buildCommand": "node --test tests/ai-site-editor.test.cjs && npm run lint && npm run typecheck && npm run build"
