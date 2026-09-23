@@ -5,15 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
-export const haoImages = {
-  hero: "/hao-customs/hero.avif",
-  exteriorBefore: "/hao-customs/exterior-before.avif",
-  exteriorAfter: "/hao-customs/exterior-after.avif",
-  interiorBefore: "/hao-customs/interior-before.avif",
-  interiorAfter: "/hao-customs/interior-after.avif",
-  paintBefore: "/hao-customs/paint-before.avif",
-  paintAfter: "/hao-customs/paint-after.avif",
-};
+export { haoImages } from "./haoMedia";
 
 const navItems = [
   { href: "/templates/haos-customs", label: "Acasă", meta: "01" },
@@ -127,13 +119,14 @@ const HAO_MEDIA_FALLBACK_REF = "79350f280335e53ec6ba63ac9a1cf0672afbfe07";
 
 /** Avoid a blank comparison if a CDN alias serves a stale 404 or AVIF decoding fails. */
 function HaoGalleryPhoto({ src, alt }: { src: string; alt: string }) {
-  const webp = src.replace(/\.avif$/i, ".webp");
-  const candidates = [
-    `${src}?v=79350f2`,
-    `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${src}`,
+  const source = typeof src === "string" ? src : "";
+  const webp = source.replace(/\.avif$/i, ".webp");
+  const candidates = source ? [
+    `${source}?v=79350f2`,
+    `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${source}`,
     `${webp}?v=79350f2`,
     `https://raw.githubusercontent.com/HaoHajde/orbyven-creative/${HAO_MEDIA_FALLBACK_REF}/public${webp}`,
-  ];
+  ] : [];
   const [attempt, setAttempt] = useState(0);
 
   if (attempt >= candidates.length) {
