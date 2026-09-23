@@ -68,6 +68,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Even when Preview is enabled, only explicitly selected pilot organizations may spend tokens.
+  const allowedOrganizations = (process.env.ORBYVEN_AI_ALLOWED_ORGANIZATION_IDS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!allowedOrganizations.includes(actor.organizationId.toLowerCase())) {
+    return fail("Editorul AI nu este activat pentru firma ta.", 403);
+  }
+
   let claim;
   try {
     claim = await claimAiEditorQuota(actor);
