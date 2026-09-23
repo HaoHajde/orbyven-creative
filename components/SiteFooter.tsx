@@ -19,6 +19,7 @@ const seoLinks = [
   ["/web-design-bucuresti", "Web design București"],
   ["/invitatii-nunta", "Invitații nuntă digitale"],
   ["/invitatii-botez", "Invitații botez digitale"],
+  ["/invitatii-majorat", "Invitații majorat digitale"],
   ["/redesign-site", "Redesign"],
   ["/studii-de-caz", "Studii de caz"],
   ["/ghid", "Ghid"],
