@@ -236,6 +236,7 @@ export default function WorkspaceRegisterPage() {
           </button>
         ) : null}
 
+        <p className="mt-4 text-xs leading-5 text-white/60">La crearea contului, prelucrăm datele de înregistrare conform <Link href="/legal/privacy" className="underline">Politicii de confidențialitate</Link>. Pentru abonamente se aplică separat acceptarea <Link href="/legal/terms" className="underline">Termenilor generali</Link> și a <Link href="/legal/subscriptions" className="underline">Termenilor B2B</Link> înainte de plată.</p>
         <AuthPrimaryButton loading={loading} loadingLabel="Se creează contul...">
           Creează cont
         </AuthPrimaryButton>
