@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:ecosystem": "node --test tests/ecosystem-contract.test.mjs",
-    "validate": "npm run lint && npm run typecheck && npm run build"
+    "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs",
+    "validate": "npm run lint && npm run typecheck && npm run test:ecosystem && npm run test:billing && node --test tests/pilot-demo-integrity.test.mjs && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
