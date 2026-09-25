@@ -22,6 +22,7 @@ type Props = {
   initialCreate?: boolean;
   initialClientId?: string;
   initialTaskId?: string;
+  initialEstimateId?: string;
 };
 
 type FormState = {
@@ -76,7 +77,7 @@ function monthKey(value: string) {
 }
 
 export default function ExpensesModule({
-  organizationId, locale, role, initialCreate = false, initialClientId, initialTaskId,
+  organizationId, locale, role, initialCreate = false, initialClientId, initialTaskId, initialEstimateId,
 }: Props) {
   const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
   const [clients, setClients] = useState<ExpenseClientLink[]>([]);
@@ -169,6 +170,7 @@ export default function ExpensesModule({
         clientId: form.clientId || null,
         taskId: form.taskId || null,
         documentId: form.documentId || null,
+        estimateId: initialEstimateId || null,
       });
       setExpenses((current) => [created, ...current]);
       setForm(emptyForm());
@@ -244,6 +246,7 @@ export default function ExpensesModule({
               <select value={form.documentId} onChange={(e) => setForm((c) => ({ ...c, documentId: e.target.value }))} className={moduleInputClass}><option value="">Fără document</option>{documents.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </Field>
           </div>
+          {initialEstimateId&&<p className="mt-3 text-[11px] text-[var(--muted)]">Cheltuiala va fi asociată devizului din care ai deschis formularul.</p>}
           <div className="mt-5 flex justify-end"><button disabled={saving} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Salvează cheltuiala"}</button></div>
         </form>
       ) : null}
