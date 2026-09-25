@@ -1,6 +1,6 @@
 # ORBYVEN Alpha — integrity hardening (preview-only)
 
-This work is deliberately isolated from `main`, has **no database writes**, and does **not** deploy to Vercel.
+Originally prepared as preview-only PR #92. Integrated in the Alpha 0.5 release with separate, verified additive Supabase migrations and a single intended production merge. This document is a safety checklist, not a statement that production deployment succeeded.
 
 ## Confirmed findings
 
