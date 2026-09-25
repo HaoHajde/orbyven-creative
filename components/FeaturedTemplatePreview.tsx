@@ -96,7 +96,7 @@ function DeferredDemoIframe({ number }: { number: string }) {
     const element = containerRef.current;
     if (!element) return;
 
-    if (!("IntersectionObserver" in window)) {
+    if (typeof IntersectionObserver === "undefined") {
       const frame = window.requestAnimationFrame(() => setShouldMount(true));
       return () => window.cancelAnimationFrame(frame);
     }
