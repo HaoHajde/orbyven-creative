@@ -66,14 +66,15 @@ export async function updateCatalogMaterial(organizationId:string,id:string,inpu
 
 export async function createMaterialRecipe(organizationId:string,input:{
   name:string;description:string;laborLei:number;
-}):Promise<void>{
+}):Promise<string>{
   if(!organizationId||!input.name.trim()||!amount(input.laborLei))throw new Error("Verifică rețeta și costul manoperei.");
   const {data}=await orbyvenSupabase.auth.getUser();
-  const {error}=await orbyvenSupabase.from("ops_material_recipes").insert({
+  const {data: created,error}=await orbyvenSupabase.from("ops_material_recipes").insert({
     organization_id:organizationId,name:input.name.trim(),description:input.description.trim()||null,
     labor_cost_cents:asCents(input.laborLei),created_by:data.user?.id??null,
-  });
-  if(error)throw error;
+  }).select("id").single();
+  if(error||!created)throw error??new Error("Rețeta nu a putut fi salvată.");
+  return created.id;
 }
 
 export async function updateRecipeLabor(organizationId:string,id:string,laborLei:number):Promise<void>{
