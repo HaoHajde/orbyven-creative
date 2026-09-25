@@ -130,6 +130,9 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "expenses") {
+    if (!["owner", "admin", "manager"].includes(role)) {
+      return <div role="status" className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--muted)]">Finanțele firmei sunt disponibile doar administratorilor și managerilor.</div>;
+    }
     return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   }
 

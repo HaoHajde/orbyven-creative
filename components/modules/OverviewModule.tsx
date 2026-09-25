@@ -84,6 +84,7 @@ export default function OverviewModule({
   onOpenModule,
 }: Props) {
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
+  const canAccessFinances = ["owner", "admin", "manager"].includes(role);
   const [snapshotNow, setSnapshotNow] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,7 +93,7 @@ export default function OverviewModule({
     setLoading(true);
     setError("");
     try {
-      const nextSnapshot = await loadOverviewSnapshot(organizationId);
+      const nextSnapshot = await loadOverviewSnapshot(organizationId, canAccessFinances);
       setSnapshot(nextSnapshot);
       setSnapshotNow(new Date().getTime());
     } catch (loadError) {
@@ -101,7 +102,7 @@ export default function OverviewModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, canAccessFinances]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -392,7 +393,7 @@ export default function OverviewModule({
           </section>
 
           <section aria-label="Rezumat operațional" className="mt-2.5 grid gap-2 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-2 sm:grid-cols-2 xl:grid-cols-4">
-            <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />
+            {canAccessFinances && <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />}
             <SnapshotRow label="Documente" value={String(snapshot.documentCount)} onClick={() => onOpenModule("documents")} enabled={enabledModules.includes("documents")} />
             <SnapshotRow label="Echipă activă" value={String(snapshot.activeTeamCount)} onClick={() => onOpenModule("team")} enabled={enabledModules.includes("team")} />
             <SnapshotRow label="Module active" value={String(enabledModules.filter((id) => id !== "overview").length)} enabled />
