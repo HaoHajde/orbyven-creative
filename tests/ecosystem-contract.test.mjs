@@ -39,7 +39,8 @@ test("prerequisites resolve in order without duplicates", () => {
     "fiscal_profile", "anaf_connection",
   ]);
   assert.deepEqual(graph.getEcosystemMissingDependencies("client_offer", new Set(["crm"])), ["work", "estimate"]);
-  assert.equal(graph.isReadyForCustomerUse("client_offer"), false);
+  assert.equal(graph.isReadyForCustomerUse("client_offer"), true);
+  assert.equal(graph.isReadyForCustomerUse("efactura_submission"), false);
   assert.equal(graph.isReadyForCustomerUse("estimate"), true);
 });
 
