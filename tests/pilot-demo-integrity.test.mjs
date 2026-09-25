@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -56,5 +56,27 @@ test("demo media is local or self-embedded; no missing relative file dependencie
     const html = read("public/orbyven-demos/pilot-" + id + "/index.html");
     const staticRefs = [...html.matchAll(/(?:src|href)=["'](?!data:|https?:|#|mailto:|tel:|javascript:|\$\{)([^"'#]+)["']/g)];
     assert.deepEqual(staticRefs.map((m) => m[1]), [], id + " references missing standalone asset");
+  }
+});
+
+test("no Reverse shortcut is injected into templates or embedded demos", () => {
+  const files = [
+    "components/TemplateExperienceLayer.tsx",
+    "app/demo/nunta",
+    "app/templates",
+    "public/orbyven-demos",
+  ];
+  while (files.length) {
+    const path = files.pop();
+    const absolute = join(root, path);
+    if (statSync(absolute).isDirectory()) {
+      for (const entry of readdirSync(absolute, { withFileTypes: true })) {
+        files.push(join(path, entry.name));
+      }
+      continue;
+    }
+    if (/\.(tsx|jsx|html)$/.test(path)) {
+      assert.doesNotMatch(read(path), /\bReverse\b/, path + " still contains a Reverse button");
+    }
   }
 });

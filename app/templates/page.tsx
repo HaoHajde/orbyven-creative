@@ -377,13 +377,6 @@ export default function TemplatesPage() {
     >
       <SiteHeader theme={theme} compact={false} activePage="templates" onToggleTheme={toggleTheme} />
 
-      <Link
-        href="/"
-        className="fixed left-4 top-[84px] z-40 hidden h-11 items-center gap-2 rounded-full border border-white/12 bg-black/35 px-4 text-[11px] font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,.2)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-black/50 md:inline-flex"
-      >
-        ← Reverse
-      </Link>
-
       <section className="relative isolate flex min-h-[94svh] items-end overflow-hidden px-5 pb-10 pt-32 text-white sm:px-6 md:px-10 md:pb-16 md:pt-40">
         <div className="absolute inset-0 -z-30 bg-[#07070a]" />
         <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_68%_25%,rgba(115,83,255,.35),transparent_26%),radial-gradient(circle_at_24%_68%,rgba(70,51,150,.24),transparent_32%),linear-gradient(180deg,#161027_0%,#09080f_68%,#07070a_100%)]" />
