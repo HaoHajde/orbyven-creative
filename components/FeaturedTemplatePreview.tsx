@@ -4,7 +4,21 @@ import type { CSSProperties, ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 import { BarberHero } from "@/components/pilot006/BarbershopExperience";
 
-export type FeaturedPreviewKind = "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl" | "baptismBoy" | "birthday18" | "hao" | "barber";
+const demoPreviews = {
+  demo006: { number: "006", dark: false },
+  demo007: { number: "007", dark: false },
+  demo008: { number: "008", dark: false },
+  demo009: { number: "009", dark: true },
+  demo010: { number: "010", dark: false },
+  demo011: { number: "011", dark: false },
+  demo012: { number: "012", dark: false },
+  demo013: { number: "013", dark: false },
+} as const;
+
+export type FeaturedPreviewKind =
+  | "obsidian" | "asphalt" | "florist" | "wedding" | "baptismGirl"
+  | "baptismBoy" | "birthday18" | "hao" | "barber"
+  | keyof typeof demoPreviews;
 
 function BrowserFrame({
   children,
@@ -70,6 +84,24 @@ function MiniNav({
 }
 
 export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPreviewKind }) {
+  if (kind in demoPreviews) {
+    const demo = demoPreviews[kind as keyof typeof demoPreviews];
+    return (
+      <BrowserFrame url={`orbyven.ro / pilot-${demo.number}`} dark={demo.dark}>
+        <div className="relative h-[338px] overflow-hidden bg-[#101014]" aria-hidden="true">
+          <iframe
+            src={`/orbyven-demos/pilot-${demo.number}/index.html`}
+            title={`Preview ORBYVEN Pilot ${demo.number}`}
+            tabIndex={-1}
+            loading="lazy"
+            sandbox="allow-scripts"
+            className="pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"
+          />
+        </div>
+      </BrowserFrame>
+    );
+  }
+
   if (kind === "barber") {
     return (
       <BrowserFrame url="noir-cuts.ro" dark>
