@@ -90,7 +90,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "expenses") {
-    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
+    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} />;
   }
 
   return <TeamModule organizationId={organizationId} role={role} />;
