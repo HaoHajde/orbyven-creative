@@ -42,16 +42,24 @@ export async function addRequirementsFromRecipe(org:string,estimateId:string,est
   if(!line) throw new Error("Selectează o poziție validă a devizului.");
   const [recipe,ingredients,previous]=await Promise.all([
     orbyvenSupabase.from("ops_material_recipes").select("id").eq("organization_id",org).eq("id",recipeId).single(),
-    orbyvenSupabase.from("ops_material_recipe_items").select("description,quantity_per_unit,unit,unit_cost_cents,vendor,position").eq("organization_id",org).eq("recipe_id",recipeId).order("position"),
+    orbyvenSupabase.from("ops_material_recipe_items").select("material_id,description,quantity_per_unit,unit,unit_cost_cents,vendor,position").eq("organization_id",org).eq("recipe_id",recipeId).order("position"),
     orbyvenSupabase.from("sales_material_requirements").select("id").eq("organization_id",org).eq("estimate_id",estimateId).eq("source_recipe_id",recipeId).eq("source_estimate_item_id",estimateItemId).limit(1),
   ]);
   if(recipe.error||!recipe.data||ingredients.error||previous.error) throw new Error("Rețeta nu este disponibilă în firma curentă.");
   if(previous.data?.length) throw new Error("Rețeta a fost aplicată deja acestei poziții.");
   if(!ingredients.data?.length) throw new Error("Rețeta nu conține materiale.");
+  const materialIds=ingredients.data.map(item=>item.material_id).filter((id):id is string=>Boolean(id));
+  const activeCatalog=materialIds.length?await orbyvenSupabase.from("ops_material_catalog")
+    .select("id,name,unit,unit_cost_cents,vendor").eq("organization_id",org).in("id",materialIds):null;
+  if(activeCatalog?.error)throw activeCatalog.error;
+  const catalog=new Map((activeCatalog?.data??[]).map(item=>[item.id,item]));
+  if(materialIds.some(id=>!catalog.has(id)))throw new Error("Un material din rețetă nu mai există în biblioteca firmei.");
   const rows=ingredients.data.map((item,i)=>({
     organization_id:org,estimate_id:estimateId,source_recipe_id:recipeId,source_estimate_item_id:line.id,
-    description:item.description,quantity:Number(item.quantity_per_unit)*Number(line.quantity),unit:item.unit,
-    unit_cost_cents:Number(item.unit_cost_cents),vendor:item.vendor,status:"planned",position:i,
+    description:item.material_id?catalog.get(item.material_id)?.name??item.description:item.description,
+    quantity:Number(item.quantity_per_unit)*Number(line.quantity),unit:item.material_id?catalog.get(item.material_id)?.unit??item.unit:item.unit,
+    unit_cost_cents:Number(item.material_id?catalog.get(item.material_id)?.unit_cost_cents??item.unit_cost_cents:item.unit_cost_cents),
+    vendor:item.material_id?catalog.get(item.material_id)?.vendor??item.vendor:item.vendor,status:"planned",position:i,
   }));
   if(rows.some(x=>!Number.isFinite(x.quantity)||x.quantity<=0||!isMoney(x.unit_cost_cents))) throw new Error("Rețeta are cantități sau costuri invalide.");
   const {error}=await orbyvenSupabase.from("sales_material_requirements").insert(rows); // PostgreSQL multi-row statement is atomic
