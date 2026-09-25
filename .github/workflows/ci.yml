@@ -35,5 +35,8 @@ jobs:
       - name: Ecosystem contract tests (offline)
         run: npm run test:ecosystem
 
+      - name: Demo template integrity (offline)
+        run: node --test tests/pilot-demo-integrity.test.mjs
+
       - name: Production build
         run: npm run build

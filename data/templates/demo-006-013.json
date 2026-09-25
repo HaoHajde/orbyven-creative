@@ -1,0 +1,188 @@
+{
+  "version": "demo-integration-2026-09",
+  "note": "Rule-based template recommendation signals; these are not training observations or verified conversion scores.",
+  "profiles": [
+    {
+      "id": "006",
+      "slug": "pilot-006-barbershop",
+      "name": "FORMA Barber Club",
+      "archetype": "booking-first",
+      "industries": [
+        "barbershop",
+        "beauty"
+      ],
+      "goal": "appointment-intent",
+      "modules": [
+        "booking-calendar",
+        "staff",
+        "service-pricing",
+        "reminders"
+      ],
+      "variants": [
+        "barber-first",
+        "service-first",
+        "express-booking",
+        "team-led"
+      ]
+    },
+    {
+      "id": "007",
+      "slug": "pilot-007-restaurant",
+      "name": "TAVOLA",
+      "archetype": "menu-commerce-first",
+      "industries": [
+        "restaurant",
+        "cafe"
+      ],
+      "goal": "menu-and-pickup",
+      "modules": [
+        "menu",
+        "allergens",
+        "cart",
+        "reservations"
+      ],
+      "variants": [
+        "menu-first",
+        "reservation-first",
+        "pickup-first",
+        "chef-story-first"
+      ]
+    },
+    {
+      "id": "008",
+      "slug": "pilot-008-real-estate",
+      "name": "CADRU.",
+      "archetype": "listings-filter-first",
+      "industries": [
+        "real-estate"
+      ],
+      "goal": "listing-to-inquiry",
+      "modules": [
+        "listings",
+        "filters",
+        "comparison",
+        "viewing"
+      ],
+      "variants": [
+        "search-first",
+        "map-first",
+        "agent-first",
+        "project-first"
+      ]
+    },
+    {
+      "id": "009",
+      "slug": "pilot-009-auto-service",
+      "name": "TORQ. Auto Lab",
+      "archetype": "process-estimate-first",
+      "industries": [
+        "auto-service"
+      ],
+      "goal": "diagnostic-request",
+      "modules": [
+        "symptoms",
+        "estimate",
+        "job-status",
+        "scheduling"
+      ],
+      "variants": [
+        "safety-first",
+        "diagnostic-first",
+        "maintenance-first",
+        "quote-first"
+      ]
+    },
+    {
+      "id": "010",
+      "slug": "pilot-010-dental-clinic",
+      "name": "LUMEN. Atelier Dentar",
+      "archetype": "trust-authority-first",
+      "industries": [
+        "dental-clinic",
+        "medical"
+      ],
+      "goal": "appointment-intent",
+      "modules": [
+        "staff",
+        "service-explainers",
+        "faq",
+        "booking"
+      ],
+      "variants": [
+        "team-first",
+        "service-first",
+        "first-visit",
+        "accessibility-first"
+      ]
+    },
+    {
+      "id": "011",
+      "slug": "pilot-011-retreat",
+      "name": "SENIN Retreat",
+      "archetype": "stay-first",
+      "industries": [
+        "hospitality",
+        "hotel"
+      ],
+      "goal": "stay-estimate",
+      "modules": [
+        "room-inventory",
+        "date-range",
+        "capacity",
+        "extras"
+      ],
+      "variants": [
+        "room-first",
+        "experience-first",
+        "family-first",
+        "couples-first"
+      ]
+    },
+    {
+      "id": "012",
+      "slug": "pilot-012-movement",
+      "name": "RITM Movement Club",
+      "archetype": "membership-schedule-first",
+      "industries": [
+        "gym",
+        "fitness"
+      ],
+      "goal": "membership-intent",
+      "modules": [
+        "class-catalog",
+        "schedule",
+        "personal-agenda",
+        "memberships"
+      ],
+      "variants": [
+        "goal-first",
+        "schedule-first",
+        "coach-first",
+        "membership-first"
+      ]
+    },
+    {
+      "id": "013",
+      "slug": "pilot-013-construction",
+      "name": "STRUCT. STUDIO",
+      "archetype": "project-estimate-materials-first",
+      "industries": [
+        "construction",
+        "renovation"
+      ],
+      "goal": "quote-intent",
+      "modules": [
+        "portfolio",
+        "estimate",
+        "materials",
+        "project-status"
+      ],
+      "variants": [
+        "portfolio-first",
+        "quote-first",
+        "materials-first",
+        "process-first"
+      ]
+    }
+  ]
+}
