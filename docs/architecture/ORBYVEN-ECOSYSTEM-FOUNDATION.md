@@ -1,7 +1,7 @@
 # ORBYVEN Ecosystem Foundation — preview-only checkpoint
 
-Status: work-in-progress branch. NOT merged, NOT deployed, NO live database writes or migrations.
-User rule (23.09.2026): work in chat/local/CI only; explicit approval required before any merge or Vercel deployment.
+Status: integrated candidate for one approved production release (25.09.2026). No schema migrations and no production data mutations performed by the developer. Existing database tables are used only when a future authorized user explicitly uses the UI.
+User explicitly approved one grouped Vercel deployment. This is not approval to issue fiscal invoices or transmit to ANAF.
 
 ## One commercial source of truth
 
@@ -33,9 +33,9 @@ Stripe subscriptions and MUST NEVER be used as a tenant-issued fiscal invoice.
 |---|---|---|
 | crm_leads, ops_tasks | Live workspace modules | Use shared client/work context |
 | sales_estimates + sales_estimate_items | Live deviz UI | Versioning and atomic item writes |
-| ops_material_recipes + ops_material_recipe_items | RLS-protected DB only | Recipe library and UX |
-| sales_material_requirements | RLS-protected DB only | Non-destructive generation, ordering and procurement |
-| sales_commercial_documents | offer/invoice_draft DB only | Revision snapshots, client approval, immutable issued invoice model |
+| ops_material_recipes + ops_material_recipe_items | RLS-protected DB, existing recipes can be selected in Oferte | Atomic recipe authoring and maintenance UI |
+| sales_material_requirements | Additive manual entry, recipe expansion and status progression in Oferte | Optimistic locking for simultaneous users and procurement integrations |
+| sales_commercial_documents | Snapshot-based client offer and non-fiscal invoice draft in Oferte | Multi-revision commercial documents, external customer approvals, immutable issued invoice model |
 | finance_budget_entries | RLS-protected DB only | Reconciliation actual vs planned, do not double-count |
 | finance_expenses | Live expense UI | Link accepted invoice/requirements and reconcile |
 | fiscal profile, issuance, e-Factura | Not provided by the current commercial module | New schema, server APIs and audited flows |
@@ -95,18 +95,17 @@ submitted to ANAF.
 - `lib/ecosystem/projections.ts`: pure amount/recipe expansion, offer snapshot
   preview, accepted-offer invoice-draft preview, explicit ANAF prerequisites.
 - `lib/ecosystem/read-model.ts`: read-only, organization-scoped lineage
-  (estimate, items, materials, commercial docs, planned budget) and stale flag.
-- Optional downloadable HTML prototype, entirely local, with demo data visibly
-  identified as demo; no backend, no real tax invoice or ANAF calls.
+  (estimate, items, materials, commercial docs, planned budget) and real-content revision check.
+- `lib/ecosystem/actions.ts`: organization-scoped, RLS-bound material/offer/draft actions with explicit confirmation and no fiscal issuance.
+- `components/modules/CommercialWorkflowPanel.tsx`: additive module inside the REAL `EstimatesModule.tsx`, same orbital background, sidebar, cards and theme.
+- ANAF submission and true fiscal invoice issuance remain disabled, not simulated.
+- The standalone HTML concept is explicitly superseded by this integrated dashboard panel.
 
 ## Implementation order before launch
 
-1. Add offline tests for dependency graph, recipe multiplication, invalid
-   references and fiscal blockers.
-2. Introduce actual Recipe + Materials UI and non-destructive, transaction-safe
-   material-generation RPC (add constraints by estimate line and recipe as needed).
-3. Design revisions/versioned commercial snapshots and explicit offer acceptance
-   with tenant RLS and role checks.
+1. Validate current integrated panel in an authenticated pilot and confirm two-tenant RLS behavior.
+2. Add a transaction-safe recipe authoring UI, uniqueness/idempotency and safe procurement integration.
+3. Design multi-revision versioned commercial snapshots and customer-facing approval with an audit trail.
 4. Approved organization fiscal profile and invoice line tax schema; signed-off
    accounting specifications, issue sequence and audit log.
 5. Authorized server-only ANAF OAuth integration + XML validation and test endpoint.
