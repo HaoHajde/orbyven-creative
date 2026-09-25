@@ -16,6 +16,7 @@ function loadPureModule(relativePath) {
 }
 const graph = loadPureModule("lib/ecosystem/graph.ts");
 const projections = loadPureModule("lib/ecosystem/projections.ts");
+const revisions = loadPureModule("lib/ecosystem/revision.ts");
 
 const estimate = {
   id: "estimate-1", organizationId: "tenant-A", clientId: "client-A",
@@ -85,4 +86,24 @@ test("ANAF stays blocked until all eight prerequisites are explicitly true", () 
   };
   assert.equal(projections.getFiscalSubmissionBlockers(states).length, 1);
   assert.deepEqual(projections.getFiscalSubmissionBlockers({ ...states, explicitUserConfirmation: true }), []);
+});
+
+
+test("accepting a quote changes status, not the approved commercial snapshot", () => {
+  const source = {
+    reference: "DEV-001",title: "Încălzire pardoseală",client_id:"client-A",
+    task_id:"work-A",currency:"RON",subtotal_cents:640000,discount_cents:0,
+    total_cents:640000,tax_rate:0,
+  };
+  const line = { id:"line-A",description:"Montaj pardoseală",quantity:80,unit_price_cents:8000 };
+  const offer = {
+    title:source.title,client_id:source.client_id,task_id:source.task_id,
+    currency:source.currency,subtotal_cents:source.subtotal_cents,
+    discount_cents:source.discount_cents,total_cents:source.total_cents,tax_rate:source.tax_rate,
+    snapshot:{source_reference:"DEV-001",lines:[{...line}]},
+  };
+  assert.equal(revisions.commercialSnapshotMatches(source,[line],offer),true);
+  assert.equal(revisions.commercialSnapshotMatches({...source,total_cents:1},[line],offer),false);
+  assert.equal(revisions.commercialSnapshotMatches(source,[{...line,quantity:81}],offer),false);
+  assert.equal(revisions.commercialSnapshotMatches(source,[line],{...offer,snapshot:{}}),false);
 });
