@@ -43,10 +43,11 @@ function Step({index,title,status,tone}:{index:string;title:string;status:string
 
 /** Fits directly inside the current EstimatesModule detail card. */
 export default function CommercialWorkflowPanel({
-  organizationId,estimate,items,locale,role,
+  organizationId,estimate,items,locale,role,onChanged,
 }:{
   organizationId:string;estimate:Estimate;items:EstimateItem[];locale:string;
   role:OrbyvenWorkspace["membership"]["role"];
+  onChanged?:()=>void;
 }){
   const [materials,setMaterials]=useState<MaterialRow[]>([]);
   const [documents,setDocuments]=useState<DocumentRow[]>([]);
@@ -109,7 +110,7 @@ export default function CommercialWorkflowPanel({
   const run=async(operation:()=>Promise<void>,success:string):Promise<boolean>=>{
     if(busy||!canWrite)return false;
     setBusy(true);setError("");setMessage("");
-    try{await operation();setMessage(success);reload();return true;}
+    try{await operation();setMessage(success);reload();onChanged?.();return true;}
     catch(reason){console.error(reason);setError(reason instanceof Error?reason.message:"Acțiunea nu a reușit.");return false;}
     finally{setBusy(false);}
   };
@@ -134,7 +135,7 @@ export default function CommercialWorkflowPanel({
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">ORBYVEN · BUSINESS FLOW</p>
         <h3 className="mt-1.5 text-[17px] font-semibold tracking-[-0.035em]">Circuitul acestui deviz</h3>
-        <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">Materiale, ofertă și ciornă fiscală conectate la aceeași lucrare.</p>
+        <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">Materiale, ofertă și ciornă comercială conectate la aceeași lucrare.</p>
       </div>
       <button type="button" onClick={reload} disabled={loading||busy} className={buttonClass}>↻ Actualizează</button>
     </header>
