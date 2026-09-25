@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -69,12 +69,14 @@ test("no Reverse shortcut is injected into templates or embedded demos", () => {
   while (files.length) {
     const path = files.pop();
     const absolute = join(root, path);
-    if (!/\.(tsx|jsx|html)$/.test(path)) {
+    if (statSync(absolute).isDirectory()) {
       for (const entry of readdirSync(absolute, { withFileTypes: true })) {
         files.push(join(path, entry.name));
       }
       continue;
     }
-    assert.doesNotMatch(read(path), /\bReverse\b/, path + " still contains a Reverse button");
+    if (/\.(tsx|jsx|html)$/.test(path)) {
+      assert.doesNotMatch(read(path), /\bReverse\b/, path + " still contains a Reverse button");
+    }
   }
 });
