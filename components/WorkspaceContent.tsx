@@ -1,16 +1,56 @@
 "use client";
 
-import CalendarModule from "@/components/modules/CalendarModule";
-import DocumentsModule from "@/components/modules/DocumentsModule";
-import EstimatesModule from "@/components/modules/EstimatesModule";
-import ExpensesModule from "@/components/modules/ExpensesModule";
-import LeadsModule from "@/components/modules/LeadsModule";
-import OverviewModule from "@/components/modules/OverviewModule";
-import TasksModule from "@/components/modules/TasksModule";
-import TeamModule from "@/components/modules/TeamModule";
+import dynamic from "next/dynamic";
+
+
+
+
+
+
+
+
+
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+
+/**
+ * Alpha 0.6: keep only the active workspace module in the initial client path.
+ * next/dynamic must stay at module scope with literal import paths for chunk matching.
+ * Preserve SSR of the currently selected module and the existing navigation/props.
+ */
+function WorkspaceModuleLoading() {
+  return (
+    <div role="status" aria-live="polite" className="flex min-h-[260px] items-center justify-center text-sm text-[var(--muted)]">
+      Se încarcă modulul...
+    </div>
+  );
+}
+
+const CalendarModule = dynamic(() => import("@/components/modules/CalendarModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const DocumentsModule = dynamic(() => import("@/components/modules/DocumentsModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const EstimatesModule = dynamic(() => import("@/components/modules/EstimatesModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const ExpensesModule = dynamic(() => import("@/components/modules/ExpensesModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const LeadsModule = dynamic(() => import("@/components/modules/LeadsModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const OverviewModule = dynamic(() => import("@/components/modules/OverviewModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const TasksModule = dynamic(() => import("@/components/modules/TasksModule"), {
+  loading: WorkspaceModuleLoading,
+});
+const TeamModule = dynamic(() => import("@/components/modules/TeamModule"), {
+  loading: WorkspaceModuleLoading,
+});
 
 type Props = {
   activeModule: OrbyvenModuleId;

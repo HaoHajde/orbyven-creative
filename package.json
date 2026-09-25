@@ -10,8 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test:ecosystem": "node --test tests/ecosystem-contract.test.mjs",
     "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs",
-    "validate": "npm run lint && npm run typecheck && npm run test:ecosystem && npm run test:billing && npm run test:security && node --test tests/pilot-demo-integrity.test.mjs && npm run build",
-    "test:security": "node --test tests/security-hardening.test.mjs"
+    "validate": "npm run lint && npm run typecheck && npm run test:ecosystem && npm run test:billing && npm run test:security && node --test tests/pilot-demo-integrity.test.mjs && npm run test:performance && npm run build",
+    "test:security": "node --test tests/security-hardening.test.mjs",
+    "test:performance": "node --test tests/performance-boundaries.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

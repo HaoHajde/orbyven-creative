@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import HaoHeroVisual from "@/components/pilot005/HaoHeroVisual";
 import { BarberHero } from "@/components/pilot006/BarbershopExperience";
 
@@ -83,21 +83,59 @@ function MiniNav({
   );
 }
 
+/**
+ * Keep off-screen demo documents out of the DOM entirely until the card is near
+ * the viewport. iframe loading="lazy" alone may still initialize nearby frames.
+ * Once shown, keep it mounted so scrolling back does not reset the demo.
+ */
+function DeferredDemoIframe({ number }: { number: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldMount, setShouldMount] = useState(false);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      const frame = window.requestAnimationFrame(() => setShouldMount(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldMount(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "420px 0px" }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative h-[338px] overflow-hidden bg-[#101014]" aria-hidden="true">
+      {shouldMount && (
+        <iframe
+          src={`/orbyven-demos/pilot-${number}/index.html`}
+          title={`Preview ORBYVEN Pilot ${number}`}
+          tabIndex={-1}
+          loading="lazy"
+          sandbox="allow-scripts"
+          className="pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"
+        />
+      )}
+    </div>
+  );
+}
+
 export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPreviewKind }) {
   if (kind in demoPreviews) {
     const demo = demoPreviews[kind as keyof typeof demoPreviews];
     return (
       <BrowserFrame url={`orbyven.ro / pilot-${demo.number}`} dark={demo.dark}>
-        <div className="relative h-[338px] overflow-hidden bg-[#101014]" aria-hidden="true">
-          <iframe
-            src={`/orbyven-demos/pilot-${demo.number}/index.html`}
-            title={`Preview ORBYVEN Pilot ${demo.number}`}
-            tabIndex={-1}
-            loading="lazy"
-            sandbox="allow-scripts"
-            className="pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"
-          />
-        </div>
+        <DeferredDemoIframe number={demo.number} />
       </BrowserFrame>
     );
   }
