@@ -5,7 +5,7 @@ import {
 import { legalConfig } from "@/lib/legal-config";
 import {
   ComplianceValidationError, oneMonthDeadline, parseContractRecord,
-  parsePrivacyCase, parsePrivacyTransition, requireUuid, type PrivacyStatus,
+  parsePrivacyCase, parsePrivacyTransition, parseRoleAssessment, requireUuid, type PrivacyStatus,
 } from "@/lib/compliance/validation";
 
 export const runtime = "nodejs";
@@ -20,6 +20,7 @@ function handleError(error: unknown) {
   const code = error && typeof error === "object" && "code" in error
     ? String((error as {code?:unknown}).code) : "";
   if (code === "23505") return reply({error:"duplicate_contract_record"},409);
+  if (code === "23514" || code === "42501") return reply({error:"compliance_rule_rejected"},400);
   if (code === "23503") return reply({error:"unknown_organization"},404);
   if (code === "42P01" || code === "PGRST205" || code === "42703") {
     return reply({error:"compliance_migration_required"},503);
@@ -132,6 +133,27 @@ export async function POST(request: Request) {
       }).select("id,status,due_at").single();
       if (error) throw error;
       return reply({ok:true,case:data},201);
+    }
+
+    if (action==="assess_case_role") {
+      const parsed=parseRoleAssessment(body);
+      const {data:current,error:currentError}=await admin.from("privacy_request_cases")
+        .select("id,processing_role,status").eq("id",parsed.id).maybeSingle();
+      if (currentError) throw currentError;
+      if (!current) return reply({error:"unknown_privacy_case"},404);
+      if (current.processing_role!=="undetermined" || current.status==="closed") {
+        return reply({error:"role_already_assessed"},409);
+      }
+      const {data,error}=await admin.from("privacy_request_cases")
+        .update({
+          processing_role:parsed.processing_role,
+          last_action:parsed.last_action,
+          updated_by:user.id,
+        }).eq("id",parsed.id).eq("processing_role","undetermined")
+        .select("id,processing_role").maybeSingle();
+      if (error) throw error;
+      if (!data) return reply({error:"privacy_case_changed_reload"},409);
+      return reply({ok:true,case:data});
     }
 
     if (action==="advance_privacy_case") {

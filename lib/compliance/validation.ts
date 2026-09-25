@@ -95,3 +95,14 @@ export function oneMonthDeadline(receivedAt: Date): string {
   next.setUTCDate(Math.min(receivedAt.getUTCDate(),nextMonthLastDay));
   return next.toISOString();
 }
+
+/** Classify actual controller/processor role once; require an accountable action note. */
+export function parseRoleAssessment(body: Record<string,unknown>) {
+  const id = requireUuid(body.id,"id");
+  const processing_role = body.processingRole;
+  if (processing_role !== "controller" && processing_role !== "processor") {
+    fail("invalid_processing_role","Determine controller or processor explicitly.");
+  }
+  const note = text(body.actionNote,"actionNote",8,500);
+  return {id,processing_role,last_action:note};
+}

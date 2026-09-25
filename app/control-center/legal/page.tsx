@@ -55,6 +55,7 @@ export default function LegalOperationsPage() {
     subjectReference:"",requestType:"access",processingRole:"undetermined",channel:"email",
   });
   const [caseNotes,setCaseNotes]=useState<Record<string,string>>({});
+  const [caseRoles,setCaseRoles]=useState<Record<string,string>>({});
   const [caseStates,setCaseStates]=useState<Record<string,string>>({});
 
   const headers=useCallback(async()=>{
@@ -79,7 +80,10 @@ export default function LegalOperationsPage() {
     }catch(e){setError(e instanceof Error?e.message:"Registru indisponibil.");}
     finally{setLoading(false);}
   },[headers,router]);
-  useEffect(()=>{void load(organizationId);},[load,organizationId]);
+  useEffect(()=>{
+    const frame=window.requestAnimationFrame(()=>{void load(organizationId);});
+    return ()=>window.cancelAnimationFrame(frame);
+  },[load,organizationId]);
 
   async function post(body:Record<string,unknown>){
     setBusy(true);setError("");setNotice("");
@@ -212,12 +216,20 @@ export default function LegalOperationsPage() {
                   Rol: {c.processing_role} · Organizație: {payload.organizations.find(o=>o.id===c.organization_id)?.name||"ORBYVEN intern"}<br/>
                   Ultima acțiune: {c.last_action||"—"}
                 </p>
+                {c.processing_role==="undetermined"&&<div className="mt-4 flex flex-wrap gap-2">
+                  <select aria-label="Rol GDPR stabilit" className={INPUT+" sm:max-w-xs"} value={caseRoles[c.id]||"controller"} onChange={e=>setCaseRoles({...caseRoles,[c.id]:e.target.value})}>
+                    <option value="controller">Operator</option><option value="processor">Împuternicit</option>
+                  </select>
+                  <button type="button" disabled={busy} className={BUTTON} onClick={()=>void post({
+                    action:"assess_case_role",id:c.id,processingRole:caseRoles[c.id]||"controller",actionNote:caseNotes[c.id]||"",
+                  })}>Confirmă rolul cu notă documentată</button>
+                </div>}
                 {nextStatus[c.status]?.length>0&&<div className="mt-4 grid gap-2 sm:grid-cols-[auto_1fr_auto]">
                   <select aria-label="Următorul status" className={INPUT} value={caseStates[c.id]||nextStatus[c.status][0]} onChange={e=>setCaseStates({...caseStates,[c.id]:e.target.value})}>
                     {nextStatus[c.status].map(s=><option key={s} value={s}>{statuses.includes(s as typeof statuses[number])?s:s}</option>)}
                   </select>
                   <input aria-label="Acțiune efectuată" className={INPUT} placeholder="Acțiune efectuată (fără date sensibile)" value={caseNotes[c.id]||""} onChange={e=>setCaseNotes({...caseNotes,[c.id]:e.target.value})}/>
-                  <button disabled={busy} className={BUTTON} onClick={()=>void post({
+                  <button type="button" disabled={busy} className={BUTTON} onClick={()=>void post({
                     action:"advance_privacy_case",id:c.id,status:caseStates[c.id]||nextStatus[c.status][0],actionNote:caseNotes[c.id]||"",
                   })}>Actualizează</button>
                 </div>}

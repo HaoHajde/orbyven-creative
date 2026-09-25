@@ -50,6 +50,8 @@ create table if not exists public.privacy_request_events (
   request_id uuid not null references public.privacy_request_cases(id) on delete restrict,
   prior_status text,
   next_status text not null,
+  prior_processing_role text,
+  next_processing_role text not null,
   action_note text,
   actor_user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
@@ -94,12 +96,21 @@ begin
   if new.organization_id is distinct from old.organization_id
     or new.subject_reference is distinct from old.subject_reference
     or new.request_type is distinct from old.request_type
-    or new.processing_role is distinct from old.processing_role
     or new.channel is distinct from old.channel
     or new.received_at is distinct from old.received_at
     or new.due_at is distinct from old.due_at then
     raise exception 'Identity, scope and baseline deadline of privacy case are immutable'
       using errcode = '42501';
+  end if;
+  if old.processing_role is distinct from new.processing_role and not (
+      old.processing_role = 'undetermined'
+      and new.processing_role in ('controller','processor')
+    ) then
+    raise exception 'Privacy case role assessment is one-time; corrections require separate review'
+      using errcode = '23514';
+  end if;
+  if new.status = 'responded' and new.processing_role = 'undetermined' then
+    raise exception 'Determine GDPR processing role before responding' using errcode = '23514';
   end if;
   if old.status <> new.status and not (
       (old.status = 'received' and new.status in ('identity_check','triage'))
@@ -131,11 +142,13 @@ returns trigger language plpgsql security invoker set search_path = ''
 as $fn$
 begin
   insert into public.privacy_request_events
-    (request_id,prior_status,next_status,action_note,actor_user_id)
+    (request_id,prior_status,next_status,prior_processing_role,next_processing_role,action_note,actor_user_id)
   values (
     new.id,
     case when tg_op = 'INSERT' then null else old.status end,
-    new.status,new.last_action,new.updated_by
+    new.status,
+    case when tg_op = 'INSERT' then null else old.processing_role end,
+    new.processing_role,new.last_action,new.updated_by
   );
   return new;
 end;
@@ -148,7 +161,7 @@ create trigger privacy_case_audit_insert
   for each row execute function private.audit_privacy_request_case();
 drop trigger if exists privacy_case_audit_update on public.privacy_request_cases;
 create trigger privacy_case_audit_update
-  after update of status,last_action on public.privacy_request_cases
+  after update of status,last_action,processing_role on public.privacy_request_cases
   for each row execute function private.audit_privacy_request_case();
 
 comment on table public.legal_contract_records is

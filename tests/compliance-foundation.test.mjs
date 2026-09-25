@@ -3,7 +3,7 @@ import {readFileSync} from "node:fs";
 import test from "node:test";
 import {
   ComplianceValidationError, oneMonthDeadline,
-  parseContractRecord,parsePrivacyCase,parsePrivacyTransition,
+  parseContractRecord,parsePrivacyCase,parsePrivacyTransition,parseRoleAssessment,
 } from "../lib/compliance/validation.ts";
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const migration=read("supabase/migrations/20260925144000_legal_trust_foundation.sql");
@@ -30,6 +30,11 @@ test("status transitions forbid silent closure and require action notes",()=>{
   assert.throws(()=>parsePrivacyTransition({id:UUID,status:"responded",actionNote:"ok"},"in_progress"),/length/);
   assert.throws(()=>parsePrivacyTransition({id:UUID,status:"received",actionNote:"Same"},"received"),/transition/);
 });
+test("GDPR role can be assessed only with a documented action",()=>{
+  const role=parseRoleAssessment({id:UUID,processingRole:"processor",actionNote:"Client is controller"});
+  assert.equal(role.processing_role,"processor");
+  assert.throws(()=>parseRoleAssessment({id:UUID,processingRole:"undetermined",actionNote:"Not sure yet"}),/Determine/);
+});
 test("one calendar month clamps last-day February rather than adding 30 days",()=>{
   assert.equal(oneMonthDeadline(new Date("2026-01-31T10:00:00Z")),"2026-02-28T10:00:00.000Z");
   assert.equal(oneMonthDeadline(new Date("2026-09-25T10:00:00Z")),"2026-10-25T10:00:00.000Z");
@@ -44,6 +49,8 @@ test("RLS, grants, immutable evidence, audit and DB state guard are part of migr
   assert.match(migration,/privacy_case_guard/);
   assert.match(migration,/privacy_case_audit_insert/);
   assert.match(migration,/privacy_case_audit_update/);
+  assert.match(migration,/prior_processing_role text/);
+  assert.match(migration,/new\.processing_role = 'undetermined'/);
   assert.match(migration,/billing_terms_acceptances remains canonical/);
 });
 test("API authorizes platform staff and never exports/deletes client data",()=>{
@@ -51,6 +58,7 @@ test("API authorizes platform staff and never exports/deletes client data",()=>{
   assert.match(api,/requireStaffRole\(staffRole,\["platform_owner","platform_admin"\]\)/);
   assert.match(api,/Cache-Control":"private, no-store"/);
   assert.match(api,/billing_terms_acceptances/);
+  assert.match(api,/assess_case_role/);
   assert.doesNotMatch(api,/auth\.admin\.deleteUser|storage\.remove\(/);
   assert.match(page,/Înregistrat intern · neverificat/);
 });
