@@ -17,6 +17,7 @@ function loadPureModule(relativePath) {
 const graph = loadPureModule("lib/ecosystem/graph.ts");
 const projections = loadPureModule("lib/ecosystem/projections.ts");
 const revisions = loadPureModule("lib/ecosystem/revision.ts");
+const financial = loadPureModule("lib/ecosystem/profitability.ts");
 
 const estimate = {
   id: "estimate-1", organizationId: "tenant-A", clientId: "client-A",
@@ -107,4 +108,31 @@ test("accepting a quote changes status, not the approved commercial snapshot", (
   assert.equal(revisions.commercialSnapshotMatches({...source,total_cents:1},[line],offer),false);
   assert.equal(revisions.commercialSnapshotMatches(source,[{...line,quantity:81}],offer),false);
   assert.equal(revisions.commercialSnapshotMatches(source,[line],{...offer,snapshot:{}}),false);
+});
+
+
+test("Alpha 0.6 margin uses selling price without VAT and never double-counts expenses", () => {
+  const data = financial.computeEstimateProfitability({
+    subtotalCents: 1200000, discountCents: 0,
+    materialLines:[{quantity:80,unit_cost_cents:6000}],
+    plannedLaborCents:250000,otherCostCents:30000,
+    recordedExpensesCents:[200000,35000],
+  });
+  assert.equal(data.netPrice,1200000);
+  assert.equal(data.estimatedMaterialCost,480000);
+  assert.equal(data.plannedMargin,440000);
+  assert.equal(data.actualExpenses,235000);
+  assert.equal(data.plannedTotal,760000);
+  assert.equal(financial.computeEstimateProfitability({
+    subtotalCents:0,discountCents:0,materialLines:[],
+    plannedLaborCents:0,otherCostCents:0,recordedExpensesCents:[],
+  }).plannedMarginPercent,null);
+});
+test("Alpha 0.6 keeps negative gross margin rather than pretending profit is positive",()=>{
+  const data=financial.computeEstimateProfitability({
+    subtotalCents:50000,discountCents:0,
+    materialLines:[{quantity:2,unit_cost_cents:40000}],
+    plannedLaborCents:20000,otherCostCents:10000,recordedExpensesCents:[],
+  });
+  assert.equal(data.plannedMargin,-60000);
 });
