@@ -31,7 +31,7 @@ export default function CookiesPage() {
 
       <LegalSection title="4. Schimbarea alegerii">
         <p>
-          Atunci când modulul de cookie-uri opționale este activ, alegerea este stocată local și poate fi resetată prin ștergerea preferințelor site-ului din browser. ORBYVEN va adăuga un control permanent de preferințe înainte de activarea unor categorii suplimentare de tracking.
+          Atunci când modulul de cookie-uri opționale este activ, alegerea este stocată local. Opțiunea „Preferințe cookies” din footer redeschide panoul, iar categoriile opționale pot fi refuzate ori modificate oricând. Când tehnologiile opționale sunt dezactivate, panoul nu este afișat.
         </p>
       </LegalSection>
     </LegalDocument>

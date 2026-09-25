@@ -54,7 +54,10 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Drepturile persoanei vizate">
+      <LegalSection title="8. Instrumente AI și conținut introdus de utilizator">
+        <p>Unele instrumente opționale pot prelucra mesaje și instrucțiuni pentru generarea sau modificarea unui website. Înainte de activarea lor comercială, furnizorii, categoriile de date, locațiile și perioadele de retenție trebuie documentate în informarea specifică și în acordurile aplicabile. Nu introduce date sensibile sau informații confidențiale fără un temei și autorizare adecvate.</p>
+      </LegalSection>
+      <LegalSection title="9. Drepturile persoanei vizate">
         <p>
           În condițiile GDPR poți solicita acces, rectificare, ștergere, restricționare, portabilitate sau opoziție și îți poți retrage consimțământul atunci când prelucrarea se bazează pe consimțământ. Ai și dreptul de a depune o plângere la autoritatea de supraveghere competentă.
         </p>

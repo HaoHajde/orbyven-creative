@@ -7,6 +7,7 @@ import {
   type BillingPlanId,
 } from "@/lib/billing/public-config";
 import { billingServerConfig } from "@/lib/billing/server-config";
+import { reconcileInvoiceDelivery } from "@/lib/billing/webhook-state";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
   booleanValue,
@@ -165,11 +166,35 @@ export async function syncStripeSubscription(client: ServiceClient, object: Json
   });
   if (!organizationId) throw new Error("Unable to resolve organization for Stripe subscription.");
 
-  const { data: existing } = await client
+  const { data: existing, error: existingError } = await client
     .from("subscriptions")
-    .select("commitment_ends_at,grace_until")
+    .select("commitment_ends_at,grace_until,merchant_key,merchant_type,merchant_legal_name,merchant_tax_id")
     .eq("stripe_subscription_id", subscriptionId)
     .maybeSingle();
+  if (existingError) throw existingError;
+
+  // Keep the original legal merchant on the subscription, even after PFA/SRL transitions.
+  const metadataMerchantKey = metadataValue(object, "merchant_key");
+  const requestedMerchantKey = metadataMerchantKey === "prelaunch" ? null : metadataMerchantKey;
+  if (existing?.merchant_key && requestedMerchantKey && existing.merchant_key !== requestedMerchantKey) {
+    throw new Error("Subscription merchant identity changed unexpectedly.");
+  }
+  const merchantKey = existing?.merchant_key ?? requestedMerchantKey;
+  const { data: merchantAcceptance, error: merchantError } = merchantKey
+    ? await client
+        .from("billing_terms_acceptances")
+        .select("merchant_key,merchant_type,merchant_legal_name,merchant_tax_id")
+        .eq("organization_id", organizationId)
+        .eq("merchant_key", merchantKey)
+        .eq("document_type", "subscription_terms")
+        .order("accepted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (merchantError) throw merchantError;
+  if (merchantKey && !merchantAcceptance && !existing?.merchant_legal_name) {
+    throw new Error("No documented merchant identity for this Stripe subscription.");
+  }
 
   const status = stringValue(object.status) || "unknown";
   const createdUnix = numberValue(object.created) ?? Math.floor(Date.now() / 1000);
@@ -186,6 +211,10 @@ export async function syncStripeSubscription(client: ServiceClient, object: Json
     organization_id: organizationId,
     stripe_subscription_id: subscriptionId,
     stripe_customer_id: customerId,
+    merchant_key: merchantKey,
+    merchant_type: existing?.merchant_type ?? merchantAcceptance?.merchant_type ?? null,
+    merchant_legal_name: existing?.merchant_legal_name ?? merchantAcceptance?.merchant_legal_name ?? null,
+    merchant_tax_id: existing?.merchant_tax_id ?? merchantAcceptance?.merchant_tax_id ?? null,
     plan_id: planId,
     status,
     current_period_start: unixDate(object.current_period_start),
@@ -222,17 +251,45 @@ export async function syncStripeInvoice(
   });
   if (!organizationId) throw new Error("Unable to resolve organization for Stripe invoice.");
 
-  const paid = eventType === "invoice.paid";
-  const fiscalStatus = paid ? "pending" : "skipped";
+  const [merchantResult, existingInvoiceResult] = await Promise.all([
+    subscriptionId
+      ? client
+          .from("subscriptions")
+          .select("merchant_key,merchant_type,merchant_legal_name,merchant_tax_id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    client
+      .from("billing_invoices")
+      .select("status,amount_paid,fiscal_status,merchant_key,merchant_type,merchant_legal_name,merchant_tax_id")
+      .eq("stripe_invoice_id", invoiceId)
+      .maybeSingle(),
+  ]);
+  if (merchantResult.error) throw merchantResult.error;
+  if (existingInvoiceResult.error) throw existingInvoiceResult.error;
+  const historic = existingInvoiceResult.data;
+  const currentMerchant = merchantResult.data;
+  if (historic?.merchant_key && currentMerchant?.merchant_key &&
+      historic.merchant_key !== currentMerchant.merchant_key) {
+    throw new Error("Invoice cannot change its original legal issuer.");
+  }
+  const invoiceMerchantKey = historic?.merchant_key ?? currentMerchant?.merchant_key ?? null;
+  const { paid, fiscalStatus } = reconcileInvoiceDelivery(eventType, historic);
 
   const { error: invoiceError } = await client.from("billing_invoices").upsert(
     {
       organization_id: organizationId,
       stripe_invoice_id: invoiceId,
       stripe_subscription_id: subscriptionId,
-      status: stringValue(object.status) || (paid ? "paid" : "open"),
+      merchant_key: invoiceMerchantKey,
+      merchant_type: historic?.merchant_type ?? currentMerchant?.merchant_type ?? null,
+      merchant_legal_name: historic?.merchant_legal_name ?? currentMerchant?.merchant_legal_name ?? null,
+      merchant_tax_id: historic?.merchant_tax_id ?? currentMerchant?.merchant_tax_id ?? null,
+      status: paid ? "paid" : stringValue(object.status) || "open",
       amount_due: numberValue(object.amount_due),
-      amount_paid: numberValue(object.amount_paid),
+      amount_paid: paid && eventType !== "invoice.paid"
+        ? historic?.amount_paid ?? numberValue(object.amount_paid)
+        : numberValue(object.amount_paid),
       currency: stringValue(object.currency),
       hosted_invoice_url: stringValue(object.hosted_invoice_url),
       invoice_pdf: stringValue(object.invoice_pdf),
@@ -253,7 +310,7 @@ export async function syncStripeInvoice(
 
   if (!subscription || !isBillingPlanId(subscription.plan_id)) return;
 
-  if (eventType === "invoice.payment_failed") {
+  if (eventType === "invoice.payment_failed" && !paid) {
     const graceUntil = addDays(new Date(), BILLING_GRACE_DAYS);
     const { error } = await client
       .from("subscriptions")

@@ -3,8 +3,10 @@ import {
   billingServerConfig,
   getStripePriceId,
   requireBillingReady,
+  requireCheckoutReady,
 } from "@/lib/billing/server-config";
 import { getSiteUrl } from "@/lib/site-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
 
 type StripeCheckoutSession = {
   id: string;
@@ -48,6 +50,7 @@ export async function createStripeCheckoutSession(input: {
   customerId?: string | null;
   email?: string | null;
 }) {
+  requireCheckoutReady();
   const plan = BILLING_PLANS[input.planId];
   const params = new URLSearchParams();
   const siteUrl = getSiteUrl();
@@ -68,8 +71,12 @@ export async function createStripeCheckoutSession(input: {
   params.set("metadata[organization_id]", input.organizationId);
   params.set("metadata[plan_id]", input.planId);
   params.set("metadata[plan_name]", plan.name);
+  params.set("metadata[merchant_key]", commercialIdentity.entityKey || "prelaunch");
+  params.set("metadata[merchant_type]", commercialIdentity.entityType);
   params.set("subscription_data[metadata][organization_id]", input.organizationId);
   params.set("subscription_data[metadata][plan_id]", input.planId);
+  params.set("subscription_data[metadata][merchant_key]", commercialIdentity.entityKey || "prelaunch");
+  params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
 
   if (input.customerId) {
     params.set("customer", input.customerId);

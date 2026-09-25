@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { billingServerConfig } from "@/lib/billing/server-config";
+import { classifyBillingWebhookRecord } from "@/lib/billing/webhook-state";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
   syncStripeCheckoutCompleted,
@@ -42,9 +43,45 @@ export async function POST(request: Request) {
   });
 
   if (insertError?.code === "23505") {
-    return NextResponse.json({ received: true, duplicate: true });
-  }
-  if (insertError) {
+    const { data: existing, error: lookupError } = await client
+      .from("billing_webhook_events")
+      .select("processed_at,processing_error")
+      .eq("provider_event_id", event.id)
+      .maybeSingle();
+
+    if (lookupError || !existing) {
+      return NextResponse.json({ error: "Unable to inspect webhook event." }, { status: 500 });
+    }
+
+    const state = classifyBillingWebhookRecord(existing);
+    if (state === "processed") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    // A concurrent delivery or a crashed worker must not be mistaken for success.
+    // Return a retryable response until the event is completed or explicitly recovered.
+    if (state === "pending") {
+      return NextResponse.json({ error: "Webhook event is still pending." }, { status: 503 });
+    }
+
+    // Atomically claim a previously failed event. Only one duplicate delivery can
+    // clear the recorded error and process the event; other concurrent ones retry later.
+    const { data: claimed, error: claimError } = await client
+      .from("billing_webhook_events")
+      .update({ processing_error: null })
+      .eq("provider_event_id", event.id)
+      .is("processed_at", null)
+      .eq("processing_error", existing.processing_error)
+      .select("provider_event_id")
+      .maybeSingle();
+
+    if (claimError) {
+      return NextResponse.json({ error: "Unable to retry webhook event." }, { status: 500 });
+    }
+    if (!claimed) {
+      return NextResponse.json({ error: "Webhook retry already in progress." }, { status: 503 });
+    }
+  } else if (insertError) {
     return NextResponse.json({ error: "Unable to record webhook event." }, { status: 500 });
   }
 
@@ -65,18 +102,30 @@ export async function POST(request: Request) {
       await syncStripeInvoice(client, event.data.object, event.type);
     }
 
-    await client
+    const { data: completed, error: completionError } = await client
       .from("billing_webhook_events")
       .update({ processed_at: new Date().toISOString(), processing_error: null })
-      .eq("provider_event_id", event.id);
+      .eq("provider_event_id", event.id)
+      .is("processed_at", null)
+      .select("provider_event_id")
+      .maybeSingle();
+
+    if (completionError || !completed) {
+      throw new Error("Unable to persist webhook completion.");
+    }
 
     return NextResponse.json({ received: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown billing error";
-    await client
+    const { error: recordError } = await client
       .from("billing_webhook_events")
       .update({ processing_error: message })
-      .eq("provider_event_id", event.id);
+      .eq("provider_event_id", event.id)
+      .is("processed_at", null);
+
+    if (recordError) {
+      console.error("ORBYVEN: unable to persist webhook failure state.");
+    }
 
     return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 });
   }

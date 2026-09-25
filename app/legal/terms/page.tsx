@@ -14,10 +14,10 @@ export default function TermsPage() {
     >
       <LegalSection title="1. Operator și acceptarea termenilor">
         <p>
-          Serviciile ORBYVEN sunt furnizate de {operatorLabel()}. Prin folosirea serviciilor sau prin contractarea unui serviciu confirmi că ai citit și accepți documentele aplicabile versiunii contractate.
+          {legalConfig.isComplete ? `Serviciile ORBYVEN sunt furnizate de ${operatorLabel()}.` : "ORBYVEN este un proiect în pregătire; identitatea comerciantului nu este încă finalizată și această informare nu reprezintă o ofertă comercială activă."} Prin contractarea unui serviciu disponibil comercial, se aplică documentele valabile și comunicate la momentul încheierii contractului.
         </p>
         <p>
-          Datele juridice complete ale operatorului sunt afișate în această pagină imediat ce activitatea comercială este activată. Contact: {legalConfig.contactEmail}.
+          Identitatea comerciantului, forma juridică și datele fiscale trebuie comunicate înainte de contractare; modificarea ulterioară a entității comerciale nu transferă automat contractele existente. Contact: {legalConfig.contactEmail}.
         </p>
       </LegalSection>
 

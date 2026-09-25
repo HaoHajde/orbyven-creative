@@ -35,6 +35,9 @@ jobs:
       - name: Ecosystem contract tests (offline)
         run: npm run test:ecosystem
 
+      - name: Billing webhook and fiscal regression tests (offline)
+        run: npm run test:billing
+
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 

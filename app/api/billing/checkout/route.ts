@@ -4,7 +4,8 @@ import {
   LEGAL_DOCUMENT_VERSION,
   isBillingPlanId,
 } from "@/lib/billing/public-config";
-import { requireBillingReady } from "@/lib/billing/server-config";
+import { requireCheckoutReady } from "@/lib/billing/server-config";
+import { legalConfig } from "@/lib/legal-config";
 import {
   authenticateBillingActor,
   createBillingServiceClient,
@@ -13,7 +14,7 @@ import { createStripeCheckoutSession } from "@/lib/billing/stripe-rest";
 
 export async function POST(request: Request) {
   try {
-    requireBillingReady();
+    requireCheckoutReady();
     const body = (await request.json()) as {
       organizationId?: unknown;
       planId?: unknown;
@@ -65,6 +66,10 @@ export async function POST(request: Request) {
         document_version: LEGAL_DOCUMENT_VERSION,
         accepted_from: "workspace_billing",
         accepted_at: acceptedAt,
+        merchant_key: legalConfig.entityKey || null,
+        merchant_type: legalConfig.entityType,
+        merchant_legal_name: legalConfig.legalName || null,
+        merchant_tax_id: legalConfig.taxId || null,
       },
       {
         organization_id: actor.organizationId,
@@ -73,6 +78,10 @@ export async function POST(request: Request) {
         document_version: LEGAL_DOCUMENT_VERSION,
         accepted_from: "workspace_billing",
         accepted_at: acceptedAt,
+        merchant_key: legalConfig.entityKey || null,
+        merchant_type: legalConfig.entityType,
+        merchant_legal_name: legalConfig.legalName || null,
+        merchant_tax_id: legalConfig.taxId || null,
       },
     ]);
     if (acceptanceError) throw acceptanceError;
