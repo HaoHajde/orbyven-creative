@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type QuickLink = {
@@ -18,7 +18,6 @@ function cleanLabel(value: string) {
 
 export default function TemplateExperienceLayer() {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [quickLinks, setQuickLinks] = useState<QuickLink[]>([]);
@@ -116,14 +115,6 @@ export default function TemplateExperienceLayer() {
 
   if (!enabled) return null;
 
-  const goBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/templates");
-  };
-
   const jumpTo = (id: string) => {
     if (id === "__top") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -141,16 +132,6 @@ export default function TemplateExperienceLayer() {
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
-
-      <button
-        type="button"
-        onClick={goBack}
-        className="fixed left-3 top-3 z-[121] inline-flex h-11 items-center gap-2 rounded-full border border-black/10 bg-white/88 px-4 text-[11px] font-semibold text-[#111] shadow-[0_10px_35px_rgba(0,0,0,.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:bg-white active:translate-y-0 sm:left-4 sm:top-4"
-        aria-label="Înapoi"
-      >
-        <span aria-hidden="true">←</span>
-        <span>Reverse</span>
-      </button>
 
       {quickLinks.length > 1 ? (
         <div className="fixed bottom-4 right-4 z-[121] flex flex-col items-end gap-2 sm:bottom-5 sm:right-5">
