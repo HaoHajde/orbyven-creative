@@ -380,7 +380,21 @@ export default function EstimatesModule({
             <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
             {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
             {canWrite&&items.length>0&&<button type="button" onClick={startRevision} className="mt-4 h-9 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 text-xs font-semibold">+ Creează revizie fără a modifica oferta anterioară</button>}
-            {selected.source_estimate_id&&<p className="mt-3 text-[11px] text-[var(--muted)]">Revizie a devizului {estimates.find(item=>item.id===selected.source_estimate_id)?.reference||"inițial"}.</p>}
+            <div className="mt-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-3">
+              <p className="text-[11px] font-semibold">Istoric devize & revizii</p>
+              <p className="mt-1 text-[10px] text-[var(--muted)]">Fiecare versiune păstrează separat ofertele și documentele sale.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {estimates.filter(item=>{
+                  const root=selected.source_estimate_id||selected.id;
+                  return item.id===root||item.source_estimate_id===root;
+                }).sort((a,b)=>a.created_at.localeCompare(b.created_at)).map((item,index)=>(
+                  <button type="button" key={item.id} onClick={()=>{setSelectedId(item.id);setItems([]);}}
+                    className={"rounded-[9px] border px-3 py-2 text-[11px] "+(selected.id===item.id?"border-[var(--accent)] bg-[var(--accent-soft)]":"border-[var(--border)] bg-[var(--surface-2)]")}>
+                    {index===0?"Original":"Revizia "+index} · {item.reference}
+                  </button>
+                ))}
+              </div>
+            </div>
             {selected.notes ? <p className="mt-5 rounded-[18px] bg-[var(--bg)] p-4 text-sm leading-6 text-[var(--muted)]">{selected.notes}</p> : null}
             <div className="mt-5 flex flex-wrap gap-2">
               {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
