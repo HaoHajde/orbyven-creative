@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { Estimate, EstimateItem } from "@/lib/modules/estimates";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { commercialSnapshotMatches } from "@/lib/ecosystem/revision";
 import {
   addMaterialRequirement, addRequirementsFromRecipe, advanceMaterialStatus,
   makeClientOfferDraft, markOfferManually, makeInvoiceDraft,
@@ -15,7 +16,9 @@ type MaterialRow = {
 };
 type DocumentRow = {
   id:string; reference:string; document_type:"offer"|"invoice_draft"; status:string;
-  generated_from_updated_at:string|null;
+  title:string;client_id:string|null;task_id:string|null;currency:string;
+  subtotal_cents:number;discount_cents:number;total_cents:number;
+  tax_rate:number|null;snapshot:unknown;
 };
 type BudgetRow = {id:string;source_type:"materials"|"invoice";direction:"income"|"expense";amount_cents:number};
 type RecipeRow = {id:string;name:string};
@@ -71,7 +74,7 @@ export default function CommercialWorkflowPanel({
       const [materialResult,docResult,recipeResult,budgetResult]=await Promise.all([
         orbyvenSupabase.from("sales_material_requirements").select("id,description,quantity,unit,unit_cost_cents,vendor,status,source_estimate_item_id")
           .eq("organization_id",organizationId).eq("estimate_id",estimate.id).order("position"),
-        orbyvenSupabase.from("sales_commercial_documents").select("id,reference,document_type,status,generated_from_updated_at")
+        orbyvenSupabase.from("sales_commercial_documents").select("id,reference,document_type,status,title,client_id,task_id,currency,subtotal_cents,discount_cents,total_cents,tax_rate,snapshot")
           .eq("organization_id",organizationId).eq("estimate_id",estimate.id),
         orbyvenSupabase.from("ops_material_recipes").select("id,name").eq("organization_id",organizationId).order("name"),
         financeVisible?orbyvenSupabase.from("finance_budget_entries").select("id,source_type,direction,amount_cents")
@@ -96,8 +99,8 @@ export default function CommercialWorkflowPanel({
   const reload=()=>setRefresh(value=>value+1);
   const offer=documents.find(doc=>doc.document_type==="offer");
   const invoice=documents.find(doc=>doc.document_type==="invoice_draft");
-  const staleOffer=Boolean(offer&&(!offer.generated_from_updated_at||Date.parse(offer.generated_from_updated_at)<Date.parse(estimate.updated_at)));
-  const staleInvoice=Boolean(invoice&&(!invoice.generated_from_updated_at||Date.parse(invoice.generated_from_updated_at)<Date.parse(estimate.updated_at)));
+  const staleOffer=Boolean(offer&&!commercialSnapshotMatches(estimate,items,offer));
+  const staleInvoice=Boolean(invoice&&!commercialSnapshotMatches(estimate,items,invoice));
   const totalCost=useMemo(()=>materials.reduce((sum,row)=>sum+Math.round(row.quantity*row.unit_cost_cents),0),[materials]);
   const plannedBudget=budget.filter(row=>row.source_type==="materials"&&row.direction==="expense").reduce((sum,row)=>sum+row.amount_cents,0);
   const readyForOffer=canWrite&&!offer&&Boolean(estimate.client_id&&estimate.task_id&&items.length)&&!["rejected","expired"].includes(estimate.status);
