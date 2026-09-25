@@ -59,3 +59,45 @@ test("baseline headers are configured without blocking existing scripts/images",
   ]) assert.ok(config.includes(name), name);
   assert.match(config, /frame-ancestors 'self'/);
 });
+
+
+const secondMigration = read("supabase/migrations/20260925152000_security_hardening_ii_finance_ip_quota.sql");
+const publicRateLimit = read("lib/security/request-rate-limit.ts");
+const publicRequestRoute = read("app/api/project-requests/route.ts");
+const recoveryRoute = read("app/api/admin/billing/webhook-recovery/route.ts");
+const workspaceOverview = read("lib/modules/overview.ts");
+
+test("financial data stays role-restricted in Postgres, not only in UI", () => {
+  assert.match(secondMigration, /m.role in \('owner','admin','manager'\)/);
+  assert.match(secondMigration, /on public.finance_expenses as restrictive for all to authenticated/);
+  assert.match(secondMigration, /on public.finance_budget_entries as restrictive for all to authenticated/);
+  assert.match(workspaceOverview, /canAccessFinances/);
+  assert.match(read("components/modules/OverviewModule.tsx"), /canAccessFinances && <SnapshotRow/);
+  assert.ok(read("components/WorkspaceContent.tsx").includes('!["owner", "admin", "manager"].includes(role)'));
+});
+
+test("public request IP quota is atomic and service-role-only", () => {
+  assert.match(secondMigration, /on conflict \(ip_fingerprint,bucket_started_at\)/i);
+  assert.match(secondMigration, /where public.project_request_ip_quota.hits < 12/);
+  assert.match(secondMigration, /grant execute on function public.claim_project_request_ip_quota\(text\)\s*to service_role/);
+  assert.match(secondMigration, /alter table public.project_request_ip_quota enable row level security/);
+  assert.match(publicRateLimit, /createHmac\("sha256", secret\)/);
+  assert.match(publicRequestRoute, /claimProjectRequestIpQuota\(request\)/);
+  assert.match(publicRequestRoute, /status: 429/);
+});
+
+test("stalled webhook recovery requires staff review and an audit log", () => {
+  assert.match(recoveryRoute, /authorizeControlCenter\(request\)/);
+  assert.match(recoveryRoute, /requireStaffRole\(staffRole, \["platform_owner"\]\)/);
+  assert.match(recoveryRoute, /reviewedProviderState !== true/);
+  assert.match(recoveryRoute, /billing.webhook_manual_recovery_requested/);
+  assert.match(recoveryRoute, /await Stripe redelivery/);
+  assert.doesNotMatch(recoveryRoute, /syncStripeInvoice\(/);
+});
+
+test("documents check leading content bytes without claiming antivirus protection", () => {
+  const documentUpload = read("lib/modules/documents.ts");
+  assert.match(documentUpload, /await validateDocumentFile\(input.file\)/);
+  assert.match(documentUpload, /hasExpectedFileSignature\(file.type, header\)/);
+  assert.ok(read("lib/security/file-signature.ts").includes("NOT malware/antivirus scanning"));
+});

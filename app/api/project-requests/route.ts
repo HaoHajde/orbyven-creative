@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { claimProjectRequestIpQuota } from "@/lib/security/request-rate-limit";
 
 import { isBillingPlanId } from "@/lib/billing/public-config";
 import { notifyNewProjectRequest } from "@/lib/email/project-request-notification";
@@ -42,8 +43,24 @@ function publicRequestNumber(requestNo: number) {
   return `OR-${String(requestNo).padStart(5, "0")}`;
 }
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (contentLength > 24_000) {
+      return NextResponse.json({ error: "Cererea este prea mare." }, { status: 413 });
+    }
+    if (!request.headers.get("content-type")?.toLowerCase().includes("application/json")) {
+      return NextResponse.json({ error: "Format invalid." }, { status: 415 });
+    }
+    if (!(await claimProjectRequestIpQuota(request))) {
+      return NextResponse.json(
+        { error: "Prea multe cereri. Încearcă din nou mai târziu." },
+        { status: 429, headers: { "Retry-After": "3600" } }
+      );
+    }
+
     const raw = (await request.json()) as Partial<PublicProjectRequestInput>;
 
     // Honeypot: bots often fill visually hidden website fields.
