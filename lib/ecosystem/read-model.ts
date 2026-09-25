@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { commercialSnapshotMatches } from "@/lib/ecosystem/revision";
 
 /**
  * Read-only tenant-scoped view of the tables already deployed by ORBYVEN.
@@ -14,6 +15,7 @@ export type WorkflowOverview = {
     client_id: string | null;
     task_id: string | null;
     updated_at: string;
+    currency:string;subtotal_cents:number;discount_cents:number;total_cents:number;tax_rate:number|null;
   };
   items: Array<{ id: string; estimate_id: string; description: string; quantity: number; unit_price_cents: number }>;
   requirements: Array<{
@@ -23,6 +25,8 @@ export type WorkflowOverview = {
   documents: Array<{
     id: string; estimate_id: string; document_type: string; reference: string;
     status: string; snapshot: unknown; generated_from_updated_at: string | null;
+    title:string;client_id:string|null;task_id:string|null;currency:string;
+    subtotal_cents:number;discount_cents:number;total_cents:number;tax_rate:number|null;
   }>;
   budget: Array<{
     id: string; estimate_id: string; source_type: string; direction: string;
@@ -40,7 +44,7 @@ export async function loadCommercialWorkflow(
 
   const [estimate, items, requirements, documents, budget] = await Promise.all([
     orbyvenSupabase.from("sales_estimates")
-      .select("id,organization_id,reference,status,title,client_id,task_id,updated_at")
+      .select("id,organization_id,reference,status,title,client_id,task_id,updated_at,currency,subtotal_cents,discount_cents,total_cents,tax_rate")
       .eq("organization_id", organizationId).eq("id", estimateId).single(),
     orbyvenSupabase.from("sales_estimate_items")
       .select("id,estimate_id,description,quantity,unit_price_cents")
@@ -49,7 +53,7 @@ export async function loadCommercialWorkflow(
       .select("id,estimate_id,source_estimate_item_id,description,quantity,unit,unit_cost_cents,vendor,status")
       .eq("organization_id", organizationId).eq("estimate_id", estimateId).order("position"),
     orbyvenSupabase.from("sales_commercial_documents")
-      .select("id,estimate_id,document_type,reference,status,snapshot,generated_from_updated_at")
+      .select("id,estimate_id,document_type,reference,status,snapshot,generated_from_updated_at,title,client_id,task_id,currency,subtotal_cents,discount_cents,total_cents,tax_rate")
       .eq("organization_id", organizationId).eq("estimate_id", estimateId),
     orbyvenSupabase.from("finance_budget_entries")
       .select("id,estimate_id,source_type,direction,status,amount_cents,description")
@@ -67,9 +71,6 @@ export async function loadCommercialWorkflow(
     requirements: (requirements.data ?? []) as WorkflowOverview["requirements"],
     documents: typedDocuments,
     budget: (budget.data ?? []) as WorkflowOverview["budget"],
-    sourceIsStale: typedDocuments.some((document) =>
-      document.generated_from_updated_at === null
-      || new Date(document.generated_from_updated_at).getTime() < new Date(typedEstimate.updated_at).getTime()
-    ),
+    sourceIsStale: typedDocuments.some((document) => !commercialSnapshotMatches(typedEstimate, (items.data ?? []) as WorkflowOverview["items"], document)),
   };
 }
