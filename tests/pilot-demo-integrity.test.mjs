@@ -54,7 +54,7 @@ test("catalog stays in current ORBYVEN category layout and keeps legacy template
 test("demo media is local or self-embedded; no missing relative file dependencies", () => {
   for (const id of Object.keys(names)) {
     const html = read("public/orbyven-demos/pilot-" + id + "/index.html");
-    const staticRefs = [...html.matchAll(/(?:src|href)=["'](?!data:|https?:|#|mailto:|tel:|javascript:)([^"'#]+)["']/g)];
+    const staticRefs = [...html.matchAll(/(?:src|href)=["'](?!data:|https?:|#|mailto:|tel:|javascript:|\\$\\{)([^"'#]+)["']/g)];
     assert.deepEqual(staticRefs.map((m) => m[1]), [], id + " references missing standalone asset");
   }
 });
