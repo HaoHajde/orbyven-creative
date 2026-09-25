@@ -78,6 +78,10 @@ export async function POST(request: Request) {
         document_version: LEGAL_DOCUMENT_VERSION,
         accepted_from: "workspace_billing",
         accepted_at: acceptedAt,
+        merchant_key: legalConfig.entityKey || null,
+        merchant_type: legalConfig.entityType,
+        merchant_legal_name: legalConfig.legalName || null,
+        merchant_tax_id: legalConfig.taxId || null,
       },
     ]);
     if (acceptanceError) throw acceptanceError;
