@@ -1,3 +1,6 @@
+import { normalizeRomanianTaxId } from "@/lib/commercial-identity";
+import { legalConfig } from "@/lib/legal-config";
+
 type JsonObject = Record<string, unknown>;
 
 const env = (name: string) => process.env[name]?.trim() ?? "";
@@ -25,6 +28,11 @@ export function getOblioReadiness() {
   if (!oblioConfig.vatName) missing.push("OBLIO_VAT_NAME");
   if (!oblioConfig.vatPercentage) missing.push("OBLIO_VAT_PERCENTAGE");
   if (!oblioConfig.cronSecret) missing.push("CRON_SECRET");
+  if (!legalConfig.isComplete) missing.push("verified commercial issuer");
+  if (oblioConfig.cif && legalConfig.taxId &&
+      normalizeRomanianTaxId(oblioConfig.cif) !== normalizeRomanianTaxId(legalConfig.taxId)) {
+    missing.push("OBLIO_CIF must match the configured issuing merchant");
+  }
 
   const percentage = Number(oblioConfig.vatPercentage);
   if (oblioConfig.vatPercentage && !Number.isFinite(percentage)) {

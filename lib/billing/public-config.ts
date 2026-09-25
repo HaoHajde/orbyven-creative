@@ -2,7 +2,7 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 export type BillingPlanId = "start" | "business" | "pro";
 
-export const LEGAL_DOCUMENT_VERSION = "2026-09-07-v1";
+export const LEGAL_DOCUMENT_VERSION = "2026-09-23-v2";
 export const BILLING_COMMITMENT_MONTHS = 12;
 export const BILLING_GRACE_DAYS = 7;
 
