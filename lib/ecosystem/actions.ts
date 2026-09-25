@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { commercialSnapshotMatches } from "@/lib/ecosystem/revision";
 
 // Operational helpers for the EXISTING Estimates module. Authorization remains
 // Supabase RLS; every query and mutation is scoped to organization_id.
@@ -17,7 +18,6 @@ async function getLines(org:string,estimateId:string){
   return (data??[]) as Line[];
 }
 const isMoney=(n:number)=>Number.isSafeInteger(n)&&n>=0;
-const isStale=(sourceAt:string|null,latest:string)=>!sourceAt || !Number.isFinite(Date.parse(sourceAt)) || Date.parse(sourceAt)<Date.parse(latest);
 function validateOffer(source:Source,lines:Line[]){
   if(!source.client_id || !source.task_id) throw new Error("Asociază întâi clientul și lucrarea.");
   if(!lines.length) throw new Error("Devizul nu are poziții.");
@@ -82,11 +82,11 @@ export async function makeClientOfferDraft(org:string,estimateId:string){
   if(error) throw error;
 }
 export async function markOfferManually(org:string,estimateId:string,status:"sent"|"accepted"){
-  const source=await getSource(org,estimateId);
+  const source=await getSource(org,estimateId),lines=await getLines(org,estimateId);
   const {data,error}=await orbyvenSupabase.from("sales_commercial_documents")
-    .select("id,status,generated_from_updated_at").eq("organization_id",org).eq("estimate_id",estimateId).eq("document_type","offer").single();
+    .select("id,status,title,client_id,task_id,currency,subtotal_cents,discount_cents,total_cents,tax_rate,snapshot").eq("organization_id",org).eq("estimate_id",estimateId).eq("document_type","offer").single();
   if(error||!data) throw new Error("Creează mai întâi oferta.");
-  if(isStale(data.generated_from_updated_at,source.updated_at)) throw new Error("Oferta nu mai corespunde devizului; este necesară revizie.");
+  if(!commercialSnapshotMatches(source,lines,data)) throw new Error("Oferta nu mai corespunde conținutului devizului; este necesară revizie.");
   if(status==="sent"&&data.status!=="draft") throw new Error("Doar ciorna poate fi marcată trimisă.");
   if(status==="accepted"&&(data.status!=="sent"||source.status!=="accepted")) throw new Error("Confirmă trimiterea și acceptarea devizului înaintea ofertei.");
   const changed=await orbyvenSupabase.from("sales_commercial_documents").update({status})
@@ -98,11 +98,11 @@ export async function makeInvoiceDraft(org:string,estimateId:string){
   validateOffer(source,lines);
   if(source.status!=="accepted"||source.tax_rate===null) throw new Error("Confirmă acceptarea devizului și tratamentul TVA.");
   const docs=await orbyvenSupabase.from("sales_commercial_documents")
-    .select("id,document_type,status,generated_from_updated_at").eq("organization_id",org).eq("estimate_id",estimateId);
+    .select("id,document_type,status,title,client_id,task_id,currency,subtotal_cents,discount_cents,total_cents,tax_rate,snapshot").eq("organization_id",org).eq("estimate_id",estimateId);
   if(docs.error) throw docs.error;
   if(docs.data?.some(d=>d.document_type==="invoice_draft")) throw new Error("Ciorna există deja.");
   const offer=docs.data?.find(d=>d.document_type==="offer");
-  if(!offer||offer.status!=="accepted"||isStale(offer.generated_from_updated_at,source.updated_at)) throw new Error("Oferta trebuie să fie actuală și acceptată explicit.");
+  if(!offer||offer.status!=="accepted"||!commercialSnapshotMatches(source,lines,offer)) throw new Error("Oferta trebuie să fie actuală și acceptată explicit.");
   const {error}=await orbyvenSupabase.from("sales_commercial_documents").insert({
     organization_id:org,estimate_id:source.id,client_id:source.client_id,task_id:source.task_id,
     document_type:"invoice_draft",reference:"PRE-"+crypto.randomUUID().slice(0,8).toUpperCase(),
