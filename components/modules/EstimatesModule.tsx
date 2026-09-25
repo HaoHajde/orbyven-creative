@@ -19,6 +19,13 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
+import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
+import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
+import { addRequirementsFromRecipe } from "@/lib/ecosystem/actions";
+import {
+  loadMaterialLibrary,recipeEstimatePreview,
+  type MaterialLibrary,
+} from "@/lib/modules/materials-catalog";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -43,9 +50,11 @@ type FormState = {
   taxRate: string;
   discount: string;
   notes: string;
+  plannedLabor: string;
+  otherCosts: string;
 };
 
-const emptyForm: FormState = { title: "", clientId: "", taskId: "", validUntil: "", taxRate: "", discount: "", notes: "" };
+const emptyForm: FormState = { title: "", clientId: "", taskId: "", validUntil: "", taxRate: "", discount: "", notes: "", plannedLabor: "", otherCosts: "" };
 const statusLabels: Record<EstimateStatus, string> = {
   draft: "Draft",
   sent: "Trimisă",
@@ -78,6 +87,14 @@ export default function EstimatesModule({
     taskId: initialTaskId ?? "",
   }));
   const [lines, setLines] = useState<DraftLine[]>(() => [newLine()]);
+  const [library,setLibrary]=useState<MaterialLibrary>({materials:[],recipes:[],ingredients:[]});
+  const [recipeId,setRecipeId]=useState("");
+  const [recipeQty,setRecipeQty]=useState("1");
+  const [recipeSale,setRecipeSale]=useState("");
+  const [recipeLines,setRecipeLines]=useState<Record<string,string>>({});
+  const [revisionSource,setRevisionSource]=useState<string|null>(null);
+  const [profitRefresh,setProfitRefresh]=useState(0);
+  const [recipeWarning,setRecipeWarning]=useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -89,14 +106,16 @@ export default function EstimatesModule({
     setLoading(true);
     setError("");
     try {
-      const [nextEstimates, nextClients, nextTasks] = await Promise.all([
+      const [nextEstimates, nextClients, nextTasks, nextLibrary] = await Promise.all([
         listEstimates(organizationId),
         listEstimateClients(organizationId),
         listEstimateTasks(organizationId),
+        loadMaterialLibrary(organizationId),
       ]);
       setEstimates(nextEstimates);
       setClients(nextClients);
       setTasks(nextTasks);
+      setLibrary(nextLibrary);
       if (initialCreate && initialTaskId) {
         const task = nextTasks.find((item) => item.id === initialTaskId);
         if (task) setForm((current) => ({ ...current, title: current.title || task.title, clientId: task.client_id || current.clientId }));
@@ -134,6 +153,36 @@ export default function EstimatesModule({
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
 
+  const refreshLibrary=async()=>{setLibrary(await loadMaterialLibrary(organizationId));};
+  const addRecipeLine=()=>{
+    if(!recipeId)return;
+    try{
+      const preview=recipeEstimatePreview(recipeId,Number(recipeQty),Number(recipeSale),library);
+      if(library.ingredients.filter(item=>item.recipe_id===recipeId).length===0)
+        throw new Error("Adaugă materiale în rețetă înainte să pregătești devizul.");
+      const line={key:crypto.randomUUID(),description:preview.description,quantity:String(preview.quantity),price:String(preview.unitPriceLei)};
+      setLines(current=>current.length===1&&!current[0].description.trim()?[line]:[...current,line]);
+      setRecipeLines(current=>({...current,[line.key]:recipeId}));
+      setRecipeWarning("");
+      if(!form.title.trim())setForm(current=>({...current,title:preview.description}));
+    }catch(reason){setRecipeWarning(reason instanceof Error?reason.message:"Datele rețetei nu sunt valide.");}
+  };
+  const startRevision=()=>{
+    if(!selected||!canWrite||!items.length)return;
+    const root=selected.source_estimate_id||selected.id;
+    setRevisionSource(root);
+    setForm({
+      title:selected.title,clientId:selected.client_id||"",taskId:selected.task_id||"",
+      validUntil:selected.valid_until||"",taxRate:selected.tax_rate===null?"":String(selected.tax_rate),
+      discount:String(selected.discount_cents/100),notes:selected.notes||"",
+      plannedLabor:String(selected.planned_labor_cents/100),otherCosts:String(selected.other_cost_cents/100),
+    });
+    setLines(items.map(item=>({key:crypto.randomUUID(),description:item.description,quantity:String(item.quantity),price:String(item.unit_price_cents/100)})));
+    setRecipeLines({});
+    setCreateOpen(true);
+    setRecipeWarning("Revizie nouă: documentele și necesarul original rămân intacte. Verifică materialele și reaplică rețetele noii versiuni.");
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
   const chooseTask = (taskId: string) => {
     const task = tasks.find((item) => item.id === taskId);
     setForm((current) => ({
