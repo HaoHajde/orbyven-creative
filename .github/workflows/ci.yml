@@ -41,6 +41,9 @@ jobs:
       - name: Security hardening regression tests (offline)
         run: npm run test:security
 
+      - name: Legal & Trust regression tests (offline)
+        run: npm run test:compliance
+
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 
