@@ -32,5 +32,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Ecosystem contract tests (offline)
+        run: npm run test:ecosystem
+
       - name: Production build
         run: npm run build

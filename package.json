@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:ecosystem": "node --test tests/ecosystem-contract.test.mjs",
     "validate": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {

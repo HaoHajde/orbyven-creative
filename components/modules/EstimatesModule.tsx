@@ -18,6 +18,7 @@ import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -286,6 +287,7 @@ export default function EstimatesModule({
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
+            <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} />
             {selected.notes ? <p className="mt-5 rounded-[18px] bg-[var(--bg)] p-4 text-sm leading-6 text-[var(--muted)]">{selected.notes}</p> : null}
             <div className="mt-5 flex flex-wrap gap-2">
               {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
