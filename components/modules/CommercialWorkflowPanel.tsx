@@ -103,34 +103,23 @@ export default function CommercialWorkflowPanel({
   const readyForOffer=canWrite&&!offer&&Boolean(estimate.client_id&&estimate.task_id&&items.length)&&!["rejected","expired"].includes(estimate.status);
   const readyForDraft=canWrite&&!invoice&&Boolean(offer&&!staleOffer&&offer.status==="accepted"&&estimate.status==="accepted"&&estimate.tax_rate!==null);
 
-  const run=async(operation:()=>Promise<void>,success:string)=>{
-    if(busy||!canWrite)return;
+  const run=async(operation:()=>Promise<void>,success:string):Promise<boolean>=>{
+    if(busy||!canWrite)return false;
     setBusy(true);setError("");setMessage("");
-    try{await operation();setMessage(success);reload();}
-    catch(reason){console.error(reason);setError(reason instanceof Error?reason.message:"Acțiunea nu a reușit.");}
+    try{await operation();setMessage(success);reload();return true;}
+    catch(reason){console.error(reason);setError(reason instanceof Error?reason.message:"Acțiunea nu a reușit.");return false;}
     finally{setBusy(false);}
-  };
-  const saveMaterial=(event:FormEvent<HTMLFormElement>)=>{
-    event.preventDefault();
-    const qty=Number(quantity),unitCostCents=Math.round(Number(unitCost)*100);
-    void run(()=>addMaterialRequirement(organizationId,estimate.id,{
-      description,quantity:qty,unit,unitCostCents,vendor,estimateItemId:sourceItem||undefined,
-    }),"Material adăugat la deviz.").then;
   };
   const addManualMaterial=async(event:FormEvent<HTMLFormElement>)=>{
     event.preventDefault();
     const qty=Number(quantity),unitCostCents=Math.round(Number(unitCost)*100);
-    await run(()=>addMaterialRequirement(organizationId,estimate.id,{
+    const success=await run(()=>addMaterialRequirement(organizationId,estimate.id,{
       description,quantity:qty,unit,unitCostCents,vendor,estimateItemId:sourceItem||undefined,
     }),"Materialul a fost adăugat.");
-    // A repeated submit cannot accidentally produce a duplicated row.
-    setMaterialOpen(false);
-    setDescription("");setUnitCost("");setVendor("");
+    if(success){setMaterialOpen(false);setDescription("");setUnitCost("");setVendor("");}
   };
 
-  const steps:[
-    {title:string;status:string;tone:Tone}
-  ]=[
+  const steps:Array<{title:string;status:string;tone:Tone}>=[
     {title:"Deviz",status:"Salvat · "+estimate.reference,tone:"ready"},
     {title:"Materiale",status:materials.length?materials.length+" poziții":"Necesar gol",tone:materials.length?"ready":"waiting"},
     {title:"Ofertă client",status:offer?(staleOffer?"De revizuit":offer.status):"Negenerată",tone:offer?(staleOffer?"progress":"ready"):"waiting"},
