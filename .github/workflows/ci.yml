@@ -44,5 +44,8 @@ jobs:
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 
+      - name: Performance loading regression tests (offline)
+        run: npm run test:performance
+
       - name: Production build
         run: npm run build
