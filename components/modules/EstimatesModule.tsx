@@ -215,6 +215,12 @@ export default function EstimatesModule({
     setSaving(true);
     setError("");
     try {
+      const preparedLines=lines.filter(line=>line.description.trim()&&Number(line.quantity)>0);
+      const recipeLaborCents=preparedLines.reduce((sum,line)=>{
+        const recipe=library.recipes.find(item=>item.id===recipeLines[line.key]);
+        return sum+(recipe?Math.round(recipe.labor_cost_cents*Number(line.quantity)):0);
+      },0);
+      if(!Number.isFinite(recipeLaborCents)||recipeLaborCents<0)throw new Error("Costul manoperei nu este valid.");
       const created = await createEstimate(organizationId, {
         title: form.title,
         clientId: form.clientId || null,
@@ -223,14 +229,32 @@ export default function EstimatesModule({
         taxRate: form.taxRate ? Number(form.taxRate) : null,
         discountLei: form.discount ? Number(form.discount) : 0,
         notes: form.notes,
-        items: lines.map((line) => ({ description: line.description, quantity: Number(line.quantity), unitPriceLei: Number(line.price) })),
+        plannedLaborLei: form.plannedLabor!==""?Number(form.plannedLabor):recipeLaborCents/100,
+        otherCostLei: form.otherCosts!==""?Number(form.otherCosts):0,
+        sourceEstimateId: revisionSource,
+        items: preparedLines.map((line) => ({ description: line.description, quantity: Number(line.quantity), unitPriceLei: Number(line.price) })),
       });
       setEstimates((current) => [created, ...current]);
       setSelectedId(created.id);
-      setItems(await listEstimateItems(organizationId, created.id));
+      const savedItems=await listEstimateItems(organizationId,created.id);
+      setItems(savedItems);
       setCreateOpen(false);
       setForm(emptyForm);
       setLines([newLine()]);
+      setRevisionSource(null);
+      setRecipeLines({});
+      const failures:string[]=[];
+      for(let index=0;index<preparedLines.length;index++){
+        const recipe=recipeLines[preparedLines[index].key],item=savedItems[index];
+        if(recipe&&item){
+          try{await addRequirementsFromRecipe(organizationId,created.id,item.id,recipe);}
+          catch(reason){failures.push(preparedLines[index].description+" — "+(reason instanceof Error?reason.message:"Materiale negenerate"));}
+        }
+      }
+      if(failures.length){
+        setError("Devizul a fost salvat, dar unele materiale nu au fost generate. Deschide «Circuitul devizului» și aplică rețeta: "+failures.join("; "));
+      }else if(Object.keys(recipeLines).length){setRecipeWarning("Deviz și necesar generate; verifică marja din detaliile devizului.");}
+      setProfitRefresh(current=>current+1);
     } catch (saveError) {
       console.error(saveError);
       setError(saveError instanceof Error ? saveError.message : "Oferta nu a putut fi creată.");
@@ -279,7 +303,7 @@ export default function EstimatesModule({
         eyebrow="Sales · Oferte & devize"
         title="Oferte"
         description="Construiești devizul lângă client și lucrare, apoi urmărești dacă a fost trimis, acceptat sau respins."
-        action={canWrite ? <button type="button" onClick={() => setCreateOpen((current) => !current)} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">{createOpen ? "Închide" : "+ Ofertă nouă"}</button> : null}
+        action={canWrite ? <button type="button" onClick={() => {if(!createOpen){setRevisionSource(null);setForm(emptyForm);setLines([newLine()]);setRecipeLines({});}setCreateOpen(current=>!current);}} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">{createOpen ? "Închide" : "+ Ofertă nouă"}</button> : null}
       />
       <div className="mt-8"><ModuleError message={error} /></div>
 
@@ -290,8 +314,12 @@ export default function EstimatesModule({
         <ModuleMetric label="Valoare acceptată" value={formatMoney(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
       </section>
 
+      <MaterialsLibraryPanel organizationId={organizationId} role={role} library={library} onChanged={refreshLibrary} />
+
       {createOpen && canWrite ? (
         <form onSubmit={handleCreate} className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+          {revisionSource&&<p className="mb-4 rounded-[12px] border border-[var(--accent)] bg-[var(--accent-soft)] p-3 text-xs font-semibold">Revizie nouă · devizul și oferta anterioară nu sunt suprascrise.</p>}
+          {recipeWarning&&<p role="status" className="mb-4 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)] p-3 text-xs">{recipeWarning}</p>}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Titlu ofertă *"><input value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} className={moduleInputClass} placeholder="Ex. Înlocuire centrală + montaj" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(tasks.find((task) => task.id === form.taskId)?.client_id)} onChange={(e) => setForm((current) => ({ ...current, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.company ? ` · ${client.company}` : ""}</option>)}</select></Field>
@@ -299,7 +327,20 @@ export default function EstimatesModule({
             <Field label="Valabil până la"><input type="date" value={form.validUntil} onChange={(e) => setForm((c) => ({ ...c, validUntil: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Discount (lei)"><input type="number" min="0" step="0.01" value={form.discount} onChange={(e) => setForm((c) => ({ ...c, discount: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
             <Field label="Taxă / TVA (%) opțional"><input type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={(e) => setForm((c) => ({ ...c, taxRate: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
+            <Field label="Manoperă estimată (lei)"><input type="number" min="0" step="0.01" value={form.plannedLabor} onChange={(e) => setForm(c=>({...c,plannedLabor:e.target.value}))} className={moduleInputClass} placeholder="Din rețete dacă lași gol" /></Field>
+            <Field label="Alte costuri estimate (lei)"><input type="number" min="0" step="0.01" value={form.otherCosts} onChange={(e) => setForm(c=>({...c,otherCosts:e.target.value}))} className={moduleInputClass} placeholder="Transport, deplasare etc." /></Field>
           </div>
+
+          {library.recipes.length>0&&<section aria-label="Deviz din rețetă" className="mt-5 rounded-[16px] border border-[var(--border-strong)] bg-[var(--surface-2)]/70 p-4">
+            <p className="text-xs font-semibold">Deviz inteligent · din biblioteca firmei</p>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">Adaugi o poziție calculată; materialele se generează la salvarea devizului.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_90px_140px_auto] sm:items-end">
+              <Field label="Rețetă"><select value={recipeId} onChange={e=>setRecipeId(e.target.value)} className={moduleInputClass}><option value="">Alege rețeta</option>{library.recipes.map(recipe=><option key={recipe.id} value={recipe.id}>{recipe.name}</option>)}</select></Field>
+              <Field label="Cantitate"><input type="number" min="0.001" step="any" value={recipeQty} onChange={e=>setRecipeQty(e.target.value)} className={moduleInputClass}/></Field>
+              <Field label="Preț vânzare / unitate"><input type="number" min="0" step="0.01" value={recipeSale} onChange={e=>setRecipeSale(e.target.value)} className={moduleInputClass} placeholder="lei"/></Field>
+              <button type="button" disabled={!recipeId||!recipeSale} onClick={addRecipeLine} className="h-11 rounded-[10px] border border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-xs font-semibold disabled:opacity-40">+ Adaugă</button>
+            </div>
+          </section>}
 
           <div className="mt-6">
             <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Poziții deviz</p><button type="button" onClick={() => setLines((current) => [...current, newLine()])} className="text-xs font-semibold">+ Adaugă poziție</button></div>
@@ -309,7 +350,7 @@ export default function EstimatesModule({
                   <Field label={`Descriere ${index + 1}`}><input value={line.description} onChange={(e) => setLines((current) => current.map((item) => item.key === line.key ? { ...item, description: e.target.value } : item))} className={moduleInputClass} placeholder="Material / manoperă" /></Field>
                   <Field label="Cantitate"><input type="number" min="0.001" step="0.001" value={line.quantity} onChange={(e) => setLines((current) => current.map((item) => item.key === line.key ? { ...item, quantity: e.target.value } : item))} className={moduleInputClass} /></Field>
                   <Field label="Preț / unitate"><input type="number" min="0" step="0.01" value={line.price} onChange={(e) => setLines((current) => current.map((item) => item.key === line.key ? { ...item, price: e.target.value } : item))} className={moduleInputClass} placeholder="lei" /></Field>
-                  <button type="button" disabled={lines.length === 1} onClick={() => setLines((current) => current.filter((item) => item.key !== line.key))} className="h-11 rounded-full border border-[var(--border)] px-4 text-xs disabled:opacity-30">Șterge</button>
+                  <button type="button" disabled={lines.length === 1} onClick={() => {setLines(current=>current.filter(item=>item.key!==line.key));setRecipeLines(current=>{const next={...current};delete next[line.key];return next;});}} className="h-11 rounded-full border border-[var(--border)] px-4 text-xs disabled:opacity-30">Șterge</button>
                 </div>
               ))}
             </div>
@@ -336,7 +377,10 @@ export default function EstimatesModule({
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
-            <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} />
+            <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
+            {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
+            {canWrite&&items.length>0&&<button type="button" onClick={startRevision} className="mt-4 h-9 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 text-xs font-semibold">+ Creează revizie fără a modifica oferta anterioară</button>}
+            {selected.source_estimate_id&&<p className="mt-3 text-[11px] text-[var(--muted)]">Revizie a devizului {estimates.find(item=>item.id===selected.source_estimate_id)?.reference||"inițial"}.</p>}
             {selected.notes ? <p className="mt-5 rounded-[18px] bg-[var(--bg)] p-4 text-sm leading-6 text-[var(--muted)]">{selected.notes}</p> : null}
             <div className="mt-5 flex flex-wrap gap-2">
               {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
