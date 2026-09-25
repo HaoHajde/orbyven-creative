@@ -40,28 +40,31 @@ export default function AdminPage() {
     setLoading(true);
     setLoadError("");
 
-    const { data: authData, error: authError } =
-      await orbitaSupabase.auth.getUser();
+    const { data: sessionData, error: sessionError } =
+      await orbitaSupabase.auth.getSession();
 
-    if (authError || !authData.user) {
+    if (sessionError || !sessionData.session) {
       router.replace("/admin/login");
       return;
     }
 
-    const { data, error } = await orbitaSupabase
-      .from("leads")
-      .select("id,name,email,project_type,budget,message,status,created_at")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      setLoadError("Nu am putut încărca cererile. Verifică politicile RLS.");
+    try {
+      const response = await fetch("/api/admin/leads", {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        cache: "no-store",
+      });
+      if (response.status === 401) {
+        router.replace("/admin/login");
+        return;
+      }
+      if (!response.ok) throw new Error("Admin access denied or unavailable.");
+      const payload = (await response.json()) as { leads: Lead[] };
+      setLeads(payload.leads ?? []);
+    } catch {
+      setLoadError("Nu am putut încărca cererile. Verifică accesul de administrator ORBYVEN.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLeads((data ?? []) as Lead[]);
-    setLoading(false);
   }, [router]);
 
   useEffect(() => {
@@ -91,21 +94,30 @@ export default function AdminPage() {
   const updateStatus = async (id: number, status: LeadStatus) => {
     setUpdatingId(id);
 
-    const { error } = await orbitaSupabase
-      .from("leads")
-      .update({ status })
-      .eq("id", id);
-
-    if (error) {
-      alert("Statusul nu a putut fi actualizat.");
+    try {
+      const { data: sessionData } = await orbitaSupabase.auth.getSession();
+      if (!sessionData.session) {
+        router.replace("/admin/login");
+        return;
+      }
+      const response = await fetch("/api/admin/leads", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, status }),
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Lead update failed.");
+      setLeads((current) =>
+        current.map((lead) => (lead.id === id ? { ...lead, status } : lead))
+      );
+    } catch {
+      alert("Statusul nu a putut fi actualizat. Verifică accesul de administrator.");
+    } finally {
       setUpdatingId(null);
-      return;
     }
-
-    setLeads((current) =>
-      current.map((lead) => (lead.id === id ? { ...lead, status } : lead))
-    );
-    setUpdatingId(null);
   };
 
   const logout = async () => {

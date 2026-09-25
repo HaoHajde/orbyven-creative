@@ -40,6 +40,36 @@ export type UploadDocumentInput = {
 };
 
 const BUCKET = "orbyven-documents";
+const ALLOWED_DOCUMENT_TYPES: Record<string, readonly string[]> = {
+  pdf: ["application/pdf"],
+  jpg: ["image/jpeg"],
+  jpeg: ["image/jpeg"],
+  png: ["image/png"],
+  webp: ["image/webp"],
+  heic: ["image/heic"],
+  heif: ["image/heif"],
+  txt: ["text/plain"],
+  csv: ["text/csv", "text/plain"],
+  doc: ["application/msword"],
+  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  xls: ["application/vnd.ms-excel"],
+  xlsx: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  ppt: ["application/vnd.ms-powerpoint"],
+  pptx: ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+};
+
+function validateDocumentFile(file: File) {
+  if (!file.name || file.size === 0) {
+    throw new Error("Selectează un fișier valid, care nu este gol.");
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    throw new Error("Fișierul depășește limita de 20 MB.");
+  }
+  const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
+  if (!ALLOWED_DOCUMENT_TYPES[extension]?.includes(file.type)) {
+    throw new Error("Tip de fișier neacceptat. Sunt permise PDF, imagini și documente Office.");
+  }
+}
 const FIELDS =
   "id,organization_id,name,category,storage_path,mime_type,size_bytes,client_id,task_id,estimate_id,note,created_by,created_at,updated_at";
 
@@ -103,8 +133,7 @@ export async function uploadDocument(
   input: UploadDocumentInput
 ): Promise<BusinessDocument> {
   requireOrganizationId(organizationId);
-  if (!input.file?.name) throw new Error("Selectează un fișier.");
-  if (input.file.size > 20 * 1024 * 1024) throw new Error("Fișierul depășește limita de 20 MB.");
+  validateDocumentFile(input.file);
 
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const objectName = `${crypto.randomUUID()}-${safeFileName(input.file.name)}`;
