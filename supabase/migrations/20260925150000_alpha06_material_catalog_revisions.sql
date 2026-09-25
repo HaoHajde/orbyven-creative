@@ -44,6 +44,18 @@ alter table public.ops_material_recipes
 alter table public.ops_material_recipes
   add constraint ops_material_recipes_labor_cost_check check (labor_cost_cents >= 0);
 
+-- Profitability is a projection, not fiscal accounting: amounts represent
+-- planned direct labor and extra operational costs in the estimate currency.
+alter table public.sales_estimates
+  add column if not exists planned_labor_cents bigint not null default 0;
+alter table public.sales_estimates
+  add column if not exists other_cost_cents bigint not null default 0;
+alter table public.sales_estimates
+  drop constraint if exists sales_estimates_planned_costs_positive;
+alter table public.sales_estimates
+  add constraint sales_estimates_planned_costs_positive
+  check (planned_labor_cents >= 0 and other_cost_cents >= 0);
+
 -- Every revision is a new estimate; accepted offers retain their old estimate.
 alter table public.sales_estimates
   add column if not exists source_estimate_id uuid;
