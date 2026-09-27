@@ -15,6 +15,7 @@ export type BusinessExpense = {
   client_id: string | null;
   task_id: string | null;
   document_id: string | null;
+  estimate_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -35,10 +36,11 @@ export type CreateExpenseInput = {
   clientId?: string | null;
   taskId?: string | null;
   documentId?: string | null;
+  estimateId?: string | null;
 };
 
 const FIELDS =
-  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,created_by,created_at,updated_at";
+  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,estimate_id,created_by,created_at,updated_at";
 
 function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
@@ -124,6 +126,16 @@ export async function createExpense(
       .single();
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
+  let linkedTaskId=input.taskId || null;
+  if (input.estimateId) {
+    const {data: estimate,error: estimateError}=await orbyvenSupabase.from("sales_estimates")
+      .select("id,client_id,task_id").eq("organization_id",organizationId).eq("id",input.estimateId).single();
+    if(estimateError||!estimate)throw new Error("Devizul nu există în această firmă.");
+    if(linkedTaskId&&estimate.task_id&&linkedTaskId!==estimate.task_id)throw new Error("Lucrarea nu corespunde devizului.");
+    if(linkedClientId&&estimate.client_id&&linkedClientId!==estimate.client_id)throw new Error("Clientul nu corespunde devizului.");
+    linkedTaskId=estimate.task_id||linkedTaskId;
+    linkedClientId=estimate.client_id||linkedClientId;
+  }
   if (input.documentId) {
     const { data: document, error: documentError } = await orbyvenSupabase
       .from("ops_documents")
@@ -147,7 +159,8 @@ export async function createExpense(
       currency: (input.currency?.trim() || "RON").toUpperCase(),
       payment_method: input.paymentMethod || null,
       client_id: linkedClientId,
-      task_id: input.taskId || null,
+      task_id: linkedTaskId,
+      estimate_id: input.estimateId || null,
       document_id: input.documentId || null,
       created_by: authData.user?.id ?? null,
     })
