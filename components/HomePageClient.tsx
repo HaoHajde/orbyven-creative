@@ -149,9 +149,14 @@ export default function HomePage() {
   const [desktopMotion, setDesktopMotion] = useState(false);
   const [activeTemplateIndex, setActiveTemplateIndex] = useState(0);
 
-  // Randomize only after hydration, choosing a fresh opening showcase per load.
+  // Randomize after hydration without a synchronous effect state update.
   useEffect(() => {
-    if (homepageTemplates.length > 1) setActiveTemplateIndex(Math.floor(Math.random() * homepageTemplates.length));
+    const frame = window.requestAnimationFrame(() => {
+      if (homepageTemplates.length > 1) {
+        setActiveTemplateIndex(Math.floor(Math.random() * homepageTemplates.length));
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
   const [activeSection, setActiveSection] = useState<string | null>("intro");
