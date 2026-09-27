@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ORBYVEN",
+  "version": "0.1.0",
+  "identifier": "ro.orbyven.desktop",
+  "build": {
+    "devUrl": "https://orbyven.ro/workspace",
+    "frontendDist": "https://orbyven.ro/workspace"
+  },
+  "app": {
+    "security": {
+      "capabilities": []
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "ORBYVEN — Workspace",
+        "url": "https://orbyven.ro/workspace",
+        "width": 1360,
+        "height": 850,
+        "minWidth": 920,
+        "minHeight": 620,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "backgroundColor": "#0B0B14"
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  }
+}

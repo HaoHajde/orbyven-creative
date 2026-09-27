@@ -1,0 +1,15 @@
+{
+  "name": "@orbyven/desktop-windows",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ORBYVEN Desktop for Windows",
+  "scripts": {
+    "icons": "tauri icon ../app/icon.svg",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "check": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

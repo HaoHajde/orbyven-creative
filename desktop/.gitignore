@@ -1,0 +1,6 @@
+node_modules/
+src-tauri/target/
+src-tauri/icons/
+src-tauri/Cargo.lock
+*.msi
+*-setup.exe
