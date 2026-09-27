@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type CSSProperties } from "react";
 import { initializeDesktopClient, orbyvenSupabase } from "./client";
 import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
@@ -187,7 +187,7 @@ export default function App() {
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
   const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
   const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
-  const createModules = modules.filter((module) => module.id !== "overview" && (module.id !== "expenses" || canFinance));
+  const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
   const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
 
   const loadModule = useCallback(async () => {
@@ -258,7 +258,7 @@ export default function App() {
     if (!workspace?.enabledModules.includes(id)) return;
     if (id === "expenses" && !canFinance) return;
     setPanel("workspace"); setCommandOpen(false); setCreateMenuOpen(false);
-    setActiveModule(id); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    setActiveModule(id); setRows([]); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
   }
 
   async function toggleModule(id: OrbyvenModuleId) {
@@ -568,7 +568,7 @@ export default function App() {
                         ] as const).map(([label, count, target, color]) => {
                           const available = workspace.enabledModules.includes(target);
                           return <button key={label} className="metric" disabled={!available}
-                            onClick={() => chooseModule(target)} style={{ "--metric-color": color } as React.CSSProperties}>
+                            onClick={() => chooseModule(target)} style={{ "--metric-color": color } as CSSProperties}>
                             <span>{label}</span><strong>{formatNumber(count)}</strong><small>{available ? "Deschide modulul ↗" : "Modul neactivat"}</small>
                           </button>;
                         })}
