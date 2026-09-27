@@ -21,13 +21,17 @@ type StripePortalSession = {
   url: string;
 };
 
-async function stripePost<T>(path: string, params: URLSearchParams): Promise<T> {
+async function stripePost<T>(path: string, params: URLSearchParams, archived = false): Promise<T> {
   requireBillingReady();
+  const apiKey = archived
+    ? billingServerConfig.stripeArchiveSecretKey
+    : billingServerConfig.stripeSecretKey;
+  if (!apiKey) throw new Error("Selected merchant Stripe API credentials are unavailable.");
 
   const response = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${billingServerConfig.stripeSecretKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params,
@@ -45,14 +49,13 @@ async function stripePost<T>(path: string, params: URLSearchParams): Promise<T> 
   return payload;
 }
 
-export async function retrieveStripePlanPrice(planId:BillingPlanId):Promise<CheckoutPrice> {
-  requireBillingReady();
-  const priceId=getStripePriceId(planId);
-  const response=await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`,{
-    headers:{Authorization:`Bearer ${billingServerConfig.stripeSecretKey}`},
-    cache:"no-store",
+export async function retrieveStripePlanPrice(planId: BillingPlanId): Promise<CheckoutPrice> {
+  requireCheckoutReady();
+  const response = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(getStripePriceId(planId))}`, {
+    headers: { Authorization: `Bearer ${billingServerConfig.stripeSecretKey}` },
+    cache: "no-store",
   });
-  if(!response.ok)throw new Error("Unable to verify the configured Stripe price.");
+  if (!response.ok) throw new Error("Unable to verify the configured Stripe price.");
   return await response.json() as CheckoutPrice;
 }
 
@@ -79,7 +82,7 @@ export async function createStripeCheckoutSession(input: {
   params.set("cancel_url", `${siteUrl}/workspace/billing?checkout=cancelled`);
   params.set("billing_address_collection", "required");
   params.set("tax_id_collection[enabled]", "true");
-  // Disable discounts until the user-facing total and discount consent flow is fully specified.
+  // Freeze the displayed total: defer promo-code handling until discount disclosure is implemented.
   params.set("allow_promotion_codes", "false");
   params.set("locale", "ro");
   params.set("metadata[organization_id]", input.organizationId);
@@ -106,10 +109,16 @@ export async function createStripeCheckoutSession(input: {
   return stripePost<StripeCheckoutSession>("checkout/sessions", params);
 }
 
-export async function createStripePortalSession(customerId: string) {
+export async function createStripePortalSession(customerId: string, archived = false) {
+  if (archived && (!billingServerConfig.stripeArchiveSecretKey ||
+      !billingServerConfig.stripeArchivePortalConfigurationId)) {
+    throw new Error("Archived merchant portal is not configured.");
+  }
   const params = new URLSearchParams();
   params.set("customer", customerId);
-  params.set("configuration", billingServerConfig.stripePortalConfigurationId);
+  params.set("configuration", archived
+    ? billingServerConfig.stripeArchivePortalConfigurationId
+    : billingServerConfig.stripePortalConfigurationId);
   params.set("return_url", `${getSiteUrl()}/workspace/billing`);
-  return stripePost<StripePortalSession>("billing_portal/sessions", params);
+  return stripePost<StripePortalSession>("billing_portal/sessions", params, archived);
 }

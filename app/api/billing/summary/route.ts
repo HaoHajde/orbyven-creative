@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getBillingReadiness } from "@/lib/billing/server-config";
+import { getBillingReadiness, billingServerConfig } from "@/lib/billing/server-config";
 import { commercialIdentity } from "@/lib/commercial-identity";
+import { archivedPortalReady } from "@/lib/billing/merchant-routing";
 import {
   authenticateBillingActor,
   createBillingServiceClient,
@@ -25,12 +26,22 @@ export async function GET(request: Request) {
     const actor = await authenticateBillingActor(request, organizationId, true);
     const client = createBillingServiceClient();
 
-    const [accountResult, subscriptionResult, entitlementsResult] = await Promise.all([
+    const [accountResult, archiveResult, subscriptionResult, entitlementsResult] = await Promise.all([
       client
-        .from("billing_accounts")
+         .from("billing_merchant_customers")
         .select("stripe_customer_id,billing_email")
         .eq("organization_id", actor.organizationId)
+        .eq("merchant_key", commercialIdentity.entityKey)
         .maybeSingle(),
+      billingServerConfig.stripeArchiveMerchantKey &&
+      billingServerConfig.stripeArchiveMerchantKey !== commercialIdentity.entityKey
+        ? client
+            .from("billing_merchant_customers")
+            .select("stripe_customer_id")
+            .eq("organization_id", actor.organizationId)
+            .eq("merchant_key", billingServerConfig.stripeArchiveMerchantKey)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
       client
         .from("subscriptions")
         .select(
@@ -48,6 +59,7 @@ export async function GET(request: Request) {
     ]);
 
     if (accountResult.error) throw accountResult.error;
+    if (archiveResult.error) throw archiveResult.error;
     if (subscriptionResult.error) throw subscriptionResult.error;
     if (entitlementsResult.error) throw entitlementsResult.error;
 
@@ -62,6 +74,8 @@ export async function GET(request: Request) {
             billingEmail: accountResult.data.billing_email,
           }
         : null,
+      archivedPortalAvailable: Boolean(archiveResult.data?.stripe_customer_id &&
+        archivedPortalReady(billingServerConfig.stripeArchiveMerchantKey)),
       subscription: subscriptionResult.data,
       entitlements: entitlementsResult.data ?? [],
     });

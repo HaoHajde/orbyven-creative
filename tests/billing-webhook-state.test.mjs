@@ -79,3 +79,28 @@ test("a failed fiscal issuance requires explicit recovery, not Stripe redelivery
     { paid: true, fiscalStatus: "failed" }
   );
 });
+
+test("stalled unprocessed webhook is recoverable after lease expiry", () => {
+  assert.equal(
+    classifyBillingWebhookRecord(
+      { processed_at: null, processing_error: null, processing_started_at: "2026-09-23T11:00:00Z" },
+      new Date("2026-09-23T11:16:00Z").getTime()
+    ), "stalled"
+  );
+});
+
+test("fresh processing lease must not be stolen", () => {
+  assert.equal(
+    classifyBillingWebhookRecord(
+      { processed_at: null, processing_error: null, processing_started_at: "2026-09-23T11:00:00Z" },
+      new Date("2026-09-23T11:01:00Z").getTime()
+    ), "pending"
+  );
+});
+
+test("already issued fiscal invoice remains issued on payment failure", () => {
+  assert.deepEqual(
+    reconcileInvoiceDelivery("invoice.payment_failed", { status: "paid", fiscal_status: "issued" }),
+    { paid: true, fiscalStatus: "issued" }
+  );
+});

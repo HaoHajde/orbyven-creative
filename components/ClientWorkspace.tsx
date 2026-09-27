@@ -54,14 +54,18 @@ export default function ClientWorkspace() {
     setLoadError("");
 
     try {
-      const { data: authData } = await orbyvenSupabase.auth.getUser();
-      if (!authData.user) {
-        router.replace("/workspace/login");
-        return;
-      }
-
+      // getCurrentWorkspace already validates the user via auth.getUser().
+      // Do not make the same authentication request twice on every dashboard load.
       const nextWorkspace = await getCurrentWorkspace();
       if (!nextWorkspace) {
+        // Only disambiguate "logged out" from "no membership" on the rare
+        // null result; do not change the authorization checks in the loader.
+        const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+        if (authError) throw authError;
+        if (!authData.user) {
+          router.replace("/workspace/login");
+          return;
+        }
         setLoadError("Contul este autentificat, dar nu are încă un workspace ORBYVEN atribuit.");
         setLoading(false);
         return;
@@ -252,7 +256,7 @@ export default function ClientWorkspace() {
       <header
         className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
-        <div className="mx-auto flex h-[65px] max-w-[1520px] items-center justify-between gap-4 px-4 md:px-6">
+        <div className="mx-auto flex min-h-[65px] max-w-[1520px] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
             <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
@@ -262,11 +266,11 @@ export default function ClientWorkspace() {
             </div>
           </div>
 
-          <div className="hidden min-w-0 flex-1 justify-center sm:flex">
+          <div className="order-3 flex w-full min-w-0 justify-center pb-3 sm:order-none sm:w-auto sm:flex-1 sm:pb-0">
             <WorkspaceSearch organizationId={workspace.organization.id} enabledModules={enabledModules} onOpenModule={openModule} />
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="order-2 flex shrink-0 items-center gap-2 sm:order-none">
             {canCreate && (
               <button
                 type="button"
@@ -284,9 +288,6 @@ export default function ClientWorkspace() {
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
             <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm">{initials || "OR"}</button>
           </div>
-        </div>
-        <div className="mx-auto max-w-[1520px] px-4 pb-3 sm:hidden">
-          <WorkspaceSearch organizationId={workspace.organization.id} enabledModules={enabledModules} onOpenModule={openModule} />
         </div>
       </header>
 

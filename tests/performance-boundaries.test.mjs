@@ -56,7 +56,7 @@ test("demo iframes wait near the viewport, then keep the existing safe iframe se
 });
 
 test("existing template catalog, security and legal code are outside this performance patch", () => {
-  const catalog = read("app/templates/page.tsx");
+  const catalog = read("lib/featured-templates.ts");
   for (let id = 6; id <= 13; id++) {
     const padded = String(id).padStart(3, "0");
     assert.ok(catalog.includes(`demo${padded}`), `pilot ${padded} lost catalog card`);

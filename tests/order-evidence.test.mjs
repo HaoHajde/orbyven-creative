@@ -89,9 +89,10 @@ test("checkout saves accepted snapshot before creating the Stripe session",()=>{
   assert.match(stripe,/metadata\[order_evidence_id\]/);
   assert.match(stripe,/metadata\[price_id\]/);
   assert.match(stripe,/allow_promotion_codes", "false"/);
-  assert.match(webhook,/syncStripeCheckoutCompleted\(client, event\.data\.object, event\.id\)/);
+  assert.match(webhook,/syncStripeCheckoutCompleted\(client, event\.data\.object, verifiedMerchantKey, event\.id\)/);
   assert.match(sync,/stripe_checkout_session_id:sessionId/);
   assert.match(sync,/hashOrderOffer\(snapshot\)/);
+  assert.match(sync,/merchantKey!==verifiedMerchantKey/);
 });
 
 test("internal dossier separates accepted offer from Stripe result",()=>{

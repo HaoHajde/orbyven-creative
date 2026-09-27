@@ -18,26 +18,32 @@ export default function ForgotPasswordPage() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
 
-    const { error } = await orbyvenSupabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      { redirectTo: `${window.location.origin}/workspace/reset-password` }
-    );
+    try {
+      const { error } = await orbyvenSupabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        { redirectTo: `${window.location.origin}/workspace/reset-password` }
+      );
 
-    if (error) {
-      console.error(error);
-      setErrorMessage("Emailul de recuperare nu a putut fi trimis. Încearcă din nou.");
+      if (error) {
+        console.error("Workspace password recovery request failed", error);
+        setErrorMessage("Emailul de recuperare nu a putut fi trimis. Încearcă din nou.");
+        return;
+      }
+
+      setSuccessMessage(
+        "Dacă există un cont pentru această adresă, vei primi un email cu linkul pentru setarea unei parole noi."
+      );
+    } catch (error) {
+      console.error("Workspace password recovery unavailable", error);
+      setErrorMessage("Serviciul de recuperare nu răspunde. Verifică conexiunea și încearcă din nou.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSuccessMessage(
-      "Dacă există un cont pentru această adresă, vei primi un email cu linkul pentru setarea unei parole noi."
-    );
-    setLoading(false);
   };
 
   return (

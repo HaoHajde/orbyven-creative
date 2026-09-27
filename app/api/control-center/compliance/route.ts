@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const privacyQuery = admin.from("privacy_request_cases")
       .select("id,organization_id,subject_reference,request_type,processing_role,channel,status,received_at,due_at,last_action,updated_at")
       .order("received_at",{ascending:false}).limit(100);
-    const [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult] = await Promise.all([
+    const [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult,exitResult] = await Promise.all([
       organizationId ? privacyQuery.eq("organization_id",organizationId) : privacyQuery,
       organizationId
         ? admin.from("legal_contract_records")
@@ -74,8 +74,15 @@ export async function GET(request: Request) {
             .select("id,plan_id,offer_snapshot,offer_sha256,accepted_at,status,stripe_checkout_session_id,checkout_final_amount_minor,checkout_tax_amount_minor,checkout_discount_amount_minor,checkout_currency,checkout_payment_status,checkout_completed_at,checkout_buyer_name,checkout_buyer_tax_id")
             .eq("organization_id",organizationId).order("accepted_at",{ascending:false}).limit(100)
         : Promise.resolve({data:[],error:null}),
+      organizationId
+        ? admin.from("organization_exit_cases")
+            .select("id,organization_id,status,requested_at,package_sha256,package_generated_at,action_note,closure_reference")
+            .eq("organization_id",organizationId).order("requested_at",{ascending:false}).limit(100)
+        : admin.from("organization_exit_cases")
+            .select("id,organization_id,status,requested_at,package_sha256,package_generated_at,action_note,closure_reference")
+            .order("requested_at",{ascending:false}).limit(100),
     ]);
-    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult]) {
+    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult,exitResult]) {
       if (result.error) throw result.error;
     }
     return reply({
@@ -85,6 +92,7 @@ export async function GET(request: Request) {
       checkouts:acceptancesResult.data ?? [],
       subscriptions:subscriptionsResult.data ?? [],
       orderEvidence:ordersResult.data ?? [],
+      exitCases:exitResult.data ?? [],
       limitPerList:100,
       canonicalAcceptanceSource:"billing_terms_acceptances",
       // A manual registry entry never claims to be a signed agreement.
@@ -102,6 +110,37 @@ export async function POST(request: Request) {
     }
     const body=readBody(await request.json());
     const action=body.action;
+
+    if (action==="advance_exit_case") {
+      const id=requireUuid(body.id,"id");
+      const status=typeof body.status==="string"?body.status:"";
+      const note=typeof body.actionNote==="string"?body.actionNote.trim():"";
+      if(note.length<12||note.length>500||/[\u0000-\u001f]/.test(note)){
+        return reply({error:"documented_action_required"},400);
+      }
+      const {data:current,error:lookupError}=await admin.from("organization_exit_cases")
+        .select("id,status").eq("id",id).maybeSingle();
+      if(lookupError)throw lookupError;
+      if(!current)return reply({error:"unknown_exit_case"},404);
+      const allowed:Record<string,string>={
+        requested:"authorized",
+        package_generated:"retention_review",
+        retention_review:"closed",
+      };
+      if(allowed[current.status]!==status)return reply({error:"invalid_exit_transition"},409);
+      const closure=typeof body.closureReference==="string"?body.closureReference.trim():"";
+      if(status==="closed"&&(closure.length<8||closure.length>450)){
+        return reply({error:"closure_evidence_required"},400);
+      }
+      const {data,error}=await admin.from("organization_exit_cases").update({
+        status,action_note:note,action_by:user.id,
+        ...(status==="closed"?{closure_reference:closure,closed_at:new Date().toISOString()}:{})
+      }).eq("id",id).eq("status",current.status)
+        .select("id,status").maybeSingle();
+      if(error)throw error;
+      if(!data)return reply({error:"exit_case_changed_reload"},409);
+      return reply({ok:true,case:data});
+    }
 
     if (action==="register_contract") {
       const parsed=parseContractRecord(body);

@@ -34,7 +34,7 @@ export default function WorkspaceAuthShell({
       style={{
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative isolate min-h-[100svh] overflow-hidden bg-[#070b16] text-[#f3f6ff] antialiased [--text:#f3f6ff]"
+      className="relative isolate min-h-[100svh] overflow-x-hidden bg-[#070b16] text-[#f3f6ff] antialiased [--text:#f3f6ff]"
     >
       <WorkspaceOrbitBackground />
 

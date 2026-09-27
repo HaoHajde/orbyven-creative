@@ -47,11 +47,17 @@ jobs:
       - name: B2B order evidence regression tests (offline)
         run: npm run test:orders
 
+      - name: Client offboarding regression tests (offline)
+        run: npm run test:offboarding
+
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 
       - name: Performance loading regression tests (offline)
         run: npm run test:performance
+
+      - name: Data efficiency and search regression tests (offline)
+        run: npm run test:data
 
       - name: Production build
         run: npm run build

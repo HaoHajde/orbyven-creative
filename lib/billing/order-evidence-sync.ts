@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { billingServerConfig } from "@/lib/billing/server-config";
-import { hashOrderOffer } from "@/lib/billing/order-evidence";
+import { hashOrderOffer } from "@/lib/billing/order-offer-hash";
 import {
   OrderEvidenceError,parseVerifiedCheckoutOutcome,
 } from "@/lib/billing/order-evidence-guards";
@@ -12,7 +11,7 @@ import { metadataValue,stringValue } from "@/lib/billing/stripe-webhook";
  * settled (payment_status is recorded separately).
  */
 export async function syncCheckoutOrderEvidence(
-  client:SupabaseClient,object:Record<string,unknown>,eventId:string,
+  client:SupabaseClient,object:Record<string,unknown>,eventId:string,verifiedMerchantKey:string,
 ) {
   const evidenceId=metadataValue(object,"order_evidence_id");
   // Historical sessions predate this feature. Never invent a retroactive offer.
@@ -33,6 +32,7 @@ export async function syncCheckoutOrderEvidence(
     planId!==existing.plan_id || priceId!==existing.stripe_price_id ||
     !snapshot || !Number.isSafeInteger(snapshot.displayed_monthly_amount_minor) ||
     snapshot.stripe_price_id!==existing.stripe_price_id ||
+    merchantKey!==verifiedMerchantKey ||
     snapshot.merchant_key!== (merchantKey==="prelaunch"?null:merchantKey) ||
     hashOrderOffer(snapshot)!==existing.offer_sha256 ||
     (existing.stripe_checkout_session_id && existing.stripe_checkout_session_id!==sessionId)) {
@@ -51,7 +51,7 @@ export async function syncCheckoutOrderEvidence(
   },{
     id:sessionId,
     offerAmountMinor:snapshot.displayed_monthly_amount_minor as number,
-    live:billingServerConfig.stripeMode==="live",
+    live:snapshot.stripe_livemode===true,
   });
   if(existing.status==="checkout_completed") {
     if(existing.stripe_checkout_session_id!==sessionId ||

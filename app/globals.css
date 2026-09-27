@@ -389,3 +389,51 @@ iframe {
   }
 }
 
+
+/* ORBYVEN homepage refresh — original hero, workspace, templates, plans and links retained. */
+.orbyven-home-hero::after {
+  content: ""; position: absolute; inset: auto 0 0; height: clamp(90px,14vh,180px);
+  pointer-events: none; background: linear-gradient(to bottom,transparent,var(--bg));
+}
+.orbyven-home-soft {
+  background: linear-gradient(180deg,var(--bg) 0%,var(--surface) 23%,var(--surface) 77%,var(--bg) 100%);
+}
+.orbyven-home-kicker {
+  display: inline-flex; align-items: center; flex-wrap: wrap; gap: 12px; max-width: 100%;
+  font-size: 12px; line-height: 1.5; font-weight: 600; letter-spacing: .035em; color: var(--muted);
+}
+.orbyven-home-kicker-icon {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 999px;
+  border: 1px solid var(--border-strong); color: var(--home-violet);
+  font-size: 14px; background: var(--accent-soft);
+}
+.orbyven-home-kicker-line { width: clamp(24px,4vw,66px); height: 1px; background: linear-gradient(90deg,var(--home-violet),transparent); }
+.orbyven-home-invite-grid { display: flex; gap: 14px; height: clamp(380px,39vw,485px); }
+.orbyven-home-invite-card {
+  flex: 1 1 0; min-width: 0; height: 100%;
+  transition: flex-grow .7s cubic-bezier(.16,1,.3,1),transform .55s cubic-bezier(.16,1,.3,1),border-color .35s ease;
+}
+.orbyven-home-price { transition: border-color .35s ease, box-shadow .4s ease; }
+.orbyven-home-price:hover { border-color: var(--home-violet); box-shadow: 0 20px 65px rgba(90,65,180,.13); }
+@media (hover: hover) and (min-width: 768px) {
+  .orbyven-home-invite-grid:has(.orbyven-home-invite-card:is(:hover,:focus-visible)) .orbyven-home-invite-card { flex-grow: .75; }
+  .orbyven-home-invite-grid:has(.orbyven-home-invite-card:is(:hover,:focus-visible)) .orbyven-home-invite-card:is(:hover,:focus-visible) { flex-grow: 2.6; transform: translateY(-4px); }
+}
+@media (hover: hover) and (min-width: 1024px) {
+  .orbyven-home-price-grid { display: flex; align-items: stretch; }
+  .orbyven-home-price-grid > .orbyven-home-price {
+    flex: 1 1 0; min-width: 0;
+    transition: flex-grow .72s cubic-bezier(.16,1,.3,1),border-color .35s ease,box-shadow .4s ease;
+  }
+  .orbyven-home-price-grid:has(.orbyven-home-price:is(:hover,:focus-within)) > .orbyven-home-price { flex-grow: .75; }
+  .orbyven-home-price-grid:has(.orbyven-home-price:is(:hover,:focus-within)) > .orbyven-home-price:is(:hover,:focus-within) {
+    flex-grow: 2.6; border-color: var(--home-violet); box-shadow: 0 24px 74px rgba(90,65,180,.15);
+  }
+}
+@media (max-width: 767px) {
+  .orbyven-home-invite-grid { display: grid; height: auto; grid-template-columns: 1fr; }
+  .orbyven-home-invite-card { width: 100%; min-height: 325px; height: 350px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbyven-home-invite-card,.orbyven-home-price-grid > .orbyven-home-price { transition: none !important; }
+}

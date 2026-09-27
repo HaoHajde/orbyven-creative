@@ -84,6 +84,7 @@ export default function OverviewModule({
   onOpenModule,
 }: Props) {
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
+  const canAccessFinances = ["owner", "admin", "manager"].includes(role);
   const [snapshotNow, setSnapshotNow] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,7 +93,7 @@ export default function OverviewModule({
     setLoading(true);
     setError("");
     try {
-      const nextSnapshot = await loadOverviewSnapshot(organizationId);
+      const nextSnapshot = await loadOverviewSnapshot(organizationId, canAccessFinances, timeZone);
       setSnapshot(nextSnapshot);
       setSnapshotNow(new Date().getTime());
     } catch (loadError) {
@@ -101,7 +102,7 @@ export default function OverviewModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, canAccessFinances, timeZone]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -112,7 +113,6 @@ export default function OverviewModule({
     if (!snapshot || !snapshotNow) return null;
     const nowIso = new Date(snapshotNow).toISOString();
     const today = dateKey(nowIso, timeZone);
-    const currentMonth = today.slice(0, 7);
     const activeLeads = snapshot.leads.filter(
       (lead) => lead.kind === "lead" && !["won", "lost"].includes(lead.stage)
     );
@@ -126,9 +126,7 @@ export default function OverviewModule({
     const sentEstimates = snapshot.estimates.filter(
       (estimate) => estimate.status === "sent"
     );
-    const monthExpenses = snapshot.expenses
-      .filter((expense) => expense.occurred_on.slice(0, 7) === currentMonth)
-      .reduce((sum, expense) => sum + expense.amount_cents, 0);
+    const monthExpenses = snapshot.monthExpensesCents;
 
     const attention: Attention[] = [];
     for (const lead of activeLeads) {
@@ -202,10 +200,10 @@ export default function OverviewModule({
       sentEstimates,
       monthExpenses,
       trends: {
-        leads: trend(activeLeads.map((item) => item.created_at)),
-        tasks: trend(openTasks.map((item) => item.created_at)),
+        leads: trend(snapshot.trendDates.leads),
+        tasks: trend(snapshot.trendDates.tasks),
         calendar: trend(snapshot.events.filter((item) => item.status !== "cancelled").map((item) => item.start_at)),
-        estimates: trend(sentEstimates.map((item) => item.created_at)),
+        estimates: trend(snapshot.trendDates.estimates),
       },
       recent,
       attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
@@ -228,11 +226,11 @@ export default function OverviewModule({
 
   // The ring is based only on this organization's actual task statuses.
   const workStages = [
-    { label: "De făcut", count: snapshot?.tasks.filter((task) => task.status === "planned").length ?? 0, color: "#738bff" },
-    { label: "În lucru", count: snapshot?.tasks.filter((task) => task.status === "in_progress").length ?? 0, color: "#66bff0" },
-    { label: "Blocate", count: snapshot?.tasks.filter((task) => task.status === "blocked").length ?? 0, color: "#efad77" },
-    { label: "Finalizate", count: snapshot?.tasks.filter((task) => task.status === "done").length ?? 0, color: "#6ed3ae" },
-    { label: "Anulate", count: snapshot?.tasks.filter((task) => task.status === "cancelled").length ?? 0, color: "#64748b" },
+    { label: "De făcut", count: snapshot?.taskStages.planned ?? 0, color: "#738bff" },
+    { label: "În lucru", count: snapshot?.taskStages.in_progress ?? 0, color: "#66bff0" },
+    { label: "Blocate", count: snapshot?.taskStages.blocked ?? 0, color: "#efad77" },
+    { label: "Finalizate", count: snapshot?.taskStages.done ?? 0, color: "#6ed3ae" },
+    { label: "Anulate", count: snapshot?.taskStages.cancelled ?? 0, color: "#64748b" },
   ];
   const workTotal = workStages.reduce((sum, stage) => sum + stage.count, 0);
   let currentAngle = 0;
@@ -246,9 +244,9 @@ export default function OverviewModule({
     : "conic-gradient(#2a405e 0deg 360deg)";
 
   const workflow = [
-    { id: "leads" as const, label: "Cereri active", count: computed?.activeLeads.length ?? 0, color: "#7376f8" },
-    { id: "tasks" as const, label: "Lucrări deschise", count: computed?.openTasks.length ?? 0, color: "#5b9cf9" },
-    { id: "estimates" as const, label: "Oferte trimise", count: computed?.sentEstimates.length ?? 0, color: "#7bd1f6" },
+    { id: "leads" as const, label: "Cereri active", count: snapshot?.activeLeadsCount ?? 0, color: "#7376f8" },
+    { id: "tasks" as const, label: "Lucrări deschise", count: snapshot?.openTasksCount ?? 0, color: "#5b9cf9" },
+    { id: "estimates" as const, label: "Oferte trimise", count: snapshot?.sentEstimatesCount ?? 0, color: "#7bd1f6" },
     { id: "calendar" as const, label: "Programări astăzi", count: computed?.todayEvents.length ?? 0, color: "#7ad8b7" },
   ].filter((step) => enabledModules.includes(step.id));
   const maxWorkflow = Math.max(1, ...workflow.map((step) => step.count));
@@ -283,10 +281,10 @@ export default function OverviewModule({
       {snapshot && computed ? (
         <>
           <section aria-label="Indicatori business" className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            <MetricCard label="Cereri active" value={computed.activeLeads.length} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
-            <MetricCard label="Lucrări deschise" value={computed.openTasks.length} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
+            <MetricCard label="Cereri active" value={snapshot.activeLeadsCount} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
+            <MetricCard label="Lucrări deschise" value={snapshot.openTasksCount} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
             <MetricCard label="Programări astăzi" value={computed.todayEvents.length} note="Programate în ultimele 7 zile" trend={computed.trends.calendar} color="#70d1eb" enabled={enabledModules.includes("calendar")} onClick={() => onOpenModule("calendar")} />
-            <MetricCard label="Oferte trimise" value={computed.sentEstimates.length} note="Create în ultimele 7 zile" trend={computed.trends.estimates} color="#7ad5b4" enabled={enabledModules.includes("estimates")} onClick={() => onOpenModule("estimates")} />
+            <MetricCard label="Oferte trimise" value={snapshot.sentEstimatesCount} note="Create în ultimele 7 zile" trend={computed.trends.estimates} color="#7ad5b4" enabled={enabledModules.includes("estimates")} onClick={() => onOpenModule("estimates")} />
           </section>
 
           <section className="mt-2.5 grid gap-2.5 xl:grid-cols-[1fr_1.04fr]">
@@ -358,7 +356,7 @@ export default function OverviewModule({
             <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
               <div className="flex items-center justify-between">
                 <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">FOLLOW-UP</p><h2 className="mt-1 text-[15px] font-semibold">Ce necesită atenție</h2></div>
-                <span className="rounded-[7px] bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">{computed.attention.length}</span>
+                <span className="rounded-[7px] bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">{computed.attention.length}{snapshot.attentionHasMore ? "+" : ""}</span>
               </div>
               {computed.attention.length ? (
                 <div className="mt-3 grid gap-1.5">
@@ -371,7 +369,7 @@ export default function OverviewModule({
                   ))}
                 </div>
               ) : <p className="mt-4 rounded-[9px] border border-dashed border-[var(--border)] px-4 py-7 text-center text-[12px] text-[var(--muted)]">Nicio urgență înregistrată.</p>}
-              {computed.attention.length > 4 && <p className="mt-2 text-[10px] text-[var(--muted)]">Încă {computed.attention.length - 4} atenționări · deschide modulele pentru detalii.</p>}
+              {(computed.attention.length > 4 || snapshot.attentionHasMore) && <p className="mt-2 text-[10px] text-[var(--muted)]">{snapshot.attentionHasMore ? "Mai există atenționări în module · deschide-le pentru detalii." : `Încă ${computed.attention.length - 4} atenționări · deschide modulele pentru detalii.`}</p>}
             </article>
 
             <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
@@ -392,7 +390,7 @@ export default function OverviewModule({
           </section>
 
           <section aria-label="Rezumat operațional" className="mt-2.5 grid gap-2 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-2 sm:grid-cols-2 xl:grid-cols-4">
-            <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />
+            {canAccessFinances && <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />}
             <SnapshotRow label="Documente" value={String(snapshot.documentCount)} onClick={() => onOpenModule("documents")} enabled={enabledModules.includes("documents")} />
             <SnapshotRow label="Echipă activă" value={String(snapshot.activeTeamCount)} onClick={() => onOpenModule("team")} enabled={enabledModules.includes("team")} />
             <SnapshotRow label="Module active" value={String(enabledModules.filter((id) => id !== "overview").length)} enabled />

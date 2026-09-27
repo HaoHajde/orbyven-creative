@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { requireBillingReady } from "@/lib/billing/server-config";
+import { requireBillingReady, billingServerConfig } from "@/lib/billing/server-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
+import { archivedPortalReady } from "@/lib/billing/merchant-routing";
 import {
   authenticateBillingActor,
   createBillingServiceClient,
@@ -10,16 +12,23 @@ import { createStripePortalSession } from "@/lib/billing/stripe-rest";
 export async function POST(request: Request) {
   try {
     requireBillingReady();
-    const body = (await request.json()) as { organizationId?: unknown };
+    const body = (await request.json()) as { organizationId?: unknown; archived?: unknown };
     const organizationId =
       typeof body.organizationId === "string" ? body.organizationId : undefined;
     const actor = await authenticateBillingActor(request, organizationId, true);
     const client = createBillingServiceClient();
 
+    const merchantKey = body.archived === true
+      ? billingServerConfig.stripeArchiveMerchantKey
+      : commercialIdentity.entityKey;
+    if (!merchantKey || (merchantKey !== commercialIdentity.entityKey && !archivedPortalReady(merchantKey))) {
+      return NextResponse.json({ error: "Portalul acestui emitent trebuie solicitat la suport." }, { status: 409 });
+    }
     const { data: account, error } = await client
-      .from("billing_accounts")
+      .from("billing_merchant_customers")
       .select("stripe_customer_id")
       .eq("organization_id", actor.organizationId)
+      .eq("merchant_key", merchantKey)
       .maybeSingle();
     if (error) throw error;
     if (!account?.stripe_customer_id) {
@@ -29,7 +38,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await createStripePortalSession(account.stripe_customer_id);
+    const session = await createStripePortalSession(
+      account.stripe_customer_id,
+      merchantKey !== commercialIdentity.entityKey
+    );
     return NextResponse.json({ url: session.url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";

@@ -81,9 +81,10 @@ export async function processPendingFiscalInvoices(limit = 10) {
 
       const [accountResult, organizationResult, subscriptionResult] = await Promise.all([
         client
-          .from("billing_accounts")
+           .from("billing_merchant_customers")
           .select("legal_name,tax_id,billing_email,billing_address")
           .eq("organization_id", invoice.organization_id)
+          .eq("merchant_key", invoice.merchant_key)
           .maybeSingle(),
         client
           .from("organizations")
@@ -118,6 +119,7 @@ export async function processPendingFiscalInvoices(limit = 10) {
       }
 
       const account = accountResult.data;
+      if (!account) throw new Error("No billing identity for this merchant and customer; reconcile before invoicing.");
       const organization = organizationResult.data;
       const clientName =
         account?.legal_name || organization.legal_name || organization.name;
@@ -137,15 +139,9 @@ export async function processPendingFiscalInvoices(limit = 10) {
       const number = issued.data?.number;
       if (!seriesName || !number) throw new Error("Oblio invoice response is missing series or number.");
 
-      let spvStatus = "not_requested";
-      let spvSentAt: string | null = null;
-      if (oblioConfig.spvSend) {
-        const spv = await sendOblioEinvoice(seriesName, number);
-        spvStatus = spv.data?.sent ? "sent" : `code_${spv.data?.code ?? "unknown"}`;
-        if (spv.data?.sent) spvSentAt = new Date().toISOString();
-      }
-
-      const { error: updateError } = await client
+      // Commit the issued fiscal document BEFORE attempting SPV transmission.
+      // A failing SPV submission must never cause a second Oblio invoice issuance.
+      const { data: recordedInvoice, error: updateError } = await client
         .from("billing_invoices")
         .update({
           fiscal_status: "issued",
@@ -153,12 +149,42 @@ export async function processPendingFiscalInvoices(limit = 10) {
           fiscal_number: number,
           fiscal_external_id: `${seriesName}-${number}`,
           fiscal_document_url: issued.data?.link ?? null,
-          spv_status: spvStatus,
-          spv_sent_at: spvSentAt,
+          spv_status: oblioConfig.spvSend ? "pending" : "not_requested",
           fiscal_error: null,
         })
-        .eq("id", invoice.id);
-      if (updateError) throw updateError;
+        .eq("id", invoice.id)
+        .eq("fiscal_status", "processing")
+        .select("id")
+        .maybeSingle();
+      if (updateError || !recordedInvoice) {
+        // Document might exist at Oblio: never auto-retry a failed/unknown result.
+        throw updateError ?? new Error("Issued document could not be recorded; reconcile manually.");
+      }
+
+      if (oblioConfig.spvSend) {
+        try {
+          const spv = await sendOblioEinvoice(seriesName, number);
+          const spvStatus = spv.data?.sent ? "sent" : `code_${spv.data?.code ?? "unknown"}`;
+          const { error: spvUpdateError } = await client
+            .from("billing_invoices")
+            .update({
+              spv_status: spvStatus,
+              spv_sent_at: spv.data?.sent ? new Date().toISOString() : null,
+              fiscal_error: spv.data?.sent ? null : "SPV submission requires reconciliation.",
+            })
+            .eq("id", invoice.id)
+            .eq("fiscal_status", "issued");
+          if (spvUpdateError) console.error("ORBYVEN: unable to persist SPV outcome.");
+        } catch {
+          const { error: spvError } = await client
+            .from("billing_invoices")
+            .update({ spv_status: "failed", fiscal_error: "SPV submission needs manual reconciliation." })
+            .eq("id", invoice.id)
+            .eq("fiscal_status", "issued");
+          if (spvError) console.error("ORBYVEN: unable to persist SPV failure.");
+        }
+      }
+
       results.push({ invoiceId: invoice.id, status: "issued" });
     } catch (processingError) {
       const message =
@@ -166,7 +192,8 @@ export async function processPendingFiscalInvoices(limit = 10) {
       await client
         .from("billing_invoices")
         .update({ fiscal_status: "failed", fiscal_error: message.slice(0, 2000) })
-        .eq("id", invoice.id);
+        .eq("id", invoice.id)
+        .eq("fiscal_status", "processing");
       results.push({ invoiceId: invoice.id, status: "failed", error: message });
     }
   }
