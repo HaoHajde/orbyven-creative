@@ -121,6 +121,7 @@ function FeaturedCard({ item, delay = 0 }: { item: FeaturedTemplate; delay?: num
     <Reveal delay={delay}>
       <Link
         href={item.href}
+        style={{ contentVisibility: "auto", containIntrinsicSize: "auto 480px" }}
         className="group block overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)]"
       >
         <div className="overflow-hidden rounded-[27px]">
@@ -149,6 +150,7 @@ function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; 
     <Reveal delay={delay}>
       <Link
         href={`/templates/${template.slug}`}
+        style={{ contentVisibility: "auto", containIntrinsicSize: "auto 520px" }}
         className="group grid min-h-[310px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3 transition duration-400 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(0,0,0,.10)] sm:grid-cols-[1.02fr_.98fr]"
       >
         <div className="overflow-hidden rounded-[22px]">
