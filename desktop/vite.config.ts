@@ -8,6 +8,8 @@ const client = fileURLToPath(new URL("./src/client.ts", import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  // The desktop app uses its own plain CSS, not the parent Next.js Tailwind/PostCSS config.
+  css: { postcss: { plugins: [] } },
   root: directory,
   resolve: {
     alias: [
