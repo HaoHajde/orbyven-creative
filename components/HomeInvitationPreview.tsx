@@ -46,7 +46,7 @@ export default function HomeInvitationPreview({ kind }: { kind: InvitationKind }
         <p className="text-[10px] font-semibold uppercase tracking-[.35em] text-[#c6a8ff]">MIDNIGHT</p>
         <p className="my-1 text-[clamp(96px,10vw,170px)] font-black leading-none tracking-[-.1em] text-[#e1d3ff]">18</p>
         <span className="h-px w-24 bg-[#a88aff]/75" />
-        <p className="mt-6 text-[10px] font-semibold uppercase tracking-[.3em]">You're invited</p>
+        <p className="mt-6 text-[10px] font-semibold uppercase tracking-[.3em]">You&apos;re invited</p>
         <p className="mt-3 text-[9px] tracking-[.15em] text-[#c0b4d7]">A NIGHT TO REMEMBER</p>
       </div>
     </div>
