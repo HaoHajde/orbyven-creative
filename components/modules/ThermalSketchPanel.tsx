@@ -22,8 +22,7 @@ export default function ThermalSketchPanel({organizationId,taskId,taskTitle,onCl
   organizationId:string;taskId:string;taskTitle:string;onClose:()=>void;
 }){
   const iframe=useRef<HTMLIFrameElement>(null);
-  const session=useRef<string>("");
-  if(!session.current)session.current=crypto.randomUUID();
+  const [session]=useState(()=>crypto.randomUUID());
   const revision=useRef(-1);
   const current=useRef<Sketch|null>(null);
   const pending=useRef<Sketch|null>(null);
@@ -106,7 +105,7 @@ export default function ThermalSketchPanel({organizationId,taskId,taskTitle,onCl
       const data=event.data;
       if(!data||data.app!==APP)return;
       if(data.kind==="ready"){setReady(true);return;}
-      if(data.session!==session.current||record===undefined)return;
+      if(data.session!==session||record===undefined)return;
       if(data.kind==="save"){
         if(!valid(data.state)){setError("Schița este prea mare sau are date invalide. Exportă schița și simplifică planșa.");setStatus("error");return;}
         if(blocked.current){setError("Versiune modificată în altă sesiune. Nu suprascriem datele existente.");setStatus("error");return;}
@@ -119,15 +118,15 @@ export default function ThermalSketchPanel({organizationId,taskId,taskTitle,onCl
     }
     window.addEventListener("message",onMessage);
     return()=>window.removeEventListener("message",onMessage);
-  },[record,flush]);
+  },[record,flush,session]);
 
   useEffect(()=>{
     if(!ready||record===undefined||!iframe.current?.contentWindow)return;
     iframe.current.contentWindow.postMessage({
-      app:APP,kind:"load",session:session.current,state:record?.plan??null,
+      app:APP,kind:"load",session:session,state:record?.plan??null,
       title:taskTitle,
     },"*");
-  },[ready,record,taskTitle]);
+  },[ready,record,taskTitle,session]);
 
   const close=async()=>{
     if(timer.current){clearTimeout(timer.current);timer.current=null;}
@@ -145,7 +144,7 @@ export default function ThermalSketchPanel({organizationId,taskId,taskTitle,onCl
         <h2 className="truncate text-sm font-semibold">{taskTitle} · Planșă termică</h2></div>
       <div className="flex items-center gap-2">
         <span role="status" className="text-[11px] text-[#aab8d2]">{status==="saved"?"✓ Salvată":status==="saving"?"Se salvează…":status==="loading"?"Se încarcă…":status==="error"?"Salvare necesită atenție":"Schiță orientativă"}</span>
-        {status==="error"&&pending.current&&<button type="button" onClick={()=>{blocked.current=false;void flush();}} className="rounded-lg border border-white/30 px-3 py-2 text-xs">Reîncearcă salvarea</button>}
+        {status==="error"&&record!==undefined&&<button type="button" onClick={()=>{blocked.current=false;void flush();}} className="rounded-lg border border-white/30 px-3 py-2 text-xs">Reîncearcă salvarea</button>}
         <button type="button" onClick={()=>void close()} className="rounded-lg border border-[#8da9ec]/50 bg-[#1c2f51] px-4 py-2 text-xs font-semibold">Închide ✕</button>
       </div>
     </div>
