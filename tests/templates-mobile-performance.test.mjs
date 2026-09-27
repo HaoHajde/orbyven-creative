@@ -19,3 +19,9 @@ test("iframe previews retain near-viewport activation rather than loading every 
   assert.match(preview, /shouldMount && \(/);
   assert.match(preview, /sandbox="allow-scripts"/);
 });
+
+test("LCP-critical hero heading is visible in HTML without a hydration-gated opacity animation", () => {
+  assert.match(source, /<h1 className="mt-6 max-w-\[1120px\]/);
+  assert.match(source, /Vezi\.[\s\S]{0,160}Înțelegi\.[\s\S]{0,160}Alegi\./);
+  assert.doesNotMatch(source, /<motion\.h1/);
+});
