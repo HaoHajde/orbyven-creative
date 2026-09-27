@@ -336,15 +336,18 @@ export default function App() {
   async function downloadDocument(row: Row) {
     setError("");
     try {
-      const url = await createDocumentSignedUrl(String(row.storage_path));
-      // The signed URL is short-lived and never persisted in the local UI.
+      const signedUrl = await createDocumentSignedUrl(String(row.storage_path));
+      // Keep the app on its local origin and avoid navigating the whole WebView to storage.
+      const response = await fetch(signedUrl, { credentials: "omit" });
+      if (!response.ok) throw new Error("Document unavailable");
+      const blobUrl = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
-      link.href = url;
+      link.href = blobUrl;
       link.download = String(row.name || "document");
-      link.rel = "noopener noreferrer";
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     } catch (cause) {
       console.error("Document download:", cause);
       setError("Documentul nu poate fi descărcat momentan.");
