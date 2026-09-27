@@ -30,7 +30,7 @@ test("exact page boundaries and empty datasets terminate; invalid pages fail clo
   })).length, 1000);
   assert.deepEqual(ranges, [[0, 499], [500, 999], [1000, 1499]]);
   assert.deepEqual(await readAllPages(() => Promise.resolve({ data: [], error: null })), []);
-  await assert.rejects(readAllPages(() => Promise.resolve({ data: null, error: { message: "offline" } })), /offline/);
+  await assert.rejects(readAllPages(() => Promise.resolve({ data: null, error: { message: "offline" } })), (error) => error.message === "offline");
   await assert.rejects(readAllPages(() => Promise.resolve({ data: null, error: null })), /unavailable/);
   await assert.rejects(readAllPages(() => Promise.resolve({ data: [], error: null }), 0), /Invalid/);
 });
@@ -45,7 +45,7 @@ test("Overview uses exact SQL counts, selected small records and current-month e
   assert.match(overview, /\.gte\("occurred_on", monthStart\)\.lt\("occurred_on", nextMonthStart\)/);
   assert.match(overview, /canAccessFinances\s*\? readAllPages/);
   assert.match(dashboard, /loadOverviewSnapshot\(organizationId, canAccessFinances, timeZone\)/);
-  assert.match(dashboard, /snapshot\.taskStages\.planned/);
+  assert.match(dashboard, /snapshot\?\.taskStages\.planned/);
   assert.match(dashboard, /snapshot\.activeLeadsCount/);
   assert.match(dashboard, /snapshot\.monthExpensesCents/);
   assert.match(dashboard, /snapshot\.attentionHasMore/);
