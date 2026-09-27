@@ -54,14 +54,18 @@ export default function ClientWorkspace() {
     setLoadError("");
 
     try {
-      const { data: authData } = await orbyvenSupabase.auth.getUser();
-      if (!authData.user) {
-        router.replace("/workspace/login");
-        return;
-      }
-
+      // getCurrentWorkspace already validates the user via auth.getUser().
+      // Do not make the same authentication request twice on every dashboard load.
       const nextWorkspace = await getCurrentWorkspace();
       if (!nextWorkspace) {
+        // Only disambiguate "logged out" from "no membership" on the rare
+        // null result; do not change the authorization checks in the loader.
+        const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+        if (authError) throw authError;
+        if (!authData.user) {
+          router.replace("/workspace/login");
+          return;
+        }
         setLoadError("Contul este autentificat, dar nu are încă un workspace ORBYVEN atribuit.");
         setLoading(false);
         return;
