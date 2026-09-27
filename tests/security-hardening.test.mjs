@@ -137,3 +137,12 @@ test("public requests cannot bypass the API IP limiter through anonymous RPC", (
   assert.match(publicRateLimit, /orbyven:project-request:ip:v1:/);
   assert.match(secondMigration, /revoke all on function public\.claim_project_request_ip_quota\(text\)/);
 });
+
+
+test("document storage and legacy lead gateway cannot bypass module or repeat-email policy", () => {
+  assert.match(pilotMigration, /on storage\.objects as restrictive for all to authenticated/);
+  assert.match(pilotMigration, /private\.is_document_storage_allowed\(storage\.objects\.name\)/);
+  assert.match(pilotMigration, /private\.is_billing_module_allowed\(/);
+  assert.match(pilotMigration, /create trigger orbyven_legacy_lead_email_limit/);
+  assert.match(pilotMigration, /pg_advisory_xact_lock/);
+});

@@ -34,3 +34,56 @@ $function$;
 revoke all on function private.is_billing_module_allowed(uuid,text) from public, anon;
 grant execute on function private.is_billing_module_allowed(uuid,text) to authenticated;
 
+
+-- Storage has its own RLS boundary; module-table entitlement guards alone
+-- would leave direct document object uploads/downloads available to unpaid orgs.
+create or replace function private.is_document_storage_allowed(target_path text)
+returns boolean language sql stable security definer set search_path = ''
+as $function$
+  select case
+    when (storage.foldername(target_path))[1] ~
+      '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then private.is_billing_module_allowed(
+      (storage.foldername(target_path))[1]::uuid, 'documents'
+    )
+    else false
+  end;
+$function$;
+revoke all on function private.is_document_storage_allowed(text) from public, anon;
+grant execute on function private.is_document_storage_allowed(text) to authenticated;
+
+drop policy if exists orbyven_documents_paid_guard on storage.objects;
+create policy orbyven_documents_paid_guard
+on storage.objects as restrictive for all to authenticated
+using (
+  bucket_id <> 'orbyven-documents'
+  or private.is_document_storage_allowed(storage.objects.name)
+)
+with check (
+  bucket_id <> 'orbyven-documents'
+  or private.is_document_storage_allowed(storage.objects.name)
+);
+
+-- Legacy public ORBITA lead insert remains available to older contact forms.
+-- Restrict repeat submissions at the database boundary, including direct REST.
+create or replace function private.limit_legacy_lead_email()
+returns trigger language plpgsql security definer set search_path = ''
+as $function$
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(pg_catalog.lower(new.email)));
+  if (
+    select count(*) from public.leads l
+    where pg_catalog.lower(l.email) = pg_catalog.lower(new.email)
+      and l.created_at > pg_catalog.now() - interval '1 hour'
+  ) >= 3 then
+    raise exception 'request submitted too recently' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$function$;
+revoke all on function private.limit_legacy_lead_email()
+  from public, anon, authenticated;
+drop trigger if exists orbyven_legacy_lead_email_limit on public.leads;
+create trigger orbyven_legacy_lead_email_limit
+before insert on public.leads
+for each row execute function private.limit_legacy_lead_email();
