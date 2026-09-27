@@ -47,5 +47,8 @@ jobs:
       - name: Performance loading regression tests (offline)
         run: npm run test:performance
 
+      - name: Data efficiency and search regression tests (offline)
+        run: npm run test:data
+
       - name: Production build
         run: npm run build

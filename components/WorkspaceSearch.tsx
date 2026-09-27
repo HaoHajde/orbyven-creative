@@ -83,12 +83,14 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
   }, [query, searchKey, organizationId]);
 
   const choose = (hit: SearchHit) => {
+    ++requestId.current;
     setOpen(false);
     setQuery("");
     setHits([]);
     onOpenModule(hit.module, { recordId: hit.id });
   };
   const validQuery = query.trim().length >= 2;
+  const visibleHits = hits.filter((hit) => searchModules.includes(hit.module));
 
   return (
     <div ref={root} className="relative w-full max-w-[430px]">
@@ -99,9 +101,19 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
           type="search"
           autoComplete="off"
           value={query}
-          onChange={(event) => { setQuery(event.target.value); setOpen(true); }}
+          onChange={(event) => {
+            // Invalidate already running responses synchronously, before the
+            // debounced effect cleanup. Never display another query's results.
+            ++requestId.current;
+            const next = event.target.value;
+            setQuery(next);
+            setOpen(true);
+            setHits([]);
+            setError("");
+            setLoading(next.trim().length >= 2 && Boolean(searchKey));
+          }}
           onFocus={() => setOpen(true)}
-          onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); if (event.key === "Enter" && hits[0] && open) { event.preventDefault(); choose(hits[0]); } }}
+          onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); if (event.key === "Enter" && visibleHits[0] && open && !loading) { event.preventDefault(); choose(visibleHits[0]); } }}
           placeholder="Caută client, lucrare, ofertă..."
           className="w-full min-w-0 bg-transparent text-[12px] text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
         />
@@ -111,7 +123,7 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
       {open && validQuery && (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[90] max-h-[340px] overflow-y-auto rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface)] p-2 shadow-[0_22px_60px_rgba(0,0,0,0.35)]">
           <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Rezultate în firma ta</p>
-          {error ? <p role="alert" className="px-2 py-3 text-xs text-red-400">{error}</p> : hits.length ? hits.map((hit) => (
+          {error ? <p role="alert" className="px-2 py-3 text-xs text-red-400">{error}</p> : visibleHits.length ? visibleHits.map((hit) => (
             <button key={hit.module + hit.id} type="button" onClick={() => choose(hit)} className="flex w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-[var(--accent-soft)]">
               <span className="min-w-0"><span className="block truncate text-[12px] font-semibold">{hit.label}</span><span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">{hit.description}</span></span>
               <span className="text-xs text-[var(--accent)]" aria-hidden="true">↗</span>
