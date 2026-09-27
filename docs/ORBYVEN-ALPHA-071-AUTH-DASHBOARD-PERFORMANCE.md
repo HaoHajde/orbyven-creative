@@ -13,6 +13,7 @@ Every future code/performance release must include the authenticated customer jo
 ## Changes in this PR
 
 - Customer login and password recovery recover the form state if a network call **rejects**; login prevents a duplicate submission and preserves existing server-authoritative entry-path decisions. Invalid credentials do not reveal whether an account exists.
+- Login and signup use the local session only to skip remote entry-state verification for logged-out visitors. When a session exists, the code still calls `getWorkspaceEntryPath()` for authoritative access and suspension checks.
 - The access-state page fails closed with a Retry action when backend verification errors instead of remaining stuck on a spinner. It never bypasses membership or organization state checks.
 - The normal successful dashboard load no longer calls Supabase `auth.getUser()` twice; `getCurrentWorkspace()` already checks it. For a null workspace result, the client still rechecks auth to distinguish logged-out from signed-in/no-membership.
 - The existing Lighthouse workflow now includes customer login/register/recovery and both internal login pages at mobile/desktop presets.
