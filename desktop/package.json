@@ -2,13 +2,14 @@
   "name": "@orbyven/desktop-windows",
   "private": true,
   "version": "0.2.0",
-  "description": "ORBYVEN native-installed desktop workspace for Windows",
+  "description": "ORBYVEN desktop workspace for Windows with locally bundled UI",
   "type": "module",
   "scripts": {
     "icons": "tauri icon ../app/icon.svg",
+    "dev:web": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
-    "build": "tauri build",
     "build:web": "vite build",
+    "build": "tauri build",
     "check": "node --test tests/*.test.mjs && tsc --noEmit"
   },
   "dependencies": {
