@@ -23,6 +23,10 @@ export default function WorkspaceLoginPage() {
 
     const checkUser = async () => {
       try {
+        // A local session is only a negative hint. If present, always call
+        // getWorkspaceEntryPath() for authoritative server-side access state.
+        const { data } = await orbyvenSupabase.auth.getSession();
+        if (cancelled || !data.session) return;
         const destination = await getWorkspaceEntryPath();
         if (!cancelled && destination !== "/workspace/login") {
           router.replace(destination);
