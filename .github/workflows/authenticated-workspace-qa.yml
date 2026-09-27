@@ -1,0 +1,41 @@
+name: ORBYVEN Authenticated Workspace QA
+
+# Opt-in only. Never runs for arbitrary PR code or shares private screenshots.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ORBYVEN_QA_EMAIL: ${{ secrets.ORBYVEN_QA_EMAIL }}
+      ORBYVEN_QA_PASSWORD: ${{ secrets.ORBYVEN_QA_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate dedicated QA account setup
+        run: |
+          if [ -z "$ORBYVEN_QA_EMAIL" ] || [ -z "$ORBYVEN_QA_PASSWORD" ]; then
+            echo "Configure ORBYVEN_QA_EMAIL and ORBYVEN_QA_PASSWORD as GitHub Actions repository secrets for a dedicated test organization." >&2
+            exit 1
+          fi
+      - name: Install read-only browser QA dependencies
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.55.0
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      - name: Test authenticated dashboard on mobile and desktop
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/audit-authenticated-workspace.mjs
