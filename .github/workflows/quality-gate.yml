@@ -93,5 +93,8 @@ jobs:
       - name: Data efficiency and search regression tests (offline)
         run: npm run test:data
 
+      - name: SEO regression tests
+        run: npm run test:seo
+
       - name: Production build
         run: npm run build

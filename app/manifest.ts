@@ -15,6 +15,12 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: siteConfig.language,
     icons: [
       {
+        src: "/branding/orbyven-favicon-96.png",
+        sizes: "96x96",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
         src: "/icon.svg?v=oc-orbit-2",
         sizes: "any",
         type: "image/svg+xml",
