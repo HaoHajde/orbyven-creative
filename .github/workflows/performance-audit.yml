@@ -3,6 +3,9 @@ name: ORBYVEN Manual Browser Performance Audit
 # Manual only: does not deploy on Vercel, modify Supabase, or run on every PR.
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/performance-audit.yml'
 
 permissions:
   contents: read
@@ -25,9 +28,12 @@ jobs:
           npm ci
           npm run build
       - name: Install Chrome
+        id: chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
+      - name: Register Chrome path
+        run: echo "CHROME_PATH=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
       - name: Audit local production build on mobile and desktop
         run: |
           set -euo pipefail
