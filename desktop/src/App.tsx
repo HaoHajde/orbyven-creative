@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import DesktopSearch from "./DesktopSearch";
+import brandSymbolDark from "../../public/branding/orbyven-logo-dark.png";
+import brandSymbolLight from "../../public/branding/orbyven-logo-light.png";
 import { initializeDesktopClient, orbyvenSupabase } from "./client";
 import { getCurrentWorkspace, getWorkspaceAccessState, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -136,20 +139,28 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem("orbyven-desktop-theme") !== "light");
   const [refresh, setRefresh] = useState(0);
+  const moduleLoadId = useRef(0);
+  const pendingRecordId = useRef<string | null>(null);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
     const state = await getWorkspaceAccessState();
     setAccessState(state);
     if (state === "login") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setRows([]); setOverview(null); setSelected(null); setWorkspace(null); setScreen("login");
       return;
     }
     if (state === "onboarding") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setWorkspace(null); setRows([]); setOverview(null); setScreen("onboarding");
       return;
     }
     if (state !== "workspace") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setWorkspace(null); setRows([]); setOverview(null); setScreen("access");
       return;
     }
@@ -179,23 +190,27 @@ export default function App() {
 
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
-  const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
+  const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id) && (item.id !== "expenses" || canFinance)), [workspace, canFinance]);
+  const canCreateModule = canWrite && activeModule !== "overview" && (activeModule !== "expenses" || canFinance);
 
   const loadModule = useCallback(async () => {
     if (!workspace) return;
     const org = workspace.organization.id;
+    const requestId = ++moduleLoadId.current;
     setError("");
     setBusy(true);
     setSelected(null);
     try {
       if (activeModule === "overview") {
         const snapshot = await loadOverviewSnapshot(org, canFinance, workspace.profile?.timezone || "Europe/Bucharest");
+        if (requestId !== moduleLoadId.current) return;
         setOverview(snapshot);
         setRows([]);
       } else {
         // All reads and writes call the existing ORBYVEN service functions, with org RLS enforced.
         // Finance data is never requested for a role that cannot access it.
         if (activeModule === "expenses" && !canFinance) {
+          if (requestId !== moduleLoadId.current) return;
           setRows([]);
           setError("Modulul financiar este disponibil doar pentru roluri autorizate.");
           return;
@@ -210,20 +225,42 @@ export default function App() {
           activeModule === "documents" ? await listDocuments(org) :
           activeModule === "expenses" ? await listExpenses(org) :
           await listTeamMembers(org);
-        setRows(result as unknown as Row[]);
+        if (requestId !== moduleLoadId.current) return;
+        const loadedRows = result as unknown as Row[];
+        setRows(loadedRows);
+        if (pendingRecordId.current) {
+          setSelected(loadedRows.find((entry) => String(entry.id) === pendingRecordId.current) ?? null);
+          pendingRecordId.current = null;
+        }
       }
     } catch (cause) {
+      if (requestId !== moduleLoadId.current) return;
       console.error("ORBYVEN desktop load:", cause);
       setError("Nu am putut încărca datele. Verifică conexiunea sau permisiunile.");
     } finally {
-      setBusy(false);
+      if (requestId === moduleLoadId.current) setBusy(false);
     }
   }, [workspace, activeModule, canFinance]);
 
   useEffect(() => { void loadModule(); }, [loadModule, refresh]);
 
-  function chooseModule(id: OrbyvenModuleId) {
+  function chooseModule(id: OrbyvenModuleId, recordId?: string) {
+    if (!workspace?.enabledModules.includes(id) || (id === "expenses" && !canFinance)) return;
+    ++moduleLoadId.current;
+    pendingRecordId.current = recordId ?? null;
+    setRows([]);
+    setOverview(null);
+    setBusy(true);
     setActiveModule(id); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    // Searching the module already selected must still refresh the matching record.
+    if (id === activeModule) setRefresh((number) => number + 1);
+  }
+  function startCreate() {
+    if (!canCreateModule || busy) return;
+    setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" });
+    setFile(null);
+    setShowCreate(true);
+    setError("");
   }
   async function login(event: FormEvent) {
     event.preventDefault(); if (busy) return;
@@ -365,13 +402,13 @@ export default function App() {
     <div className={"desktop " + (isDark ? "dark" : "light")}>
       {screen !== "workspace" ? (
         <main className="auth-background">
-          <div className="auth-top"><span className="brand-mark">OC</span><span>ORBYVEN <small>DESKTOP</small></span></div>
+          <div className="auth-top"><img className="brand-symbol" src={brandSymbolDark} alt="" /><span>ORBYVEN <small>CREATIVE · WORKSPACE</small></span></div>
           {screen === "loading" && <section className="auth-card"><div className="spinner" /><h1>Se pregătește ORBYVEN.</h1><p>Conectăm aplicația la spațiul tău de lucru.</p></section>}
           {screen === "error" && <section className="auth-card"><h1>Conexiune indisponibilă.</h1><p>{error}</p><button className="primary" onClick={() => window.location.reload()}>Reîncearcă</button></section>}
           {screen === "access" && <section className="auth-card"><h1>Acces indisponibil.</h1><p>{ACCESS_MESSAGES[accessState] || "Contul nu poate accesa workspace-ul."}</p><button className="secondary" onClick={() => void logout()}>Schimbă contul</button></section>}
           {screen === "login" && <section className="auth-card">
-            <span className="eyebrow">WORKSPACE · WINDOWS</span><h1>Bine ai revenit.</h1>
-            <p>Contul tău ORBYVEN. Aplicație locală, date sincronizate.</p>
+            <span className="eyebrow">ORBYVEN · WORKSPACE</span><h1>Bine ai <em>revenit.</em></h1>
+            <p>Intră în spațiul firmei tale. Aceleași date ca pe orbyven.ro, într-o aplicație Windows proprie.</p>
             <form onSubmit={(event) => void login(event)} className="form">
               <label className="field"><span>Email</span><input type="email" required autoComplete="username"
                 value={credentials.email} onChange={(event) => setCredentials((old) => ({ ...old, email: event.target.value }))} /></label>
@@ -390,12 +427,12 @@ export default function App() {
             </form>
             <button className="text-button" onClick={() => void logout()}>Alt cont</button>
           </section>}
-          <footer className="auth-footer">ORBYVEN DESKTOP v0.2 · WINDOWS</footer>
+          <footer className="auth-footer">ORBYVEN DESKTOP · WINDOWS</footer>
         </main>
       ) : workspace && (
         <div className="shell">
           <aside className="sidebar">
-            <div className="logo"><span className="brand-mark">OC</span><div><strong>ORBYVEN</strong><small>WORKSPACE</small></div></div>
+            <div className="logo"><img className="brand-symbol" src={isDark ? brandSymbolDark : brandSymbolLight} alt="" /><div><strong>ORBYVEN</strong><small>CREATIVE · WORKSPACE</small></div></div>
             <div className="company-label"><small>ORGANIZAȚIE</small><strong>{workspace.organization.name}</strong><span>{ROLE_LABELS[workspace.membership.role]}</span></div>
             <p className="nav-label">SPAȚIUL TĂU</p>
             <nav aria-label="Module">
@@ -410,7 +447,10 @@ export default function App() {
           <main className="main-area">
             <header className="topbar">
               <span className="breadcrumb">Workspace <span>/</span> {TITLES[activeModule]}</span>
+              <DesktopSearch organizationId={workspace.organization.id} enabledModules={modules.map((item) => item.id)}
+                onOpen={(module, recordId) => chooseModule(module, recordId)} />
               <div className="top-actions">
+                {canCreateModule && <button className="primary top-create" type="button" onClick={startCreate} disabled={busy}>+ Creează</button>}
                 <button title="Reîncarcă datele" className="icon-button" onClick={() => setRefresh((n) => n + 1)} disabled={busy}>↻</button>
                 <button title="Schimbă tema" className="icon-button" onClick={() => {
                   localStorage.setItem("orbyven-desktop-theme", isDark ? "light" : "dark"); setIsDark(!isDark);
@@ -424,8 +464,8 @@ export default function App() {
               <section className="page-heading">
                 <div><p className="eyebrow">ORBYVEN / {activeModule.toUpperCase()}</p><h1>{TITLES[activeModule]}<span className="heading-point">.</span></h1>
                   <p className="subheading">{activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." : ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
-                {activeModule !== "overview" && canWrite && (activeModule !== "expenses" || canFinance) && (
-                  <button className="primary add-button" onClick={() => { setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" }); setFile(null); setShowCreate(true); setError(""); }}>+ Adaugă</button>
+                {canCreateModule && (
+                  <button className="primary add-button" onClick={startCreate} disabled={busy}>+ Adaugă</button>
                 )}
               </section>
               {error && <div role="alert" className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
@@ -442,10 +482,11 @@ export default function App() {
                           ["Oferte trimise", overview.sentEstimatesCount, "estimates"],
                           ["Documente", overview.documentCount, "documents"],
                           ["Echipă activă", overview.activeTeamCount, "team"],
-                        ].map(([label, count, target]) => <button key={String(label)} className="metric" onClick={() => chooseModule(target as OrbyvenModuleId)}>
+                        ].filter(([, , target]) => modules.some((module) => module.id === target))
+                          .map(([label, count, target]) => <button key={String(label)} className="metric" onClick={() => chooseModule(target as OrbyvenModuleId)}>
                           <span>{label}</span><strong>{formatNumber(Number(count))}</strong><small>Deschide modulul ↗</small>
                         </button>)}
-                        {canFinance && <button className="metric" onClick={() => chooseModule("expenses")}><span>Cheltuieli luna aceasta</span><strong className="money">{currency(overview.monthExpensesCents)}</strong><small>Deschide cheltuieli ↗</small></button>}
+                        {canFinance && modules.some((module) => module.id === "expenses") && <button className="metric" onClick={() => chooseModule("expenses")}><span>Cheltuieli luna aceasta</span><strong className="money">{currency(overview.monthExpensesCents)}</strong><small>Deschide cheltuieli ↗</small></button>}
                       </div>
                       <div className="overview-bottom">
                         <div className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
@@ -478,7 +519,7 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.2.0</span></footer>
+              <footer className="page-footer">ORBYVEN CREATIVE · Desktop Workspace <span>v0.3.0</span></footer>
             </div>
           </main>
           {selected && <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
