@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { readAllPages } from "@/lib/modules/paged-read";
 
 export type OverviewLead = {
   id: string;
@@ -54,7 +55,6 @@ export type OverviewSnapshot = {
   activeTeamCount: number;
 };
 
-const PAGE_SIZE = 500;
 const ATTENTION_LIMIT = 16;
 const DAY_MS = 86400000;
 const OPEN_TASKS = '("done","cancelled")';
@@ -65,22 +65,6 @@ const OPEN_LEADS = '("won","lost")';
  * a seven-day trend. Supabase/PostgREST silently caps unbounded selects at the
  * project's max rows; relying on the default would corrupt business metrics.
  */
-async function readAll<T>(
-  getPage: (from: number, to: number) => PromiseLike<{
-    data: T[] | null;
-    error: { message: string } | null;
-  }>
-): Promise<T[]> {
-  const all: T[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await getPage(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
-    const rows = data ?? [];
-    all.push(...rows);
-    if (rows.length < PAGE_SIZE) return all;
-  }
-}
-
 async function countRows(
   query: PromiseLike<{ count: number | null; error: { message: string } | null }>
 ): Promise<number> {
@@ -171,24 +155,24 @@ export async function loadOverviewSnapshot(
       .select("id,reference,title,status,total_cents,currency,updated_at,created_at")
       .eq("organization_id", organizationId).eq("status", "sent")
       .lte("updated_at", staleEstimateBefore).order("updated_at").limit(ATTENTION_LIMIT + 1),
-    readAll<{ created_at: string }>((from, to) =>
+    readAllPages<{ created_at: string }>((from, to) =>
       orbyvenSupabase.from("crm_leads").select("created_at").eq("organization_id", organizationId)
         .eq("kind", "lead").not("stage", "in", OPEN_LEADS)
         .gte("created_at", trendSince).order("created_at").order("id").range(from, to)),
-    readAll<{ created_at: string }>((from, to) =>
+    readAllPages<{ created_at: string }>((from, to) =>
       orbyvenSupabase.from("ops_tasks").select("created_at").eq("organization_id", organizationId)
         .not("status", "in", OPEN_TASKS).gte("created_at", trendSince)
         .order("created_at").order("id").range(from, to)),
-    readAll<{ created_at: string }>((from, to) =>
+    readAllPages<{ created_at: string }>((from, to) =>
       orbyvenSupabase.from("sales_estimates").select("created_at").eq("organization_id", organizationId)
         .eq("status", "sent").gte("created_at", trendSince)
         .order("created_at").order("id").range(from, to)),
-    readAll<OverviewEvent>((from, to) =>
+    readAllPages<OverviewEvent>((from, to) =>
       orbyvenSupabase.from("calendar_events").select("id,title,status,start_at")
         .eq("organization_id", organizationId).gte("start_at", trendSince).lte("start_at", eventsUntil)
         .order("start_at").order("id").range(from, to)),
     canAccessFinances
-      ? readAll<{ amount_cents: number }>((from, to) =>
+      ? readAllPages<{ amount_cents: number }>((from, to) =>
           orbyvenSupabase.from("finance_expenses").select("amount_cents")
             .eq("organization_id", organizationId)
             .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
