@@ -10,6 +10,7 @@ on:
       - 'components/FeaturedTemplatePreview.tsx'
       - 'components/ClientTemplatePreview.tsx'
       - 'tests/templates-mobile-performance.test.mjs'
+      - 'scripts/summarize-lighthouse.mjs'
 
 permissions:
   contents: read
