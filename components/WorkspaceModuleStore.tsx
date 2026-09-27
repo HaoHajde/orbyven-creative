@@ -4,6 +4,7 @@ import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 type Props = {
   enabledModules: OrbyvenModuleId[];
+  entitledModules: OrbyvenModuleId[];
   onToggle: (id: OrbyvenModuleId) => void;
   onClose: () => void;
   canManage: boolean;
@@ -13,6 +14,7 @@ type Props = {
 
 export default function WorkspaceModuleStore({
   enabledModules,
+  entitledModules,
   onToggle,
   onClose,
   canManage,
@@ -40,6 +42,7 @@ export default function WorkspaceModuleStore({
         {ORBYVEN_MODULES.map((definition) => {
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
+          const entitled = entitledModules.includes(definition.id);
           const saving = savingModule === definition.id;
 
           return (
@@ -55,14 +58,14 @@ export default function WorkspaceModuleStore({
               <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">{definition.description}</p>
 
               <div className="mt-auto flex items-center justify-between gap-4 pt-5">
-                <span className="text-xs text-[var(--muted)]">{saving ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
+                <span className="text-xs text-[var(--muted)]">{saving ? "Se salvează..." : !entitled ? "Abonament / pilot necesar" : enabled ? "Activ" : "Neactivat"}</span>
                 <button
                   type="button"
-                  disabled={locked || !canManage || Boolean(savingModule)}
+                  disabled={locked || !entitled || !canManage || Boolean(savingModule)}
                   onClick={() => onToggle(definition.id)}
                   className={`h-9 rounded-full px-3.5 text-[11px] font-semibold transition ${enabled ? "bg-[var(--button)] text-[var(--button-text)] shadow-sm" : "border border-[var(--border-strong)] bg-[color:var(--bg)]/50"} disabled:cursor-default disabled:opacity-60`}
                 >
-                  {locked ? "Inclus" : !canManage ? "Blocat" : saving ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                  {locked ? "Inclus" : !entitled ? "Blocat" : !canManage ? "Blocat" : saving ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                 </button>
               </div>
             </article>

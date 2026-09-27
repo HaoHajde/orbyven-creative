@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { hasExpectedFileSignature } from "@/lib/security/file-signature";
 
 export type DocumentCategory =
   | "general"
@@ -58,7 +59,7 @@ const ALLOWED_DOCUMENT_TYPES: Record<string, readonly string[]> = {
   pptx: ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
 };
 
-function validateDocumentFile(file: File) {
+async function validateDocumentFile(file: File) {
   if (!file.name || file.size === 0) {
     throw new Error("Selectează un fișier valid, care nu este gol.");
   }
@@ -68,6 +69,10 @@ function validateDocumentFile(file: File) {
   const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
   if (!ALLOWED_DOCUMENT_TYPES[extension]?.includes(file.type)) {
     throw new Error("Tip de fișier neacceptat. Sunt permise PDF, imagini și documente Office.");
+  }
+  const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (!hasExpectedFileSignature(file.type, header)) {
+    throw new Error("Conținutul fișierului nu corespunde formatului declarat.");
   }
 }
 const FIELDS =
@@ -133,7 +138,7 @@ export async function uploadDocument(
   input: UploadDocumentInput
 ): Promise<BusinessDocument> {
   requireOrganizationId(organizationId);
-  validateDocumentFile(input.file);
+  await validateDocumentFile(input.file);
 
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const objectName = `${crypto.randomUUID()}-${safeFileName(input.file.name)}`;
