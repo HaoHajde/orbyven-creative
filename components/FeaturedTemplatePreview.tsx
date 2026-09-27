@@ -88,11 +88,12 @@ function MiniNav({
  * the viewport. iframe loading="lazy" alone may still initialize nearby frames.
  * Once shown, keep it mounted so scrolling back does not reset the demo.
  */
-function DeferredDemoIframe({ number }: { number: string }) {
+function DeferredDemoIframe({ number, eager = false }: { number: string; eager?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [shouldMount, setShouldMount] = useState(false);
+  const [shouldMount, setShouldMount] = useState(eager);
 
   useEffect(() => {
+    if (eager) return;
     const element = containerRef.current;
     if (!element) return;
 
@@ -112,7 +113,7 @@ function DeferredDemoIframe({ number }: { number: string }) {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [eager]);
 
   return (
     <div ref={containerRef} className="relative h-[338px] overflow-hidden bg-[#101014]" aria-hidden="true">
@@ -130,12 +131,12 @@ function DeferredDemoIframe({ number }: { number: string }) {
   );
 }
 
-export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPreviewKind }) {
+export default function FeaturedTemplatePreview({ kind, eagerDemo = false }: { kind: FeaturedPreviewKind; eagerDemo?: boolean }) {
   if (kind in demoPreviews) {
     const demo = demoPreviews[kind as keyof typeof demoPreviews];
     return (
       <BrowserFrame url={`orbyven.ro / pilot-${demo.number}`} dark={demo.dark}>
-        <DeferredDemoIframe number={demo.number} />
+        <DeferredDemoIframe number={demo.number} eager={eagerDemo} />
       </BrowserFrame>
     );
   }

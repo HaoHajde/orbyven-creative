@@ -3,6 +3,7 @@
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
 import HomeInvitationPreview from "@/components/HomeInvitationPreview";
+import HomeTemplatePreviewFrame from "@/components/HomeTemplatePreviewFrame";
 import { featuredTemplates } from "@/lib/featured-templates";
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
@@ -415,15 +416,13 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
-            <div className="orbyven-home-template-viewport relative overflow-hidden rounded-[24px] bg-[var(--surface-2)]">
-              <div className="orbyven-home-template-stage absolute inset-0 overflow-hidden">
-                {activeTemplate.source === "featured" ? (
-                  <FeaturedTemplatePreview kind={activeTemplate.kind} />
-                ) : (
-                  <ClientTemplatePreview template={activeTemplate} compact />
-                )}
-              </div>
-            </div>
+            <HomeTemplatePreviewFrame key={activeTemplate.source === "featured" ? activeTemplate.href : activeTemplate.slug}>
+              {activeTemplate.source === "featured" ? (
+                <FeaturedTemplatePreview kind={activeTemplate.kind} eagerDemo />
+              ) : (
+                <ClientTemplatePreview template={activeTemplate} compact />
+              )}
+            </HomeTemplatePreviewFrame>
             <div className="flex flex-col gap-4 px-2 pb-2 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted-2)]">{activeTemplate.source === "featured" ? activeTemplate.label : activeTemplate.category}</p>
