@@ -155,6 +155,10 @@ export default function ClientWorkspace() {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
 
     const currentlyEnabled = workspace.enabledModules.includes(id);
+    if (!currentlyEnabled && !workspace.entitledModules.includes(id)) {
+      setActionError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      return;
+    }
     const previousModules = workspace.enabledModules;
     const nextModules = currentlyEnabled
       ? previousModules.filter((moduleId) => moduleId !== id)
@@ -342,6 +346,7 @@ export default function ClientWorkspace() {
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
+              entitledModules={workspace.entitledModules}
               onToggle={toggleModule}
               onClose={() => setPanel("workspace")}
               canManage={canManageModules}

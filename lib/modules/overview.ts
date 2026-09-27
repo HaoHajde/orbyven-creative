@@ -54,7 +54,10 @@ export type OverviewSnapshot = {
   activeTeamCount: number;
 };
 
-export async function loadOverviewSnapshot(organizationId: string): Promise<OverviewSnapshot> {
+export async function loadOverviewSnapshot(
+  organizationId: string,
+  canAccessFinances: boolean
+): Promise<OverviewSnapshot> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
 
   const [leads, tasks, events, estimates, expenses, documents, team] = await Promise.all([
@@ -78,11 +81,13 @@ export async function loadOverviewSnapshot(organizationId: string): Promise<Over
       .select("id,reference,title,status,total_cents,currency,updated_at,created_at")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
-    orbyvenSupabase
-      .from("finance_expenses")
-      .select("id,occurred_on,amount_cents,currency")
-      .eq("organization_id", organizationId)
-      .order("occurred_on", { ascending: false }),
+    canAccessFinances
+      ? orbyvenSupabase
+          .from("finance_expenses")
+          .select("id,occurred_on,amount_cents,currency")
+          .eq("organization_id", organizationId)
+          .order("occurred_on", { ascending: false })
+      : Promise.resolve({ data: [] as OverviewExpense[], error: null }),
     orbyvenSupabase
       .from("ops_documents")
       .select("id", { count: "exact", head: true })
