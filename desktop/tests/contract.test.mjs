@@ -49,5 +49,33 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.2.0");
+  assert.equal(config.version, "0.3.0");
+});
+
+test("desktop v0.3 shares live site identity, not a remote browser window", () => {
+  const app = content("../src/App.tsx");
+  const styles = content("../src/styles.css");
+  const search = content("../src/DesktopSearch.tsx");
+  assert.match(app, /orbyven-logo-dark\.png/);
+  assert.match(app, /orbyven-logo-light\.png/);
+  assert.match(app, /<DesktopSearch organizationId=\{workspace\.organization\.id\}/);
+  assert.match(app, /\+ Creează/);
+  assert.match(styles, /--bg:#070b16/);
+  assert.match(styles, /--surface:#0d1728/);
+  assert.match(styles, /desktop-global-search/);
+  assert.match(search, /\.eq\("organization_id", organizationId\)/g);
+  assert.match(search, /needle\.replace/);
+  assert.match(search, /request !== generation\.current/);
+  assert.doesNotMatch(app, /<iframe|https:\/\/orbyven\.ro\/workspace/);
+});
+
+test("desktop navigation respects active modules, finance roles and stale-result invalidation", () => {
+  const app = content("../src/App.tsx");
+  assert.match(app, /workspace\?\.enabledModules\.includes\(item\.id\) && \(item\.id !== "expenses" \|\| canFinance\)/);
+  assert.match(app, /if \(!workspace\?\.enabledModules\.includes\(id\) \|\| \(id === "expenses" && !canFinance\)\) return/);
+  assert.match(app, /\+\+moduleLoadId\.current/);
+  assert.match(app, /requestId !== moduleLoadId\.current/);
+  assert.match(app, /pendingRecordId\.current/);
+  assert.match(app, /modules\.some\(\(module\) => module\.id === target\)/);
+  assert.match(app, /canFinance && modules\.some\(\(module\) => module\.id === "expenses"\)/);
 });
