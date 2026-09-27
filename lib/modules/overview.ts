@@ -131,7 +131,7 @@ export async function loadOverviewSnapshot(
 
   const [
     activeLeadsCount, openTasksCount, sentEstimatesCount,
-    planned, inProgress, blocked, done, cancelled,
+    stageCounts,
     recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
     events, monthExpenseRows, documentCount, activeTeamCount,
@@ -142,10 +142,10 @@ export async function loadOverviewSnapshot(
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)),
     countRows(orbyvenSupabase.from("sales_estimates").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("status", "sent")),
-    ...(["planned", "in_progress", "blocked", "done", "cancelled"] as const).map((status) =>
+    Promise.all((["planned", "in_progress", "blocked", "done", "cancelled"] as const).map((status) =>
       countRows(orbyvenSupabase.from("ops_tasks").select("id", { count: "exact", head: true })
         .eq("organization_id", organizationId).eq("status", status))
-    ),
+    )),
     orbyvenSupabase.from("crm_leads")
       .select("id,name,kind,stage,next_follow_up_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
@@ -200,6 +200,7 @@ export async function loadOverviewSnapshot(
       .eq("organization_id", organizationId).eq("status", "active")),
   ]);
 
+  const [planned, inProgress, blocked, done, cancelled] = stageCounts;
   for (const result of [recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
     recentEstimates, staleEstimates]) {
     if (result.error) throw result.error;
