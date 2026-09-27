@@ -592,6 +592,44 @@ export default function App() {
               <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.0</span></footer>
             </div>
           </main>
+          {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCommandOpen(false);
+          }}>
+            <section className="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">
+              <div className="command-top">
+                <h2 id="command-title">Unde vrei să ajungi?</h2>
+                <button className="icon-button" aria-label="Închide navigarea" onClick={() => setCommandOpen(false)}>×</button>
+              </div>
+              <input autoFocus aria-label="Caută un modul" placeholder="Caută un modul..." value={commandQuery}
+                onChange={(event) => setCommandQuery(event.target.value)} />
+              <p className="eyebrow">MODULE DISPONIBILE</p>
+              <div className="command-results">{filteredModules.filter((module) => module.id !== "expenses" || canFinance).map((module) =>
+                <button key={module.id} className="command-item" onClick={() => chooseModule(module.id)}>
+                  <span className="module-store-icon"><ModuleGlyph id={module.id} /></span>
+                  <span><strong>{TITLES[module.id]}</strong><small>{module.description}</small></span>
+                  <span className="command-arrow">→</span>
+                </button>)}</div>
+              {filteredModules.length === 0 && <p className="muted">Niciun modul găsit.</p>}
+              <small className="command-hint">Ctrl K · caută rapid &nbsp; · &nbsp; Esc · închide</small>
+            </section>
+          </div>}
+          {createMenuOpen && canWrite && <div className="overlay command-overlay" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCreateMenuOpen(false);
+          }}>
+            <section className="command-dialog create-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-create-title">
+              <div className="command-top"><div><p className="eyebrow">ACȚIUNE NOUĂ</p>
+                <h2 id="quick-create-title">Ce vrei să creezi?</h2></div>
+                <button className="icon-button" aria-label="Închide" onClick={() => setCreateMenuOpen(false)}>×</button></div>
+              <div className="command-results">{createModules.map((module) =>
+                <button key={module.id} className="command-item" onClick={() => openCreate(module.id)}>
+                  <span className="module-store-icon"><ModuleGlyph id={module.id} /></span>
+                  <strong>{module.id === "leads" ? "Cerere nouă" : module.id === "tasks" ? "Lucrare nouă" :
+                    module.id === "calendar" ? "Programare nouă" : module.id === "estimates" ? "Ofertă nouă" :
+                    module.id === "documents" ? "Document nou" : module.id === "expenses" ? "Cheltuială nouă" : "Membru nou"}</strong>
+                  <span className="command-arrow">→</span>
+                </button>)}</div>
+            </section>
+          </div>}
           {selected && <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
             <section className="drawer" role="dialog" aria-modal="true" aria-labelledby="record-title">
               <div className="drawer-top"><span className="eyebrow">DETALII · {TITLES[activeModule]}</span><button className="icon-button" aria-label="Închide" onClick={() => setSelected(null)}>×</button></div>
