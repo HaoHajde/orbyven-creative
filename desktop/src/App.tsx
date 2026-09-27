@@ -691,7 +691,7 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.0</span></footer>
+              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.1</span></footer>
             </div>
           </main>
           {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
