@@ -127,7 +127,7 @@ function DeferredDemoIframe({ number, eager = false }: { number: string; eager?:
           loading="lazy"
           sandbox="allow-scripts"
           className={eager ? "pointer-events-none absolute left-0 top-0 origin-top-left border-0" : "pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"}
-          style={eager ? { width: "200%", height: "200%", transform: "scale(0.5)", transformOrigin: "top left" } : undefined}
+          style={eager ? { maxWidth: "none", width: "200%", height: "200%", transform: "scale(0.5)", transformOrigin: "top left" } : { maxWidth: "none" }}
         />
       )}
     </div>

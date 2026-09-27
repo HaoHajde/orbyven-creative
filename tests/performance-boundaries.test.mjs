@@ -59,6 +59,10 @@ test("demo iframes wait near the viewport, then keep the existing safe iframe se
   assert.match(preview, /inset-x-0 bottom-0 top-8 min-h-0/);
   assert.match(preview, /width: "200%", height: "200%", transform: "scale\(0\.5\)"/);
   assert.match(preview, /eager \? "relative h-full w-full/);
+  // The global responsive-media max-width:100% must not clamp scaled iframe width.
+  assert.match(read("app/globals.css"), /iframe \{\s*display: block;\s*max-width: 100%;/);
+  assert.match(preview, /maxWidth: "none", width: "200%"/);
+  assert.match(preview, /: \{ maxWidth: "none" \}/);
 });
 
 test("existing template catalog, security and legal code are outside this performance patch", () => {
