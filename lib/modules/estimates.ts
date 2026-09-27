@@ -15,6 +15,9 @@ export type Estimate = {
   discount_cents: number;
   tax_rate: number | null;
   total_cents: number;
+  planned_labor_cents: number;
+  other_cost_cents: number;
+  source_estimate_id: string | null;
   valid_until: string | null;
   notes: string | null;
   sent_at: string | null;
@@ -55,11 +58,14 @@ export type CreateEstimateInput = {
   taxRate?: number | null;
   validUntil?: string | null;
   notes?: string;
+  plannedLaborLei?: number;
+  otherCostLei?: number;
+  sourceEstimateId?: string | null;
   items: EstimateItemInput[];
 };
 
 const ESTIMATE_FIELDS =
-  "id,organization_id,reference,status,title,client_id,task_id,currency,subtotal_cents,discount_cents,tax_rate,total_cents,valid_until,notes,sent_at,accepted_at,created_by,created_at,updated_at";
+  "id,organization_id,reference,status,title,client_id,task_id,currency,subtotal_cents,discount_cents,tax_rate,total_cents,planned_labor_cents,other_cost_cents,source_estimate_id,valid_until,notes,sent_at,accepted_at,created_by,created_at,updated_at";
 const ITEM_FIELDS =
   "id,organization_id,estimate_id,description,quantity,unit_price_cents,position,created_by,created_at,updated_at";
 
@@ -188,6 +194,22 @@ export async function createEstimate(
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
 
+  if (input.sourceEstimateId) {
+    const { data: source, error: sourceError } = await orbyvenSupabase
+      .from("sales_estimates")
+      .select("id,client_id,task_id,source_estimate_id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.sourceEstimateId)
+      .single();
+    if (sourceError || !source) throw new Error("Devizul sursă nu aparține acestei firme.");
+    if (source.client_id !== linkedClientId || source.task_id !== (input.taskId || null))
+      throw new Error("Revizia trebuie să păstreze clientul și lucrarea; creează un deviz nou pentru alt context.");
+    if (source.source_estimate_id) throw new Error("Folosește devizul inițial ca sursă pentru revizie.");
+  }
+  if (!Number.isFinite(input.plannedLaborLei ?? 0) || (input.plannedLaborLei ?? 0) < 0 ||
+      !Number.isFinite(input.otherCostLei ?? 0) || (input.otherCostLei ?? 0) < 0)
+    throw new Error("Costurile estimate nu pot fi negative.");
+
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const calculated = totals(items, input.discountLei ?? 0, input.taxRate ?? null);
 
@@ -203,6 +225,9 @@ export async function createEstimate(
       discount_cents: calculated.discountCents,
       tax_rate: calculated.taxRate,
       total_cents: calculated.totalCents,
+      planned_labor_cents: leiToCents(input.plannedLaborLei ?? 0),
+      other_cost_cents: leiToCents(input.otherCostLei ?? 0),
+      source_estimate_id: input.sourceEstimateId || null,
       valid_until: input.validUntil || null,
       notes: cleanOptional(input.notes),
       created_by: authData.user?.id ?? null,

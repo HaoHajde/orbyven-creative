@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const privacyQuery = admin.from("privacy_request_cases")
       .select("id,organization_id,subject_reference,request_type,processing_role,channel,status,received_at,due_at,last_action,updated_at")
       .order("received_at",{ascending:false}).limit(100);
-    const [casesResult,contractsResult,acceptancesResult,subscriptionsResult] = await Promise.all([
+    const [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult] = await Promise.all([
       organizationId ? privacyQuery.eq("organization_id",organizationId) : privacyQuery,
       organizationId
         ? admin.from("legal_contract_records")
@@ -69,8 +69,13 @@ export async function GET(request: Request) {
             .select("id,plan_id,status,merchant_key,merchant_legal_name,created_at")
             .eq("organization_id",organizationId).order("created_at",{ascending:false}).limit(20)
         : Promise.resolve({data:[],error:null}),
+      organizationId
+        ? admin.from("billing_order_evidence")
+            .select("id,plan_id,offer_snapshot,offer_sha256,accepted_at,status,stripe_checkout_session_id,checkout_final_amount_minor,checkout_tax_amount_minor,checkout_discount_amount_minor,checkout_currency,checkout_payment_status,checkout_completed_at,checkout_buyer_name,checkout_buyer_tax_id")
+            .eq("organization_id",organizationId).order("accepted_at",{ascending:false}).limit(100)
+        : Promise.resolve({data:[],error:null}),
     ]);
-    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult]) {
+    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult]) {
       if (result.error) throw result.error;
     }
     return reply({
@@ -79,6 +84,7 @@ export async function GET(request: Request) {
       contracts:contractsResult.data ?? [],
       checkouts:acceptancesResult.data ?? [],
       subscriptions:subscriptionsResult.data ?? [],
+      orderEvidence:ordersResult.data ?? [],
       limitPerList:100,
       canonicalAcceptanceSource:"billing_terms_acceptances",
       // A manual registry entry never claims to be a signed agreement.

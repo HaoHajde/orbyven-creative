@@ -3,6 +3,7 @@
 import BrandLogo from "@/components/BrandLogo";
 import {
   BILLING_PLANS,
+  BILLING_CHECKOUT_ACKNOWLEDGEMENT,
   LEGAL_DOCUMENT_VERSION,
   PUBLIC_PRICE_TAX_LABEL,
   type BillingPlanId,
@@ -237,12 +238,11 @@ export default function WorkspaceBillingPage() {
               className="mt-1 h-4 w-4"
             />
             <span>
-              Confirm că reprezint organizația și accept{" "}
-              <Link href="/legal/terms" className="underline underline-offset-4">Termenii și Condițiile</Link>
-              {" "}și{" "}
-              <Link href="/legal/subscriptions" className="underline underline-offset-4">Termenii de abonament B2B</Link>
-              , inclusiv angajamentul inițial de 12 luni. Am consultat și{" "}
-              <Link href="/legal/privacy" className="underline underline-offset-4">Politica de Confidențialitate</Link>.
+              {BILLING_CHECKOUT_ACKNOWLEDGEMENT}
+              {" "}Documente:{" "}
+              <Link href="/legal/terms" className="underline underline-offset-4">Termeni și Condiții</Link>,
+              {" "}<Link href="/legal/subscriptions" className="underline underline-offset-4">Termeni de abonament B2B</Link>,
+              {" "}<Link href="/legal/privacy" className="underline underline-offset-4">Politica de Confidențialitate</Link>.
             </span>
           </label>
         )}

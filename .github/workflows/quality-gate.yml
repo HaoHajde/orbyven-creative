@@ -87,6 +87,9 @@ jobs:
       - name: Legal & Trust regression tests (offline)
         run: npm run test:compliance
 
+      - name: B2B order evidence regression tests (offline)
+        run: npm run test:orders
+
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 

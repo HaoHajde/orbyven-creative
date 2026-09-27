@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
   try {
     if (event.type === "checkout.session.completed") {
-      await syncStripeCheckoutCompleted(client, event.data.object);
+      await syncStripeCheckoutCompleted(client, event.data.object, event.id);
     }
 
     if (

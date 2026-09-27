@@ -8,6 +8,7 @@ import {
 } from "@/lib/billing/public-config";
 import { billingServerConfig } from "@/lib/billing/server-config";
 import { reconcileInvoiceDelivery } from "@/lib/billing/webhook-state";
+import { syncCheckoutOrderEvidence } from "@/lib/billing/order-evidence-sync";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
   booleanValue,
@@ -122,9 +123,10 @@ async function syncEntitlements(
   if (error) throw error;
 }
 
-export async function syncStripeCheckoutCompleted(client: ServiceClient, object: JsonObject) {
+export async function syncStripeCheckoutCompleted(client: ServiceClient, object: JsonObject, eventId: string) {
   const organizationId = metadataValue(object, "organization_id");
   if (!organizationId) throw new Error("Stripe checkout is missing organization_id metadata.");
+  await syncCheckoutOrderEvidence(client, object, eventId);
 
   const customerId = stringValue(object.customer);
   const customerDetails = objectValue(object.customer_details);

@@ -7,6 +7,7 @@ import {
 } from "@/lib/billing/server-config";
 import { getSiteUrl } from "@/lib/site-config";
 import { commercialIdentity } from "@/lib/commercial-identity";
+import type { CheckoutPrice } from "@/lib/billing/order-evidence-guards";
 
 type StripeCheckoutSession = {
   id: string;
@@ -44,9 +45,21 @@ async function stripePost<T>(path: string, params: URLSearchParams): Promise<T> 
   return payload;
 }
 
+export async function retrieveStripePlanPrice(planId:BillingPlanId):Promise<CheckoutPrice> {
+  requireBillingReady();
+  const priceId=getStripePriceId(planId);
+  const response=await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`,{
+    headers:{Authorization:`Bearer ${billingServerConfig.stripeSecretKey}`},
+    cache:"no-store",
+  });
+  if(!response.ok)throw new Error("Unable to verify the configured Stripe price.");
+  return await response.json() as CheckoutPrice;
+}
+
 export async function createStripeCheckoutSession(input: {
   organizationId: string;
   planId: BillingPlanId;
+  orderEvidenceId: string;
   customerId?: string | null;
   email?: string | null;
 }) {
@@ -66,15 +79,19 @@ export async function createStripeCheckoutSession(input: {
   params.set("cancel_url", `${siteUrl}/workspace/billing?checkout=cancelled`);
   params.set("billing_address_collection", "required");
   params.set("tax_id_collection[enabled]", "true");
-  params.set("allow_promotion_codes", "true");
+  // Disable discounts until the user-facing total and discount consent flow is fully specified.
+  params.set("allow_promotion_codes", "false");
   params.set("locale", "ro");
   params.set("metadata[organization_id]", input.organizationId);
   params.set("metadata[plan_id]", input.planId);
+  params.set("metadata[order_evidence_id]", input.orderEvidenceId);
+  params.set("metadata[price_id]", getStripePriceId(input.planId));
   params.set("metadata[plan_name]", plan.name);
   params.set("metadata[merchant_key]", commercialIdentity.entityKey || "prelaunch");
   params.set("metadata[merchant_type]", commercialIdentity.entityType);
   params.set("subscription_data[metadata][organization_id]", input.organizationId);
   params.set("subscription_data[metadata][plan_id]", input.planId);
+  params.set("subscription_data[metadata][order_evidence_id]", input.orderEvidenceId);
   params.set("subscription_data[metadata][merchant_key]", commercialIdentity.entityKey || "prelaunch");
   params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
 

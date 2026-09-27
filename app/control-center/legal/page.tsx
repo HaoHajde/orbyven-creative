@@ -16,15 +16,27 @@ type Acceptance = {
   accepted_at:string;merchant_legal_name:string|null;
 };
 type Subscription = {id:string;plan_id:string;status:string;merchant_legal_name:string|null};
+type OrderEvidence = {
+  id:string;plan_id:string;offer_sha256:string;accepted_at:string;status:string;
+  stripe_checkout_session_id:string|null;checkout_final_amount_minor:number|null;
+  checkout_tax_amount_minor:number|null;checkout_discount_amount_minor:number|null;
+  checkout_currency:string|null;checkout_payment_status:string|null;checkout_completed_at:string|null;
+  checkout_buyer_name:string|null;checkout_buyer_tax_id:string|null;
+  offer_snapshot:{
+    plan_name:string;displayed_monthly_amount_minor:number;displayed_currency:string;
+    displayed_tax_label:string;commitment_months:number;merchant_legal_name:string|null;
+    legal_document_version:string;acknowledgement_text:string;
+  };
+};
 type PrivacyCase = {
   id:string;organization_id:string|null;subject_reference:string;request_type:string;
   processing_role:string;status:string;received_at:string;due_at:string;last_action:string|null;
 };
 type Payload = {
   organizations:Organization[];contracts:Contract[];checkouts:Acceptance[];
-  subscriptions:Subscription[];privacyCases:PrivacyCase[];
+  subscriptions:Subscription[];privacyCases:PrivacyCase[];orderEvidence:OrderEvidence[];
 };
-const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[]};
+const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[],orderEvidence:[]};
 const INPUT = "w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-indigo-400";
 const BUTTON = "rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium hover:border-indigo-400 disabled:opacity-50";
 const statuses = ["received","identity_check","triage","in_progress","responded","closed"] as const;
@@ -160,6 +172,32 @@ export default function LegalOperationsPage() {
                   {payload.subscriptions.map(s=><p key={s.id} className="mt-3 border-t border-white/10 pt-3 text-xs leading-6">
                     {s.plan_id} · {s.status}<br/>Emitent: {s.merchant_legal_name||"Necompletat"}
                   </p>)}
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-white/10 p-4">
+                <h3 className="font-medium">Oferte și comenzi păstrate ca dovadă ({payload.orderEvidence.length})</h3>
+                <p className="mt-2 text-xs text-white/60">Oferta acceptată și rezultatul Stripe se păstrează separat. Finalizarea checkoutului nu dovedește singură plata ori emiterea facturii fiscale.</p>
+                {payload.orderEvidence.length===0&&<p className="mt-3 text-sm text-white/50">Nu există dovezi de comandă pentru această organizație. Comenzile istorice nu sunt reconstruite artificial.</p>}
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {payload.orderEvidence.map(o=><article key={o.id} className="rounded-xl border border-white/10 bg-black/20 p-4 text-xs leading-6">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <strong>{o.offer_snapshot.plan_name}</strong>
+                      <span className="text-amber-200">{o.status}</span>
+                    </div>
+                    <p className="mt-2 text-white/70">Ofertă afișată și acceptată: {o.offer_snapshot.displayed_monthly_amount_minor/100} {o.offer_snapshot.displayed_currency.toUpperCase()} / lună · {o.offer_snapshot.displayed_tax_label}</p>
+                    <p className="text-white/60">Angajament: {o.offer_snapshot.commitment_months} luni · Versiunea termenilor: {o.offer_snapshot.legal_document_version}</p>
+                    <p className="text-white/60">Emitent: {o.offer_snapshot.merchant_legal_name||"Necompletat"} · Acceptat: {date(o.accepted_at)}</p>
+                    {o.checkout_completed_at&&<p className="mt-2 text-white/60">Cumpărător: {o.checkout_buyer_name||"Nume nespecificat"} · Identificator fiscal: {o.checkout_buyer_tax_id||"Neînregistrat"}</p>}
+                    <p className="mt-2 break-all text-white/50">Hash ofertă: {o.offer_sha256}</p>
+                    {o.checkout_completed_at&&o.checkout_final_amount_minor!==null&&
+                      <p className="mt-2 border-t border-white/10 pt-2 text-emerald-200">
+                        Rezultat Stripe: {o.checkout_final_amount_minor/100} {(o.checkout_currency||"ron").toUpperCase()}
+                        {" "}· TVA calculat: {(o.checkout_tax_amount_minor??0)/100}
+                        {" "}· Discount: {(o.checkout_discount_amount_minor??0)/100}
+                        {" "}· Plată: {o.checkout_payment_status||"necunoscut"} · {date(o.checkout_completed_at)}
+                      </p>}
+                  </article>)}
                 </div>
               </div>
               <h3 className="mt-8 text-base font-semibold">Documente arhivate manual</h3>
