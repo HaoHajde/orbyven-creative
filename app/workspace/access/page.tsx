@@ -28,31 +28,42 @@ const STATE_COPY = {
 export default function WorkspaceAccessPage() {
   const router = useRouter();
   const [state, setState] = useState<keyof typeof STATE_COPY | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const nextState = await getWorkspaceAccessState();
-      if (cancelled) return;
-      if (nextState === "login") {
-        router.replace("/workspace/login");
-        return;
+      setLoadError(false);
+      try {
+        const nextState = await getWorkspaceAccessState();
+        if (cancelled) return;
+        if (nextState === "login") {
+          router.replace("/workspace/login");
+          return;
+        }
+        if (nextState === "workspace") {
+          router.replace("/workspace");
+          return;
+        }
+        if (nextState === "onboarding") {
+          router.replace("/workspace/onboarding");
+          return;
+        }
+        setState(nextState);
+      } catch (error) {
+        console.error("Workspace access state unavailable", error);
+        if (!cancelled) {
+          setState(null);
+          setLoadError(true);
+        }
       }
-      if (nextState === "workspace") {
-        router.replace("/workspace");
-        return;
-      }
-      if (nextState === "onboarding") {
-        router.replace("/workspace/onboarding");
-        return;
-      }
-      setState(nextState);
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, retry]);
 
   const copy = state ? STATE_COPY[state] : null;
 
@@ -64,13 +75,22 @@ export default function WorkspaceAccessPage() {
   return (
     <WorkspaceAuthShell
       eyebrow="ORBYVEN · ACCESS"
-      title={copy?.title ?? "Se verifică accesul..."}
-      description={copy?.description ?? "Verificăm starea workspace-ului tău."}
+      title={loadError ? "Accesul nu a putut fi verificat." : copy?.title ?? "Se verifică accesul..."}
+      description={loadError ? "Verifică conexiunea și încearcă din nou. Nu afișăm datele companiei fără verificarea accesului." : copy?.description ?? "Verificăm starea workspace-ului tău."}
     >
       <div className="text-center">
         <div className="rounded-[18px] bg-[#f5f5f7] px-4 py-4 text-sm leading-6 text-[#6e6e73] dark:bg-black dark:text-[#a1a1a6]">
           Datele companiei rămân izolate și nu sunt afișate cât timp accesul este suspendat.
         </div>
+        {loadError && (
+          <button
+            type="button"
+            onClick={() => setRetry((value) => value + 1)}
+            className="mt-6 mr-3 h-11 rounded-full border border-white/[0.16] px-5 text-xs font-semibold"
+          >
+            Reîncearcă verificarea
+          </button>
+        )}
         <button
           type="button"
           onClick={() => void logout()}
