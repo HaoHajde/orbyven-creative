@@ -24,7 +24,7 @@ type OrderEvidence = {
   checkout_buyer_name:string|null;checkout_buyer_tax_id:string|null;
   offer_snapshot:{
     plan_name:string;displayed_monthly_amount_minor:number;displayed_currency:string;
-    displayed_tax_label:string;commitment_months:number;merchant_legal_name:string|null;
+    displayed_tax_label:string;commitment_months:number;displayed_commitment_total_minor:number;merchant_legal_name:string|null;
     legal_document_version:string;acknowledgement_text:string;
   };
 };
@@ -186,7 +186,7 @@ export default function LegalOperationsPage() {
                       <span className="text-amber-200">{o.status}</span>
                     </div>
                     <p className="mt-2 text-white/70">Ofertă afișată și acceptată: {o.offer_snapshot.displayed_monthly_amount_minor/100} {o.offer_snapshot.displayed_currency.toUpperCase()} / lună · {o.offer_snapshot.displayed_tax_label}</p>
-                    <p className="text-white/60">Angajament: {o.offer_snapshot.commitment_months} luni · Versiunea termenilor: {o.offer_snapshot.legal_document_version}</p>
+                    <p className="text-white/60">Angajament: {o.offer_snapshot.commitment_months} luni · total ofertă {o.offer_snapshot.displayed_commitment_total_minor/100} RON · Versiunea termenilor: {o.offer_snapshot.legal_document_version}</p>
                     <p className="text-white/60">Emitent: {o.offer_snapshot.merchant_legal_name||"Necompletat"} · Acceptat: {date(o.accepted_at)}</p>
                     {o.checkout_completed_at&&<p className="mt-2 text-white/60">Cumpărător: {o.checkout_buyer_name||"Nume nespecificat"} · Identificator fiscal: {o.checkout_buyer_tax_id||"Neînregistrat"}</p>}
                     <p className="mt-2 break-all text-white/50">Hash ofertă: {o.offer_sha256}</p>

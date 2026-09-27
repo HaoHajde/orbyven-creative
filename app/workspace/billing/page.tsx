@@ -4,6 +4,7 @@ import BrandLogo from "@/components/BrandLogo";
 import {
   BILLING_PLANS,
   BILLING_CHECKOUT_ACKNOWLEDGEMENT,
+  BILLING_COMMITMENT_MONTHS,
   LEGAL_DOCUMENT_VERSION,
   PUBLIC_PRICE_TAX_LABEL,
   type BillingPlanId,
@@ -214,6 +215,7 @@ export default function WorkspaceBillingPage() {
                   <span className="pb-1 text-xs text-[#6e6e73]">lei / lună</span>
                 </div>
                 <p className="mt-2 text-xs text-[#86868b]">{PUBLIC_PRICE_TAX_LABEL}</p>
+                <p className="mt-2 text-xs text-[#86868b]">Angajament inițial: {BILLING_COMMITMENT_MONTHS} luni · {plan.priceLei*BILLING_COMMITMENT_MONTHS} lei la prețul afișat.</p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-[#6e6e73]">{plan.description}</p>
                 <p className="mt-5 text-xs leading-5 text-[#86868b]">Include: {plan.entitlements.join(", ")}</p>
                 <button

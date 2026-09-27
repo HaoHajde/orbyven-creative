@@ -19,7 +19,7 @@ export function requirePublishedStripePrice(planId: BillingPlanId, price: Checko
   });
 }
 
-export function createOrderOfferSnapshot(planId:BillingPlanId,price:StripePriceEvidence) {
+export function createOrderOfferSnapshot(planId:BillingPlanId,price:CheckoutPrice) {
   const plan=BILLING_PLANS[planId];
   return {
     schema_version:1,
@@ -31,6 +31,7 @@ export function createOrderOfferSnapshot(planId:BillingPlanId,price:StripePriceE
     recurring_interval:"month",
     recurring_interval_count:1,
     commitment_months:BILLING_COMMITMENT_MONTHS,
+    displayed_commitment_total_minor:plan.priceLei*100*BILLING_COMMITMENT_MONTHS,
     displayed_monthly_amount_minor:plan.priceLei*100,
     displayed_currency:"ron",
     displayed_tax_label:PUBLIC_PRICE_TAX_LABEL,
