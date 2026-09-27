@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const editor=fs.readFileSync(new URL("../public/thermal-planner/index.html",import.meta.url),"utf8");
-const module=fs.readFileSync(new URL("../components/modules/ThermalSketchPanel.tsx",import.meta.url),"utf8");
+const thermalModule=fs.readFileSync(new URL("../components/modules/ThermalSketchPanel.tsx",import.meta.url),"utf8");
 const tasks=fs.readFileSync(new URL("../components/modules/TasksModule.tsx",import.meta.url),"utf8");
 const migration=fs.readFileSync(new URL("../supabase/migrations/20260927202000_alpha065_thermal_sketches.sql",import.meta.url),"utf8");
 test("Alpha 0.65 live canvas retains existing smart wall and pipe behavior",()=>{
@@ -17,8 +17,8 @@ test("Alpha 0.65 live canvas starts empty, contains no browser-only persistence 
   assert.ok(!editor.includes("localStorage."));
   assert.ok(!editor.includes("Date fictive. Schița"));
   assert.ok(editor.includes("Schiță orientativă"));
-  assert.ok(module.includes('sandbox="allow-scripts allow-downloads"'));
-  assert.ok(!module.includes("allow-same-origin"));
+  assert.ok(thermalModule.includes('sandbox="allow-scripts allow-downloads"'));
+  assert.ok(!thermalModule.includes("allow-same-origin"));
 });
 test("Alpha 0.65 is only reachable from work task, tenant-scoped in DB",()=>{
   assert.ok(tasks.includes('selectedTask.kind === "work"'));
@@ -26,6 +26,6 @@ test("Alpha 0.65 is only reachable from work task, tenant-scoped in DB",()=>{
   assert.ok(migration.includes("foreign key (organization_id,task_id)"));
   assert.ok(migration.includes("private.is_org_member(organization_id)"));
   assert.ok(migration.includes("private.is_billing_module_allowed(organization_id,'tasks')"));
-  assert.ok(module.includes('.eq("revision",revision.current)'));
-  assert.ok(module.includes('event.origin!=="null"'));
+  assert.ok(thermalModule.includes('.eq("revision",revision.current)'));
+  assert.ok(thermalModule.includes('event.origin!=="null"'));
 });
