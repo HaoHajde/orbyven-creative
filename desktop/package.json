@@ -1,15 +1,29 @@
 {
   "name": "@orbyven/desktop-windows",
   "private": true,
-  "version": "0.1.0",
-  "description": "ORBYVEN Desktop for Windows",
+  "version": "0.2.0",
+  "description": "ORBYVEN desktop workspace for Windows with locally bundled UI",
+  "type": "module",
   "scripts": {
     "icons": "tauri icon ../app/icon.svg",
+    "dev:web": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
+    "build:web": "vite build",
     "build": "tauri build",
-    "check": "node --test tests/*.test.mjs"
+    "check": "node --test tests/*.test.mjs && tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0"
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5",
+    "vite": "^6.0.0"
   }
 }

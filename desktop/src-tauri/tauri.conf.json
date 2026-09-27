@@ -1,21 +1,23 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ORBYVEN",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "ro.orbyven.desktop",
   "build": {
-    "devUrl": "https://orbyven.ro/workspace",
-    "frontendDist": "https://orbyven.ro/workspace"
+    "beforeDevCommand": "npm run dev:web",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build:web",
+    "frontendDist": "../dist"
   },
   "app": {
     "security": {
-      "capabilities": []
+      "capabilities": [],
+      "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://orbyven.ro https: wss:; font-src 'self' data:; frame-src 'none'"
     },
     "windows": [
       {
         "label": "main",
-        "title": "ORBYVEN — Workspace",
-        "url": "https://orbyven.ro/workspace",
+        "title": "ORBYVEN — Desktop Workspace",
         "width": 1360,
         "height": 850,
         "minWidth": 920,
@@ -24,7 +26,7 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "backgroundColor": "#0B0B14"
+        "backgroundColor": "#080d19"
       }
     ]
   },

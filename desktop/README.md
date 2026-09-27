@@ -1,21 +1,20 @@
-# ORBYVEN Desktop — Windows alpha
+# ORBYVEN Desktop v0.2.0 — independent Windows application
 
-This is a **standalone Windows shell for the existing ORBYVEN workspace**, not a second implementation of the dashboard.
+This version replaces the v0.1 remote webpage wrapper with a **locally bundled React application** served from Tauri's own application origin. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
-- Entry: `https://orbyven.ro/workspace` (the Next.js route in `app/workspace/page.tsx`).
-- Login: the existing `/workspace/login`, using the same Supabase auth and multi-tenant access checks.
-- UI and data: loaded from the current deployed ORBYVEN app; no web frontend or secrets are packaged.
-- Windows WebView2: used by Tauri instead of bundling Chrome/Edge. It opens as a standalone Windows application.
-- Security: no Tauri native commands/plugins/capabilities are exposed to remote web content.
-- Network: internet is required. No offline editing or native file-system access is promised in alpha.
-- The standalone app has its own cookie/session store. Logging in to Chrome does not automatically log the app in.
-- Brand icon: generated from `../app/icon.svg`, the original OC icon used by the website.
+## Architecture
 
-## Local Windows build
+- Local UI: `desktop/src/App.tsx`, `desktop/src/styles.css` and Vite `dist/` embedded in the NSIS installer.
+- Backend: exactly the same Supabase project as ORBYVEN Web, configured via `https://orbyven.ro/api/desktop/config`. This route publishes ONLY the existing public URL + publishable key. It must be deployed before first use.
+- Authentication: desktop-specific session storage; password-based Supabase Auth. No password is packaged or logged. No public registration page is duplicated; onboarding is supported for authenticated accounts.
+- Security: call the existing `workspace_entry_state` RPC BEFORE any company data. Reuse `getCurrentWorkspace()`, tenant-scoped module functions and Supabase RLS from the existing app. No service-role key or native command/IPC permissions.
+- Modules: Overview, leads/clients, work/tasks, calendar, estimates, documents, expenses, team. List/detail UI, plus basic creation and appropriate status changes using existing shared module services; deeper web-specific editors and specialized workflows are not yet feature-parity complete.
+- Connection: app UI still launches when backend is down, but login and online data operations require internet. No offline record writes or auto-updates in this Alpha.
 
-Prerequisites: Windows 10/11, Node.js 22, Rust stable (MSVC), Microsoft C++ Build Tools and WebView2. See the [Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/).
+## Developer build
 
-From the repository root:
+Windows 10/11, Node 22, Rust MSVC, Microsoft C++ Build Tools and WebView2 are required.
+From repo root:
 
 ```powershell
 cd desktop
@@ -26,19 +25,17 @@ npm run dev
 npm run build
 ```
 
-The NSIS `*-setup.exe` installer is generated under
-`desktop/src-tauri/target/release/bundle/nsis/`.
+Compiled local assets: `desktop/dist/`. Installer:
+`desktop/src-tauri/target/release/bundle/nsis/*-setup.exe`.
 
-## CI installer
+## GitHub CI
 
-`.github/workflows/desktop-windows.yml` runs on a Windows GitHub Actions runner for desktop-related pull requests and uploads the installer as a workflow artifact. It **does not deploy the website to Vercel or publish a public GitHub release**.
+On desktop-related PRs the `ORBYVEN Desktop Windows` workflow runs local-UI contract tests, TypeScript, bundled-Vite build and Tauri Windows NSIS installer creation, then uploads an artifact.
 
-## Alpha scope and release blockers
+## Remaining release requirements
 
-1. Test login, sign-out, registration, workspace permissions, file exports/downloads, links to other domains and payment redirects inside WebView2 on a real Windows device.
-2. Validate the configured origin and live availability of `/workspace`; `app.orbyven.ro` is not used here until it actually hosts the route.
-3. Add OS integration (notifications, startup behavior, deep links) only after individually scoping native permissions.
-4. Set up signed installers, a secure update channel, and release management before distributing to paying customers.
-5. If a future requirement is offline use, add an explicit local cache and conflict-handling design rather than assuming a remote WebView is offline-capable.
-
-Never add Supabase service-role keys, Stripe secrets or other privileged tokens to this application.
+- Verify `/api/desktop/config` is live after web deployment and Supabase publishable key is configured.
+- Test the installed Windows app on real hardware: login, roles, suspended company, profile, CRUD, document upload/download, signed links, reconnect and window behavior.
+- Do not claim full web feature parity: complex estimates and job relationships, specialized editors, invoicing and all other web-only features need separate desktop UI work.
+- Add signed installers and secure desktop auto-update infrastructure before wide customer distribution.
+- Never put Supabase service-role keys, Stripe secret keys or any privileged tokens in the desktop app or public bootstrap endpoint.

@@ -6,6 +6,9 @@ on:
       - 'desktop/**'
       - '.github/workflows/desktop-windows.yml'
       - 'app/icon.svg'
+      - 'app/api/desktop/**'
+      - 'lib/modules/**'
+      - 'lib/orbyven-workspace.ts'
   workflow_dispatch:
 
 permissions:
