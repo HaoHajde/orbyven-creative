@@ -23,6 +23,10 @@ export default function WorkspaceLoginPage() {
 
     const checkUser = async () => {
       try {
+        // A local session is only a negative hint. If present, always call
+        // getWorkspaceEntryPath() for authoritative server-side access state.
+        const { data } = await orbyvenSupabase.auth.getSession();
+        if (cancelled || !data.session) return;
         const destination = await getWorkspaceEntryPath();
         if (!cancelled && destination !== "/workspace/login") {
           router.replace(destination);
@@ -40,28 +44,40 @@ export default function WorkspaceLoginPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setErrorMessage("");
 
-    const { error } = await orbyvenSupabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-
-    if (error) {
-      setErrorMessage("Email sau parolă incorectă.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const destination = await getWorkspaceEntryPath();
+      const { error } = await orbyvenSupabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) {
+        setErrorMessage(
+          error.status === 0 || error.message.toLowerCase().includes("fetch")
+            ? "Serviciul de autentificare nu răspunde. Verifică conexiunea și încearcă din nou."
+            : "Email sau parolă incorectă."
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Sign-in succeeded: never repeat the password request if the workspace
+      // entry-state lookup fails. The workspace route handles its own access.
+      let destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>> = "/workspace";
+      try {
+        destination = await getWorkspaceEntryPath();
+      } catch (routeError) {
+        console.error("Workspace entry routing unavailable", routeError);
+      }
       router.replace(destination === "/workspace/login" ? "/workspace" : destination);
       router.refresh();
-    } catch (routeError) {
-      console.error(routeError);
-      router.replace("/workspace");
-      router.refresh();
+    } catch (error) {
+      console.error("Workspace sign-in request failed", error);
+      setErrorMessage("Autentificarea nu este disponibilă acum. Verifică conexiunea și reîncearcă.");
+      setLoading(false);
     }
   };
 

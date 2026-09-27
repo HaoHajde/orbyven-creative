@@ -1,6 +1,6 @@
 name: ORBYVEN Manual Browser Performance Audit
 
-# Manual only: does not deploy on Vercel, modify Supabase, or run on every PR.
+# Public and unauthenticated auth routes only. Does not deploy or access private data.
 on:
   workflow_dispatch:
   pull_request:
@@ -13,7 +13,7 @@ permissions:
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
@@ -44,14 +44,23 @@ jobs:
             if curl -fsS http://127.0.0.1:3000/ > /dev/null; then break; fi
             sleep 2
           done
-          curl -fsS http://127.0.0.1:3000/templates > /dev/null
+          for route in templates workspace/login workspace/register workspace/forgot-password workspace/reset-password admin/login control-center/login; do
+            curl -fsS "http://127.0.0.1:3000/$route" > /dev/null
+          done
           mkdir -p lighthouse
           npm exec --yes --package=lighthouse@12 -- lighthouse --version
-          for page in home templates workspace-login; do
+          # Only synthetic unauthenticated entry pages; DO NOT claim this
+          # captures real login, onboarding or authenticated dashboard UX.
+          for page in home templates workspace-login workspace-register workspace-forgot workspace-reset admin-login control-center-login; do
             case "$page" in
               home) path="/" ;;
               templates) path="/templates" ;;
               workspace-login) path="/workspace/login" ;;
+              workspace-register) path="/workspace/register" ;;
+              workspace-forgot) path="/workspace/forgot-password" ;;
+              workspace-reset) path="/workspace/reset-password" ;;
+              admin-login) path="/admin/login" ;;
+              control-center-login) path="/control-center/login" ;;
             esac
             for device in mobile desktop; do
               preset=""
