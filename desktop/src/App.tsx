@@ -542,33 +542,92 @@ export default function App() {
                 </section>
               ) : activeModule === "overview" ? (
                 <div className="overview">
-                  <div className="greeting"><span>ORBYVEN · BUSINESS OVERVIEW</span><h2>{workspace.profile?.greeting_name ? "Salut, " + workspace.profile.greeting_name + "." : "Bine ai revenit."}</h2>
-                    <p>Informațiile sunt actualizate din workspace-ul tău ORBYVEN.</p></div>
-                  {busy && !overview ? <p className="muted">Se încarcă datele...</p> : overview && (
+                  <section className="overview-greeting">
+                    <div><p className="eyebrow">ORBYVEN / OVERVIEW</p>
+                      <h2>Bună, {workspace.profile?.greeting_name || workspace.organization.name.split(" ")[0] || "acolo"}.</h2>
+                      <p>{new Intl.DateTimeFormat(workspace.profile?.locale || "ro-RO", {
+                        weekday: "long", day: "numeric", month: "long",
+                        timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                      }).format(new Date())} · Rezumatul firmei</p>
+                    </div>
+                    <span className="role-pill"><span className="online-dot" /> {ROLE_LABELS[workspace.membership.role]}</span>
+                  </section>
+                  {busy && !overview ? <p className="muted">Se încarcă rezumatul...</p> : overview && (
                     <>
                       <div className="metrics">
-                        {[
-                          ["Cereri active", overview.activeLeadsCount, "leads"],
-                          ["Lucrări deschise", overview.openTasksCount, "tasks"],
-                          ["Oferte trimise", overview.sentEstimatesCount, "estimates"],
-                          ["Documente", overview.documentCount, "documents"],
-                          ["Echipă activă", overview.activeTeamCount, "team"],
-                        ].map(([label, count, target]) => <button key={String(label)} className="metric" onClick={() => chooseModule(target as OrbyvenModuleId)}>
-                          <span>{label}</span><strong>{formatNumber(Number(count))}</strong><small>Deschide modulul ↗</small>
-                        </button>)}
-                        {canFinance && <button className="metric" onClick={() => chooseModule("expenses")}><span>Cheltuieli luna aceasta</span><strong className="money">{currency(overview.monthExpensesCents)}</strong><small>Deschide cheltuieli ↗</small></button>}
+                        {([
+                          ["Cereri active", overview.activeLeadsCount, "leads", "#7c7afa"],
+                          ["Lucrări deschise", overview.openTasksCount, "tasks", "#66aaff"],
+                          ["Programări astăzi", overview.events.filter((event) =>
+                            event.status !== "cancelled" &&
+                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(event.start_at)) ===
+                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())).length, "calendar", "#70d1eb"],
+                          ["Oferte trimise", overview.sentEstimatesCount, "estimates", "#7ad5b4"],
+                        ] as const).map(([label, count, target, color]) => {
+                          const available = workspace.enabledModules.includes(target);
+                          return <button key={label} className="metric" disabled={!available}
+                            onClick={() => chooseModule(target)} style={{ "--metric-color": color } as React.CSSProperties}>
+                            <span>{label}</span><strong>{formatNumber(count)}</strong><small>{available ? "Deschide modulul ↗" : "Modul neactivat"}</small>
+                          </button>;
+                        })}
                       </div>
                       <div className="overview-bottom">
-                        <div className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
-                          {overview.tasks.slice(0, 6).map((task) => <button className="activity" key={task.id} onClick={() => chooseModule("tasks")}>
-                            <span><strong>{task.title}</strong><small>{task.status} · {task.priority}</small></span><span>→</span></button>)}
+                        <article className="surface stage-panel">
+                          <div className="panel-heading"><div><span className="eyebrow">OPERATIONS</span><h3>Lucrări după status</h3></div><small>Rezumat actualizat</small></div>
+                          <div className="stage-chart">
+                            <button type="button" className="stage-ring" disabled={!workspace.enabledModules.includes("tasks")}
+                              onClick={() => chooseModule("tasks")} style={{
+                                background: (() => {
+                                  const stages = [
+                                    ["planned", "#738bff"], ["in_progress", "#66bff0"],
+                                    ["blocked", "#efad77"], ["done", "#6ed3ae"], ["cancelled", "#64748b"],
+                                  ] as const;
+                                  const total = stages.reduce((sum, [stage]) => sum + overview.taskStages[stage], 0);
+                                  if (!total) return "conic-gradient(#2a405e 0 360deg)";
+                                  let progress = 0;
+                                  return "conic-gradient(" + stages.filter(([stage]) => overview.taskStages[stage] > 0)
+                                    .map(([stage,color]) => { const start = progress; progress += overview.taskStages[stage] / total * 360;
+                                      return color + " " + start + "deg " + progress + "deg"; }).join(",") + ")";
+                                })(),
+                              }}>
+                              <span className="stage-ring-inner"><strong>{formatNumber(Object.values(overview.taskStages).reduce((sum, count) => sum + count, 0))}</strong><small>total înregistrări</small></span>
+                            </button>
+                            <div className="stage-legend">
+                              {([
+                                ["planned", "De făcut", "#738bff"], ["in_progress", "În lucru", "#66bff0"],
+                                ["blocked", "Blocate", "#efad77"], ["done", "Finalizate", "#6ed3ae"], ["cancelled", "Anulate", "#64748b"],
+                              ] as const).map(([id,label,color]) => <div key={id}><span className="legend-dot" style={{ background: color }} />{label}<strong>{overview.taskStages[id]}</strong></div>)}
+                            </div>
+                          </div>
+                        </article>
+                        <article className="surface workflow-panel">
+                          <div className="panel-heading"><div><span className="eyebrow">WORKFLOW</span><h3>Fluxul afacerii</h3></div><small>Din modulele tale</small></div>
+                          {([
+                            ["leads", "Cereri active", overview.activeLeadsCount],
+                            ["tasks", "Lucrări deschise", overview.openTasksCount],
+                            ["calendar", "Programări astăzi", overview.events.filter((event) => event.status === "scheduled" && new Date(event.start_at).toDateString() === new Date().toDateString()).length],
+                            ["estimates", "Oferte trimise", overview.sentEstimatesCount],
+                          ] as const).filter(([id]) => workspace.enabledModules.includes(id)).map(([id,label,value]) =>
+                            <button key={id} className="workflow-row" onClick={() => chooseModule(id)}>
+                              <span>{label}</span><strong>{value}</strong><span className="workflow-track"><i style={{ width: Math.max(2, value / Math.max(1,overview.activeLeadsCount,overview.openTasksCount,overview.sentEstimatesCount) * 100) + "%" }} /></span>
+                            </button>)}
+                        </article>
+                      </div>
+                      <div className="overview-bottom activity-panels">
+                        <article className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
+                          {workspace.enabledModules.includes("tasks") && overview.tasks.slice(0, 5).map((task) =>
+                            <button className="activity" key={task.id} onClick={() => chooseModule("tasks")}>
+                              <span><strong>{task.title}</strong><small>{task.status} · {task.priority}</small></span><span>→</span></button>)}
                           {!overview.tasks.length && <p className="muted">Nicio lucrare recentă.</p>}
-                        </div>
-                        <div className="surface"><span className="eyebrow">URMĂTOARELE ZILE</span><h3>Programări</h3>
-                          {overview.events.slice(0, 6).map((event) => <button className="activity" key={event.id} onClick={() => chooseModule("calendar")}>
-                            <span><strong>{event.title}</strong><small>{formatDate(event.start_at)}</small></span><span>→</span></button>)}
+                        </article>
+                        <article className="surface"><span className="eyebrow">URMĂTOARELE ZILE</span><h3>Programări</h3>
+                          {workspace.enabledModules.includes("calendar") && overview.events.slice(0, 5).map((event) =>
+                            <button className="activity" key={event.id} onClick={() => chooseModule("calendar")}>
+                              <span><strong>{event.title}</strong><small>{formatDate(event.start_at)}</small></span><span>→</span></button>)}
                           {!overview.events.length && <p className="muted">Nu există programări apropiate.</p>}
-                        </div>
+                        </article>
                       </div>
                     </>
                   )}
