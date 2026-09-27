@@ -23,6 +23,12 @@ test("login and recovery fail closed but always restore an interactive form on n
   assert.match(forgot, /Dacă există un cont pentru această adresă/);
 });
 
+test("auth shell allows compact mobile viewports to scroll when the keyboard opens", () => {
+  const shell = read("components/WorkspaceAuthShell.tsx");
+  assert.match(shell, /min-h-\[100svh\] overflow-x-hidden/);
+  assert.doesNotMatch(shell, /min-h-\[100svh\] overflow-hidden/);
+});
+
 test("access state screen never reveals organization data when identity check fails", () => {
   const page = read("app/workspace/access/page.tsx");
   assert.match(page, /try \{\s*const nextState = await getWorkspaceAccessState\(\)/);
