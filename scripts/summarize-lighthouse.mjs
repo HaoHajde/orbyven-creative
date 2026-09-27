@@ -14,5 +14,14 @@ for (const filename of readdirSync(folder).filter((name) => name.endsWith(".json
     return typeof value === "number" ? Math.round(value) : "n/a";
   };
   console.log(`${filename}: performance=${score("performance")} accessibility=${score("accessibility")} LCP=${rounded("largest-contentful-paint")}ms INP=${rounded("interaction-to-next-paint")}ms TBT=${rounded("total-blocking-time")}ms CLS=${metric("cumulative-layout-shift") ?? "n/a"}`);
+  if (filename === "templates-mobile.json") {
+    const lcpNode = report.audits?.["largest-contentful-paint-element"]?.details?.items?.[0]?.node;
+    const snippet = typeof lcpNode?.snippet === "string" ? lcpNode.snippet.replace(/\s+/g, " ").slice(0, 200) : "not reported";
+    console.log("templates-mobile LCP element: " + snippet);
+    const timing = report.audits?.["lcp-breakdown-insight"]?.details?.items;
+    if (Array.isArray(timing)) {
+      console.log("templates-mobile LCP insight: " + JSON.stringify(timing.slice(0, 4)).slice(0, 650));
+    }
+  }
 }
 console.log("Lighthouse is a synthetic public-route audit; authenticated workspace and real-user INP require a separate secured browser session.");
