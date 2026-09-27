@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { initializeDesktopClient, orbyvenSupabase } from "./client";
-import { getCurrentWorkspace, getWorkspaceAccessState, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { ModuleGlyph, OrbyvenBrand } from "./Brand";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { createCrmLead, listCrmLeads, updateCrmLead } from "@/lib/modules/leads";
@@ -136,6 +137,11 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem("orbyven-desktop-theme") !== "light");
   const [refresh, setRefresh] = useState(0);
+  const [panel, setPanel] = useState<"workspace" | "modules">("workspace");
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
@@ -180,6 +186,9 @@ export default function App() {
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
   const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
+  const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
+  const createModules = modules.filter((module) => module.id !== "overview" && (module.id !== "expenses" || canFinance));
+  const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
 
   const loadModule = useCallback(async () => {
     if (!workspace) return;
@@ -222,8 +231,59 @@ export default function App() {
 
   useEffect(() => { void loadModule(); }, [loadModule, refresh]);
 
+  useEffect(() => {
+    const onKeys = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault(); setCommandQuery(""); setCommandOpen((open) => !open);
+      }
+      if (event.key === "Escape") {
+        setCommandOpen(false); setCreateMenuOpen(false); setShowCreate(false); setSelected(null);
+      }
+    };
+    window.addEventListener("keydown", onKeys);
+    return () => window.removeEventListener("keydown", onKeys);
+  }, []);
+
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible" && workspace && !showCreate && !selected) {
+        setRefresh((value) => value + 1);
+      }
+    };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, [workspace, showCreate, selected]);
+
   function chooseModule(id: OrbyvenModuleId) {
+    if (!workspace?.enabledModules.includes(id)) return;
+    if (id === "expenses" && !canFinance) return;
+    setPanel("workspace"); setCommandOpen(false); setCreateMenuOpen(false);
     setActiveModule(id); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+  }
+
+  async function toggleModule(id: OrbyvenModuleId) {
+    if (!workspace || !canManageModules || savingModule || id === "overview") return;
+    const enabled = workspace.enabledModules.includes(id);
+    const previous = workspace.enabledModules;
+    const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
+    setError(""); setSavingModule(id);
+    setWorkspace((current) => current ? { ...current, enabledModules: next } : current);
+    if (enabled && activeModule === id) chooseModule("overview");
+    try {
+      await setOrganizationModuleEnabled(workspace.organization.id, id, !enabled);
+      setRefresh((value) => value + 1);
+    } catch (cause) {
+      console.error("Desktop module toggle:", cause);
+      setWorkspace((current) => current ? { ...current, enabledModules: previous } : current);
+      setError("Modulul nu a putut fi actualizat. Am anulat modificarea.");
+    } finally { setSavingModule(null); }
+  }
+
+  function openCreate(moduleId: OrbyvenModuleId) {
+    if (!canWrite || !workspace?.enabledModules.includes(moduleId) || (moduleId === "expenses" && !canFinance)) return;
+    chooseModule(moduleId);
+    setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" });
+    setFile(null); setError(""); setShowCreate(true);
   }
   async function login(event: FormEvent) {
     event.preventDefault(); if (busy) return;
