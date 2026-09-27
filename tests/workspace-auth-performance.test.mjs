@@ -11,6 +11,12 @@ test("login and recovery fail closed but always restore an interactive form on n
   assert.match(login, /catch \(error\) \{\s*console\.error\("Workspace sign-in request failed"/);
   assert.match(login, /setLoading\(false\)/);
   assert.match(login, /getWorkspaceEntryPath\(\)/);
+  const signup = read("app/workspace/register/page.tsx");
+  for (const entry of [login, signup]) {
+    assert.match(entry, /const \{ data \} = await orbyvenSupabase\.auth\.getSession\(\)/);
+    assert.match(entry, /if \(cancelled \|\| !data\.session\) return/);
+    assert.match(entry, /const destination = await getWorkspaceEntryPath\(\)/);
+  }
   assert.match(forgot, /try \{[\s\S]*?resetPasswordForEmail/);
   assert.match(forgot, /catch \(error\) \{/);
   assert.match(forgot, /finally \{\s*setLoading\(false\)/);
