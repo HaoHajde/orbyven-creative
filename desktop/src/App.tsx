@@ -464,9 +464,7 @@ export default function App() {
               <section className="page-heading">
                 <div><p className="eyebrow">ORBYVEN / {activeModule.toUpperCase()}</p><h1>{TITLES[activeModule]}<span className="heading-point">.</span></h1>
                   <p className="subheading">{activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." : ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
-                {canCreateModule && (
-                  <button className="primary add-button" onClick={startCreate} disabled={busy}>+ Adaugă</button>
-                )}
+
               </section>
               {error && <div role="alert" className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
               {activeModule === "overview" ? (
