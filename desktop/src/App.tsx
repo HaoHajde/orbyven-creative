@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type CSSProperties } from "react";
+import { useDesktopRecordSearch } from "./useDesktopRecordSearch";
 import { initializeDesktopClient, orbyvenSupabase } from "./client";
 import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
@@ -142,20 +143,28 @@ export default function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
+  const moduleLoadId = useRef(0);
+  const pendingRecordId = useRef<string | null>(null);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
     const state = await getWorkspaceAccessState();
     setAccessState(state);
     if (state === "login") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setRows([]); setOverview(null); setSelected(null); setWorkspace(null); setScreen("login");
       return;
     }
     if (state === "onboarding") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setWorkspace(null); setRows([]); setOverview(null); setScreen("onboarding");
       return;
     }
     if (state !== "workspace") {
+      ++moduleLoadId.current;
+      pendingRecordId.current = null;
       setWorkspace(null); setRows([]); setOverview(null); setScreen("access");
       return;
     }
@@ -189,22 +198,31 @@ export default function App() {
   const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
   const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
   const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
+  const commandRecords = useDesktopRecordSearch({
+    organizationId: workspace?.organization.id ?? "",
+    enabledModules: modules.filter((module) => module.id !== "expenses" || canFinance).map((module) => module.id),
+    query: commandQuery,
+    open: commandOpen && screen === "workspace",
+  });
 
   const loadModule = useCallback(async () => {
     if (!workspace) return;
     const org = workspace.organization.id;
+    const requestId = ++moduleLoadId.current;
     setError("");
     setBusy(true);
     setSelected(null);
     try {
       if (activeModule === "overview") {
         const snapshot = await loadOverviewSnapshot(org, canFinance, workspace.profile?.timezone || "Europe/Bucharest");
+        if (requestId !== moduleLoadId.current) return;
         setOverview(snapshot);
         setRows([]);
       } else {
         // All reads and writes call the existing ORBYVEN service functions, with org RLS enforced.
         // Finance data is never requested for a role that cannot access it.
         if (activeModule === "expenses" && !canFinance) {
+          if (requestId !== moduleLoadId.current) return;
           setRows([]);
           setError("Modulul financiar este disponibil doar pentru roluri autorizate.");
           return;
@@ -219,13 +237,34 @@ export default function App() {
           activeModule === "documents" ? await listDocuments(org) :
           activeModule === "expenses" ? await listExpenses(org) :
           await listTeamMembers(org);
-        setRows(result as unknown as Row[]);
+        if (requestId !== moduleLoadId.current) return;
+        const loadedRows = result as unknown as Row[];
+        setRows(loadedRows);
+        const recordId = pendingRecordId.current;
+        if (recordId) {
+          pendingRecordId.current = null;
+          const match = loadedRows.find((row) => String(row.id) === recordId);
+          if (match) {
+            setSelected(match);
+          } else if (activeModule === "leads" || activeModule === "tasks" || activeModule === "estimates") {
+            // A global search hit may be older than the list view's server row cap.
+            // Verify both the tenant and record id through Supabase RLS.
+            const table = activeModule === "leads" ? "crm_leads" :
+              activeModule === "tasks" ? "ops_tasks" : "sales_estimates";
+            const { data, error: recordError } = await orbyvenSupabase.from(table)
+              .select("*").eq("organization_id", org).eq("id", recordId).maybeSingle();
+            if (requestId !== moduleLoadId.current) return;
+            if (recordError) throw recordError;
+            setSelected(data as Row | null);
+          }
+        }
       }
     } catch (cause) {
+      if (requestId !== moduleLoadId.current) return;
       console.error("ORBYVEN desktop load:", cause);
       setError("Nu am putut încărca datele. Verifică conexiunea sau permisiunile.");
     } finally {
-      setBusy(false);
+      if (requestId === moduleLoadId.current) setBusy(false);
     }
   }, [workspace, activeModule, canFinance]);
 
@@ -254,11 +293,15 @@ export default function App() {
     return () => window.removeEventListener("focus", refreshOnFocus);
   }, [workspace, showCreate, selected]);
 
-  function chooseModule(id: OrbyvenModuleId) {
+  function chooseModule(id: OrbyvenModuleId, recordId?: string) {
     if (!workspace?.enabledModules.includes(id)) return;
     if (id === "expenses" && !canFinance) return;
+    ++moduleLoadId.current;
+    pendingRecordId.current = recordId ?? null;
     setPanel("workspace"); setCommandOpen(false); setCreateMenuOpen(false);
-    setActiveModule(id); setRows([]); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    setActiveModule(id); setRows([]); setOverview(null); setQuery("");
+    setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    if (id === activeModule) setRefresh((value) => value + 1);
   }
 
   async function toggleModule(id: OrbyvenModuleId) {
@@ -659,7 +702,7 @@ export default function App() {
                 <h2 id="command-title">Unde vrei să ajungi?</h2>
                 <button className="icon-button" aria-label="Închide navigarea" onClick={() => setCommandOpen(false)}>×</button>
               </div>
-              <input autoFocus aria-label="Caută un modul" placeholder="Caută un modul..." value={commandQuery}
+              <input autoFocus aria-label="Caută în workspace" placeholder="Caută modul, client, lucrare, ofertă..." value={commandQuery}
                 onChange={(event) => setCommandQuery(event.target.value)} />
               <p className="eyebrow">MODULE DISPONIBILE</p>
               <div className="command-results">{filteredModules.filter((module) => module.id !== "expenses" || canFinance).map((module) =>
@@ -669,6 +712,21 @@ export default function App() {
                   <span className="command-arrow">→</span>
                 </button>)}</div>
               {filteredModules.length === 0 && <p className="muted">Niciun modul găsit.</p>}
+              {commandQuery.trim().length >= 2 && <>
+                <p className="eyebrow">CLIENȚI · LUCRĂRI · OFERTE</p>
+                <div className="command-results">
+                  {commandRecords.hits.map((hit) => <button key={hit.module + hit.id} type="button"
+                    className="command-item" onClick={() => chooseModule(hit.module, hit.id)}>
+                    <span className="module-store-icon"><ModuleGlyph id={hit.module} /></span>
+                    <span><strong>{hit.label}</strong><small>{hit.description}</small></span>
+                    <span className="command-arrow">↗</span>
+                  </button>)}
+                  {commandRecords.loading && <p className="muted">Se caută în firma ta...</p>}
+                  {commandRecords.error && <p role="alert" className="muted">Căutarea nu este disponibilă acum.</p>}
+                  {!commandRecords.loading && !commandRecords.error && !commandRecords.hits.length &&
+                    <p className="muted">Nicio înregistrare găsită.</p>}
+                </div>
+              </>}
               <small className="command-hint">Ctrl K · caută rapid &nbsp; · &nbsp; Esc · închide</small>
             </section>
           </div>}
