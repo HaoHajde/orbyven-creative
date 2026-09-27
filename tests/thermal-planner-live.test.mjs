@@ -13,7 +13,7 @@ test("Alpha 0.65 live canvas starts empty, contains no browser-only persistence 
   assert.ok(editor.includes("let state=empty();"));
   assert.ok(editor.includes("kind:\"ready\""));
   assert.ok(editor.includes("kind:\"save\""));
-  assert.ok(editor.includes("kind:\"load\""));
+  assert.ok(editor.includes('payload.kind!=="load"'));
   assert.ok(!editor.includes("localStorage."));
   assert.ok(!editor.includes("Date fictive. Schița"));
   assert.ok(editor.includes("Schiță orientativă"));
