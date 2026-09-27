@@ -2,6 +2,7 @@
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
+import HomeInvitationPreview from "@/components/HomeInvitationPreview";
 import { featuredTemplates } from "@/lib/featured-templates";
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
@@ -245,6 +246,10 @@ export default function HomePage() {
     "--button-text": theme === "dark" ? "#000000" : "#ffffff",
     "--accent": "#4b46ee",
     "--home-violet": "#a58bff",
+    "--home-flow-start": theme === "dark" ? "#0b0b0e" : "#fcfcfd",
+    "--home-flow": theme === "dark"
+      ? "linear-gradient(180deg, #0b0b0e 0%, #111117 45%, #0e0e13 100%)"
+      : "linear-gradient(180deg, #fcfcfd 0%, #f7f7fa 45%, #fafafd 100%)",
     "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
     "--accent-soft-2": theme === "dark" ? "rgba(111,66,255,0.11)" : "rgba(111,66,255,0.05)",
   } as CSSProperties;
@@ -257,7 +262,7 @@ export default function HomePage() {
         color: "var(--text)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative min-h-screen overflow-x-clip antialiased"
+      className="orbyven-home-main relative min-h-screen overflow-x-clip antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="home" onToggleTheme={toggleTheme} />
       <WarpMenu items={warpItems} activeSection={activeSection} />
@@ -410,11 +415,15 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
-            {activeTemplate.source === "featured" ? (
-              <FeaturedTemplatePreview kind={activeTemplate.kind} />
-            ) : (
-              <ClientTemplatePreview template={activeTemplate} compact />
-            )}
+            <div className="orbyven-home-template-viewport relative overflow-hidden rounded-[24px] bg-[var(--surface-2)]">
+              <div className="orbyven-home-template-stage absolute inset-0 overflow-hidden">
+                {activeTemplate.source === "featured" ? (
+                  <FeaturedTemplatePreview kind={activeTemplate.kind} />
+                ) : (
+                  <ClientTemplatePreview template={activeTemplate} compact />
+                )}
+              </div>
+            </div>
             <div className="flex flex-col gap-4 px-2 pb-2 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted-2)]">{activeTemplate.source === "featured" ? activeTemplate.label : activeTemplate.category}</p>
@@ -443,14 +452,15 @@ export default function HomePage() {
           <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Momente <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">personale.</span> Un link memorabil.</h2>
           <div className="orbyven-home-invite-grid mt-10">
             {[
-              { href: "/invitatii-nunta", title: "Invitații de nuntă", label: "O poveste în doi", image: "/demo/nunta/diana-florin/couple1.jpeg" },
-              { href: "/invitatii-botez", title: "Invitații de botez", label: "Un nou început", image: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?auto=format&fit=crop&w=1000&q=82" },
-              { href: "/invitatii-majorat", title: "Invitații de majorat", label: "Un nou capitol", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=82" },
+              { href: "/invitatii-nunta", title: "Invitații de nuntă", label: "O poveste în doi", kind: "wedding" as const },
+              { href: "/invitatii-botez", title: "Invitații de botez", label: "Un nou început", kind: "baptism" as const },
+              { href: "/invitatii-majorat", title: "Invitații de majorat", label: "Un nou capitol", kind: "birthday" as const },
             ].map((item, index) => (
               <Link key={item.href} href={item.href} className="orbyven-home-invite-card group relative isolate block overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-2)] hover:border-[var(--home-violet)] focus-visible:border-[var(--home-violet)]">
-                <div aria-hidden="true" className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-110 group-focus-visible:scale-110" style={{ backgroundImage: `linear-gradient(180deg,rgba(6,5,12,.08) 28%,rgba(6,5,12,.88) 100%),url("${item.image}")` }} />
-                <span className="absolute left-6 top-6 text-[10px] font-semibold tracking-[.2em] text-white/90">ORBYVEN / 0{index + 1}</span>
-                <span aria-hidden="true" className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-sm transition duration-300 group-hover:rotate-45 group-hover:bg-[var(--accent)]">↗</span>
+                <HomeInvitationPreview kind={item.kind} />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080710]/85 via-transparent to-transparent" />
+                <span className="absolute left-6 top-6 rounded-full border border-white/30 bg-black/20 px-3 py-2 text-[9px] font-semibold tracking-[.17em] text-white shadow-sm backdrop-blur-sm">ORBYVEN / 0{index + 1}</span>
+                <span aria-hidden="true" className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition duration-300 group-hover:rotate-45 group-hover:bg-[var(--accent)]">↗</span>
                 <div className="absolute inset-x-7 bottom-8">
                   <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d8c7ff]">{item.label}</p>
                   <h3 className="mt-3 text-[clamp(27px,3vw,44px)] font-semibold leading-[1.02] tracking-[-.06em] text-white">{item.title}</h3>
