@@ -773,7 +773,7 @@ export default function TasksModule({
           onClose={() => setThermalTaskId(null)} />
       )}
 
-      <style jsx>{
+      <style jsx>{`
         .input {
           height: 44px;
           width: 100%;
