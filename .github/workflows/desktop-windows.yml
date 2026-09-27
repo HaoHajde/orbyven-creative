@@ -1,0 +1,48 @@
+name: ORBYVEN Desktop Windows
+
+on:
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/desktop-windows.yml'
+      - 'app/icon.svg'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Rust stable for Windows
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri CLI
+        run: npm install --prefix desktop --no-audit --no-fund
+
+      - name: Contract checks
+        run: npm run check --prefix desktop
+
+      - name: Generate original ORBYVEN icon
+        run: npm run icons --prefix desktop
+
+      - name: Build Windows NSIS installer
+        run: npm run build --prefix desktop
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORBYVEN-Desktop-Windows-alpha
+          path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+          retention-days: 14
