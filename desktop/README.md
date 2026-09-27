@@ -1,4 +1,4 @@
-# ORBYVEN Desktop v0.3.0 — independent Windows application
+# ORBYVEN Desktop v0.3.1 — independent Windows application
 
 This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.3 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
@@ -39,3 +39,9 @@ On desktop-related PRs the `ORBYVEN Desktop Windows` workflow runs local-UI cont
 - Do not claim full web feature parity: complex estimates and job relationships, specialized editors, invoicing and all other web-only features need separate desktop UI work.
 - Add signed installers and secure desktop auto-update infrastructure before wide customer distribution.
 - Never put Supabase service-role keys, Stripe secret keys or any privileged tokens in the desktop app or public bootstrap endpoint.
+
+## Alpha 0.3.1 — actual record search and consistency guards
+
+The existing **Ctrl+K** palette also searches CRM client names, work titles and estimate titles via the same tenant-scoped Supabase tables and RLS policies as the web dashboard. No second search bar or visual redesign. Search ignores stale results while typing, changing company or closing the palette. Choosing a result enters its enabled module and opens that record (including a safe RLS-scoped lookup for a row beyond the listing cap). Pending module responses cannot overwrite another module's records or spinner state. Online reads still need a connection.
+
+The **desktop 0.3 visual redesign was shipped separately**: this patch preserves the existing website-aligned header, sidebar, command menu, module store and Overview. It does not merge draft #106 or its SQL.
