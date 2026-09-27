@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 type BillingSummary = {
   configured: boolean;
   checkoutPaused?: boolean;
+  archivedPortalAvailable?: boolean;
   message?: string;
   billingAccount?: { hasStripeCustomer: boolean; billingEmail: string | null } | null;
   subscription?: {
@@ -114,7 +115,7 @@ export default function WorkspaceBillingPage() {
     }
   };
 
-  const openPortal = async () => {
+  const openPortal = async (archived = false) => {
     if (!workspace) return;
     setAction("portal");
     setError("");
@@ -123,7 +124,7 @@ export default function WorkspaceBillingPage() {
       const response = await fetch("/api/billing/portal", {
         method: "POST",
         headers,
-        body: JSON.stringify({ organizationId: workspace.organization.id }),
+        body: JSON.stringify({ organizationId: workspace.organization.id, archived }),
       });
       const data = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !data.url) throw new Error(data.error || "Portal indisponibil.");
@@ -156,10 +157,20 @@ export default function WorkspaceBillingPage() {
               {workspace?.organization.name || "Organizația ta"} · plan, plăți și drepturi comerciale într-un singur loc.
             </p>
           </div>
+          {summary?.archivedPortalAvailable && (
+            <button
+              type="button"
+              onClick={() => openPortal(true)}
+              disabled={action !== null}
+              className="h-11 rounded-full border border-black/[0.12] px-5 text-sm font-medium disabled:opacity-50"
+            >
+              Facturi și metodă de plată — emitent anterior
+            </button>
+          )}
           {summary?.billingAccount?.hasStripeCustomer && (
             <button
               type="button"
-              onClick={openPortal}
+              onClick={() => openPortal(false)}
               disabled={action !== null}
               className="h-11 rounded-full border border-black/[0.12] px-5 text-sm font-medium disabled:opacity-50"
             >

@@ -6,6 +6,7 @@ import {
 } from "@/lib/billing/public-config";
 import { requireCheckoutReady } from "@/lib/billing/server-config";
 import { legalConfig } from "@/lib/legal-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
 import {
   authenticateBillingActor,
   createBillingServiceClient,
@@ -51,9 +52,10 @@ export async function POST(request: Request) {
     }
 
     const { data: account, error: accountError } = await client
-      .from("billing_accounts")
+      .from("billing_merchant_customers")
       .select("stripe_customer_id")
       .eq("organization_id", actor.organizationId)
+      .eq("merchant_key", commercialIdentity.entityKey)
       .maybeSingle();
     if (accountError) throw accountError;
 

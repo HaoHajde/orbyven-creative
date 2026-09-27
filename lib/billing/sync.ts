@@ -7,6 +7,7 @@ import {
   type BillingPlanId,
 } from "@/lib/billing/public-config";
 import { billingServerConfig } from "@/lib/billing/server-config";
+import { commercialIdentity } from "@/lib/commercial-identity";
 import { reconcileInvoiceDelivery } from "@/lib/billing/webhook-state";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import {
@@ -66,7 +67,7 @@ function firstTaxId(customerDetails: JsonObject | null) {
 
 async function resolveOrganizationId(
   client: ServiceClient,
-  input: { organizationId?: string | null; customerId?: string | null; subscriptionId?: string | null }
+  input: { merchantKey: string; organizationId?: string | null; customerId?: string | null; subscriptionId?: string | null }
 ) {
   if (input.organizationId) return input.organizationId;
 
@@ -75,15 +76,17 @@ async function resolveOrganizationId(
       .from("subscriptions")
       .select("organization_id")
       .eq("stripe_subscription_id", input.subscriptionId)
+      .eq("merchant_key", input.merchantKey)
       .maybeSingle();
     if (data?.organization_id) return data.organization_id as string;
   }
 
   if (input.customerId) {
     const { data } = await client
-      .from("billing_accounts")
+       .from("billing_merchant_customers")
       .select("organization_id")
       .eq("stripe_customer_id", input.customerId)
+      .eq("merchant_key", input.merchantKey)
       .maybeSingle();
     if (data?.organization_id) return data.organization_id as string;
   }
@@ -96,8 +99,21 @@ async function syncEntitlements(
   organizationId: string,
   planId: BillingPlanId,
   status: string,
-  graceUntil: string | null
+  graceUntil: string | null,
+  merchantKey: string
 ) {
+  // An archived PFA event must not revoke SRL entitlements after a valid cutover.
+  if (merchantKey !== commercialIdentity.entityKey) {
+    const { data: activeCurrent, error: currentError } = await client
+      .from("subscriptions")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("merchant_key", commercialIdentity.entityKey)
+      .in("status", ["active", "trialing", "past_due"])
+      .limit(1);
+    if (currentError) throw currentError;
+    if (activeCurrent?.length) return;
+  }
   const plan = BILLING_PLANS[planId];
   const allowed = new Set(plan.entitlements);
   const commerciallyActive = status === "active" || status === "trialing" || status === "past_due";
@@ -122,7 +138,12 @@ async function syncEntitlements(
   if (error) throw error;
 }
 
-export async function syncStripeCheckoutCompleted(client: ServiceClient, object: JsonObject) {
+export async function syncStripeCheckoutCompleted(
+  client: ServiceClient, object: JsonObject, merchantKey: string
+) {
+  if (metadataValue(object, "merchant_key") !== merchantKey) {
+    throw new Error("Checkout merchant metadata does not match the signed Stripe account.");
+  }
   const organizationId = metadataValue(object, "organization_id");
   if (!organizationId) throw new Error("Stripe checkout is missing organization_id metadata.");
 
@@ -133,9 +154,21 @@ export async function syncStripeCheckoutCompleted(client: ServiceClient, object:
   const address = objectValue(customerDetails?.address) ?? {};
   const taxId = firstTaxId(customerDetails);
 
-  const { error } = await client.from("billing_accounts").upsert(
+  if (!customerId) throw new Error("Stripe checkout has no customer id.");
+  const { data: existing, error: existingError } = await client
+    .from("billing_merchant_customers")
+    .select("stripe_customer_id")
+    .eq("organization_id", organizationId)
+    .eq("merchant_key", merchantKey)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing && existing.stripe_customer_id !== customerId) {
+    throw new Error("Merchant customer id changed; requires an explicit migration.");
+  }
+  const { error } = await client.from("billing_merchant_customers").upsert(
     {
       organization_id: organizationId,
+      merchant_key: merchantKey,
       stripe_customer_id: customerId,
       billing_email: email,
       legal_name: legalName,
@@ -143,12 +176,14 @@ export async function syncStripeCheckoutCompleted(client: ServiceClient, object:
       billing_address: address,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "organization_id" }
+    { onConflict: "organization_id,merchant_key" }
   );
   if (error) throw error;
 }
 
-export async function syncStripeSubscription(client: ServiceClient, object: JsonObject) {
+export async function syncStripeSubscription(
+  client: ServiceClient, object: JsonObject, verifiedMerchantKey: string
+) {
   const subscriptionId = stringValue(object.id);
   const customerId = stringValue(object.customer);
   if (!subscriptionId) throw new Error("Stripe subscription id is missing.");
@@ -160,6 +195,7 @@ export async function syncStripeSubscription(client: ServiceClient, object: Json
   if (!planId) throw new Error("Unable to map Stripe subscription to an ORBYVEN plan.");
 
   const organizationId = await resolveOrganizationId(client, {
+    merchantKey: verifiedMerchantKey,
     organizationId: metadataValue(object, "organization_id"),
     customerId,
     subscriptionId,
@@ -176,10 +212,14 @@ export async function syncStripeSubscription(client: ServiceClient, object: Json
   // Keep the original legal merchant on the subscription, even after PFA/SRL transitions.
   const metadataMerchantKey = metadataValue(object, "merchant_key");
   const requestedMerchantKey = metadataMerchantKey === "prelaunch" ? null : metadataMerchantKey;
-  if (existing?.merchant_key && requestedMerchantKey && existing.merchant_key !== requestedMerchantKey) {
+  if (requestedMerchantKey && requestedMerchantKey !== verifiedMerchantKey) {
+    throw new Error("Subscription issuer disagrees with verified Stripe signature.");
+  }
+  if (existing?.merchant_key && existing.merchant_key !== verifiedMerchantKey) {
     throw new Error("Subscription merchant identity changed unexpectedly.");
   }
   const merchantKey = existing?.merchant_key ?? requestedMerchantKey;
+  if (!merchantKey) throw new Error("Cannot infer legal issuer from Stripe event.");
   const { data: merchantAcceptance, error: merchantError } = merchantKey
     ? await client
         .from("billing_terms_acceptances")
@@ -232,13 +272,14 @@ export async function syncStripeSubscription(client: ServiceClient, object: Json
     .upsert(row, { onConflict: "stripe_subscription_id" });
   if (error) throw error;
 
-  await syncEntitlements(client, organizationId, planId, status, graceUntil);
+  await syncEntitlements(client, organizationId, planId, status, graceUntil, merchantKey);
 }
 
 export async function syncStripeInvoice(
   client: ServiceClient,
   object: JsonObject,
-  eventType: string
+  eventType: string,
+  verifiedMerchantKey: string
 ) {
   const invoiceId = stringValue(object.id);
   if (!invoiceId) throw new Error("Stripe invoice id is missing.");
@@ -246,6 +287,7 @@ export async function syncStripeInvoice(
   const customerId = stringValue(object.customer);
   const subscriptionId = stringValue(object.subscription);
   const organizationId = await resolveOrganizationId(client, {
+    merchantKey: verifiedMerchantKey,
     customerId,
     subscriptionId,
   });
@@ -274,6 +316,9 @@ export async function syncStripeInvoice(
     throw new Error("Invoice cannot change its original legal issuer.");
   }
   const invoiceMerchantKey = historic?.merchant_key ?? currentMerchant?.merchant_key ?? null;
+  if (!invoiceMerchantKey || invoiceMerchantKey !== verifiedMerchantKey) {
+    throw new Error("Invoice issuer disagrees with verified Stripe signature.");
+  }
   const { paid, fiscalStatus } = reconcileInvoiceDelivery(eventType, historic);
 
   const { error: invoiceError } = await client.from("billing_invoices").upsert(
@@ -317,7 +362,7 @@ export async function syncStripeInvoice(
       .update({ grace_until: graceUntil, updated_at: new Date().toISOString() })
       .eq("stripe_subscription_id", subscriptionId);
     if (error) throw error;
-    await syncEntitlements(client, organizationId, subscription.plan_id, "past_due", graceUntil);
+    await syncEntitlements(client, organizationId, subscription.plan_id, "past_due", graceUntil, verifiedMerchantKey);
   }
 
   if (eventType === "invoice.paid") {
@@ -331,7 +376,8 @@ export async function syncStripeInvoice(
       organizationId,
       subscription.plan_id,
       subscription.status as string,
-      null
+      null,
+      verifiedMerchantKey
     );
   }
 }

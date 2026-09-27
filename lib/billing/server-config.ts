@@ -25,6 +25,11 @@ export const billingServerConfig = {
   stripeMode,
   stripeLiveConfirmed: env("ORBYVEN_BILLING_LIVE_CONFIRMED") === "true",
   stripeWebhookSecret: env("STRIPE_WEBHOOK_SECRET"),
+  // Archived PFA Stripe account: separate credentials; never reuse them for new SRL checkout.
+  stripeArchiveMerchantKey: env("STRIPE_ARCHIVE_MERCHANT_KEY"),
+  stripeArchiveSecretKey: env("STRIPE_ARCHIVE_SECRET_KEY"),
+  stripeArchiveWebhookSecret: env("STRIPE_ARCHIVE_WEBHOOK_SECRET"),
+  stripeArchivePortalConfigurationId: env("STRIPE_ARCHIVE_PORTAL_CONFIGURATION_ID"),
   stripePortalConfigurationId: env("STRIPE_PORTAL_CONFIGURATION_ID"),
   supabaseServiceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
   priceIds,

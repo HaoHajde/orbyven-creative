@@ -20,13 +20,17 @@ type StripePortalSession = {
   url: string;
 };
 
-async function stripePost<T>(path: string, params: URLSearchParams): Promise<T> {
+async function stripePost<T>(path: string, params: URLSearchParams, archived = false): Promise<T> {
   requireBillingReady();
+  const apiKey = archived
+    ? billingServerConfig.stripeArchiveSecretKey
+    : billingServerConfig.stripeSecretKey;
+  if (!apiKey) throw new Error("Selected merchant Stripe API credentials are unavailable.");
 
   const response = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${billingServerConfig.stripeSecretKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params,
@@ -89,10 +93,16 @@ export async function createStripeCheckoutSession(input: {
   return stripePost<StripeCheckoutSession>("checkout/sessions", params);
 }
 
-export async function createStripePortalSession(customerId: string) {
+export async function createStripePortalSession(customerId: string, archived = false) {
+  if (archived && (!billingServerConfig.stripeArchiveSecretKey ||
+      !billingServerConfig.stripeArchivePortalConfigurationId)) {
+    throw new Error("Archived merchant portal is not configured.");
+  }
   const params = new URLSearchParams();
   params.set("customer", customerId);
-  params.set("configuration", billingServerConfig.stripePortalConfigurationId);
+  params.set("configuration", archived
+    ? billingServerConfig.stripeArchivePortalConfigurationId
+    : billingServerConfig.stripePortalConfigurationId);
   params.set("return_url", `${getSiteUrl()}/workspace/billing`);
-  return stripePost<StripePortalSession>("billing_portal/sessions", params);
+  return stripePost<StripePortalSession>("billing_portal/sessions", params, archived);
 }

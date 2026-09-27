@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:ecosystem": "node --test tests/ecosystem-contract.test.mjs",
-    "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs",
+    "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs tests/billing-merchant-contract.test.mjs",
     "validate": "npm run lint && npm run typecheck && npm run test:ecosystem && npm run test:billing && npm run test:security && node --test tests/pilot-demo-integrity.test.mjs && npm run test:performance && npm run test:data && npm run build",
     "test:security": "node --test tests/security-hardening.test.mjs",
     "test:performance": "node --test tests/performance-boundaries.test.mjs",
