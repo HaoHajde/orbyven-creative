@@ -266,18 +266,15 @@ export default function TemplatesPage() {
             >
               ORBYVEN · Template system
             </motion.p>
-            <motion.h1
-              initial={reduceMotion ? false : { opacity: 0, y: 34 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: .9, delay: .06, ease }}
-              className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]"
-            >
+            {/* LCP-critical title must be visible in server HTML, without waiting
+                for hydration before an opacity:0 animation can reveal it. */}
+            <h1 className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]">
               Vezi.
               <br />
               <span className="text-white/35">Înțelegi.</span>
               <br />
               Alegi.
-            </motion.h1>
+            </h1>
           </div>
 
           <motion.div
