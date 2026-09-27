@@ -6,6 +6,10 @@ on:
   pull_request:
     paths:
       - '.github/workflows/performance-audit.yml'
+      - 'app/templates/page.tsx'
+      - 'components/FeaturedTemplatePreview.tsx'
+      - 'components/ClientTemplatePreview.tsx'
+      - 'tests/templates-mobile-performance.test.mjs'
 
 permissions:
   contents: read
