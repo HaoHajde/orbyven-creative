@@ -12,6 +12,7 @@ const names = {
   "012": "pilot-012-movement", "013": "pilot-013-construction",
 };
 const home = read("app/templates/page.tsx");
+const featuredCatalog = read("lib/featured-templates.ts");
 const preview = read("components/FeaturedTemplatePreview.tsx");
 const manifest = JSON.parse(read("data/templates/demo-006-013.json"));
 
@@ -29,7 +30,7 @@ test("eight unique, searchable demos have complete HTML, routes and category car
     assert.ok(html.length > 10000, file);
     assert.ok(page.includes("/orbyven-demos/pilot-" + id + "/index.html"), slug);
     assert.ok(page.includes('index: false'), slug);
-    assert.ok(home.includes('href: "' + route + '"'), slug + " missing card");
+    assert.ok(featuredCatalog.includes('href: "' + route + '"'), slug + " missing card in shared showcase");
     assert.ok(home.includes('"' + route + '"'), slug + " missing category");
     assert.ok(preview.includes("demo" + id + ":"), slug + " missing thumbnail");
     const profile = manifest.profiles.find((item) => item.id === id);
