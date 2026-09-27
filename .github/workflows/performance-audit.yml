@@ -1,0 +1,68 @@
+name: ORBYVEN Manual Browser Performance Audit
+
+# Manual only: does not deploy on Vercel, modify Supabase, or run on every PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      - name: Audit local production build on mobile and desktop
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/orbyven-next.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:3000/templates > /dev/null
+          mkdir -p lighthouse
+          npm exec --yes --package=lighthouse@12 -- lighthouse --version
+          for page in home templates workspace-login; do
+            case "$page" in
+              home) path="/" ;;
+              templates) path="/templates" ;;
+              workspace-login) path="/workspace/login" ;;
+            esac
+            for device in mobile desktop; do
+              preset=""
+              if [ "$device" = "desktop" ]; then preset="--preset=desktop"; fi
+              npm exec --yes --package=lighthouse@12 -- lighthouse "http://127.0.0.1:3000$path" \
+                --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+                --only-categories=performance,accessibility \
+                --output=json --output-path="lighthouse/${page}-${device}.json" \
+                --quiet $preset
+            done
+          done
+          node scripts/summarize-lighthouse.mjs lighthouse
+      - name: Upload raw audit data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbyven-lighthouse-${{ github.sha }}
+          path: lighthouse/
+          if-no-files-found: warn
+          retention-days: 14
