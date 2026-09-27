@@ -15,7 +15,7 @@ test("desktop ships its own compiled local UI rather than loading the website", 
   assert.equal(config.build.beforeDevCommand, "npm run dev:web");
   assert.equal(config.app.windows[0].url, undefined);
   assert.equal(manifest.scripts["build:web"], "vite build");
-  assert.ok(content("../src/App.tsx").includes("ORBYVEN Desktop"));
+  assert.match(content("../src/App.tsx"), /ORBYVEN · Desktop Workspace/);
 });
 
 test("only PUBLIC Supabase values are obtained at startup", () => {
