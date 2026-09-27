@@ -1,7 +1,7 @@
 # ORBYVEN Alpha 0.7 — Data Efficiency & UX Reliability
 
 ## Baseline and integration
-Built from canonical `main` at `77ef2b89fd59382a1d966e1514e637ee8dac94b6`. Separate drafts #97 Legal, #98 Security Hardening II and #99 Materials are NOT part of this change. Integrator must reconcile #98's finance visibility gate; this release includes equivalent role-aware data fetching and display without altering Supabase policy.
+The feature branch started from `77ef2b89fd59382a1d966e1514e637ee8dac94b6`; during review, Materials PR #99 merged into canonical main as `518c1ed5e0a8deb212ee5502db928e9a73015a0b`. GitHub must merge this PR into that newer main without reverting the material library, estimate revisions, profitability or dynamic workspace. Separate drafts #97 Legal and #98 Security Hardening II remain outside this change. Integrator must reconcile #98's finance visibility gate; this release includes equivalent role-aware data fetching and display without altering Supabase policy.
 
 ## What changed
 - Overview no longer downloads the entire history of leads, tasks and estimates into the browser. Each displayed metric uses an exact tenant-scoped `head/count` read; five task statuses use separate exact counts, and only four latest records plus up to sixteen actionable records per category are fetched for cards.
