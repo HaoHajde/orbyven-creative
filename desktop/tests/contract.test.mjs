@@ -49,5 +49,22 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.2.0");
+  assert.equal(config.version, "0.3.0");
+});
+
+test("desktop matches the real web workspace without loading remote HTML", () => {
+  const app = content("../src/App.tsx");
+  const brand = content("../src/Brand.tsx");
+  const website = content("../../components/ClientWorkspace.tsx");
+  const css = content("../src/styles.css");
+  assert.match(brand, /\.\.\/\.\.\/app\/icon\.svg\?url/);
+  assert.match(app, /ORBYVEN \/ OVERVIEW/);
+  assert.match(app, /ModuleGlyph/);
+  assert.match(app, /setOrganizationModuleEnabled/);
+  assert.match(app, /setCommandOpen/);
+  assert.match(app, /Ctrl K/);
+  assert.match(css, /grid-template-columns:206px minmax\(0,1fr\)/);
+  for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
+    assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
+  }
 });

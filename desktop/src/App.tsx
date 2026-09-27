@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type CSSProperties } from "react";
 import { initializeDesktopClient, orbyvenSupabase } from "./client";
-import { getCurrentWorkspace, getWorkspaceAccessState, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import { ModuleGlyph, OrbyvenBrand } from "./Brand";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { createCrmLead, listCrmLeads, updateCrmLead } from "@/lib/modules/leads";
@@ -136,6 +137,11 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem("orbyven-desktop-theme") !== "light");
   const [refresh, setRefresh] = useState(0);
+  const [panel, setPanel] = useState<"workspace" | "modules">("workspace");
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
@@ -180,6 +186,9 @@ export default function App() {
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
   const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
+  const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
+  const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
+  const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
 
   const loadModule = useCallback(async () => {
     if (!workspace) return;
@@ -222,8 +231,59 @@ export default function App() {
 
   useEffect(() => { void loadModule(); }, [loadModule, refresh]);
 
+  useEffect(() => {
+    const onKeys = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault(); setCommandQuery(""); setCommandOpen((open) => !open);
+      }
+      if (event.key === "Escape") {
+        setCommandOpen(false); setCreateMenuOpen(false); setShowCreate(false); setSelected(null);
+      }
+    };
+    window.addEventListener("keydown", onKeys);
+    return () => window.removeEventListener("keydown", onKeys);
+  }, []);
+
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible" && workspace && !showCreate && !selected) {
+        setRefresh((value) => value + 1);
+      }
+    };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, [workspace, showCreate, selected]);
+
   function chooseModule(id: OrbyvenModuleId) {
-    setActiveModule(id); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    if (!workspace?.enabledModules.includes(id)) return;
+    if (id === "expenses" && !canFinance) return;
+    setPanel("workspace"); setCommandOpen(false); setCreateMenuOpen(false);
+    setActiveModule(id); setRows([]); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+  }
+
+  async function toggleModule(id: OrbyvenModuleId) {
+    if (!workspace || !canManageModules || savingModule || id === "overview") return;
+    const enabled = workspace.enabledModules.includes(id);
+    const previous = workspace.enabledModules;
+    const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
+    setError(""); setSavingModule(id);
+    setWorkspace((current) => current ? { ...current, enabledModules: next } : current);
+    if (enabled && activeModule === id) chooseModule("overview");
+    try {
+      await setOrganizationModuleEnabled(workspace.organization.id, id, !enabled);
+      setRefresh((value) => value + 1);
+    } catch (cause) {
+      console.error("Desktop module toggle:", cause);
+      setWorkspace((current) => current ? { ...current, enabledModules: previous } : current);
+      setError("Modulul nu a putut fi actualizat. Am anulat modificarea.");
+    } finally { setSavingModule(null); }
+  }
+
+  function openCreate(moduleId: OrbyvenModuleId) {
+    if (!canWrite || !workspace?.enabledModules.includes(moduleId) || (moduleId === "expenses" && !canFinance)) return;
+    chooseModule(moduleId);
+    setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" });
+    setFile(null); setError(""); setShowCreate(true);
   }
   async function login(event: FormEvent) {
     event.preventDefault(); if (busy) return;
@@ -365,7 +425,7 @@ export default function App() {
     <div className={"desktop " + (isDark ? "dark" : "light")}>
       {screen !== "workspace" ? (
         <main className="auth-background">
-          <div className="auth-top"><span className="brand-mark">OC</span><span>ORBYVEN <small>DESKTOP</small></span></div>
+          <div className="auth-top"><OrbyvenBrand subtitle="CREATIVE" /></div>
           {screen === "loading" && <section className="auth-card"><div className="spinner" /><h1>Se pregătește ORBYVEN.</h1><p>Conectăm aplicația la spațiul tău de lucru.</p></section>}
           {screen === "error" && <section className="auth-card"><h1>Conexiune indisponibilă.</h1><p>{error}</p><button className="primary" onClick={() => window.location.reload()}>Reîncearcă</button></section>}
           {screen === "access" && <section className="auth-card"><h1>Acces indisponibil.</h1><p>{ACCESS_MESSAGES[accessState] || "Contul nu poate accesa workspace-ul."}</p><button className="secondary" onClick={() => void logout()}>Schimbă contul</button></section>}
@@ -390,74 +450,184 @@ export default function App() {
             </form>
             <button className="text-button" onClick={() => void logout()}>Alt cont</button>
           </section>}
-          <footer className="auth-footer">ORBYVEN DESKTOP v0.2 · WINDOWS</footer>
+          <footer className="auth-footer">ORBYVEN DESKTOP v0.3 · WINDOWS</footer>
         </main>
       ) : workspace && (
-        <div className="shell">
-          <aside className="sidebar">
-            <div className="logo"><span className="brand-mark">OC</span><div><strong>ORBYVEN</strong><small>WORKSPACE</small></div></div>
-            <div className="company-label"><small>ORGANIZAȚIE</small><strong>{workspace.organization.name}</strong><span>{ROLE_LABELS[workspace.membership.role]}</span></div>
-            <p className="nav-label">SPAȚIUL TĂU</p>
-            <nav aria-label="Module">
-              {modules.map((item) =>
-                <button key={item.id} className={"nav-item " + (activeModule === item.id ? "active" : "")}
-                  aria-current={activeModule === item.id ? "page" : undefined} onClick={() => chooseModule(item.id)}>
-                  <span className="nav-dot" style={{ background: item.color }} /><span>{TITLES[item.id]}</span>
-                </button>)}
-            </nav>
-            <div className="sidebar-bottom"><span className="online-dot" /> Conectat la ORBYVEN <small>Interfață instalată local</small></div>
-          </aside>
-          <main className="main-area">
-            <header className="topbar">
-              <span className="breadcrumb">Workspace <span>/</span> {TITLES[activeModule]}</span>
-              <div className="top-actions">
-                <button title="Reîncarcă datele" className="icon-button" onClick={() => setRefresh((n) => n + 1)} disabled={busy}>↻</button>
-                <button title="Schimbă tema" className="icon-button" onClick={() => {
-                  localStorage.setItem("orbyven-desktop-theme", isDark ? "light" : "dark"); setIsDark(!isDark);
-                }}>{isDark ? "☀" : "☾"}</button>
-                <button className="account" title="Ieși din cont" onClick={() => void logout()} disabled={busy}>
-                  {workspace.user.email?.split("@")[0] || "Cont"} <span>↗</span>
-                </button>
-              </div>
-            </header>
-            <div className="work-area">
+        <div className="desktop-workspace">
+          <header className="topbar">
+            <OrbyvenBrand subtitle="CREATIVE" />
+            <div className="topbar-organization">
+              <strong>{workspace.profile?.display_name ?? workspace.organization.name}</strong>
+              <small>Business workspace</small>
+            </div>
+            <button type="button" className="topbar-search" onClick={() => { setCommandQuery(""); setCommandOpen(true); }}
+              aria-label="Caută module și deschide navigarea rapidă">
+              <span>⌕ &nbsp; Caută în workspace...</span><kbd>Ctrl K</kbd>
+            </button>
+            <div className="top-actions">
+              {canWrite && createModules.length > 0 && (
+                <button className="primary topbar-create" type="button" onClick={() => setCreateMenuOpen(true)}>+ Creează</button>
+              )}
+              <button type="button" className="topbar-modules" onClick={() => { setPanel(panel === "modules" ? "workspace" : "modules"); setCommandOpen(false); }}>
+                {panel === "modules" ? "Înapoi" : "Module"}
+              </button>
+              <button title="Reîncarcă datele" aria-label="Reîncarcă datele" className="icon-button" onClick={() => setRefresh((n) => n + 1)} disabled={busy}>↻</button>
+              <button title="Schimbă tema" aria-label="Schimbă tema" className="icon-button" onClick={() => {
+                localStorage.setItem("orbyven-desktop-theme", isDark ? "light" : "dark"); setIsDark(!isDark);
+              }}>{isDark ? "☀" : "☾"}</button>
+              <button className="account account-avatar" title="Ieși din cont" aria-label="Delogare" onClick={() => void logout()} disabled={busy}>
+                {(workspace.profile?.display_name ?? workspace.organization.name).trim().slice(0,2).toUpperCase()}
+              </button>
+            </div>
+          </header>
+          <div className="shell">
+            <aside className="sidebar">
+              <div className="company-label"><strong>{workspace.profile?.display_name ?? workspace.organization.name}</strong>
+                <span>{ROLE_LABELS[workspace.membership.role]} · Workspace activ</span></div>
+              <nav aria-label="Module">
+                {([
+                  { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
+                  { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
+                  { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
+                ]).map((group) => {
+                  const available = modules.filter((definition) => group.ids.includes(definition.id) &&
+                    (definition.id !== "expenses" || canFinance));
+                  if (!available.length) return null;
+                  return <div className="nav-group" key={group.label}>
+                    <p className="nav-label">{group.label}</p>
+                    {available.map((item) => <button key={item.id}
+                      type="button" className={"nav-item " + (panel === "workspace" && activeModule === item.id ? "active" : "")}
+                      aria-current={panel === "workspace" && activeModule === item.id ? "page" : undefined}
+                      onClick={() => chooseModule(item.id)}>
+                      <ModuleGlyph id={item.id} /><span>{TITLES[item.id]}</span>
+                    </button>)}
+                  </div>;
+                })}
+              </nav>
+              <button className="sidebar-customize" type="button" onClick={() => setPanel("modules")}>
+                <strong>{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</strong>
+                <small>{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</small>
+              </button>
+            </aside>
+            <main className="main-area">
+              <div className="work-area">
               <section className="page-heading">
-                <div><p className="eyebrow">ORBYVEN / {activeModule.toUpperCase()}</p><h1>{TITLES[activeModule]}<span className="heading-point">.</span></h1>
-                  <p className="subheading">{activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." : ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
-                {activeModule !== "overview" && canWrite && (activeModule !== "expenses" || canFinance) && (
-                  <button className="primary add-button" onClick={() => { setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" }); setFile(null); setShowCreate(true); setError(""); }}>+ Adaugă</button>
+                <div><p className="eyebrow">{panel === "modules" ? "PERSONALIZARE" : "BUSINESS WORKSPACE"}</p>
+                  <h1>{panel === "modules" ? "Modulele tale." : TITLES[activeModule] + "."}</h1>
+                  <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
+                    activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." :
+                    ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
+                {panel === "workspace" && activeModule !== "overview" && canWrite && (activeModule !== "expenses" || canFinance) && (
+                  <button className="primary add-button" onClick={() => openCreate(activeModule)}>+ Adaugă</button>
                 )}
               </section>
               {error && <div role="alert" className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
-              {activeModule === "overview" ? (
+              {panel === "modules" ? (
+                <section className="module-store">
+                  {ORBYVEN_MODULES.map((definition) => {
+                    const enabled = workspace.enabledModules.includes(definition.id);
+                    const locked = definition.id === "overview";
+                    const blocked = !canManageModules || Boolean(savingModule) || locked;
+                    return <article key={definition.id} className="module-store-card">
+                      <div className="module-store-head"><span className="module-store-icon"><ModuleGlyph id={definition.id} /></span>
+                        {definition.badge && <span className="module-store-badge">{definition.badge}</span>}</div>
+                      <h2>{definition.name}</h2><p>{definition.description}</p>
+                      <div className="module-store-bottom"><span>{savingModule === definition.id ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
+                        <button type="button" className={enabled ? "primary" : "secondary"} disabled={blocked}
+                          onClick={() => void toggleModule(definition.id)}>
+                          {locked ? "Inclus" : !canManageModules ? "Blocat" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                        </button></div>
+                    </article>;
+                  })}
+                </section>
+              ) : activeModule === "overview" ? (
                 <div className="overview">
-                  <div className="greeting"><span>BUSINESS OVERVIEW</span><h2>{workspace.profile?.greeting_name ? "Salut, " + workspace.profile.greeting_name + "." : "Bine ai revenit."}</h2>
-                    <p>Informațiile sunt actualizate din workspace-ul tău ORBYVEN.</p></div>
-                  {busy && !overview ? <p className="muted">Se încarcă datele...</p> : overview && (
+                  <section className="overview-greeting">
+                    <div><p className="eyebrow">ORBYVEN / OVERVIEW</p>
+                      <h2>Bună, {workspace.profile?.greeting_name || workspace.organization.name.split(" ")[0] || "acolo"}.</h2>
+                      <p>{new Intl.DateTimeFormat(workspace.profile?.locale || "ro-RO", {
+                        weekday: "long", day: "numeric", month: "long",
+                        timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                      }).format(new Date())} · Rezumatul firmei</p>
+                    </div>
+                    <span className="role-pill"><span className="online-dot" /> {ROLE_LABELS[workspace.membership.role]}</span>
+                  </section>
+                  {busy && !overview ? <p className="muted">Se încarcă rezumatul...</p> : overview && (
                     <>
                       <div className="metrics">
-                        {[
-                          ["Cereri active", overview.activeLeadsCount, "leads"],
-                          ["Lucrări deschise", overview.openTasksCount, "tasks"],
-                          ["Oferte trimise", overview.sentEstimatesCount, "estimates"],
-                          ["Documente", overview.documentCount, "documents"],
-                          ["Echipă activă", overview.activeTeamCount, "team"],
-                        ].map(([label, count, target]) => <button key={String(label)} className="metric" onClick={() => chooseModule(target as OrbyvenModuleId)}>
-                          <span>{label}</span><strong>{formatNumber(Number(count))}</strong><small>Deschide modulul ↗</small>
-                        </button>)}
-                        {canFinance && <button className="metric" onClick={() => chooseModule("expenses")}><span>Cheltuieli luna aceasta</span><strong className="money">{currency(overview.monthExpensesCents)}</strong><small>Deschide cheltuieli ↗</small></button>}
+                        {([
+                          ["Cereri active", overview.activeLeadsCount, "leads", "#7c7afa"],
+                          ["Lucrări deschise", overview.openTasksCount, "tasks", "#66aaff"],
+                          ["Programări astăzi", overview.events.filter((event) =>
+                            event.status !== "cancelled" &&
+                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(event.start_at)) ===
+                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())).length, "calendar", "#70d1eb"],
+                          ["Oferte trimise", overview.sentEstimatesCount, "estimates", "#7ad5b4"],
+                        ] as const).map(([label, count, target, color]) => {
+                          const available = workspace.enabledModules.includes(target);
+                          return <button key={label} className="metric" disabled={!available}
+                            onClick={() => chooseModule(target)} style={{ "--metric-color": color } as CSSProperties}>
+                            <span>{label}</span><strong>{formatNumber(count)}</strong><small>{available ? "Deschide modulul ↗" : "Modul neactivat"}</small>
+                          </button>;
+                        })}
                       </div>
                       <div className="overview-bottom">
-                        <div className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
-                          {overview.tasks.slice(0, 6).map((task) => <button className="activity" key={task.id} onClick={() => chooseModule("tasks")}>
-                            <span><strong>{task.title}</strong><small>{task.status} · {task.priority}</small></span><span>→</span></button>)}
+                        <article className="surface stage-panel">
+                          <div className="panel-heading"><div><span className="eyebrow">OPERATIONS</span><h3>Lucrări după status</h3></div><small>Rezumat actualizat</small></div>
+                          <div className="stage-chart">
+                            <button type="button" className="stage-ring" disabled={!workspace.enabledModules.includes("tasks")}
+                              onClick={() => chooseModule("tasks")} style={{
+                                background: (() => {
+                                  const stages = [
+                                    ["planned", "#738bff"], ["in_progress", "#66bff0"],
+                                    ["blocked", "#efad77"], ["done", "#6ed3ae"], ["cancelled", "#64748b"],
+                                  ] as const;
+                                  const total = stages.reduce((sum, [stage]) => sum + overview.taskStages[stage], 0);
+                                  if (!total) return "conic-gradient(#2a405e 0 360deg)";
+                                  let progress = 0;
+                                  return "conic-gradient(" + stages.filter(([stage]) => overview.taskStages[stage] > 0)
+                                    .map(([stage,color]) => { const start = progress; progress += overview.taskStages[stage] / total * 360;
+                                      return color + " " + start + "deg " + progress + "deg"; }).join(",") + ")";
+                                })(),
+                              }}>
+                              <span className="stage-ring-inner"><strong>{formatNumber(Object.values(overview.taskStages).reduce((sum, count) => sum + count, 0))}</strong><small>total înregistrări</small></span>
+                            </button>
+                            <div className="stage-legend">
+                              {([
+                                ["planned", "De făcut", "#738bff"], ["in_progress", "În lucru", "#66bff0"],
+                                ["blocked", "Blocate", "#efad77"], ["done", "Finalizate", "#6ed3ae"], ["cancelled", "Anulate", "#64748b"],
+                              ] as const).map(([id,label,color]) => <div key={id}><span className="legend-dot" style={{ background: color }} />{label}<strong>{overview.taskStages[id]}</strong></div>)}
+                            </div>
+                          </div>
+                        </article>
+                        <article className="surface workflow-panel">
+                          <div className="panel-heading"><div><span className="eyebrow">WORKFLOW</span><h3>Fluxul afacerii</h3></div><small>Din modulele tale</small></div>
+                          {([
+                            ["leads", "Cereri active", overview.activeLeadsCount],
+                            ["tasks", "Lucrări deschise", overview.openTasksCount],
+                            ["calendar", "Programări astăzi", overview.events.filter((event) => event.status === "scheduled" && new Date(event.start_at).toDateString() === new Date().toDateString()).length],
+                            ["estimates", "Oferte trimise", overview.sentEstimatesCount],
+                          ] as const).filter(([id]) => workspace.enabledModules.includes(id)).map(([id,label,value]) =>
+                            <button key={id} className="workflow-row" onClick={() => chooseModule(id)}>
+                              <span>{label}</span><strong>{value}</strong><span className="workflow-track"><i style={{ width: Math.max(2, value / Math.max(1,overview.activeLeadsCount,overview.openTasksCount,overview.sentEstimatesCount) * 100) + "%" }} /></span>
+                            </button>)}
+                        </article>
+                      </div>
+                      <div className="overview-bottom activity-panels">
+                        <article className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
+                          {workspace.enabledModules.includes("tasks") && overview.tasks.slice(0, 5).map((task) =>
+                            <button className="activity" key={task.id} onClick={() => chooseModule("tasks")}>
+                              <span><strong>{task.title}</strong><small>{task.status} · {task.priority}</small></span><span>→</span></button>)}
                           {!overview.tasks.length && <p className="muted">Nicio lucrare recentă.</p>}
-                        </div>
-                        <div className="surface"><span className="eyebrow">URMĂTOARELE ZILE</span><h3>Programări</h3>
-                          {overview.events.slice(0, 6).map((event) => <button className="activity" key={event.id} onClick={() => chooseModule("calendar")}>
-                            <span><strong>{event.title}</strong><small>{formatDate(event.start_at)}</small></span><span>→</span></button>)}
+                        </article>
+                        <article className="surface"><span className="eyebrow">URMĂTOARELE ZILE</span><h3>Programări</h3>
+                          {workspace.enabledModules.includes("calendar") && overview.events.slice(0, 5).map((event) =>
+                            <button className="activity" key={event.id} onClick={() => chooseModule("calendar")}>
+                              <span><strong>{event.title}</strong><small>{formatDate(event.start_at)}</small></span><span>→</span></button>)}
                           {!overview.events.length && <p className="muted">Nu există programări apropiate.</p>}
-                        </div>
+                        </article>
                       </div>
                     </>
                   )}
@@ -478,9 +648,47 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.2.0</span></footer>
+              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.0</span></footer>
             </div>
           </main>
+          {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCommandOpen(false);
+          }}>
+            <section className="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">
+              <div className="command-top">
+                <h2 id="command-title">Unde vrei să ajungi?</h2>
+                <button className="icon-button" aria-label="Închide navigarea" onClick={() => setCommandOpen(false)}>×</button>
+              </div>
+              <input autoFocus aria-label="Caută un modul" placeholder="Caută un modul..." value={commandQuery}
+                onChange={(event) => setCommandQuery(event.target.value)} />
+              <p className="eyebrow">MODULE DISPONIBILE</p>
+              <div className="command-results">{filteredModules.filter((module) => module.id !== "expenses" || canFinance).map((module) =>
+                <button key={module.id} className="command-item" onClick={() => chooseModule(module.id)}>
+                  <span className="module-store-icon"><ModuleGlyph id={module.id} /></span>
+                  <span><strong>{TITLES[module.id]}</strong><small>{module.description}</small></span>
+                  <span className="command-arrow">→</span>
+                </button>)}</div>
+              {filteredModules.length === 0 && <p className="muted">Niciun modul găsit.</p>}
+              <small className="command-hint">Ctrl K · caută rapid &nbsp; · &nbsp; Esc · închide</small>
+            </section>
+          </div>}
+          {createMenuOpen && canWrite && <div className="overlay command-overlay" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCreateMenuOpen(false);
+          }}>
+            <section className="command-dialog create-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-create-title">
+              <div className="command-top"><div><p className="eyebrow">ACȚIUNE NOUĂ</p>
+                <h2 id="quick-create-title">Ce vrei să creezi?</h2></div>
+                <button className="icon-button" aria-label="Închide" onClick={() => setCreateMenuOpen(false)}>×</button></div>
+              <div className="command-results">{createModules.map((module) =>
+                <button key={module.id} className="command-item" onClick={() => openCreate(module.id)}>
+                  <span className="module-store-icon"><ModuleGlyph id={module.id} /></span>
+                  <strong>{module.id === "leads" ? "Cerere nouă" : module.id === "tasks" ? "Lucrare nouă" :
+                    module.id === "calendar" ? "Programare nouă" : module.id === "estimates" ? "Ofertă nouă" :
+                    module.id === "documents" ? "Document nou" : module.id === "expenses" ? "Cheltuială nouă" : "Membru nou"}</strong>
+                  <span className="command-arrow">→</span>
+                </button>)}</div>
+            </section>
+          </div>}
           {selected && <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
             <section className="drawer" role="dialog" aria-modal="true" aria-labelledby="record-title">
               <div className="drawer-top"><span className="eyebrow">DETALII · {TITLES[activeModule]}</span><button className="icon-button" aria-label="Închide" onClick={() => setSelected(null)}>×</button></div>
@@ -513,6 +721,7 @@ export default function App() {
               </form>
             </section>
           </div>}
+        </div>
         </div>
       )}
     </div>
