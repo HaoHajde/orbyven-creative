@@ -1,6 +1,8 @@
 "use client";
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
+import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
+import { featuredTemplates } from "@/lib/featured-templates";
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -17,8 +19,8 @@ const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const warpItems: WarpItem[] = [
   { id: "intro", label: "Intro", number: "01" },
-  { id: "templates", label: "Templates", number: "02" },
-  { id: "modular", label: "Workspace", number: "03" },
+  { id: "modular", label: "Workspace", number: "02" },
+  { id: "templates", label: "Templates", number: "03" },
   { id: "services", label: "Servicii", number: "04" },
   { id: "pricing", label: "Prețuri", number: "05" },
   { id: "start", label: "Start", number: "06" },
@@ -136,10 +138,21 @@ const planMeta = {
   },
 } as const;
 
+// Featured previews are shared with /templates; no duplicate manually maintained list.
+const homepageTemplates = [
+  ...featuredTemplates.map((item) => ({ ...item, source: "featured" as const })),
+  ...clientTemplateList.map((item) => ({ ...item, source: "catalog" as const })),
+];
+
 export default function HomePage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [desktopMotion, setDesktopMotion] = useState(false);
   const [activeTemplateIndex, setActiveTemplateIndex] = useState(0);
+
+  // Randomize only after hydration, choosing a fresh opening showcase per load.
+  useEffect(() => {
+    if (homepageTemplates.length > 1) setActiveTemplateIndex(Math.floor(Math.random() * homepageTemplates.length));
+  }, []);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
   const [activeSection, setActiveSection] = useState<string | null>("intro");
   const heroRef = useRef<HTMLElement | null>(null);
@@ -206,13 +219,13 @@ export default function HomePage() {
     });
   };
 
-  const activeTemplate = clientTemplateList[activeTemplateIndex] ?? clientTemplateList[0];
+  const activeTemplate = homepageTemplates[activeTemplateIndex] ?? homepageTemplates[0];
   const activeModule = moduleShowcase[activeModuleIndex] ?? moduleShowcase[0];
 
   const previousTemplate = () =>
-    setActiveTemplateIndex((current) => (current - 1 + clientTemplateList.length) % clientTemplateList.length);
+    setActiveTemplateIndex((current) => (current - 1 + homepageTemplates.length) % homepageTemplates.length);
   const nextTemplate = () =>
-    setActiveTemplateIndex((current) => (current + 1) % clientTemplateList.length);
+    setActiveTemplateIndex((current) => (current + 1) % homepageTemplates.length);
 
   const vars = {
     "--bg": theme === "dark" ? "#000000" : "#ffffff",
@@ -226,6 +239,7 @@ export default function HomePage() {
     "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
     "--button-text": theme === "dark" ? "#000000" : "#ffffff",
     "--accent": "#4b46ee",
+    "--home-violet": "#a58bff",
     "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
     "--accent-soft-2": theme === "dark" ? "rgba(111,66,255,0.11)" : "rgba(111,66,255,0.05)",
   } as CSSProperties;
@@ -246,7 +260,7 @@ export default function HomePage() {
       <section
         id="intro"
         ref={heroRef}
-        className="relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden bg-[var(--bg)] md:min-h-screen"
+        className="orbyven-home-hero relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden bg-[var(--bg)] md:min-h-screen"
       >
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-29%] hidden h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_center,currentColor_0.7px,transparent_0.7px)] [background-size:7px_7px]" />
@@ -277,71 +291,14 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <section id="templates" className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <div className="mx-auto max-w-[1500px]">
-          <div className="flex items-end justify-between gap-5">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">Templates</p>
-              <h2 className="mt-3 text-[38px] font-semibold tracking-[-0.055em] sm:text-[52px]">Vezi. Glisează. Alege.</h2>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={previousTemplate} aria-label="Template anterior" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
-              <button type="button" onClick={nextTemplate} aria-label="Template următor" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">→</button>
-            </div>
-          </div>
-
-          <div className="mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
-            <ClientTemplatePreview template={activeTemplate} compact />
-            <div className="flex flex-col gap-4 px-2 pb-2 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted-2)]">{activeTemplate.category}</p>
-                <p className="mt-1 text-xl font-semibold">{activeTemplate.title}</p>
-              </div>
-              <Link href={`/templates/${activeTemplate.slug}`} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">
-                Deschide ↗
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-4">
-            <div className="flex gap-2">
-              {clientTemplateList.map((template, index) => (
-                <button key={template.slug} type="button" onClick={() => setActiveTemplateIndex(index)} aria-label={`Arată ${template.title}`} className={`h-1.5 rounded-full transition-all ${index === activeTemplateIndex ? "w-10 bg-[var(--text)]" : "w-5 bg-[var(--border-strong)]"}`} />
-              ))}
-            </div>
-            <Link href="/templates" className="text-xs font-semibold">Toate →</Link>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="invitatii-orbyven" className="border-b border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-20">
-        <div className="mx-auto max-w-[1500px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">Invitații digitale · ORBYVEN CREATIVE</p>
-          <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Momente personale. Un link memorabil.</h2>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--muted)]">Descoperă invitații online pentru nuntă, botez și majorat: modele care se personalizează cu detaliile evenimentului și pot include confirmarea participării.</p>
-          <div className="mt-9 grid gap-3 md:grid-cols-3">
-            {[
-              { href: "/invitatii-nunta", title: "Invitații de nuntă", copy: "Poveste, locații, program și RSVP într-o invitație digitală elegantă." },
-              { href: "/invitatii-botez", title: "Invitații de botez", copy: "Modele pentru fetiță și băiețel, cu detaliile zilei într-un singur loc." },
-              { href: "/invitatii-majorat", title: "Invitații de majorat", copy: "Un concept vizual pentru petrecerea de 18 ani, ușor de distribuit." },
-            ].map((item) => (
-              <Link key={item.href} href={item.href} className="group flex min-h-44 flex-col justify-between rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-7 transition hover:border-[var(--border-strong)]">
-                <h3 className="text-2xl font-semibold tracking-[-0.04em]">{item.title} <span aria-hidden="true" className="inline-block transition group-hover:translate-x-1">↗</span></h3>
-                <p className="mt-7 text-sm leading-6 text-[var(--muted)]">{item.copy}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="modular" className="relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
+      <section id="modular" className="orbyven-home-soft relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[65%] bg-[radial-gradient(circle_at_60%_15%,rgba(75,70,238,0.10),transparent_56%)]" />
         <div className="relative mx-auto max-w-[1500px]">
           <div className="grid gap-9 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:gap-16">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">Workspace modular</p>
-              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Activezi doar ce folosești.</h2>
-              <p className="mt-5 max-w-md text-[15px] leading-7 text-[var(--muted)]">Modulele nu sunt pagini lipite una lângă alta. Își păstrează contextul și lucrează împreună.</p>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Un singur spațiu. Totul conectat.</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Activezi <span className="relative z-10 -mx-[0.03em] text-[var(--home-violet)]">doar</span> ce folosești.</h2>
+              <p className="mt-5 max-w-md text-[15px] font-medium leading-7 text-[var(--home-violet)]">Modulele nu sunt pagini lipite una lângă alta. Își păstrează contextul și lucrează împreună.</p>
               <Link href="/workspace" className="mt-7 inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60">Dashboard →</Link>
             </div>
 
@@ -434,12 +391,77 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="services" className="scroll-mt-24 border-y border-[var(--border)] bg-[var(--surface)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+      <section id="templates" className="orbyven-home-soft scroll-mt-24 border-y border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <div className="mx-auto max-w-[1500px]">
+          <div className="flex items-end justify-between gap-5">
+            <div>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Colecția ORBYVEN</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-3 text-[38px] font-semibold tracking-[-0.055em] sm:text-[52px]">Vezi. <span className="relative z-10 -mx-[0.045em] inline-block text-[var(--home-violet)]">Glisează.</span> Alege.</h2>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={previousTemplate} aria-label="Template anterior" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
+              <button type="button" onClick={nextTemplate} aria-label="Template următor" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">→</button>
+            </div>
+          </div>
+
+          <div className="mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
+            {activeTemplate.source === "featured" ? (
+              <FeaturedTemplatePreview kind={activeTemplate.kind} />
+            ) : (
+              <ClientTemplatePreview template={activeTemplate} compact />
+            )}
+            <div className="flex flex-col gap-4 px-2 pb-2 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted-2)]">{activeTemplate.source === "featured" ? activeTemplate.label : activeTemplate.category}</p>
+                <p className="mt-1 text-xl font-semibold">{activeTemplate.title}</p>
+              </div>
+              <Link href={activeTemplate.source === "featured" ? activeTemplate.href : `/templates/${activeTemplate.slug}`} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">
+                Deschide ↗
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4">
+            <div className="flex gap-2">
+              {homepageTemplates.map((template, index) => (
+                <button key={template.source === "featured" ? template.href : template.slug} type="button" onClick={() => setActiveTemplateIndex(index)} aria-label={`Arată ${template.title}`} className={`h-1.5 rounded-full transition-all ${index === activeTemplateIndex ? "w-10 bg-[var(--text)]" : "w-5 bg-[var(--border-strong)]"}`} />
+              ))}
+            </div>
+            <Link href="/templates" className="text-xs font-semibold">Toate →</Link>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="invitatii-orbyven" className="orbyven-home-soft border-b border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-20">
+        <div className="mx-auto max-w-[1500px]">
+          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Momente care rămân</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+          <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Momente <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">personale.</span> Un link memorabil.</h2>
+          <div className="orbyven-home-invite-grid mt-10">
+            {[
+              { href: "/invitatii-nunta", title: "Invitații de nuntă", label: "O poveste în doi", image: "/demo/nunta/diana-florin/couple1.jpeg" },
+              { href: "/invitatii-botez", title: "Invitații de botez", label: "Un nou început", image: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?auto=format&fit=crop&w=1000&q=82" },
+              { href: "/invitatii-majorat", title: "Invitații de majorat", label: "Un nou capitol", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=82" },
+            ].map((item, index) => (
+              <Link key={item.href} href={item.href} className="orbyven-home-invite-card group relative isolate block overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-2)] hover:border-[var(--home-violet)] focus-visible:border-[var(--home-violet)]">
+                <div aria-hidden="true" className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-110 group-focus-visible:scale-110" style={{ backgroundImage: `linear-gradient(180deg,rgba(6,5,12,.08) 28%,rgba(6,5,12,.88) 100%),url("${item.image}")` }} />
+                <span className="absolute left-6 top-6 text-[10px] font-semibold tracking-[.2em] text-white/90">ORBYVEN / 0{index + 1}</span>
+                <span aria-hidden="true" className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-sm transition duration-300 group-hover:rotate-45 group-hover:bg-[var(--accent)]">↗</span>
+                <div className="absolute inset-x-7 bottom-8">
+                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d8c7ff]">{item.label}</p>
+                  <h3 className="mt-3 text-[clamp(27px,3vw,44px)] font-semibold leading-[1.02] tracking-[-.06em] text-white">{item.title}</h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="services" className="orbyven-home-soft scroll-mt-24 border-y border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="mx-auto max-w-[1500px]">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">Servicii</p>
-              <h2 className="mt-4 text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Construim ce ai nevoie.</h2>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Ideile tale, în formă digitală</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-4 text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Construim <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">ce ai nevoie.</span></h2>
             </div>
             <Link href="/servicii" className="text-sm font-semibold">Detalii →</Link>
           </div>
@@ -471,16 +493,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
+      <section id="pricing" className="orbyven-home-soft relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[30%] h-[460px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--accent-soft-2)] blur-[160px]" />
         <div className="relative mx-auto max-w-[1500px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">Prețuri</p>
+          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Alegi ritmul în care crești</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Simplu de ales.</h2>
+            <h2 className="text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Simplu <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">de ales.</span></h2>
             <p className="max-w-md text-sm leading-6 text-[var(--muted)]">Trei niveluri clare. Începi cu cât ai nevoie și păstrezi aceeași experiență ORBYVEN.</p>
           </div>
 
-          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+          <div className="orbyven-home-price-grid mt-10 grid gap-4 lg:grid-cols-3">
             {Object.values(BILLING_PLANS).map((plan, index) => {
               const meta = planMeta[plan.id];
               const featured = plan.id === "business";
@@ -489,7 +511,7 @@ export default function HomePage() {
                   key={plan.id}
                   whileHover={{ y: -6 }}
                   transition={{ type: "spring", stiffness: 270, damping: 24 }}
-                  className={`group relative overflow-hidden rounded-[32px] border p-6 sm:p-7 ${featured ? "border-[rgba(93,83,255,.55)] bg-[var(--surface-2)] shadow-[0_26px_70px_rgba(75,70,238,.12)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
+                  className={`orbyven-home-price group relative overflow-hidden rounded-[32px] border p-6 sm:p-7 ${featured ? "border-[rgba(93,83,255,.55)] bg-[var(--surface-2)] shadow-[0_26px_70px_rgba(75,70,238,.12)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
                 >
                   <motion.div
                     aria-hidden="true"
