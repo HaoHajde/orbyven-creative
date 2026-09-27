@@ -49,7 +49,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.3.0");
+  assert.equal(config.version, "0.3.1");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -67,4 +67,27 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
     assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
   }
+});
+
+test("Ctrl+K searches actual enabled tenant records with live-web semantics", () => {
+  const app = content("../src/App.tsx");
+  const search = content("../src/useDesktopRecordSearch.ts");
+  assert.match(app, /useDesktopRecordSearch\(/);
+  assert.match(app, /<ModuleGlyph id=\{hit\.module\}/);
+  assert.match(app, /chooseModule\(hit\.module, hit\.id\)/);
+  assert.match(search, /\.eq\("organization_id", organizationId\)/g);
+  assert.match(search, /\.ilike\("name", pattern\)/);
+  assert.match(search, /\.ilike\("title", pattern\)/);
+  assert.match(search, /needle\.replace/);
+  assert.match(search, /requestId\.current/);
+});
+
+test("module switches invalidate old async data and select only authorized records", () => {
+  const app = content("../src/App.tsx");
+  assert.match(app, /\+\+moduleLoadId\.current/);
+  assert.match(app, /requestId !== moduleLoadId\.current/);
+  assert.match(app, /pendingRecordId\.current/);
+  assert.match(app, /if \(!workspace\?\.enabledModules\.includes\(id\)\) return/);
+  assert.match(app, /if \(id === "expenses" && !canFinance\) return/);
+  assert.match(app, /\.eq\("organization_id", org\)\.eq\("id", recordId\)/);
 });
