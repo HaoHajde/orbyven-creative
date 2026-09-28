@@ -20,6 +20,7 @@ const modulePaths: Record<OrbyvenModuleId, string> = {
   documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
   expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
   team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
+  thermal: "M4 19h16 M6 16V8l6-4 6 4v8 M9 16v-5h6v5 M8 20v2 M16 20v2",
 };
 
 export function ModuleGlyph({ id }: { id: OrbyvenModuleId }) {
