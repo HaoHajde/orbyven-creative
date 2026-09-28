@@ -217,6 +217,10 @@ export default function TasksModule({
       setWorkContext(null);
       void loadWorkTaskContext(organizationId, selectedTask.id, {
         canAccessFinances,
+        includeEstimates: enabledModules.includes("estimates"),
+        includeDocuments: enabledModules.includes("documents"),
+        includeCalendar: enabledModules.includes("calendar"),
+        includeExpenses: enabledModules.includes("expenses"),
         includeThermal: enabledModules.includes("thermal"),
       })
         .then((nextContext) => {
