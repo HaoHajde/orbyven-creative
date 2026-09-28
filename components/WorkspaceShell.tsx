@@ -31,7 +31,7 @@ type Panel = "workspace" | "modules";
 
 type Props = {
   initialWorkspace: OrbyvenWorkspace;
-  brand: ReactNode;
+  brand: ReactNode | ((theme: WorkspaceTheme) => ReactNode);
   onLogout: () => Promise<void> | void;
   presentation?: WorkspacePresentationConfig | null;
 };
@@ -172,12 +172,17 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
     ...(presentation?.themeTokens?.[theme] ?? WORKSPACE_THEME_TOKENS[theme]),
   } as CSSProperties;
   const navGroups = presentation?.navGroups ?? WORKSPACE_NAV_GROUPS;
+  const layout = presentation?.layout;
   const roleLabels = presentation?.roleLabels ?? WORKSPACE_ROLE_LABELS;
 
   return (
     <main
       style={{
         ...vars,
+        "--workspace-max-width": (layout?.maxWidth ?? 1520) + "px",
+        "--workspace-sidebar-width": (layout?.sidebarWidth ?? 206) + "px",
+        "--workspace-header-height": (layout?.headerHeight ?? 65) + "px",
+        "--workspace-sidebar-top": (layout?.sidebarTop ?? 77) + "px",
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
@@ -196,9 +201,9 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
       <header
         className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
-        <div className="mx-auto flex min-h-[65px] max-w-[1520px] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
+        <div className="mx-auto flex min-h-[var(--workspace-header-height)] max-w-[var(--workspace-max-width)] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
-            {brand}
+            {typeof brand === "function" ? brand(theme) : brand}
             <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
             <div className="hidden min-w-0 lg:block">
               <span className="block max-w-[180px] truncate text-[11px] font-semibold">{organizationName}</span>
@@ -231,8 +236,8 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+      <div className="relative z-10 mx-auto grid max-w-[var(--workspace-max-width)] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[var(--workspace-sidebar-width)_minmax(0,1fr)] md:px-4 md:pb-6">
+        <aside className="sticky top-[var(--workspace-sidebar-top)] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
