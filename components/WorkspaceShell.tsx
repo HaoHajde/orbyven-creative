@@ -180,7 +180,7 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
         "--workspace-sidebar-top": (layout?.sidebarTop ?? 77) + "px",
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-      }}
+      } as CSSProperties & Record<`--${string}`, string>}
       className="relative isolate min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
       {theme === "dark" ? (
