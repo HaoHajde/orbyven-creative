@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 export let orbyvenSupabase: SupabaseClient;
 
@@ -7,19 +8,44 @@ type DesktopConfig = {
   supabasePublishableKey: string;
 };
 
-/**
- * Remote bootstrap returns only the SAME PUBLIC values shipped to web browsers.
- * The complete UI is bundled locally. No privileged API key goes into the installer.
- */
-export async function initializeDesktopClient() {
-  const response = await fetch("https://orbyven.ro/api/desktop/config", {
+export type DesktopUiManifest = {
+  revision: string;
+  desktopVersion: string;
+  generatedAt: string;
+  theme: {
+    dark: Record<string, string>;
+    light: Record<string, string>;
+  };
+  layout: {
+    maxWidth: number;
+    headerHeight: number;
+    sidebarWidth: number;
+    shellGap: number;
+    panelRadius: number;
+  };
+  navGroups: Array<{ label: string; ids: OrbyvenModuleId[] }>;
+  createModules: OrbyvenModuleId[];
+};
+
+const ORBYVEN_ORIGIN = "https://orbyven.ro";
+
+async function fetchJson<T>(path: string): Promise<T> {
+  const response = await fetch(ORBYVEN_ORIGIN + path, {
     method: "GET",
     cache: "no-store",
     credentials: "omit",
     signal: AbortSignal.timeout(12000),
   });
-  if (!response.ok) throw new Error("Nu putem conecta aplicația la ORBYVEN.");
-  const config: DesktopConfig = await response.json();
+  if (!response.ok) throw new Error("ORBYVEN endpoint unavailable: " + path);
+  return response.json() as Promise<T>;
+}
+
+/**
+ * Remote bootstrap returns only the SAME PUBLIC values shipped to web browsers.
+ * The complete UI stays bundled locally. No privileged API key goes into the installer.
+ */
+export async function initializeDesktopClient() {
+  const config = await fetchJson<DesktopConfig>("/api/desktop/config");
   const { supabaseUrl, supabasePublishableKey } = config;
   if (!supabaseUrl || !supabasePublishableKey || !supabaseUrl.startsWith("https://")) {
     throw new Error("Configurația publică ORBYVEN este invalidă.");
@@ -33,4 +59,8 @@ export async function initializeDesktopClient() {
     },
   });
   return orbyvenSupabase;
+}
+
+export async function fetchDesktopUiManifest() {
+  return fetchJson<DesktopUiManifest>("/api/desktop/ui");
 }
