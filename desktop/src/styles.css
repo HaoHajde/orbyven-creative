@@ -208,3 +208,10 @@ kbd{border:1px solid var(--border);background:var(--surface-2);border-radius:5px
   .desktop-workspace .overview-greeting h2{font-size:26px}
   .desktop-workspace .role-pill{display:none}
 }
+
+
+.live-ui-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px;border-radius:999px;border:1px solid var(--border);font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--muted);white-space:nowrap;background:var(--surface-2)}
+.live-ui-pill.synced{color:#6ed3ae;border-color:rgba(110,211,174,.18);background:rgba(110,211,174,.06)}
+.live-ui-pill.bundled{color:var(--muted-2)}
+.live-ui-pill .online-dot{margin:0;width:6px;height:6px}
+@media(max-width:1100px){.live-ui-pill{display:none}}
