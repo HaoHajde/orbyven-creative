@@ -316,6 +316,10 @@ export default function App() {
   async function toggleModule(id: OrbyvenModuleId) {
     if (!workspace || !canManageModules || savingModule || id === "overview") return;
     const enabled = workspace.enabledModules.includes(id);
+    if (!enabled && !workspace.entitledModules.includes(id)) {
+      setError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      return;
+    }
     const previous = workspace.enabledModules;
     const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
     setError(""); setSavingModule(id);
@@ -595,7 +599,8 @@ export default function App() {
                   {ORBYVEN_MODULES.map((definition) => {
                     const enabled = workspace.enabledModules.includes(definition.id);
                     const locked = definition.id === "overview";
-                    const blocked = !canManageModules || Boolean(savingModule) || locked;
+                    const entitled = workspace.entitledModules.includes(definition.id);
+                    const blocked = !canManageModules || Boolean(savingModule) || locked || (!enabled && !entitled);
                     return <article key={definition.id} className="module-store-card">
                       <div className="module-store-head"><span className="module-store-icon"><ModuleGlyph id={definition.id} /></span>
                         {definition.badge && <span className="module-store-badge">{definition.badge}</span>}</div>
@@ -603,7 +608,7 @@ export default function App() {
                       <div className="module-store-bottom"><span>{savingModule === definition.id ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
                         <button type="button" className={enabled ? "primary" : "secondary"} disabled={blocked}
                           onClick={() => void toggleModule(definition.id)}>
-                          {locked ? "Inclus" : !canManageModules ? "Blocat" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                          {locked ? "Inclus" : !canManageModules ? "Blocat" : !enabled && !entitled ? "Necesită acces" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                         </button></div>
                     </article>;
                   })}
