@@ -49,7 +49,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.3.1");
+  assert.equal(config.version, "0.4.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -88,4 +88,23 @@ test("NSIS installer carries ORBYVEN visual identity", () => {
   assert.match(generator, /#627BFF/);
   assert.match(generator, /ORBYVEN/);
   assert.match(generator, /Business workspace/);
+});
+
+test("live visual manifest keeps desktop aligned with the web workspace", () => {
+  const app = content("../src/App.tsx");
+  const client = content("../src/client.ts");
+  const web = content("../../components/ClientWorkspace.tsx");
+  const visual = content("../../lib/workspace-visual-system.ts");
+  const route = content("../../app/api/desktop/ui/route.ts");
+  assert.match(client, /\/api\/desktop\/ui/);
+  assert.match(app, /fetchDesktopUiManifest/);
+  assert.match(app, /uiManifest\.navGroups/);
+  assert.match(app, /uiManifest\.createModules/);
+  assert.match(app, /structuralUpdateAvailable/);
+  assert.match(web, /WORKSPACE_NAV_GROUPS/);
+  assert.match(web, /themeToCssVars/);
+  assert.match(visual, /SPECIALIZATE/);
+  assert.match(visual, /thermal/);
+  assert.match(route, /WORKSPACE_UI_REVISION/);
+  assert.match(route, /Cache-Control/);
 });
