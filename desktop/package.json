@@ -1,15 +1,16 @@
 {
   "name": "@orbyven/desktop-windows",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "ORBYVEN desktop workspace for Windows with locally bundled UI",
   "type": "module",
   "scripts": {
     "icons": "tauri icon ../app/icon.svg",
     "installer:brand": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-installer-brand.ps1",
-    "dev:web": "vite --host 127.0.0.1 --port 1420",
+    "sync:web-assets": "node scripts/sync-web-assets.mjs",
+    "dev:web": "npm run sync:web-assets && vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
-    "build:web": "vite build",
+    "build:web": "npm run sync:web-assets && vite build",
     "build": "npm run icons && npm run installer:brand && tauri build",
     "check": "node --test tests/*.test.mjs && tsc --noEmit"
   },

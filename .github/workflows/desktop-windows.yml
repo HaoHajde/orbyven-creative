@@ -42,7 +42,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: ORBYVEN-Desktop-Windows-v0.3.1
+          name: ORBYVEN-Desktop-Windows-v0.4.0
           path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           retention-days: 14

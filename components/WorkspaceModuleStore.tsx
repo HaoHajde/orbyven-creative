@@ -1,6 +1,7 @@
 "use client";
 
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { WORKSPACE_UI_CONTRACT } from "@/lib/workspace-ui-contract";
 
 type Props = {
   enabledModules: OrbyvenModuleId[];
@@ -26,10 +27,10 @@ export default function WorkspaceModuleStore({
       <section className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Personalizare</p>
-          <h1 className="mt-2.5 text-[34px] font-semibold leading-[0.99] tracking-[-0.05em] sm:text-[44px]">Modulele tale.</h1>
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[0.99] tracking-[-0.05em] sm:text-[44px]">{WORKSPACE_UI_CONTRACT.copy.moduleStoreTitle}</h1>
           <p className="mt-2.5 max-w-2xl text-sm leading-6 text-[var(--muted)]">
             {canManage
-              ? "Alege instrumentele de care ai nevoie. Restul rămân ascunse, ca workspace-ul să fie simplu."
+              ? WORKSPACE_UI_CONTRACT.copy.moduleStoreDescription
               : "Aici vezi instrumentele active ale firmei. Doar un owner sau admin le poate schimba."}
           </p>
         </div>
