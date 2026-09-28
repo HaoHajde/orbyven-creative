@@ -19,17 +19,18 @@ type Props={
   role:OrbyvenWorkspace["membership"]["role"];
   enabledModules:OrbyvenModuleId[];
   onOpenModule:(moduleId:OrbyvenModuleId,options?:WorkspaceOpenOptions)=>void;
+  initialTaskId?:string;
 };
 
 function formatDate(value:string,locale:string){
   return new Intl.DateTimeFormat(locale,{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
 }
 
-export default function ThermalPlannerModule({organizationId,locale,role,enabledModules,onOpenModule}:Props){
+export default function ThermalPlannerModule({organizationId,locale,role,enabledModules,onOpenModule,initialTaskId}:Props){
   const [works,setWorks]=useState<WorkTask[]>([]);
   const [clients,setClients]=useState<WorkTaskClient[]>([]);
   const [sketches,setSketches]=useState<SketchMeta[]>([]);
-  const [selectedTaskId,setSelectedTaskId]=useState<string|null>(null);
+  const [selectedTaskId,setSelectedTaskId]=useState<string|null>(initialTaskId??null);
   const [openTaskId,setOpenTaskId]=useState<string|null>(null);
   const [query,setQuery]=useState("");
   const [loading,setLoading]=useState(true);
@@ -52,12 +53,12 @@ export default function ThermalPlannerModule({organizationId,locale,role,enabled
       setWorks(nextWorks);
       setClients(nextClients);
       setSketches((sketchResult.data??[]) as SketchMeta[]);
-      setSelectedTaskId(current=>current&&nextWorks.some(task=>task.id===current)?current:nextWorks[0]?.id??null);
+      setSelectedTaskId(current=>current&&nextWorks.some(task=>task.id===current)?current:initialTaskId&&nextWorks.some(task=>task.id===initialTaskId)?initialTaskId:nextWorks[0]?.id??null);
     }catch(reason){
       console.error(reason);
       setError("Planșele termice nu au putut fi încărcate.");
     }finally{setLoading(false);}
-  },[organizationId]);
+  },[organizationId,initialTaskId]);
 
   useEffect(()=>{const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer);},[load]);
 
