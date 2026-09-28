@@ -9,6 +9,7 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 export type EcosystemNodeId =
   | "crm"
   | "work"
+  | "thermal_plan"
   | "estimate"
   | "material_recipes"
   | "material_requirements"
@@ -32,6 +33,7 @@ export type EcosystemNode = {
 export const ECOSYSTEM_NODES: readonly EcosystemNode[] = [
   { id: "crm", label: "Client / cerere", table: "crm_leads", workspaceModule: "leads", requires: [], availability: "live", description: "Identitatea clientului și istoricul comunicării." },
   { id: "work", label: "Lucrare", table: "ops_tasks", workspaceModule: "tasks", requires: ["crm"], availability: "live", description: "Coordonează execuția și păstrează client_id." },
+  { id: "thermal_plan", label: "Planșă Termică", table: "thermal_sketches", workspaceModule: "thermal", requires: ["work"], availability: "live", description: "Modul nișat opțional: schiță 2D, instalație termică și estimări orientative, legat de o lucrare existentă." },
   { id: "estimate", label: "Deviz", table: "sales_estimates", workspaceModule: "estimates", requires: ["crm", "work"], availability: "live", description: "Liniile, prețurile și manopera sunt în sales_estimate_items." },
   { id: "material_recipes", label: "Rețete materiale", table: "ops_material_recipes", workspaceModule: null, requires: [], availability: "database_only", description: "Rețete reutilizabile per unitate de lucrare." },
   { id: "material_requirements", label: "Necesar materiale", table: "sales_material_requirements", workspaceModule: "estimates", requires: ["estimate"], availability: "live", description: "Cantitate, unitate, cost, furnizor și status comandă legate de deviz." },

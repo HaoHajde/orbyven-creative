@@ -43,6 +43,9 @@ const TasksModule = dynamic(() => import("@/components/modules/TasksModule"), {
 const TeamModule = dynamic(() => import("@/components/modules/TeamModule"), {
   loading: WorkspaceModuleLoading,
 });
+const ThermalPlannerModule = dynamic(() => import("@/components/modules/ThermalPlannerModule"), {
+  loading: WorkspaceModuleLoading,
+});
 
 type Props = {
   activeModule: OrbyvenModuleId;
@@ -126,6 +129,10 @@ export default function WorkspaceContent({
       return <div role="status" className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--muted)]">Finanțele firmei sunt disponibile doar administratorilor și managerilor.</div>;
     }
     return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} />;
+  }
+
+  if (activeModule === "thermal") {
+    return <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} />;
   }
 
   return <TeamModule organizationId={organizationId} role={role} />;
