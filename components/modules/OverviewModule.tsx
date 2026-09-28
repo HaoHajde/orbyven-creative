@@ -253,7 +253,7 @@ export default function OverviewModule({
       todayQueue,
       attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
     };
-  }, [snapshot, snapshotNow, timeZone, enabledModules]);
+  }, [snapshot, snapshotNow, timeZone, enabledModules, locale]);
 
   if (loading) {
     return (
