@@ -10,9 +10,9 @@ const tasks=read("components/modules/TasksModule.tsx");
 const registry=read("lib/orbyven-modules.ts");
 const workspace=read("components/WorkspaceContent.tsx");
 const client=read("components/ClientWorkspace.tsx");
-const baseMigration=read("supabase/migrations/20260927202000_alpha065_thermal_sketches.sql");
-const moduleGuard=read("supabase/migrations/20260928165000_thermal_independent_module_guard.sql");
-const pilotEntitlement=read("supabase/migrations/20260928171000_thermal_pilot_entitlement.sql");
+const baseMigration=read("supabase/migrations/20260927173520_alpha065_thermal_sketches.sql");
+const moduleGuard=read("supabase/migrations/20260928140502_thermal_independent_module_guard.sql");
+const pilotEntitlement=read("supabase/migrations/20260928142037_thermal_pilot_entitlement.sql");
 
 test("Alpha 0.65 canvas retains smart wall, snap and pipe-network behavior",()=>{
   for(const token of ["wallIntervals(","wallExteriorSegments(","chooseElbow(","insertJunction(","routeDraft","renderGhost(","hydrateSmartState(","openings","components","routes","zones"])
