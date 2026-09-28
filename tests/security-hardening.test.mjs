@@ -106,7 +106,7 @@ test("documents check leading content bytes without claiming antivirus protectio
 
 
 const pilotMigration = read("supabase/migrations/20260928140022_pilot_entitlements_private_requests.sql");
-const gatewayCutover = read("supabase/migrations/20260928165200_project_requests_server_only_cutover.sql");
+const gatewayCutover = read("supabase/migrations/20260928141201_project_requests_server_only_cutover.sql");
 const workspace = read("lib/orbyven-workspace.ts");
 const moduleStore = read("components/WorkspaceModuleStore.tsx");
 
