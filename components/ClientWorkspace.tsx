@@ -7,6 +7,7 @@ import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { WORKSPACE_UI_CONTRACT } from "@/lib/workspace-ui-contract";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
@@ -111,8 +112,7 @@ export default function ClientWorkspace() {
   const activeDefinition =
     ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ?? ORBYVEN_MODULES[0];
 
-  const canManageModules =
-    workspace?.membership.role === "owner" || workspace?.membership.role === "admin";
+  const canManageModules = WORKSPACE_UI_CONTRACT.moduleManagerRoles.includes(workspace?.membership.role ?? "");
 
   const organizationName =
     workspace?.profile?.display_name ?? workspace?.organization.name ?? "ORBYVEN";
@@ -193,9 +193,9 @@ export default function ClientWorkspace() {
   };
 
   const createOptions = ORBYVEN_MODULES.filter((definition) =>
-    ["leads", "tasks", "calendar", "estimates", "expenses"].includes(definition.id)
+    WORKSPACE_UI_CONTRACT.createModuleIds.includes(definition.id)
       && enabledModules.includes(definition.id)
-      && (definition.id !== "expenses" || ["owner", "admin", "manager"].includes(workspace?.membership.role ?? "viewer"))
+      && (definition.id !== "expenses" || WORKSPACE_UI_CONTRACT.financeRoles.includes(workspace?.membership.role ?? "viewer"))
   );
   const canCreate = workspace?.membership.role !== "viewer" && createOptions.length > 0;
 
@@ -204,19 +204,23 @@ export default function ClientWorkspace() {
     router.replace("/workspace/login");
   };
 
+  const activeTheme = WORKSPACE_UI_CONTRACT.themes[theme];
   const vars = {
-    "--bg": theme === "dark" ? "#070b16" : "#f1f5fd",
-    "--surface": theme === "dark" ? "#0d1728" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#15233a" : "#eaf1fd",
-    "--text": theme === "dark" ? "#eef4ff" : "#142746",
-    "--muted": theme === "dark" ? "#a2b1cb" : "#596d8c",
-    "--muted-2": theme === "dark" ? "#8296b4" : "#7183a1",
-    "--border": theme === "dark" ? "rgba(167,190,246,0.16)" : "rgba(46,82,146,0.12)",
-    "--border-strong": theme === "dark" ? "rgba(157,190,249,0.25)" : "rgba(46,82,146,0.24)",
-    "--button": theme === "dark" ? "#477af3" : "#244caa",
-    "--button-text": "#ffffff",
-    "--accent": theme === "dark" ? "#7ba9ff" : "#3561d8",
-    "--accent-soft": theme === "dark" ? "rgba(86,134,244,0.17)" : "rgba(65,105,208,0.11)",
+    "--bg": activeTheme.bg,
+    "--surface": activeTheme.surface,
+    "--surface-2": activeTheme.surface2,
+    "--text": activeTheme.text,
+    "--muted": activeTheme.muted,
+    "--muted-2": activeTheme.muted2,
+    "--border": activeTheme.border,
+    "--border-strong": activeTheme.borderStrong,
+    "--button": activeTheme.button,
+    "--button-text": activeTheme.buttonText,
+    "--accent": activeTheme.accent,
+    "--accent-soft": activeTheme.accentSoft,
+    "--workspace-max-width": WORKSPACE_UI_CONTRACT.layout.maxWidth + "px",
+    "--workspace-header-height": WORKSPACE_UI_CONTRACT.layout.headerHeight + "px",
+    "--workspace-sidebar-width": WORKSPACE_UI_CONTRACT.layout.sidebarWidth + "px",
   } as CSSProperties;
 
   if (loading) {
@@ -260,13 +264,13 @@ export default function ClientWorkspace() {
       <header
         className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
-        <div className="mx-auto flex min-h-[65px] max-w-[1520px] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
+        <div className="mx-auto flex min-h-[var(--workspace-header-height)] max-w-[var(--workspace-max-width)] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo compact theme={theme} />
             <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
             <div className="hidden min-w-0 lg:block">
               <span className="block max-w-[180px] truncate text-[11px] font-semibold">{organizationName}</span>
-              <span className="block text-[10px] text-[var(--muted-2)]">Business workspace</span>
+              <span className="block text-[10px] text-[var(--muted-2)]">{WORKSPACE_UI_CONTRACT.copy.workspaceLabel}</span>
             </div>
           </div>
 
@@ -284,7 +288,7 @@ export default function ClientWorkspace() {
                 className="flex h-9 items-center justify-center rounded-full bg-[var(--button)] px-3 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:px-4"
               >
                 <span className="sm:hidden" aria-hidden="true">+</span>
-                <span className="hidden sm:inline">+ Creează</span>
+                <span className="hidden sm:inline">{WORKSPACE_UI_CONTRACT.copy.createLabel}</span>
                 <span className="sr-only sm:hidden">Creează o înregistrare</span>
               </button>
             )}
@@ -295,19 +299,14 @@ export default function ClientWorkspace() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
+      <div className="relative z-10 mx-auto grid max-w-[var(--workspace-max-width)] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[var(--workspace-sidebar-width)_minmax(0,1fr)] md:px-4 md:pb-6">
         <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
           </div>
 
-          {([
-            { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
-            { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
-            { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
-            { label: "SPECIALIZATE", ids: ["thermal"] as OrbyvenModuleId[] },
-          ]).map((group) => {
+          {WORKSPACE_UI_CONTRACT.navigationGroups.map((group) => {
             const items = enabledDefinitions.filter((definition) => group.ids.includes(definition.id));
             if (!items.length) return null;
             return (
