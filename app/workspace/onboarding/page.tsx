@@ -5,9 +5,10 @@ import {
   ORBYVEN_MODULES,
   type OrbyvenModuleId,
 } from "@/lib/orbyven-modules";
+import { BILLING_PLANS, isBillingPlanId } from "@/lib/billing/public-config";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 function slugify(value: string) {
@@ -23,12 +24,14 @@ function slugify(value: string) {
 
 export default function WorkspaceOnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planValue = searchParams.get("plan");
+  const checkoutPlan = isBillingPlanId(planValue) ? planValue : null;
+  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
   const [companyName, setCompanyName] = useState("");
-  const [selectedModules, setSelectedModules] = useState<OrbyvenModuleId[]>([
-    "overview",
-    "leads",
-    "tasks",
-  ]);
+  const [selectedModules, setSelectedModules] = useState<OrbyvenModuleId[]>(() =>
+    checkoutPlan ? [...BILLING_PLANS[checkoutPlan].entitlements] : ["overview", "leads", "tasks"]
+  );
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -44,7 +47,7 @@ export default function WorkspaceOnboardingPage() {
         if (cancelled) return;
 
         if (destination !== "/workspace/onboarding") {
-          router.replace(destination);
+          router.replace(checkoutPlan && destination === "/workspace" ? `/contact${checkoutQuery}` : destination);
           return;
         }
 
@@ -62,7 +65,7 @@ export default function WorkspaceOnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [checkoutPlan, checkoutQuery, router]);
 
   const toggleModule = (id: OrbyvenModuleId) => {
     if (id === "overview") return;
@@ -107,7 +110,7 @@ export default function WorkspaceOnboardingPage() {
       return;
     }
 
-    router.replace("/workspace");
+    router.replace(checkoutPlan ? `/contact${checkoutQuery}` : "/workspace");
     router.refresh();
   };
 
@@ -165,6 +168,13 @@ export default function WorkspaceOnboardingPage() {
             </div>
           </section>
 
+          {checkoutPlan ? (
+            <section className="mt-6 rounded-[28px] border border-[#4b46ee]/20 bg-[#4b46ee]/[0.05] p-6 dark:bg-[#4b46ee]/[0.10]">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7b73d8]">Plan selectat</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">{BILLING_PLANS[checkoutPlan].name}</h2>
+              <p className="mt-3 text-sm leading-6 text-[#6e6e73] dark:text-[#a1a1a6]">Modulele planului sunt pregătite automat. Detaliile de design vor fi configurate după plată în ORBYVEN.</p>
+            </section>
+          ) : (
           <section className="mt-6">
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#86868b]">
@@ -212,6 +222,7 @@ export default function WorkspaceOnboardingPage() {
               })}
             </div>
           </section>
+          )}
 
           {errorMessage && (
             <div className="mt-6 rounded-[20px] border border-red-500/20 bg-red-500/[0.06] px-5 py-4 text-sm text-red-500">

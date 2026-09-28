@@ -68,3 +68,26 @@ test("real-auth QA requires dedicated secrets and never uploads private screensh
   assert.match(script, /1366, height: 900/);
   assert.doesNotMatch(script, /screenshot\(|tracing\.|storageState\(|console\.log\(email|console\.log\(password/);
 });
+
+
+test("fast checkout preserves selected plan from public pricing through auth and onboarding", () => {
+  const home = read("components/HomePageClient.tsx");
+  const contact = read("app/contact/page.tsx");
+  const register = read("app/workspace/register/page.tsx");
+  const login = read("app/workspace/login/page.tsx");
+  const callback = read("app/workspace/auth/callback/page.tsx");
+  const onboarding = read("app/workspace/onboarding/page.tsx");
+
+  assert.match(home, /href=\{\`\/contact\?plan=\$\{plan\.id\}&source=homepage\`\}/);
+  assert.match(contact, /\/api\/billing\/checkout/);
+  assert.match(contact, /Apple Pay/);
+  assert.match(contact, /Google Pay/);
+  assert.match(contact, /LEGAL_DOCUMENT_VERSION/);
+  assert.match(contact, /Creează cont și continuă/);
+  for (const source of [register, login, callback, onboarding]) {
+    assert.match(source, /checkoutQuery/);
+    assert.match(source, /\/contact\$\{checkoutQuery\}/);
+  }
+  assert.match(onboarding, /BILLING_PLANS\[checkoutPlan\]\.entitlements/);
+  assert.match(onboarding, /Plan selectat/);
+});

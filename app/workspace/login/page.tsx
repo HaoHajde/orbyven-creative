@@ -8,11 +8,21 @@ import WorkspaceAuthShell, {
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 export default function WorkspaceLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan");
+  const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
+  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
+  const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
+    if (!checkoutPlan) return destination === "/workspace/login" ? "/workspace" : destination;
+    if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
+    if (destination === "/workspace") return `/contact${checkoutQuery}`;
+    return destination;
+  }, [checkoutPlan, checkoutQuery]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +39,7 @@ export default function WorkspaceLoginPage() {
         if (cancelled || !data.session) return;
         const destination = await getWorkspaceEntryPath();
         if (!cancelled && destination !== "/workspace/login") {
-          router.replace(destination);
+          router.replace(routeAfterAuth(destination));
         }
       } catch (error) {
         console.error(error);
@@ -40,7 +50,7 @@ export default function WorkspaceLoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [routeAfterAuth, router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,7 +82,7 @@ export default function WorkspaceLoginPage() {
       } catch (routeError) {
         console.error("Workspace entry routing unavailable", routeError);
       }
-      router.replace(destination === "/workspace/login" ? "/workspace" : destination);
+      router.replace(routeAfterAuth(destination));
       router.refresh();
     } catch (error) {
       console.error("Workspace sign-in request failed", error);
@@ -90,7 +100,7 @@ export default function WorkspaceLoginPage() {
       footer={
         <>
           Nu ai cont?{" "}
-          <Link href="/workspace/register" className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
+          <Link href={`/workspace/register${checkoutQuery}`} className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
             Creează unul
           </Link>
         </>

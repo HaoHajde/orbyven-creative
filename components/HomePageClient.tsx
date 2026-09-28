@@ -567,7 +567,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="mt-auto pt-8">
-                      <Link href={`/cerere?plan=${plan.id}&payment=subscription&source=homepage`} className={`inline-flex h-12 w-full items-center justify-between rounded-full border px-5 text-sm font-semibold transition duration-300 group-hover:translate-y-[-1px] ${featured ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)]"}`}>
+                      <Link href={`/contact?plan=${plan.id}&source=homepage`} className={`inline-flex h-12 w-full items-center justify-between rounded-full border px-5 text-sm font-semibold transition duration-300 group-hover:translate-y-[-1px] ${featured ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)]"}`}>
                         <span>Alege {plan.name}</span>
                         <span aria-hidden="true">→</span>
                       </Link>

@@ -2,11 +2,15 @@
 
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function WorkspaceAuthCallbackPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan");
+  const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
+  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
   const [message, setMessage] = useState("Se confirmă contul...");
 
   useEffect(() => {
@@ -20,7 +24,14 @@ export default function WorkspaceAuthCallbackPage() {
       routed = true;
       const destination = await getWorkspaceEntryPath();
       if (!cancelled) {
-        router.replace(destination === "/workspace/login" ? "/workspace/onboarding" : destination);
+        const next = checkoutPlan
+          ? destination === "/workspace"
+            ? `/contact${checkoutQuery}`
+            : destination === "/workspace/onboarding" || destination === "/workspace/login"
+              ? `/workspace/onboarding${checkoutQuery}`
+              : destination
+          : destination === "/workspace/login" ? "/workspace/onboarding" : destination;
+        router.replace(next);
         router.refresh();
       }
     };
@@ -41,7 +52,7 @@ export default function WorkspaceAuthCallbackPage() {
       window.clearTimeout(timeout);
       listener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [checkoutPlan, checkoutQuery, router]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#fbfbfd] px-6 text-center text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">

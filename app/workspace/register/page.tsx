@@ -9,8 +9,8 @@ import WorkspaceAuthShell, {
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 function getSignupErrorMessage(error: { message?: string; status?: number }) {
   const message = (error.message ?? "").toLowerCase();
@@ -49,6 +49,16 @@ function getSignupErrorMessage(error: { message?: string; status?: number }) {
 
 export default function WorkspaceRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan");
+  const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
+  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
+  const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
+    if (!checkoutPlan) return destination === "/workspace/login" ? "/workspace/onboarding" : destination;
+    if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
+    if (destination === "/workspace") return `/contact${checkoutQuery}`;
+    return destination;
+  }, [checkoutPlan, checkoutQuery]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +78,7 @@ export default function WorkspaceRegisterPage() {
         if (cancelled || !data.session) return;
         const destination = await getWorkspaceEntryPath();
         if (!cancelled && destination !== "/workspace/login") {
-          router.replace(destination);
+          router.replace(routeAfterAuth(destination));
         }
       } catch (error) {
         console.error(error);
@@ -78,7 +88,7 @@ export default function WorkspaceRegisterPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [routeAfterAuth, router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -105,7 +115,7 @@ export default function WorkspaceRegisterPage() {
         password,
         options: {
           data: { full_name: name.trim() },
-          emailRedirectTo: `${origin}/workspace/auth/callback`,
+          emailRedirectTo: `${origin}/workspace/auth/callback${checkoutQuery}`,
         },
       });
 
@@ -121,7 +131,7 @@ export default function WorkspaceRegisterPage() {
 
       if (data.session) {
         const destination = await getWorkspaceEntryPath();
-        router.replace(destination === "/workspace/login" ? "/workspace/onboarding" : destination);
+        router.replace(routeAfterAuth(destination));
         router.refresh();
         return;
       }
@@ -150,7 +160,7 @@ export default function WorkspaceRegisterPage() {
         type: "signup",
         email: registeredEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/workspace/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/workspace/auth/callback${checkoutQuery}`,
         },
       });
 
@@ -181,7 +191,7 @@ export default function WorkspaceRegisterPage() {
       footer={
         <>
           Ai deja cont?{" "}
-          <Link href="/workspace/login" className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
+          <Link href={`/workspace/login${checkoutQuery}`} className="font-semibold text-[#8fa3ff] transition hover:text-[#bdc9ff]">
             Intră în workspace
           </Link>
         </>

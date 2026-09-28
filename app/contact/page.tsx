@@ -1,84 +1,140 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import {
+  BILLING_PLANS,
+  LEGAL_DOCUMENT_VERSION,
+  PUBLIC_PRICE_TAX_LABEL,
+  isBillingPlanId,
+  type BillingPlanId,
+} from "@/lib/billing/public-config";
+import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import {
+  getCurrentWorkspace,
+  getWorkspaceEntryPath,
+  type OrbyvenWorkspace,
+} from "@/lib/orbyven-workspace";
 
 type Theme = "light" | "dark";
-
-type FormState = {
-  name: string;
-  email: string;
-  projectType: string;
-  budget: string;
-  message: string;
-};
-
-const initialForm: FormState = {
-  name: "",
-  email: "",
-  projectType: "Website pentru business",
-  budget: "Nu știu încă",
-  message: "",
-};
+type AccountState = "checking" | "guest" | "onboarding" | "ready" | "restricted";
 
 function getThemeVars(theme: Theme) {
   return {
-    "--bg": theme === "dark" ? "#000000" : "#ffffff",
-    "--surface": theme === "dark" ? "#0c0c0e" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#151518" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
-    "--border":
-      theme === "dark" ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)",
-    "--border-strong":
-      theme === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
+    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
+    "--surface": theme === "dark" ? "#101014" : "#ffffff",
+    "--surface-2": theme === "dark" ? "#17171c" : "#f1f1f5",
+    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
+    "--muted-2": theme === "dark" ? "#777781" : "#878790",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
     "--accent": "#4b46ee",
-    "--accent-soft":
-      theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
+    "--home-violet": "#a58bff",
+    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
+    "--grid-line": theme === "dark" ? "rgba(255,255,255,.045)" : "rgba(20,20,30,.045)",
   } as CSSProperties;
 }
 
+function PaymentBadges() {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex h-9 items-center gap-2 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-semibold">
+        <span className="text-[16px] leading-none"></span> Pay
+      </span>
+      <span className="inline-flex h-9 items-center gap-2 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-semibold">
+        <span className="font-black tracking-[-.08em]"><span className="text-[#4285f4]">G</span></span> Pay
+      </span>
+      <span className="inline-flex h-9 items-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-black italic tracking-[-.04em] text-[#1a1f71]">VISA</span>
+      <span className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[10px] font-semibold">
+        <span className="relative inline-flex w-7 items-center">
+          <span className="h-4 w-4 rounded-full bg-[#eb001b]" />
+          <span className="-ml-1.5 h-4 w-4 rounded-full bg-[#f79e1b] opacity-90" />
+        </span>
+        Mastercard
+      </span>
+    </div>
+  );
+}
+
 export default function ContactPage() {
+  const searchParams = useSearchParams();
+  const queryPlan = searchParams.get("plan");
+  const initialPlan: BillingPlanId = isBillingPlanId(queryPlan) ? queryPlan : "business";
+
   const [theme, setTheme] = useState<Theme>("light");
-  const [form, setForm] = useState<FormState>(initialForm);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [requestNumber, setRequestNumber] = useState("");
-  const startedAtRef = useRef(0);
+  const [planId, setPlanId] = useState<BillingPlanId>(initialPlan);
+  const [accountState, setAccountState] = useState<AccountState>("checking");
+  const [workspace, setWorkspace] = useState<OrbyvenWorkspace | null>(null);
+  const [accepted, setAccepted] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState("");
+
+  const selectedPlan = useMemo(() => BILLING_PLANS[planId], [planId]);
 
   useEffect(() => {
     const hydrate = () => {
       const saved = window.localStorage.getItem("studio-theme");
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const nextTheme: Theme =
-        saved === "dark" || saved === "light"
-          ? saved
-          : prefersDark
-            ? "dark"
-            : "light";
-
+      const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
-      startedAtRef.current = Date.now();
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
     };
-
     const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAccount = async () => {
+      try {
+        const { data } = await orbyvenSupabase.auth.getSession();
+        if (cancelled) return;
+        if (!data.session) {
+          setAccountState("guest");
+          return;
+        }
+
+        const destination = await getWorkspaceEntryPath();
+        if (cancelled) return;
+
+        if (destination === "/workspace/onboarding") {
+          setAccountState("onboarding");
+          return;
+        }
+        if (destination !== "/workspace") {
+          setAccountState("restricted");
+          return;
+        }
+
+        const currentWorkspace = await getCurrentWorkspace();
+        if (cancelled) return;
+        if (!currentWorkspace) {
+          setAccountState("onboarding");
+          return;
+        }
+
+        setWorkspace(currentWorkspace);
+        setAccountState("ready");
+      } catch (loadError) {
+        console.error(loadError);
+        if (!cancelled) {
+          setError("Nu am putut verifica starea contului. Reîncearcă.");
+          setAccountState("guest");
+        }
+      }
+    };
+    void loadAccount();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -86,348 +142,236 @@ export default function ContactPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
       return next;
     });
   };
 
-  const updateField = (field: keyof FormState, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
-    if (submitError) setSubmitError("");
-    if (requestNumber) setRequestNumber("");
-  };
+  const checkoutQuery = `?plan=${planId}&checkout=1`;
+  const registerHref = `/workspace/register${checkoutQuery}`;
+  const loginHref = `/workspace/login${checkoutQuery}`;
+  const onboardingHref = `/workspace/onboarding${checkoutQuery}`;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const name = form.name.trim();
-    const email = form.email.trim().toLowerCase();
-    const message = form.message.trim();
-
-    if (!name || !email || !message) {
-      setSubmitError("Completează numele, emailul și câteva detalii despre proiect.");
-      return;
-    }
-
-    if (!privacyAccepted) {
-      setSubmitError("Acceptă Politica de Confidențialitate pentru a trimite cererea.");
-      return;
-    }
-
-    setSending(true);
-    setSubmitError("");
-    setRequestNumber("");
+  const startCheckout = async () => {
+    if (!workspace || !accepted || paying) return;
+    setPaying(true);
+    setError("");
 
     try {
-      const response = await fetch("/api/project-requests", {
+      const { data } = await orbyvenSupabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setAccountState("guest");
+        throw new Error("Sesiunea a expirat. Autentifică-te din nou.");
+      }
+
+      const response = await fetch("/api/billing/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          paymentMode: "custom_quote",
-          planId: null,
-          companyName: "",
-          contactName: name,
-          email,
-          phone: "",
-          projectTitle: form.projectType,
-          projectDetails: `Buget orientativ: ${form.budget}\n\n${message}`,
-          source: "contact_page",
-          privacyAccepted: true,
-          marketingConsent: false,
-          startedAt: startedAtRef.current,
-          website: "",
+          organizationId: workspace.organization.id,
+          planId,
+          acceptedLegalVersion: LEGAL_DOCUMENT_VERSION,
         }),
       });
 
-      const payload = (await response.json()) as {
-        error?: string;
-        requestNumber?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Cererea nu a putut fi trimisă.");
+      const payload = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error || "Checkout-ul nu este disponibil momentan.");
       }
-
-      setRequestNumber(payload.requestNumber || "OR-RECEIVED");
-      setForm(initialForm);
-      setPrivacyAccepted(false);
-      startedAtRef.current = Date.now();
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "Cererea nu a putut fi trimisă. Încearcă din nou."
-      );
-    } finally {
-      setSending(false);
+      window.location.assign(payload.url);
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : "Checkout-ul nu este disponibil momentan.");
+      setPaying(false);
     }
   };
 
   const vars = getThemeVars(theme);
-  const background = theme === "dark" ? "#000000" : "#ffffff";
-  const foreground = theme === "dark" ? "#f5f5f7" : "#1d1d1f";
 
   return (
     <main
-      style={{
-        ...vars,
-        backgroundColor: background,
-        color: foreground,
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-      }}
-      className="relative min-h-screen overflow-x-clip antialiased md:transition-colors md:duration-300"
+      style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
+      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
-      <SiteHeader
-        theme={theme}
-        compact={false}
-        activePage="contact"
-        onToggleTheme={toggleTheme}
-      />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_10%,rgba(110,79,255,.14),transparent_20%),radial-gradient(circle_at_12%_54%,rgba(74,107,201,.07),transparent_22%),radial-gradient(circle_at_83%_78%,rgba(156,77,221,.07),transparent_22%)]" />
+        <div className="absolute inset-0 opacity-45" style={{
+          backgroundImage: "linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "linear-gradient(to bottom,transparent,black 14%,black 88%,transparent)",
+        }} />
+      </div>
 
-      <section
-        style={{ backgroundColor: background }}
-        className="relative px-6 pb-9 pt-28 sm:px-8 sm:pb-12 sm:pt-32 md:px-10 md:pb-20 md:pt-40"
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-20 hidden h-72 w-[44rem] max-w-[90vw] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[110px] md:block"
-        />
+      <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
-        <div className="relative mx-auto w-full max-w-[1500px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--muted-2)] sm:text-[11px]">
-            ORBYVEN CREATIVE · CONTACT
+      <section className="relative z-10 px-5 pb-10 pt-28 sm:px-6 md:px-10 md:pb-14 md:pt-36">
+        <div className="mx-auto max-w-[1450px]">
+          <p className="orbyven-home-kicker">
+            <span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span>
+            <span>ORBYVEN · FAST START</span>
+            <span aria-hidden="true" className="orbyven-home-kicker-line" />
           </p>
-
-          <h1 className="mt-5 max-w-5xl text-[44px] font-semibold leading-[0.94] tracking-[-0.058em] sm:text-[62px] md:mt-7 md:text-[82px] lg:text-[104px]">
-            Ai o idee?
-            <span className="block">Hai s-o facem memorabilă.</span>
+          <h1 className="mt-6 max-w-5xl text-[clamp(52px,8vw,112px)] font-semibold leading-[.86] tracking-[-.07em]">
+            Alegi. Creezi cont.
+            <br />
+            <span className="text-[var(--home-violet)]">Plătești.</span>
           </h1>
-
-          <p className="mt-5 max-w-2xl text-[15px] leading-7 text-[var(--muted)] sm:text-base md:mt-8 md:text-lg md:leading-8">
-            Spune-ne ce vrei să obții. Nu ai nevoie de un brief perfect — clarificăm
-            împreună direcția, structura și ce merită construit.
+          <p className="mt-6 max-w-xl text-[13px] leading-6 text-[var(--muted)] sm:text-[14px]">
+            Fără brief lung aici. După activare, ORBYVEN AI te întreabă exact ce are nevoie pentru design și configurare.
           </p>
         </div>
       </section>
 
-      <section
-        style={{ backgroundColor: background }}
-        className="relative px-6 pb-24 sm:px-8 md:px-10 md:pb-36"
-      >
-        <div className="mx-auto grid max-w-[1500px] gap-8 xl:grid-cols-[0.72fr_1.28fr] xl:gap-20">
-          <aside className="hidden xl:block xl:sticky xl:top-28 xl:self-start">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-2)]">
-              Start here
-            </p>
-            <h2 className="mt-5 max-w-xl text-[58px] font-semibold leading-[0.98] tracking-[-0.055em]">
-              Direct la ce contează.
-            </h2>
-            <p className="mt-6 max-w-lg text-[15px] leading-7 text-[var(--muted)]">
-              Trimite-ne contextul proiectului. Cererea intră direct în fluxul
-              ORBYVEN și primește un număr unic, fără formulare intermediare.
-            </p>
-
-            <div className="mt-9 divide-y divide-[var(--border)] border-y border-[var(--border)] text-sm">
-              <InfoRow label="Răspuns" value="În cel mai scurt timp" />
-              <InfoRow label="Lucrăm" value="Remote · România" />
-              <InfoRow label="Flux" value="Cerere → ofertă → proiect" />
-              <a
-                href="mailto:contact@orbyven.ro"
-                className="block py-4 text-sm font-medium text-[var(--text)] underline underline-offset-4"
-              >
-                contact@orbyven.ro
-              </a>
+      <section className="relative z-10 px-5 pb-20 sm:px-6 md:px-10 md:pb-28">
+        <div className="mx-auto grid max-w-[1450px] gap-5 lg:grid-cols-[1.05fr_.95fr]">
+          <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)]/90 p-5 shadow-[0_30px_100px_rgba(0,0,0,.08)] backdrop-blur-xl sm:p-7">
+            <div className="grid grid-cols-3 gap-2">
+              {(["start", "business", "pro"] as BillingPlanId[]).map((id) => {
+                const plan = BILLING_PLANS[id];
+                const active = planId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setPlanId(id);
+                      setAccepted(false);
+                      setError("");
+                    }}
+                    className={`rounded-[20px] border p-4 text-left transition ${active ? "border-[rgba(165,139,255,.55)] bg-[var(--accent-soft)] shadow-[0_16px_50px_rgba(75,70,238,.09)]" : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--border-strong)]"}`}
+                  >
+                    <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">{plan.name}</p>
+                    <div className="mt-3 flex flex-wrap items-baseline gap-1">
+                      <span className="text-[30px] font-semibold leading-none tracking-[-.06em]">{plan.priceLei}</span>
+                      <span className="text-[9px] text-[var(--muted)]">lei/lună</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
-            <Link
-              href="/cerere"
-              className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-[var(--text)]"
-            >
-              Vrei toate opțiunile comerciale?
-              <span aria-hidden="true">→</span>
-            </Link>
-          </aside>
-
-          <form
-            id="project-form"
-            onSubmit={handleSubmit}
-            aria-busy={sending}
-            className="relative rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 md:overflow-hidden md:rounded-[36px] md:p-9 lg:p-11"
-          >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute right-[-12%] top-[-12%] hidden h-[360px] w-[360px] rounded-full bg-[var(--accent-soft)] blur-[140px] md:block"
-            />
-
-            <div className="relative">
-              <div className="mb-7 border-b border-[var(--border)] pb-6 md:mb-10 md:pb-8">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-2)]">
-                  Project inquiry
-                </p>
-                <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em] sm:text-[38px]">
-                  Spune-ne despre proiect.
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                  Câteva detalii sunt suficiente. Restul îl stabilim împreună.
-                </p>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Nume *">
-                  <input
-                    value={form.name}
-                    onChange={(event) => updateField("name", event.target.value)}
-                    autoComplete="name"
-                    className={inputClass}
-                    placeholder="Numele tău"
-                  />
-                </Field>
-
-                <Field label="Email *">
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => updateField("email", event.target.value)}
-                    autoComplete="email"
-                    className={inputClass}
-                    placeholder="nume@companie.ro"
-                  />
-                </Field>
-
-                <Field label="Tip proiect">
-                  <select
-                    value={form.projectType}
-                    onChange={(event) => updateField("projectType", event.target.value)}
-                    className={inputClass}
-                  >
-                    <option>Website pentru business</option>
-                    <option>Landing page</option>
-                    <option>Dashboard / instrument intern</option>
-                    <option>Experiență digitală</option>
-                    <option>Alt proiect</option>
-                  </select>
-                </Field>
-
-                <Field label="Buget orientativ">
-                  <select
-                    value={form.budget}
-                    onChange={(event) => updateField("budget", event.target.value)}
-                    className={inputClass}
-                  >
-                    <option>Nu știu încă</option>
-                    <option>Sub 2.500 lei</option>
-                    <option>2.500 – 5.000 lei</option>
-                    <option>5.000 – 10.000 lei</option>
-                    <option>Peste 10.000 lei</option>
-                  </select>
-                </Field>
-              </div>
-
-              <Field label="Ce vrei să construim? *" className="mt-5">
-                <textarea
-                  value={form.message}
-                  onChange={(event) => updateField("message", event.target.value)}
-                  className={`${inputClass} min-h-40 resize-y`}
-                  placeholder="Spune-ne pe scurt ce vrei să obții, ce problemă rezolvăm și orice detaliu relevant."
-                />
-              </Field>
-
-              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm leading-6 text-[var(--muted)]">
-                <input
-                  type="checkbox"
-                  checked={privacyAccepted}
-                  onChange={(event) => {
-                    setPrivacyAccepted(event.target.checked);
-                    if (submitError) setSubmitError("");
-                  }}
-                  className="mt-1 h-4 w-4 accent-[var(--accent)]"
-                />
-                <span>
-                  Am citit{" "}
-                  <Link
-                    href="/legal/privacy"
-                    className="text-[var(--text)] underline underline-offset-4"
-                  >
-                    Politica de Confidențialitate
-                  </Link>{" "}
-                  pentru prelucrarea acestei cereri.
-                </span>
-              </label>
-
-              {submitError && (
-                <p
-                  className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-500"
-                  role="alert"
-                >
-                  {submitError}
-                </p>
-              )}
-
-              {requestNumber && (
-                <div
-                  className="mt-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-4"
-                  role="status"
-                >
-                  <p className="text-sm font-semibold text-[var(--text)]">
-                    Cererea a fost trimisă.
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    Număr de referință:{" "}
-                    <strong className="text-[var(--text)]">{requestNumber}</strong>
-                  </p>
+            <div className="mt-6 rounded-[26px] border border-[var(--border)] bg-[var(--bg)] p-5 sm:p-6">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">Plan selectat</p>
+                  <h2 className="mt-2 text-[34px] font-semibold tracking-[-.055em]">{selectedPlan.name}</h2>
+                  <p className="mt-2 max-w-md text-[11px] leading-5 text-[var(--muted)]">{selectedPlan.description}</p>
                 </div>
-              )}
+                <div className="shrink-0 text-left sm:text-right">
+                  <p className="text-[44px] font-semibold leading-none tracking-[-.07em]">{selectedPlan.priceLei}</p>
+                  <p className="mt-1 text-[9px] text-[var(--muted)]">lei / lună · {PUBLIC_PRICE_TAX_LABEL}</p>
+                </div>
+              </div>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-[var(--muted-2)]">
-                  Nu se efectuează nicio plată din acest formular.
-                </p>
+              <div className="mt-6 grid grid-cols-3 gap-2">
+                {[
+                  ["01", "Plan"],
+                  ["02", "Cont"],
+                  ["03", "Plată"],
+                ].map(([number, label], index) => (
+                  <div key={label} className={`rounded-[15px] border px-3 py-3 ${index === 0 || accountState === "ready" ? "border-[rgba(165,139,255,.30)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}>
+                    <p className="text-[7px] font-bold tracking-[.14em] text-[var(--muted-2)]">{number}</p>
+                    <p className="mt-1 text-[10px] font-semibold">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[26px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">Plată securizată</p>
+                  <p className="mt-2 text-[12px] font-semibold">Stripe Checkout</p>
+                </div>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[8px] font-bold uppercase tracking-[.12em] text-emerald-500">SECURE</span>
+              </div>
+              <div className="mt-4">
+                <PaymentBadges />
+              </div>
+              <p className="mt-4 max-w-xl text-[9px] leading-4 text-[var(--muted-2)]">
+                Cardul este procesat în checkout-ul securizat Stripe. Apple Pay și Google Pay apar automat când sunt compatibile cu dispozitivul, browserul și configurația comerciantului.
+              </p>
+            </div>
+          </div>
+
+          <aside className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)]/90 p-5 shadow-[0_30px_100px_rgba(0,0,0,.08)] backdrop-blur-xl sm:p-7 lg:sticky lg:top-24 lg:self-start">
+            <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">CONT + CHECKOUT</p>
+            <h2 className="mt-4 text-[36px] font-semibold leading-[.98] tracking-[-.055em]">Mai puține întrebări. Mai repede în ORBYVEN.</h2>
+
+            {accountState === "checking" ? (
+              <div className="mt-8 rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-5 text-[11px] text-[var(--muted)]">Verificăm contul…</div>
+            ) : null}
+
+            {accountState === "guest" ? (
+              <div className="mt-8">
+                <Link href={registerHref} className="flex h-13 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[12px] font-semibold text-[var(--button-text)]">
+                  <span>Creează cont și continuă</span><span>→</span>
+                </Link>
+                <Link href={loginHref} className="mt-3 flex h-12 w-full items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 text-[11px] font-semibold">
+                  Am deja cont
+                </Link>
+                <p className="mt-4 text-[9px] leading-4 text-[var(--muted-2)]">Planul ales rămâne salvat în flux. După confirmarea contului ajungi direct înapoi la checkout.</p>
+              </div>
+            ) : null}
+
+            {accountState === "onboarding" ? (
+              <div className="mt-8">
+                <p className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] p-4 text-[10px] leading-5 text-[var(--muted)]">Contul este gata. Mai avem nevoie doar de numele companiei pentru workspace.</p>
+                <Link href={onboardingHref} className="mt-3 flex h-13 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[12px] font-semibold text-[var(--button-text)]">
+                  <span>Finalizează contul</span><span>→</span>
+                </Link>
+              </div>
+            ) : null}
+
+            {accountState === "restricted" ? (
+              <div className="mt-8">
+                <p className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 p-4 text-[10px] leading-5 text-amber-600">Contul necesită verificare înainte de o plată nouă.</p>
+                <Link href="/workspace/access" className="mt-3 flex h-12 w-full items-center justify-center rounded-full border border-[var(--border-strong)] text-[11px] font-semibold">Verifică accesul</Link>
+              </div>
+            ) : null}
+
+            {accountState === "ready" ? (
+              <div className="mt-8">
+                <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                  <p className="text-[8px] font-bold uppercase tracking-[.14em] text-[var(--muted-2)]">Cont conectat</p>
+                  <p className="mt-2 text-[12px] font-semibold">{workspace?.organization.name}</p>
+                  <p className="mt-1 text-[9px] text-[var(--muted)]">{workspace?.user.email}</p>
+                </div>
+
+                <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-[var(--border)] p-4 text-[10px] leading-5 text-[var(--muted)]">
+                  <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-[#4b46ee]" />
+                  <span>
+                    Accept <Link href="/legal/terms" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii</Link> și <Link href="/legal/subscriptions" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii de abonament</Link>.
+                  </span>
+                </label>
+
                 <button
-                  type="submit"
-                  disabled={sending}
-                  className="inline-flex min-h-12 touch-manipulation items-center justify-center rounded-full bg-[var(--button)] px-7 text-sm font-medium text-[var(--button-text)] active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 md:transition-transform md:hover:scale-[1.015]"
+                  type="button"
+                  disabled={!accepted || paying}
+                  onClick={startCheckout}
+                  className="mt-4 flex h-14 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[12px] font-semibold text-[var(--button-text)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {sending ? "Se trimite…" : "Trimite cererea"}
+                  <span>{paying ? "Se deschide checkout-ul…" : `Plătește ${selectedPlan.priceLei} lei / lună`}</span>
+                  <span>→</span>
                 </button>
               </div>
+            ) : null}
+
+            {error ? <p className="mt-4 rounded-[16px] border border-red-500/20 bg-red-500/10 px-4 py-3 text-[10px] leading-5 text-red-500">{error}</p> : null}
+
+            <div className="mt-6 border-t border-[var(--border)] pt-5">
+              <p className="text-[9px] leading-4 text-[var(--muted-2)]">Ai nevoie de ofertă custom, nu abonament?</p>
+              <Link href="/cerere?payment=custom_quote&source=contact" className="mt-2 inline-flex text-[10px] font-semibold">Trimite o cerere →</Link>
+              <a href="mailto:contact@orbyven.ro" className="ml-4 inline-flex text-[10px] font-semibold text-[var(--muted)]">Email →</a>
             </div>
-          </form>
+          </aside>
         </div>
       </section>
 
       <SiteFooter theme={theme} activePage="contact" />
     </main>
-  );
-}
-
-const inputClass =
-  "w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3.5 text-[15px] text-[var(--text)] outline-none placeholder:text-[var(--muted-2)] focus:border-[var(--accent)]/60 focus:ring-2 focus:ring-[var(--accent)]/10 md:transition";
-
-function Field({
-  label,
-  children,
-  className = "",
-}: {
-  label: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className}`}>
-      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-6 py-4">
-      <span className="text-[var(--muted-2)]">{label}</span>
-      <span className="text-right font-medium text-[var(--text)]">{value}</span>
-    </div>
   );
 }
