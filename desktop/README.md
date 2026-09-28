@@ -1,6 +1,6 @@
-# ORBYVEN Desktop v0.3.0 — independent Windows application
+# ORBYVEN Desktop v0.3.1 — independent Windows application
 
-This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.3 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
+This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.3.1 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
 ## Architecture
 
@@ -8,7 +8,8 @@ This Windows build ships a **locally bundled React application** served from Tau
 - Backend: exactly the same Supabase project as ORBYVEN Web, configured via `https://orbyven.ro/api/desktop/config`. This route publishes ONLY the existing public URL + publishable key. It must be deployed before first use.
 - Authentication: desktop-specific session storage; password-based Supabase Auth. No password is packaged or logged. No public registration page is duplicated; onboarding is supported for authenticated accounts.
 - Security: call the existing `workspace_entry_state` RPC BEFORE any company data. Reuse `getCurrentWorkspace()`, tenant-scoped module functions and Supabase RLS from the existing app. No service-role key or native command/IPC permissions.
-- Web-inspired experience: original OC SVG, dark/light brand tokens, 65px global header, compact grouped sidebar, Ctrl+K module palette, website-like quick-create, owner/admin module manager, four KPI cards, operations ring and workflow card.\n- Modules: Overview, leads/clients, work/tasks, calendar, estimates, documents, expenses, team. List/detail UI, plus basic creation and appropriate status changes using existing shared module services; deeper web-specific editors and specialized workflows are not yet feature-parity complete.
+- Branded Windows installer: ORBYVEN OC installer/uninstaller icon, navy-violet header, orbital welcome/finish artwork and ORBYVEN Start Menu folder.\n- Web-inspired experience: original OC SVG, dark/light brand tokens, 65px global header, compact grouped sidebar, Ctrl+K module palette, website-like quick-create, owner/admin module manager, four KPI cards, operations ring and workflow card.
+- Modules: Overview, leads/clients, work/tasks, calendar, estimates, documents, expenses, team. List/detail UI, plus basic creation and appropriate status changes using existing shared module services; deeper web-specific editors and specialized workflows are not yet feature-parity complete.
 - Connection: app UI still launches when backend is down, but login and online data operations require internet. No offline record writes or auto-updates in this Alpha.
 
 ## Developer build
@@ -21,6 +22,7 @@ cd desktop
 npm install
 npm run check
 npm run icons
+npm run installer:brand
 npm run dev
 npm run build
 ```
