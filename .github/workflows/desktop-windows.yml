@@ -36,16 +36,13 @@ jobs:
       - name: Contract checks
         run: npm run check --prefix desktop
 
-      - name: Generate original ORBYVEN icon
-        run: npm run icons --prefix desktop
-
-      - name: Build Windows NSIS installer
+      - name: Build branded ORBYVEN Windows NSIS installer
         run: npm run build --prefix desktop
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: ORBYVEN-Desktop-Windows-v0.3.0
+          name: ORBYVEN-Desktop-Windows-v0.3.1
           path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           retention-days: 14
