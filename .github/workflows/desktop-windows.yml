@@ -7,6 +7,17 @@ on:
       - '.github/workflows/desktop-windows.yml'
       - 'app/icon.svg'
       - 'app/api/desktop/**'
+      - 'components/ClientWorkspace.tsx'
+      - 'components/WorkspaceShell.tsx'
+      - 'components/WorkspaceContent.tsx'
+      - 'components/WorkspaceSearch.tsx'
+      - 'components/WorkspaceModuleStore.tsx'
+      - 'components/WorkspaceOrbitBackground.tsx'
+      - 'components/modules/**'
+      - 'lib/workspace-ui.ts'
+      - 'lib/orbyven-modules.ts'
+      - 'lib/workspace-navigation.ts'
+      - 'lib/ecosystem/**'
       - 'lib/modules/**'
       - 'lib/orbyven-workspace.ts'
   workflow_dispatch:
@@ -42,7 +53,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: ORBYVEN-Desktop-Windows-v0.3.1
+          name: ORBYVEN-Desktop-Windows-v0.4.0
           path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           retention-days: 14
