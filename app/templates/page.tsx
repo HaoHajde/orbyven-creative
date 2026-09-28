@@ -2,6 +2,7 @@
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
+import TemplateCardPreviewFrame from "@/components/TemplateCardPreviewFrame";
 import { featuredTemplates as featured, type FeaturedTemplate } from "@/lib/featured-templates";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -116,29 +117,39 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
   );
 }
 
+function AccentTitle({ text }: { text: string }) {
+  const splitAt = text.lastIndexOf(" ");
+  if (splitAt < 0) return <span className="text-[var(--home-violet)]">{text}</span>;
+  return (
+    <>
+      {text.slice(0, splitAt + 1)}
+      <span className="relative z-10 -mx-[0.018em] text-[var(--home-violet)]">{text.slice(splitAt + 1)}</span>
+    </>
+  );
+}
+
 function FeaturedCard({ item, delay = 0 }: { item: FeaturedTemplate; delay?: number }) {
   return (
-    <Reveal delay={delay}>
+    <Reveal delay={delay} className="h-full">
       <Link
         href={item.href}
-        className="group block overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_100px_rgba(0,0,0,.14)]"
+        className="group flex min-h-[590px] h-full flex-col overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.055)] transition duration-500 hover:-translate-y-1 hover:border-[var(--home-violet)]/35 hover:shadow-[0_30px_100px_rgba(0,0,0,.12)] sm:h-[610px]"
       >
-        <div className="overflow-hidden rounded-[27px]">
-          <div className="transition duration-700 ease-out group-hover:scale-[1.018]">
-            <FeaturedTemplatePreview kind={item.kind} />
-          </div>
-        </div>
-        <div className="flex items-end justify-between gap-5 px-3 pb-3 pt-5 sm:px-4">
+        <div className="flex flex-1 items-start justify-between gap-5 px-3 pb-5 pt-3 sm:px-4 sm:pt-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{item.label}</p>
               <span className="text-[8px] text-[var(--muted)]/65">· {item.meta}</span>
             </div>
-            <h3 className="mt-2 text-[27px] font-semibold tracking-[-.045em] sm:text-[31px]">{item.title}</h3>
-            <p className="mt-1.5 max-w-lg text-[11px] leading-5 text-[var(--muted)]">{item.subtitle}</p>
+            <h3 className="mt-3 text-[30px] font-semibold leading-[.96] tracking-[-.05em] sm:text-[34px]">{item.title}</h3>
+            <p className="mt-3 max-w-xl text-[11px] leading-5 text-[var(--muted)]">{item.subtitle}</p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition duration-300 group-hover:rotate-45">↗</span>
         </div>
+
+        <TemplateCardPreviewFrame>
+          <FeaturedTemplatePreview kind={item.kind} />
+        </TemplateCardPreviewFrame>
       </Link>
     </Reveal>
   );
@@ -146,25 +157,26 @@ function FeaturedCard({ item, delay = 0 }: { item: FeaturedTemplate; delay?: num
 
 function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; delay?: number }) {
   return (
-    <Reveal delay={delay}>
+    <Reveal delay={delay} className="h-full">
       <Link
         href={`/templates/${template.slug}`}
-        className="group grid min-h-[310px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-3 transition duration-400 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(0,0,0,.10)] sm:grid-cols-[1.02fr_.98fr]"
+        className="group flex min-h-[590px] h-full flex-col overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_20px_70px_rgba(0,0,0,.055)] transition duration-500 hover:-translate-y-1 hover:border-[var(--home-violet)]/35 hover:shadow-[0_30px_100px_rgba(0,0,0,.12)] sm:h-[610px]"
       >
-        <div className="overflow-hidden rounded-[22px]">
+        <div className="flex flex-1 items-start justify-between gap-5 px-3 pb-5 pt-3 sm:px-4 sm:pt-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
+              <span className="text-[8px] text-[var(--muted)]/65">· Model ORBYVEN</span>
+            </div>
+            <h3 className="mt-3 text-[30px] font-semibold leading-[.96] tracking-[-.05em] sm:text-[34px]">{template.title}</h3>
+            <p className="mt-3 max-w-xl text-[11px] leading-5 text-[var(--muted)]">{template.description}</p>
+          </div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition duration-300 group-hover:rotate-45">↗</span>
+        </div>
+
+        <TemplateCardPreviewFrame>
           <ClientTemplatePreview template={template} compact />
-        </div>
-        <div className="flex min-h-[210px] flex-col justify-between p-5 sm:min-h-full sm:p-6">
-          <div>
-            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
-            <h3 className="mt-3 text-[34px] font-semibold leading-[.94] tracking-[-.055em]">{template.title}</h3>
-            <p className="mt-4 max-w-sm text-[12px] leading-6 text-[var(--muted)]">{template.description}</p>
-          </div>
-          <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-4">
-            <span className="text-[10px] font-semibold">Vezi modelul</span>
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--button)] text-[var(--button-text)] transition group-hover:rotate-45">↗</span>
-          </div>
-        </div>
+        </TemplateCardPreviewFrame>
       </Link>
     </Reveal>
   );
@@ -205,6 +217,10 @@ export default function TemplatesPage() {
     "--border": theme === "dark" ? "rgba(255,255,255,.09)" : "rgba(0,0,0,.08)",
     "--button": theme === "dark" ? "#f5f5f7" : "#111114",
     "--button-text": theme === "dark" ? "#050506" : "#ffffff",
+    "--home-violet": "#a58bff",
+    "--accent-soft": theme === "dark" ? "rgba(123,92,255,.16)" : "rgba(111,78,255,.10)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.16)" : "rgba(0,0,0,.15)",
+    "--template-canvas": theme === "dark" ? "#09090d" : "#f8f8fa",
   } as CSSProperties;
 
   const templateGroups = templateCategories.map((category) => {
@@ -228,14 +244,15 @@ export default function TemplatesPage() {
   return (
     <main
       style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
+      className="relative min-h-screen overflow-x-hidden bg-[var(--template-canvas)] text-[var(--text)] antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="templates" onToggleTheme={toggleTheme} />
 
       <section className="relative isolate flex min-h-[94svh] items-end overflow-hidden px-5 pb-10 pt-32 text-white sm:px-6 md:px-10 md:pb-16 md:pt-40">
-        <div className="absolute inset-0 -z-30 bg-[#07070a]" />
-        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_68%_25%,rgba(115,83,255,.35),transparent_26%),radial-gradient(circle_at_24%_68%,rgba(70,51,150,.24),transparent_32%),linear-gradient(180deg,#161027_0%,#09080f_68%,#07070a_100%)]" />
-        <div className="absolute inset-0 -z-10 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute inset-0 -z-40 bg-[#07070a]" />
+        <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_68%_25%,rgba(115,83,255,.35),transparent_26%),radial-gradient(circle_at_24%_68%,rgba(70,51,150,.24),transparent_32%),linear-gradient(180deg,#161027_0%,#09080f_68%,#07070a_100%)]" />
+        <div className="absolute inset-0 -z-20 opacity-[.12] [background-image:linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-[240px] bg-[linear-gradient(to_bottom,transparent,var(--template-canvas))]" />
 
         {!reduceMotion ? (
           <>
@@ -302,13 +319,13 @@ export default function TemplatesPage() {
       </section>
 
       <section id="modele" className="mx-auto max-w-[1520px] px-5 pb-8 pt-14 sm:px-6 md:px-10 md:pb-10 md:pt-20">
-        <div className="flex flex-col gap-7 border-b border-[var(--border)] pb-10 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-7 pb-10 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-[.22em] text-[var(--muted)]">Biblioteca ORBYVEN</p>
+            <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Biblioteca ORBYVEN</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
             <h2 className="mt-4 text-[clamp(42px,6vw,76px)] font-semibold leading-[.9] tracking-[-.062em]">
-              Alege industria.
+              Alege <span className="relative z-10 -mx-[0.018em] text-[var(--home-violet)]">industria.</span>
               <br />
-              <span className="text-[var(--muted)]">Apoi alege direcția.</span>
+              Apoi alege direcția.
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-6 text-[var(--muted)]">
@@ -332,20 +349,16 @@ export default function TemplatesPage() {
         </div>
       </section>
 
-      {templateGroups.map((group, groupIndex) => (
+      {templateGroups.map((group) => (
         <section
           key={group.id}
           id={group.id}
           className="mx-auto max-w-[1520px] scroll-mt-28 px-5 py-12 sm:px-6 md:px-10 md:py-16"
         >
-          <div className="mb-8 grid gap-5 border-t border-[var(--border)] pt-9 lg:grid-cols-[.82fr_1.18fr] lg:items-end">
+          <div className="mb-8 grid gap-5 pt-5 lg:grid-cols-[.82fr_1.18fr] lg:items-end">
             <div>
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-bold tabular-nums text-[var(--muted)]">0{groupIndex + 1}</span>
-                <span className="h-px w-8 bg-[var(--border)]" />
-                <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[var(--muted)]">{group.kicker}</p>
-              </div>
-              <h2 className="mt-4 text-[clamp(38px,5vw,62px)] font-semibold leading-[.92] tracking-[-.058em]">{group.title}</h2>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>{group.kicker}</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-4 text-[clamp(38px,5vw,62px)] font-semibold leading-[.92] tracking-[-.058em]"><AccentTitle text={group.title} /></h2>
             </div>
             <div className="flex items-end justify-between gap-5">
               <p className="max-w-xl text-[13px] leading-6 text-[var(--muted)]">{group.description}</p>
@@ -363,7 +376,7 @@ export default function TemplatesPage() {
             </nav>
           ) : null}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid auto-rows-fr gap-4 xl:grid-cols-2">
             {group.featured.map((item, index) => (
               <FeaturedCard key={item.href} item={item} delay={Math.min(index * .035, .12)} />
             ))}

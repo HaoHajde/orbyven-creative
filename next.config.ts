@@ -1,11 +1,35 @@
 import type { NextConfig } from "next";
 
+// Crawlers need to reach private/demo pages to observe their noindex signals.
+const privateSeoRoutes = [
+  "/admin/:path*",
+  "/control-center/:path*",
+  "/workspace/:path*",
+  "/mobile-home",
+  "/mobile-contact",
+  "/mobile-servicii",
+  "/mobile-templates",
+];
+const demoSeoRoutes = [
+  "/templates/:path+",
+  "/demo/:path*",
+  "/orbyven-demos/:path*",
+];
+
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
     return [
+      ...privateSeoRoutes.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+      })),
+      ...demoSeoRoutes.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, follow, noarchive" }],
+      })),
       {
         source: "/:path*",
         headers: [

@@ -25,11 +25,13 @@ function BrowserFrame({
   url,
   dark = false,
   className = "",
+  fillPreview = false,
 }: {
   children: ReactNode;
   url: string;
   dark?: boolean;
   className?: string;
+  fillPreview?: boolean;
 }) {
   return (
     <div
@@ -43,7 +45,7 @@ function BrowserFrame({
           {url}
         </span>
       </div>
-      <div className="relative min-h-[calc(100%-2rem)]">{children}</div>
+      <div className={fillPreview ? "absolute inset-x-0 bottom-0 top-8 min-h-0" : "relative min-h-[calc(100%-2rem)]"}>{children}</div>
     </div>
   );
 }
@@ -88,11 +90,12 @@ function MiniNav({
  * the viewport. iframe loading="lazy" alone may still initialize nearby frames.
  * Once shown, keep it mounted so scrolling back does not reset the demo.
  */
-function DeferredDemoIframe({ number }: { number: string }) {
+function DeferredDemoIframe({ number, eager = false }: { number: string; eager?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [shouldMount, setShouldMount] = useState(false);
+  const [shouldMount, setShouldMount] = useState(eager);
 
   useEffect(() => {
+    if (eager) return;
     const element = containerRef.current;
     if (!element) return;
 
@@ -112,10 +115,10 @@ function DeferredDemoIframe({ number }: { number: string }) {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [eager]);
 
   return (
-    <div ref={containerRef} className="relative h-[338px] overflow-hidden bg-[#101014]" aria-hidden="true">
+    <div ref={containerRef} className={eager ? "relative h-full w-full overflow-hidden bg-[#101014]" : "relative h-[338px] overflow-hidden bg-[#101014]"} aria-hidden="true">
       {shouldMount && (
         <iframe
           src={`/orbyven-demos/pilot-${number}/index.html`}
@@ -123,19 +126,20 @@ function DeferredDemoIframe({ number }: { number: string }) {
           tabIndex={-1}
           loading="lazy"
           sandbox="allow-scripts"
-          className="pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"
+          className={eager ? "pointer-events-none absolute left-0 top-0 origin-top-left border-0" : "pointer-events-none absolute left-0 top-0 h-[845px] w-[250%] origin-top-left scale-[.4] border-0"}
+          style={eager ? { maxWidth: "none", width: "200%", height: "200%", transform: "scale(0.5)", transformOrigin: "top left" } : { maxWidth: "none" }}
         />
       )}
     </div>
   );
 }
 
-export default function FeaturedTemplatePreview({ kind }: { kind: FeaturedPreviewKind }) {
+export default function FeaturedTemplatePreview({ kind, eagerDemo = false }: { kind: FeaturedPreviewKind; eagerDemo?: boolean }) {
   if (kind in demoPreviews) {
     const demo = demoPreviews[kind as keyof typeof demoPreviews];
     return (
-      <BrowserFrame url={`orbyven.ro / pilot-${demo.number}`} dark={demo.dark}>
-        <DeferredDemoIframe number={demo.number} />
+      <BrowserFrame url={`orbyven.ro / pilot-${demo.number}`} dark={demo.dark} fillPreview={eagerDemo}>
+        <DeferredDemoIframe number={demo.number} eager={eagerDemo} />
       </BrowserFrame>
     );
   }

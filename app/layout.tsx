@@ -66,12 +66,18 @@ export const metadata: Metadata = {
 
   manifest: "/manifest.webmanifest",
 
+  twitter: {
+    card: "summary_large_image",
+    images: ["/opengraph-image"],
+  },
+
   icons: {
     icon: [
+      { url: "/branding/orbyven-favicon-96.png", type: "image/png", sizes: "96x96" },
       { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/branding/orbyven-favicon-96.png",
   },
 };
 

@@ -391,12 +391,25 @@ iframe {
 
 
 /* ORBYVEN homepage refresh — original hero, workspace, templates, plans and links retained. */
+.orbyven-home-main {
+  /* One uninterrupted canvas: no repeated black/grey gradients between sections. */
+  background-image: var(--home-flow);
+}
 .orbyven-home-hero::after {
-  content: ""; position: absolute; inset: auto 0 0; height: clamp(90px,14vh,180px);
-  pointer-events: none; background: linear-gradient(to bottom,transparent,var(--bg));
+  content: ""; position: absolute; inset: auto 0 0; height: clamp(120px,20vh,250px);
+  pointer-events: none; background: linear-gradient(to bottom,transparent,var(--home-flow-start));
 }
 .orbyven-home-soft {
-  background: linear-gradient(180deg,var(--bg) 0%,var(--surface) 23%,var(--surface) 77%,var(--bg) 100%);
+  background: transparent;
+  border-color: transparent;
+}
+.orbyven-home-template-viewport {
+  height: clamp(375px,33vw,445px);
+  overflow: hidden;
+  isolation: isolate;
+}
+@media (max-width: 767px) {
+  .orbyven-home-template-viewport { height: 370px; }
 }
 .orbyven-home-kicker {
   display: inline-flex; align-items: center; flex-wrap: wrap; gap: 12px; max-width: 100%;

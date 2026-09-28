@@ -10,14 +10,8 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: [
-          "/admin/",
-          "/api/",
-          "/mobile-home",
-          "/mobile-contact",
-          "/mobile-servicii",
-          "/mobile-templates",
-        ],
+        // Do not block noindex pages: bots must be able to read their headers.
+        disallow: ["/api/"],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
