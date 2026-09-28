@@ -19,6 +19,7 @@ const modulePaths: Record<OrbyvenModuleId, string> = {
   estimates: "M5 2h10l4 4v16H5z M15 2v5h4 M8 12h8 M8 16h8 M8 19h5",
   documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
   expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
+  thermal: "M3 7h18 M5 7v10h14V7 M8 11h8 M8 14h5 M4 21h16",
   team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
 };
 
