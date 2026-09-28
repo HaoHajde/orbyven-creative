@@ -89,3 +89,14 @@ test("NSIS installer carries ORBYVEN visual identity", () => {
   assert.match(generator, /ORBYVEN/);
   assert.match(generator, /Business workspace/);
 });
+
+test("desktop fails closed for newly added shared modules until their local UI exists", () => {
+  const app = content("../src/App.tsx");
+  const brand = content("../src/Brand.tsx");
+  assert.match(app, /DESKTOP_IMPLEMENTED_MODULES/);
+  assert.match(app, /DESKTOP_IMPLEMENTED_MODULES\.has\(item\.id\)/);
+  assert.match(app, /!DESKTOP_IMPLEMENTED_MODULES\.has\(id\)/);
+  assert.match(app, /ORBYVEN_MODULES\.filter\(\(definition\) => DESKTOP_IMPLEMENTED_MODULES\.has\(definition\.id\)\)/);
+  assert.match(app, /thermal: "Planșă termică"/);
+  assert.match(brand, /thermal:/);
+});
