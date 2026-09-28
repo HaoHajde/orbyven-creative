@@ -19,8 +19,6 @@ import {
   type WorkTaskStatus,
 } from "@/lib/modules/tasks";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
-import dynamic from "next/dynamic";
-const ThermalSketchPanel = dynamic(() => import("@/components/modules/ThermalSketchPanel"), { loading: () => <p role="status" className="text-xs text-[var(--muted)]">Se încarcă planșa…</p> });
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
@@ -139,7 +137,6 @@ export default function TasksModule({
   const [form, setForm] = useState<CreateForm>(() => ({ ...emptyForm, clientId: initialClientId ?? "" }));
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
-  const [thermalTaskId, setThermalTaskId] = useState<string | null>(null);
 
   const canWrite = role !== "viewer";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -729,12 +726,6 @@ export default function TasksModule({
           {canDelete && enabledModules.includes("expenses") && (
             <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială pentru lucrare</button>
           )}
-          {canWrite && selectedTask.kind === "work" && (
-            <button type="button" onClick={() => setThermalTaskId(selectedTask.id)}
-              className="h-9 rounded-full border border-[var(--accent)] bg-[var(--accent-soft)] px-4 text-xs font-semibold">
-              ◫ Planșă termică 0.65
-            </button>
-          )}
           {canWrite && selectedTask.kind === "work" && enabledModules.includes("estimates") && (
             <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă pentru lucrare</button>
           )}
@@ -765,12 +756,6 @@ export default function TasksModule({
           onDelete={() => void removeTask(selectedTask)}
         />
         </div>
-      )}
-
-      {thermalTaskId && tasks.find(task => task.id === thermalTaskId && task.kind === "work") && (
-        <ThermalSketchPanel key={thermalTaskId} organizationId={organizationId}
-          taskId={thermalTaskId} taskTitle={tasks.find(task => task.id === thermalTaskId)?.title ?? "Lucrare"}
-          onClose={() => setThermalTaskId(null)} />
       )}
 
       <style jsx>{`
