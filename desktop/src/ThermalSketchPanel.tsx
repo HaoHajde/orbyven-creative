@@ -115,14 +115,14 @@ export default function ThermalSketchPanel({ organizationId, taskId, taskTitle, 
 
   return <div className="thermal-editor">
     <div className="thermal-editor-bar">
-      <div><small>ORBYVEN · PLANȘĂ TERMICĂ / LIVE</small><strong>{taskTitle}</strong></div>
+      <div><small>ORBYVEN · PLANȘĂ TERMICĂ / WEB PARITY</small><strong>{taskTitle}</strong></div>
       <div className="thermal-editor-actions"><span>{status === "saved" ? "✓ Salvată" : status === "saving" ? "Se salvează…" : status === "error" ? "Necesită atenție" : "Schiță orientativă"}</span>
         <button onClick={() => void close()}>Închide ✕</button></div>
     </div>
     {error && <div className="thermal-editor-error">{error}</div>}
     {record === undefined ? <div className="thermal-editor-loading">Se pregătește planșa…</div> :
       <iframe ref={iframe} title={"Editor Planșă Termică: " + taskTitle}
-        src="https://orbyven.ro/thermal-planner/index.html" sandbox="allow-scripts allow-downloads"
+        src="/thermal-planner/index.html" sandbox="allow-scripts allow-downloads"
         onLoad={() => setReady(true)} />}
   </div>;
 }
