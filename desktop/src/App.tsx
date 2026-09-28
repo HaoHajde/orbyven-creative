@@ -11,6 +11,8 @@ import { createEstimate, listEstimates, setEstimateStatus } from "@/lib/modules/
 import { createDocumentSignedUrl, listDocuments, uploadDocument, type DocumentCategory } from "@/lib/modules/documents";
 import { createExpense, listExpenses } from "@/lib/modules/expenses";
 import { createTeamMember, listTeamMembers, updateTeamMember } from "@/lib/modules/team";
+import { getInitialUiContract, loadLiveUiContract } from "./ui-contract";
+import ThermalModule from "./ThermalModule";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
 type Row = Record<string, unknown>;
@@ -60,7 +62,7 @@ const FORM_FIELDS: Partial<Record<OrbyvenModuleId, Field[]>> = {
 const TITLES: Record<OrbyvenModuleId, string> = {
   overview: "Prezentare generală", leads: "Clienți", tasks: "Lucrări",
   calendar: "Calendar", estimates: "Oferte & devize", documents: "Documente",
-  expenses: "Cheltuieli", team: "Echipă",
+  expenses: "Cheltuieli", thermal: "Planșă Termică", team: "Echipă",
 };
 const STATUS_OPTIONS: Partial<Record<OrbyvenModuleId, string[]>> = {
   leads: ["new", "contacted", "qualified", "proposal", "won", "lost"],
@@ -142,6 +144,8 @@ export default function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
+  const [uiContract, setUiContract] = useState(() => getInitialUiContract());
+  const [uiSynced, setUiSynced] = useState(false);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
@@ -170,7 +174,8 @@ export default function App() {
     const start = async () => {
       try {
         await initializeDesktopClient();
-        if (!cancelled) await initializeWorkspace();
+        const nextContract = await loadLiveUiContract();
+        if (!cancelled) { setUiContract(nextContract); setUiSynced(true); await initializeWorkspace(); }
       } catch (cause) {
         if (!cancelled) {
           console.error("ORBYVEN Desktop initialization:", cause);
@@ -184,10 +189,10 @@ export default function App() {
   }, [initializeWorkspace]);
 
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
-  const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
+  const canFinance = Boolean(workspace && uiContract.financeRoles.includes(workspace.membership.role));
   const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
-  const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
-  const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
+  const canManageModules = Boolean(workspace && uiContract.moduleManagerRoles.includes(workspace.membership.role));
+  const createModules = modules.filter((module) => uiContract.createModuleIds.includes(module.id) && (module.id !== "expenses" || canFinance));
   const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
 
   const loadModule = useCallback(async () => {
@@ -209,6 +214,7 @@ export default function App() {
           setError("Modulul financiar este disponibil doar pentru roluri autorizate.");
           return;
         }
+        if (activeModule === "thermal") { setRows([]); return; }
         const result =
           activeModule === "leads" ? await listCrmLeads(org) :
           activeModule === "tasks" ? await listWorkTasks(org) :
@@ -264,6 +270,9 @@ export default function App() {
   async function toggleModule(id: OrbyvenModuleId) {
     if (!workspace || !canManageModules || savingModule || id === "overview") return;
     const enabled = workspace.enabledModules.includes(id);
+    if (!enabled && !workspace.entitledModules.includes(id)) {
+      setError("Acest modul necesită un abonament sau acces pilot aprobat."); return;
+    }
     const previous = workspace.enabledModules;
     const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
     setError(""); setSavingModule(id);
@@ -422,7 +431,23 @@ export default function App() {
   }, [rows, query, activeModule]);
 
   return (
-    <div className={"desktop " + (isDark ? "dark" : "light")}>
+    <div className={"desktop " + (isDark ? "dark" : "light")} style={{
+      "--bg": uiContract.themes[isDark ? "dark" : "light"].bg,
+      "--surface": uiContract.themes[isDark ? "dark" : "light"].surface,
+      "--surface-2": uiContract.themes[isDark ? "dark" : "light"].surface2,
+      "--text": uiContract.themes[isDark ? "dark" : "light"].text,
+      "--muted": uiContract.themes[isDark ? "dark" : "light"].muted,
+      "--muted-2": uiContract.themes[isDark ? "dark" : "light"].muted2,
+      "--border": uiContract.themes[isDark ? "dark" : "light"].border,
+      "--border-strong": uiContract.themes[isDark ? "dark" : "light"].borderStrong,
+      "--button": uiContract.themes[isDark ? "dark" : "light"].button,
+      "--accent": uiContract.themes[isDark ? "dark" : "light"].accent,
+      "--accent-soft": uiContract.themes[isDark ? "dark" : "light"].accentSoft,
+      "--workspace-max-width": uiContract.layout.maxWidth + "px",
+      "--workspace-header-height": uiContract.layout.headerHeight + "px",
+      "--workspace-sidebar-width": uiContract.layout.sidebarWidth + "px",
+      "--workspace-radius": uiContract.layout.surfaceRadius + "px",
+    } as CSSProperties}>
       {screen !== "workspace" ? (
         <main className="auth-background">
           <div className="auth-top"><OrbyvenBrand subtitle="CREATIVE" /></div>
@@ -458,15 +483,15 @@ export default function App() {
             <OrbyvenBrand subtitle="CREATIVE" />
             <div className="topbar-organization">
               <strong>{workspace.profile?.display_name ?? workspace.organization.name}</strong>
-              <small>Business workspace</small>
+              <small>{uiContract.copy.workspaceLabel}</small>
             </div>
             <button type="button" className="topbar-search" onClick={() => { setCommandQuery(""); setCommandOpen(true); }}
               aria-label="Caută module și deschide navigarea rapidă">
-              <span>⌕ &nbsp; Caută în workspace...</span><kbd>Ctrl K</kbd>
+              <span>⌕ &nbsp; {uiContract.copy.searchPlaceholder}</span><kbd>Ctrl K</kbd>
             </button>
             <div className="top-actions">
               {canWrite && createModules.length > 0 && (
-                <button className="primary topbar-create" type="button" onClick={() => setCreateMenuOpen(true)}>+ Creează</button>
+                <button className="primary topbar-create" type="button" onClick={() => setCreateMenuOpen(true)}>{uiContract.copy.createLabel}</button>
               )}
               <button type="button" className="topbar-modules" onClick={() => { setPanel(panel === "modules" ? "workspace" : "modules"); setCommandOpen(false); }}>
                 {panel === "modules" ? "Înapoi" : "Module"}
@@ -485,11 +510,7 @@ export default function App() {
               <div className="company-label"><strong>{workspace.profile?.display_name ?? workspace.organization.name}</strong>
                 <span>{ROLE_LABELS[workspace.membership.role]} · Workspace activ</span></div>
               <nav aria-label="Module">
-                {([
-                  { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
-                  { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
-                  { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
-                ]).map((group) => {
+                {uiContract.navigationGroups.map((group) => {
                   const available = modules.filter((definition) => group.ids.includes(definition.id) &&
                     (definition.id !== "expenses" || canFinance));
                   if (!available.length) return null;
@@ -513,8 +534,8 @@ export default function App() {
               <div className="work-area">
               <section className="page-heading">
                 <div><p className="eyebrow">{panel === "modules" ? "PERSONALIZARE" : "BUSINESS WORKSPACE"}</p>
-                  <h1>{panel === "modules" ? "Modulele tale." : TITLES[activeModule] + "."}</h1>
-                  <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
+                  <h1>{panel === "modules" ? uiContract.copy.moduleStoreTitle : TITLES[activeModule] + "."}</h1>
+                  <p className="subheading">{panel === "modules" ? uiContract.copy.moduleStoreDescription :
                     activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." :
                     ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
                 {panel === "workspace" && activeModule !== "overview" && canWrite && (activeModule !== "expenses" || canFinance) && (
@@ -527,7 +548,8 @@ export default function App() {
                   {ORBYVEN_MODULES.map((definition) => {
                     const enabled = workspace.enabledModules.includes(definition.id);
                     const locked = definition.id === "overview";
-                    const blocked = !canManageModules || Boolean(savingModule) || locked;
+                    const entitled = workspace.entitledModules.includes(definition.id);
+                    const blocked = !canManageModules || Boolean(savingModule) || locked || (!enabled && !entitled);
                     return <article key={definition.id} className="module-store-card">
                       <div className="module-store-head"><span className="module-store-icon"><ModuleGlyph id={definition.id} /></span>
                         {definition.badge && <span className="module-store-badge">{definition.badge}</span>}</div>
@@ -535,11 +557,13 @@ export default function App() {
                       <div className="module-store-bottom"><span>{savingModule === definition.id ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
                         <button type="button" className={enabled ? "primary" : "secondary"} disabled={blocked}
                           onClick={() => void toggleModule(definition.id)}>
-                          {locked ? "Inclus" : !canManageModules ? "Blocat" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                          {locked ? "Inclus" : !canManageModules ? "Blocat" : !entitled && !enabled ? "Necesită acces" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                         </button></div>
                     </article>;
                   })}
                 </section>
+              ) : activeModule === "thermal" ? (
+                <ThermalModule organizationId={workspace.organization.id} locale={workspace.profile?.locale || "ro-RO"} canWrite={canWrite} onOpenTasks={() => chooseModule("tasks")} />
               ) : activeModule === "overview" ? (
                 <div className="overview">
                   <section className="overview-greeting">
@@ -648,7 +672,7 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.1</span></footer>
+              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.4.0 · UI {uiSynced ? "live " + uiContract.revision : "cached"}</span></footer>
             </div>
           </main>
           {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
