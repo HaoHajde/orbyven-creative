@@ -5,3 +5,4 @@ src-tauri/icons/
 src-tauri/Cargo.lock
 *.msi
 *-setup.exe
+src-tauri/installer/
