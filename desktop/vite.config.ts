@@ -16,6 +16,7 @@ export default defineConfig({
       // Reuse the EXISTING ORBYVEN modules and access-state logic unchanged.
       // Override only the Next.js Supabase client (which reads process.env).
       { find: /^@\/lib\/orbyven-supabase$/, replacement: client },
+      { find: /^next\/dynamic$/, replacement: nextDynamic },
       { find: "@", replacement: root },
     ],
   },
