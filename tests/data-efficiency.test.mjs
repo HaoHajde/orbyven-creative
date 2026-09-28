@@ -8,6 +8,8 @@ const overview = read("lib/modules/overview.ts");
 const dashboard = read("components/modules/OverviewModule.tsx");
 const search = read("components/WorkspaceSearch.tsx");
 const workspace = read("components/ClientWorkspace.tsx");
+const tasksData = read("lib/modules/tasks.ts");
+const tasksUi = read("components/modules/TasksModule.tsx");
 
 test("exact totals page through 1,000+ records, including the final partial page", async () => {
   const dataset = Array.from({ length: 1203 }, (_, id) => ({ id, amount_cents: id }));
@@ -50,6 +52,22 @@ test("Overview uses exact SQL counts, selected small records and current-month e
   assert.match(dashboard, /snapshot\.monthExpensesCents/);
   assert.match(dashboard, /snapshot\.attentionHasMore/);
   assert.match(dashboard, /canAccessFinances && <SnapshotRow label="Cheltuieli luna aceasta"/);
+  assert.match(overview, /eq\("status", "blocked"\)/);
+  assert.match(overview, /scheduledNearTasks/);
+  assert.match(overview, /dueNearTasks/);
+  assert.match(dashboard, /todayQueue/);
+  assert.match(dashboard, /Lucrare blocată · necesită o decizie/);
+});
+
+test("work dossier reads contextual data without bypassing finance or pagination boundaries", () => {
+  assert.match(tasksData, /export async function loadWorkTaskContext/);
+  assert.match(tasksData, /options\.canAccessFinances\s*\? readAllPages/);
+  assert.match(tasksData, /\.from\("ops_documents"\)/);
+  assert.match(tasksData, /\.from\("calendar_events"\)/);
+  assert.match(tasksData, /options\.includeThermal/);
+  assert.match(tasksUi, /DOSAR LUCRARE/);
+  assert.match(tasksUi, /expensesCents/);
+  assert.match(tasksUi, /thermalSketch/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {
