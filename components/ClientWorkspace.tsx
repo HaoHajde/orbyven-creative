@@ -7,6 +7,7 @@ import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, themeToCssVars } from "@/lib/workspace-visual-system";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
@@ -193,7 +194,7 @@ export default function ClientWorkspace() {
   };
 
   const createOptions = ORBYVEN_MODULES.filter((definition) =>
-    ["leads", "tasks", "calendar", "estimates", "expenses"].includes(definition.id)
+    WORKSPACE_CREATE_MODULES.includes(definition.id)
       && enabledModules.includes(definition.id)
       && (definition.id !== "expenses" || ["owner", "admin", "manager"].includes(workspace?.membership.role ?? "viewer"))
   );
@@ -204,20 +205,7 @@ export default function ClientWorkspace() {
     router.replace("/workspace/login");
   };
 
-  const vars = {
-    "--bg": theme === "dark" ? "#070b16" : "#f1f5fd",
-    "--surface": theme === "dark" ? "#0d1728" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#15233a" : "#eaf1fd",
-    "--text": theme === "dark" ? "#eef4ff" : "#142746",
-    "--muted": theme === "dark" ? "#a2b1cb" : "#596d8c",
-    "--muted-2": theme === "dark" ? "#8296b4" : "#7183a1",
-    "--border": theme === "dark" ? "rgba(167,190,246,0.16)" : "rgba(46,82,146,0.12)",
-    "--border-strong": theme === "dark" ? "rgba(157,190,249,0.25)" : "rgba(46,82,146,0.24)",
-    "--button": theme === "dark" ? "#477af3" : "#244caa",
-    "--button-text": "#ffffff",
-    "--accent": theme === "dark" ? "#7ba9ff" : "#3561d8",
-    "--accent-soft": theme === "dark" ? "rgba(86,134,244,0.17)" : "rgba(65,105,208,0.11)",
-  } as CSSProperties;
+  const vars = themeToCssVars(theme) as CSSProperties;
 
   if (loading) {
     return <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />;
@@ -302,12 +290,7 @@ export default function ClientWorkspace() {
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
           </div>
 
-          {([
-            { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
-            { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
-            { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
-            { label: "SPECIALIZATE", ids: ["thermal"] as OrbyvenModuleId[] },
-          ]).map((group) => {
+          {WORKSPACE_NAV_GROUPS.map((group) => {
             const items = enabledDefinitions.filter((definition) => group.ids.includes(definition.id));
             if (!items.length) return null;
             return (

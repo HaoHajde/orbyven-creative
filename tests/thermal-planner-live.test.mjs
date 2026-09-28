@@ -10,6 +10,7 @@ const tasks=read("components/modules/TasksModule.tsx");
 const registry=read("lib/orbyven-modules.ts");
 const workspace=read("components/WorkspaceContent.tsx");
 const client=read("components/ClientWorkspace.tsx");
+const visualSystem=read("lib/workspace-visual-system.ts");
 const baseMigration=read("supabase/migrations/20260927173520_alpha065_thermal_sketches.sql");
 const moduleGuard=read("supabase/migrations/20260928140502_thermal_independent_module_guard.sql");
 const pilotEntitlement=read("supabase/migrations/20260928142037_thermal_pilot_entitlement.sql");
@@ -38,7 +39,8 @@ test("thermal planner is an independent optional workspace module, not a Tasks a
   assert.ok(registry.includes('category: "specialized"'));
   assert.ok(workspace.includes('activeModule === "thermal"'));
   assert.ok(workspace.includes('import("@/components/modules/ThermalPlannerModule")'));
-  assert.ok(client.includes('{ label: "SPECIALIZATE", ids: ["thermal"]'));
+  assert.ok(client.includes("WORKSPACE_NAV_GROUPS"));
+  assert.ok(visualSystem.includes('{ label: "SPECIALIZATE", ids: ["thermal"] }'));
   assert.ok(thermalModule.includes('listWorkTasks(organizationId)'));
   assert.ok(thermalModule.includes('task.kind==="work"'));
   assert.ok(!tasks.includes("ThermalSketchPanel"));

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type CSSProperties } from "react";
-import { initializeDesktopClient, orbyvenSupabase } from "./client";
+import { fetchDesktopUiManifest, initializeDesktopClient, orbyvenSupabase, type DesktopUiManifest } from "./client";
 import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { CURRENT_DESKTOP_VERSION, WORKSPACE_CREATE_MODULES, WORKSPACE_LAYOUT, WORKSPACE_NAV_GROUPS, WORKSPACE_THEME, WORKSPACE_UI_REVISION } from "@/lib/workspace-visual-system";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { createCrmLead, listCrmLeads, updateCrmLead } from "@/lib/modules/leads";
 import { createWorkTask, listWorkTasks, setWorkTaskStatus } from "@/lib/modules/tasks";
@@ -80,6 +81,16 @@ const ACCESS_MESSAGES: Record<string, string> = {
   organization_archived: "Compania a fost arhivată.",
 };
 
+const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
+  revision: WORKSPACE_UI_REVISION,
+  desktopVersion: CURRENT_DESKTOP_VERSION,
+  generatedAt: "bundled",
+  theme: WORKSPACE_THEME as unknown as DesktopUiManifest["theme"],
+  layout: WORKSPACE_LAYOUT,
+  navGroups: WORKSPACE_NAV_GROUPS.map((group) => ({ label: group.label, ids: [...group.ids] })),
+  createModules: [...WORKSPACE_CREATE_MODULES],
+};
+
 function formatNumber(value: number) { return new Intl.NumberFormat("ro-RO").format(value); }
 function formatDate(value: unknown) {
   if (typeof value !== "string" || !value) return "—";
@@ -143,6 +154,8 @@ export default function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
+  const [uiManifest, setUiManifest] = useState<DesktopUiManifest>(BUNDLED_UI_MANIFEST);
+  const [liveUiSynced, setLiveUiSynced] = useState(false);
 
   const initializeWorkspace = useCallback(async () => {
     // An authoritative access-state RPC must run BEFORE any private data read.
@@ -166,12 +179,25 @@ export default function App() {
     setScreen("workspace");
   }, []);
 
+  const syncLiveUi = useCallback(async () => {
+    try {
+      const manifest = await fetchDesktopUiManifest();
+      setUiManifest(manifest);
+      setLiveUiSynced(true);
+    } catch (cause) {
+      console.warn("ORBYVEN live UI manifest unavailable; bundled UI remains active.", cause);
+      setLiveUiSynced(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const start = async () => {
       try {
         await initializeDesktopClient();
-        if (!cancelled) await initializeWorkspace();
+        if (!cancelled) {
+          await Promise.allSettled([syncLiveUi(), initializeWorkspace()]);
+        }
       } catch (cause) {
         if (!cancelled) {
           console.error("ORBYVEN Desktop initialization:", cause);
@@ -182,13 +208,13 @@ export default function App() {
     };
     void start();
     return () => { cancelled = true; };
-  }, [initializeWorkspace]);
+  }, [initializeWorkspace, syncLiveUi]);
 
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
   const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
   const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
-  const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
+  const createModules = modules.filter((module) => uiManifest.createModules.includes(module.id) && (module.id !== "expenses" || canFinance));
   const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
 
   const loadModule = useCallback(async () => {
@@ -271,9 +297,14 @@ export default function App() {
         setRefresh((value) => value + 1);
       }
     };
+    const syncOnFocus = () => { void syncLiveUi(); };
     window.addEventListener("focus", refreshOnFocus);
-    return () => window.removeEventListener("focus", refreshOnFocus);
-  }, [workspace, showCreate, selected]);
+    window.addEventListener("focus", syncOnFocus);
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      window.removeEventListener("focus", syncOnFocus);
+    };
+  }, [workspace, showCreate, selected, syncLiveUi]);
 
   function chooseModule(id: OrbyvenModuleId) {
     if (!workspace?.enabledModules.includes(id)) return;
@@ -285,6 +316,10 @@ export default function App() {
   async function toggleModule(id: OrbyvenModuleId) {
     if (!workspace || !canManageModules || savingModule || id === "overview") return;
     const enabled = workspace.enabledModules.includes(id);
+    if (!enabled && !workspace.entitledModules.includes(id)) {
+      setError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      return;
+    }
     const previous = workspace.enabledModules;
     const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
     setError(""); setSavingModule(id);
@@ -442,8 +477,25 @@ export default function App() {
       .join(" ").toLocaleLowerCase("ro-RO").includes(term));
   }, [rows, query, activeModule]);
 
+  const activeTheme = uiManifest.theme[isDark ? "dark" : "light"] ?? BUNDLED_UI_MANIFEST.theme[isDark ? "dark" : "light"];
+  const desktopThemeVars = {
+    "--bg": activeTheme.bg,
+    "--surface": activeTheme.surface,
+    "--surface-2": activeTheme.surface2,
+    "--text": activeTheme.text,
+    "--muted": activeTheme.muted,
+    "--muted-2": activeTheme.muted2,
+    "--border": activeTheme.border,
+    "--border-strong": activeTheme.borderStrong,
+    "--button": activeTheme.button,
+    "--button-text": activeTheme.buttonText,
+    "--accent": activeTheme.accent,
+    "--accent-soft": activeTheme.accentSoft,
+  } as CSSProperties;
+  const structuralUpdateAvailable = uiManifest.desktopVersion !== CURRENT_DESKTOP_VERSION;
+
   return (
-    <div className={"desktop " + (isDark ? "dark" : "light")}>
+    <div className={"desktop " + (isDark ? "dark" : "light")} style={desktopThemeVars}>
       {screen !== "workspace" ? (
         <main className="auth-background">
           <div className="auth-top"><OrbyvenBrand subtitle="CREATIVE" /></div>
@@ -471,7 +523,7 @@ export default function App() {
             </form>
             <button className="text-button" onClick={() => void logout()}>Alt cont</button>
           </section>}
-          <footer className="auth-footer">ORBYVEN DESKTOP v0.3.1 · WINDOWS</footer>
+          <footer className="auth-footer">ORBYVEN DESKTOP v0.4.0 · WINDOWS</footer>
         </main>
       ) : workspace && (
         <div className="desktop-workspace">
@@ -486,6 +538,9 @@ export default function App() {
               <span>⌕ &nbsp; Caută în workspace...</span><kbd>Ctrl K</kbd>
             </button>
             <div className="top-actions">
+              <span className={"live-ui-pill " + (liveUiSynced ? "synced" : "bundled")} title={"UI revision " + uiManifest.revision}>
+                <span className="online-dot" /> {structuralUpdateAvailable ? "Update UI" : liveUiSynced ? "Live UI" : "Local UI"}
+              </span>
               {canWrite && createModules.length > 0 && (
                 <button className="primary topbar-create" type="button" onClick={() => setCreateMenuOpen(true)}>+ Creează</button>
               )}
@@ -506,11 +561,7 @@ export default function App() {
               <div className="company-label"><strong>{workspace.profile?.display_name ?? workspace.organization.name}</strong>
                 <span>{ROLE_LABELS[workspace.membership.role]} · Workspace activ</span></div>
               <nav aria-label="Module">
-                {([
-                  { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
-                  { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
-                  { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
-                ]).map((group) => {
+                {uiManifest.navGroups.map((group) => {
                   const available = modules.filter((definition) => group.ids.includes(definition.id) &&
                     (definition.id !== "expenses" || canFinance));
                   if (!available.length) return null;
@@ -548,7 +599,8 @@ export default function App() {
                   {ORBYVEN_MODULES.map((definition) => {
                     const enabled = workspace.enabledModules.includes(definition.id);
                     const locked = definition.id === "overview";
-                    const blocked = !canManageModules || Boolean(savingModule) || locked;
+                    const entitled = workspace.entitledModules.includes(definition.id);
+                    const blocked = !canManageModules || Boolean(savingModule) || locked || (!enabled && !entitled);
                     return <article key={definition.id} className="module-store-card">
                       <div className="module-store-head"><span className="module-store-icon"><ModuleGlyph id={definition.id} /></span>
                         {definition.badge && <span className="module-store-badge">{definition.badge}</span>}</div>
@@ -556,7 +608,7 @@ export default function App() {
                       <div className="module-store-bottom"><span>{savingModule === definition.id ? "Se salvează..." : enabled ? "Activ" : "Neactivat"}</span>
                         <button type="button" className={enabled ? "primary" : "secondary"} disabled={blocked}
                           onClick={() => void toggleModule(definition.id)}>
-                          {locked ? "Inclus" : !canManageModules ? "Blocat" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
+                          {locked ? "Inclus" : !canManageModules ? "Blocat" : !enabled && !entitled ? "Necesită acces" : savingModule === definition.id ? "Salvare" : enabled ? "Elimină" : "Adaugă"}
                         </button></div>
                     </article>;
                   })}
@@ -669,7 +721,7 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.3.1</span></footer>
+              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.4.0 · UI {uiManifest.revision}</span></footer>
             </div>
           </main>
           {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
