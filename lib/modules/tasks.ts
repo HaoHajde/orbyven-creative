@@ -150,7 +150,14 @@ export async function listWorkTaskClients(
 export async function loadWorkTaskContext(
   organizationId: string,
   taskId: string,
-  options: { canAccessFinances: boolean; includeThermal: boolean }
+  options: {
+    canAccessFinances: boolean;
+    includeEstimates: boolean;
+    includeDocuments: boolean;
+    includeCalendar: boolean;
+    includeExpenses: boolean;
+    includeThermal: boolean;
+  }
 ): Promise<WorkTaskContext> {
   requireOrganizationId(organizationId);
   requireTaskId(taskId);
@@ -158,25 +165,31 @@ export async function loadWorkTaskContext(
   const nowIso = new Date().toISOString();
   const [estimatesResult, documentsResult, eventsResult, expenseRows, thermalResult] =
     await Promise.all([
-      orbyvenSupabase
-        .from("sales_estimates")
-        .select("id,status,updated_at")
-        .eq("organization_id", organizationId)
-        .eq("task_id", taskId)
-        .order("updated_at", { ascending: false }),
-      orbyvenSupabase
-        .from("ops_documents")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", organizationId)
-        .eq("task_id", taskId),
-      orbyvenSupabase
-        .from("calendar_events")
-        .select("id,status,start_at")
-        .eq("organization_id", organizationId)
-        .eq("task_id", taskId)
-        .neq("status", "cancelled")
-        .order("start_at", { ascending: true }),
-      options.canAccessFinances
+      options.includeEstimates
+        ? orbyvenSupabase
+            .from("sales_estimates")
+            .select("id,status,updated_at")
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+            .order("updated_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+      options.includeDocuments
+        ? orbyvenSupabase
+            .from("ops_documents")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+        : Promise.resolve({ count: 0, error: null }),
+      options.includeCalendar
+        ? orbyvenSupabase
+            .from("calendar_events")
+            .select("id,status,start_at")
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+            .neq("status", "cancelled")
+            .order("start_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      options.includeExpenses && options.canAccessFinances
         ? readAllPages<{ amount_cents: number }>((from, to) =>
             orbyvenSupabase
               .from("finance_expenses")
@@ -201,7 +214,7 @@ export async function loadWorkTaskContext(
   if (documentsResult.error) throw documentsResult.error;
   if (eventsResult.error) throw eventsResult.error;
   if (thermalResult.error) throw thermalResult.error;
-  if (documentsResult.count === null) throw new Error("Document count unavailable.");
+  if (options.includeDocuments && documentsResult.count === null) throw new Error("Document count unavailable.");
 
   const estimates = estimatesResult.data ?? [];
   const events = eventsResult.data ?? [];
@@ -211,7 +224,7 @@ export async function loadWorkTaskContext(
     sentEstimatesCount: estimates.filter((item) => item.status === "sent").length,
     acceptedEstimatesCount: estimates.filter((item) => item.status === "accepted").length,
     latestEstimateId: estimates[0]?.id ?? null,
-    documentsCount: documentsResult.count,
+    documentsCount: documentsResult.count ?? 0,
     eventsCount: events.length,
     upcomingEventsCount: events.filter((item) => item.start_at >= nowIso).length,
     expensesCount: expenseRows ? expenseRows.length : null,
