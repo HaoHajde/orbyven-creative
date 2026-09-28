@@ -252,8 +252,12 @@ export default function App() {
 
   useEffect(() => {
     const refreshOnFocus = () => {
-      if (document.visibilityState === "visible" && workspace && !showCreate && !selected) {
-        setRefresh((value) => value + 1);
+      if (document.visibilityState === "visible") {
+        void loadLiveUiContract().then((next) => {
+          setUiContract((current) => current.revision === next.revision ? current : next);
+          setUiSynced(true);
+        });
+        if (workspace && !showCreate && !selected) setRefresh((value) => value + 1);
       }
     };
     window.addEventListener("focus", refreshOnFocus);
@@ -475,7 +479,7 @@ export default function App() {
             </form>
             <button className="text-button" onClick={() => void logout()}>Alt cont</button>
           </section>}
-          <footer className="auth-footer">ORBYVEN DESKTOP v0.3.1 · WINDOWS</footer>
+          <footer className="auth-footer">ORBYVEN DESKTOP v0.4.0 · WINDOWS</footer>
         </main>
       ) : workspace && (
         <div className="desktop-workspace">
