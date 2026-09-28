@@ -6,6 +6,7 @@ export type OrbyvenModuleId =
   | "estimates"
   | "documents"
   | "expenses"
+  | "thermal"
   | "team";
 
 export type OrbyvenModuleCategory =
@@ -13,6 +14,7 @@ export type OrbyvenModuleCategory =
   | "sales"
   | "operations"
   | "finance"
+  | "specialized"
   | "people";
 
 export type OrbyvenModuleDefinition = {
@@ -104,6 +106,17 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
     color: "#b42318",
     accent: "#fff0ee",
     features: ["Cheltuieli", "Categorii", "Rezumat lunar"],
+  },
+  {
+    id: "thermal",
+    name: "Planșă Termică",
+    shortName: "Planșă",
+    description: "Schiță 2D pentru instalații termice, trasee, încăperi și estimări termice orientative.",
+    category: "specialized",
+    badge: "Nișat",
+    color: "#5f83ff",
+    accent: "#edf2ff",
+    features: ["Pereți & încăperi", "Tur / retur", "Radiatoare & pardoseală"],
   },
   {
     id: "team",
