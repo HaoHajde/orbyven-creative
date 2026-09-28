@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Architecture integrity and lightweight budgets
+        run: npm run test:architecture
+
       - name: Lint
         run: npm run lint
 
@@ -55,3 +58,6 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Built web bundle budgets
+        run: node scripts/architecture-integrity.mjs --web-build
