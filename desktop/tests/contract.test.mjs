@@ -19,7 +19,8 @@ test("desktop ships its own compiled local UI rather than loading the website", 
 });
 
 test("only PUBLIC Supabase values are obtained at startup", () => {
-  assert.match(client, /https:\/\/orbyven\.ro\/api\/desktop\/config/);
+  assert.match(client, /const ORBYVEN_ORIGIN = "https:\/\/orbyven\.ro"/);
+  assert.match(client, /\/api\/desktop\/config/);
   assert.match(bootstrap, /NEXT_PUBLIC_SUPABASE_URL/);
   assert.match(bootstrap, /NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
   assert.doesNotMatch(bootstrap, /process\.env\.(?:SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY)/);
@@ -64,9 +65,12 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   assert.match(app, /setCommandOpen/);
   assert.match(app, /Ctrl K/);
   assert.match(css, /grid-template-columns:206px minmax\(0,1fr\)/);
-  for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
-    assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
+  const visual = content("../../lib/workspace-visual-system.ts");
+  for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS", "SPECIALIZATE"]) {
+    assert.ok(visual.includes(label), "Shared nav group: " + label);
   }
+  assert.match(app, /uiManifest\.navGroups/);
+  assert.match(website, /WORKSPACE_NAV_GROUPS/);
 });
 
 test("NSIS installer carries ORBYVEN visual identity", () => {
