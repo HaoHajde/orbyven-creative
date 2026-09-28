@@ -48,7 +48,7 @@ export const WORKSPACE_UI_CONTRACT: WorkspaceUiContract = {
     { label: "OVERVIEW", ids: ["overview"] },
     { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] },
     { label: "OPERATIONS", ids: ["documents", "expenses", "team"] },
-    { label: "SPECIALIZED", ids: ["thermal"] },
+    { label: "SPECIALIZATE", ids: ["thermal"] },
   ],
   createModuleIds: ["leads", "tasks", "calendar", "estimates", "expenses"],
   financeRoles: ["owner", "admin", "manager"],
