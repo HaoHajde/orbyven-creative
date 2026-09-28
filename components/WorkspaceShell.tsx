@@ -23,6 +23,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 
@@ -169,23 +170,9 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
   const vars = {
     ...workspaceThemeVars(theme),
     ...(presentation?.themeTokens?.[theme] ?? WORKSPACE_THEME_TOKENS[theme]),
-  } as React.CSSProperties;
+  } as CSSProperties;
   const navGroups = presentation?.navGroups ?? WORKSPACE_NAV_GROUPS;
   const roleLabels = presentation?.roleLabels ?? WORKSPACE_ROLE_LABELS;
-
-  return (
-      <WorkspaceStateScreen
-        vars={vars}
-        theme={theme}
-        title="Workspace indisponibil"
-        description={loadError}
-        actionLabel="Încearcă din nou"
-        onAction={loadWorkspace}
-        secondaryLabel="Delogare"
-        onSecondary={logout}
-      />
-    );
-  }
 
   return (
     <main
