@@ -60,8 +60,11 @@ const FORM_FIELDS: Partial<Record<OrbyvenModuleId, Field[]>> = {
 const TITLES: Record<OrbyvenModuleId, string> = {
   overview: "Prezentare generală", leads: "Clienți", tasks: "Lucrări",
   calendar: "Calendar", estimates: "Oferte & devize", documents: "Documente",
-  expenses: "Cheltuieli", team: "Echipă",
+  expenses: "Cheltuieli", team: "Echipă", thermal: "Planșă termică",
 };
+const DESKTOP_IMPLEMENTED_MODULES = new Set<OrbyvenModuleId>([
+  "overview", "leads", "tasks", "calendar", "estimates", "documents", "expenses", "team",
+]);
 const STATUS_OPTIONS: Partial<Record<OrbyvenModuleId, string[]>> = {
   leads: ["new", "contacted", "qualified", "proposal", "won", "lost"],
   tasks: ["planned", "in_progress", "blocked", "done", "cancelled"],
@@ -185,7 +188,7 @@ export default function App() {
 
   const canWrite = Boolean(workspace && workspace.membership.role !== "viewer");
   const canFinance = Boolean(workspace && ["owner", "admin", "manager"].includes(workspace.membership.role));
-  const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id)), [workspace]);
+  const modules = useMemo(() => ORBYVEN_MODULES.filter((item) => workspace?.enabledModules.includes(item.id) && DESKTOP_IMPLEMENTED_MODULES.has(item.id)), [workspace]);
   const canManageModules = Boolean(workspace && ["owner", "admin"].includes(workspace.membership.role));
   const createModules = modules.filter((module) => ["leads", "tasks", "calendar", "estimates", "expenses"].includes(module.id) && (module.id !== "expenses" || canFinance));
   const filteredModules = modules.filter((module) => (TITLES[module.id] + " " + module.name).toLocaleLowerCase("ro-RO").includes(commandQuery.trim().toLocaleLowerCase("ro-RO")));
@@ -262,7 +265,7 @@ export default function App() {
   }
 
   async function toggleModule(id: OrbyvenModuleId) {
-    if (!workspace || !canManageModules || savingModule || id === "overview") return;
+    if (!workspace || !canManageModules || savingModule || id === "overview" || !DESKTOP_IMPLEMENTED_MODULES.has(id)) return;
     const enabled = workspace.enabledModules.includes(id);
     const previous = workspace.enabledModules;
     const next = enabled ? previous.filter((item) => item !== id) : [...previous, id];
@@ -524,7 +527,7 @@ export default function App() {
               {error && <div role="alert" className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
               {panel === "modules" ? (
                 <section className="module-store">
-                  {ORBYVEN_MODULES.map((definition) => {
+                  {ORBYVEN_MODULES.filter((definition) => DESKTOP_IMPLEMENTED_MODULES.has(definition.id)).map((definition) => {
                     const enabled = workspace.enabledModules.includes(definition.id);
                     const locked = definition.id === "overview";
                     const blocked = !canManageModules || Boolean(savingModule) || locked;
