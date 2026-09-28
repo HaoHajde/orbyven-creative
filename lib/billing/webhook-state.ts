@@ -1,16 +1,21 @@
 export type BillingWebhookRecord = {
   processed_at: string | null;
   processing_error: string | null;
+  processing_started_at?: string;
 };
 
-export type BillingWebhookRecordState = "processed" | "retryable" | "pending";
+export type BillingWebhookRecordState = "processed" | "retryable" | "pending" | "stalled";
 
 /** Distinguish successful delivery from an event that is merely recorded. */
 export function classifyBillingWebhookRecord(
-  record: BillingWebhookRecord
+  record: BillingWebhookRecord,
+  now = Date.now(),
+  stallAfterMs = 15 * 60_000
 ): BillingWebhookRecordState {
   if (record.processed_at) return "processed";
   if (record.processing_error !== null) return "retryable";
+  if (record.processing_started_at &&
+    new Date(record.processing_started_at).getTime() + stallAfterMs < now) return "stalled";
   return "pending";
 }
 
