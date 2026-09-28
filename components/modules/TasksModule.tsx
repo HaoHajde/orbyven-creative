@@ -207,35 +207,36 @@ export default function TasksModule({
   }, [organizationId, selectedTask]);
 
   useEffect(() => {
-    if (!selectedTask) {
-      setWorkContext(null);
-      setContextError("");
-      return;
-    }
+    if (!selectedTask) return;
 
     let active = true;
-    setContextLoading(true);
-    setContextError("");
-    void loadWorkTaskContext(organizationId, selectedTask.id, {
-      canAccessFinances,
-      includeThermal: enabledModules.includes("thermal"),
-    })
-      .then((nextContext) => {
-        if (active) setWorkContext(nextContext);
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      setContextLoading(true);
+      setContextError("");
+      setWorkContext(null);
+      void loadWorkTaskContext(organizationId, selectedTask.id, {
+        canAccessFinances,
+        includeThermal: enabledModules.includes("thermal"),
       })
-      .catch((contextLoadError) => {
-        console.error(contextLoadError);
-        if (active) {
-          setWorkContext(null);
-          setContextError("Dosarul lucrării nu a putut fi încărcat complet.");
-        }
-      })
-      .finally(() => {
-        if (active) setContextLoading(false);
-      });
+        .then((nextContext) => {
+          if (active) setWorkContext(nextContext);
+        })
+        .catch((contextLoadError) => {
+          console.error(contextLoadError);
+          if (active) {
+            setWorkContext(null);
+            setContextError("Dosarul lucrării nu a putut fi încărcat complet.");
+          }
+        })
+        .finally(() => {
+          if (active) setContextLoading(false);
+        });
+    }, 0);
 
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
   }, [organizationId, selectedTask, canAccessFinances, enabledModules]);
 
