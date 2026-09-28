@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { readAllPages } from "@/lib/modules/paged-read";
 
 export type WorkTaskKind = "task" | "work";
 export type WorkTaskStatus = "planned" | "in_progress" | "blocked" | "done" | "cancelled";
@@ -42,6 +43,19 @@ export type WorkTaskClient = {
   name: string;
   company: string | null;
   kind: "lead" | "client";
+};
+
+export type WorkTaskContext = {
+  estimatesCount: number;
+  sentEstimatesCount: number;
+  acceptedEstimatesCount: number;
+  latestEstimateId: string | null;
+  documentsCount: number;
+  eventsCount: number;
+  upcomingEventsCount: number;
+  expensesCount: number | null;
+  expensesCents: number | null;
+  thermalSketch: boolean | null;
 };
 
 export type CreateWorkTaskInput = {
@@ -131,6 +145,94 @@ export async function listWorkTaskClients(
 
   if (error) throw error;
   return (data ?? []) as WorkTaskClient[];
+}
+
+export async function loadWorkTaskContext(
+  organizationId: string,
+  taskId: string,
+  options: {
+    canAccessFinances: boolean;
+    includeEstimates: boolean;
+    includeDocuments: boolean;
+    includeCalendar: boolean;
+    includeExpenses: boolean;
+    includeThermal: boolean;
+  }
+): Promise<WorkTaskContext> {
+  requireOrganizationId(organizationId);
+  requireTaskId(taskId);
+
+  const nowIso = new Date().toISOString();
+  const [estimatesResult, documentsResult, eventsResult, expenseRows, thermalResult] =
+    await Promise.all([
+      options.includeEstimates
+        ? orbyvenSupabase
+            .from("sales_estimates")
+            .select("id,status,updated_at")
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+            .order("updated_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+      options.includeDocuments
+        ? orbyvenSupabase
+            .from("ops_documents")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+        : Promise.resolve({ count: 0, error: null }),
+      options.includeCalendar
+        ? orbyvenSupabase
+            .from("calendar_events")
+            .select("id,status,start_at")
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+            .neq("status", "cancelled")
+            .order("start_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      options.includeExpenses && options.canAccessFinances
+        ? readAllPages<{ amount_cents: number }>((from, to) =>
+            orbyvenSupabase
+              .from("finance_expenses")
+              .select("amount_cents")
+              .eq("organization_id", organizationId)
+              .eq("task_id", taskId)
+              .order("occurred_on", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+          )
+        : Promise.resolve(null),
+      options.includeThermal
+        ? orbyvenSupabase
+            .from("thermal_sketches")
+            .select("task_id", { count: "exact", head: true })
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+        : Promise.resolve({ count: null, error: null }),
+    ]);
+
+  if (estimatesResult.error) throw estimatesResult.error;
+  if (documentsResult.error) throw documentsResult.error;
+  if (eventsResult.error) throw eventsResult.error;
+  if (thermalResult.error) throw thermalResult.error;
+  if (options.includeDocuments && documentsResult.count === null) throw new Error("Document count unavailable.");
+
+  const estimates = estimatesResult.data ?? [];
+  const events = eventsResult.data ?? [];
+
+  return {
+    estimatesCount: estimates.length,
+    sentEstimatesCount: estimates.filter((item) => item.status === "sent").length,
+    acceptedEstimatesCount: estimates.filter((item) => item.status === "accepted").length,
+    latestEstimateId: estimates[0]?.id ?? null,
+    documentsCount: documentsResult.count ?? 0,
+    eventsCount: events.length,
+    upcomingEventsCount: events.filter((item) => item.start_at >= nowIso).length,
+    expensesCount: expenseRows ? expenseRows.length : null,
+    expensesCents: expenseRows
+      ? expenseRows.reduce((sum, item) => sum + Number(item.amount_cents), 0)
+      : null,
+    thermalSketch: options.includeThermal ? (thermalResult.count ?? 0) > 0 : null,
+  };
 }
 
 export async function createWorkTask(

@@ -93,6 +93,7 @@ export default function ExpensesModule({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [scopeTaskId, setScopeTaskId] = useState(initialCreate ? "" : (initialTaskId ?? ""));
 
   const canWrite = role === "owner" || role === "admin" || role === "manager";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -130,24 +131,29 @@ export default function ExpensesModule({
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
   const docById = useMemo(() => new Map(documents.map((item) => [item.id, item.name])), [documents]);
 
+  const scopedExpenses = useMemo(
+    () => (scopeTaskId ? expenses.filter((item) => item.task_id === scopeTaskId) : expenses),
+    [expenses, scopeTaskId]
+  );
+
   const categories = useMemo(
-    () => Array.from(new Set(expenses.map((item) => item.category))).sort((a, b) => a.localeCompare(b, locale)),
-    [expenses, locale]
+    () => Array.from(new Set(scopedExpenses.map((item) => item.category))).sort((a, b) => a.localeCompare(b, locale)),
+    [scopedExpenses, locale]
   );
 
   const filtered = useMemo(
-    () => (filter === "all" ? expenses : expenses.filter((item) => item.category === filter)),
-    [expenses, filter]
+    () => (filter === "all" ? scopedExpenses : scopedExpenses.filter((item) => item.category === filter)),
+    [scopedExpenses, filter]
   );
 
   const metrics = useMemo(() => {
     const currentMonth = monthKey(todayInput());
-    const monthExpenses = expenses.filter((item) => monthKey(item.occurred_on) === currentMonth);
+    const monthExpenses = scopedExpenses.filter((item) => monthKey(item.occurred_on) === currentMonth);
     const monthTotal = monthExpenses.reduce((sum, item) => sum + item.amount_cents, 0);
-    const total = expenses.reduce((sum, item) => sum + item.amount_cents, 0);
-    const linked = expenses.filter((item) => item.client_id || item.task_id).length;
-    return { monthTotal, total, linked, count: expenses.length };
-  }, [expenses]);
+    const total = scopedExpenses.reduce((sum, item) => sum + item.amount_cents, 0);
+    const linked = scopedExpenses.filter((item) => item.client_id || item.task_id).length;
+    return { monthTotal, total, linked, count: scopedExpenses.length };
+  }, [scopedExpenses]);
 
   const chooseTask = (taskId: string) => {
     const task = tasks.find((item) => item.id === taskId);
@@ -253,7 +259,14 @@ export default function ExpensesModule({
 
       <section className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <h2 className="font-semibold">Registru simplu</h2>
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="font-semibold">{scopeTaskId ? "Costurile lucrării" : "Registru simplu"}</h2>
+            {scopeTaskId ? (
+              <button type="button" onClick={() => setScopeTaskId("")} className="max-w-[240px] truncate rounded-full border border-[var(--border)] px-2.5 py-1 text-[10px] text-[var(--muted)]" title="Arată toate cheltuielile">
+                {taskById.get(scopeTaskId) || "Lucrare"} · ×
+              </button>
+            ) : null}
+          </div>
           <select value={filter} onChange={(e) => setFilter(e.target.value)} className={`${moduleInputClass} sm:max-w-[220px]`}>
             <option value="all">Toate categoriile</option>
             {categories.map((category) => <option key={category} value={category}>{category}</option>)}

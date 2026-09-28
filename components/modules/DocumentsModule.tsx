@@ -20,6 +20,7 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialTaskId?: string;
 };
 
 const categoryLabels: Record<DocumentCategory, string> = {
@@ -43,7 +44,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, initialTaskId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -51,7 +52,7 @@ export default function DocumentsModule({ organizationId, locale, role }: Props)
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState<DocumentCategory>("general");
   const [clientId, setClientId] = useState("");
-  const [taskId, setTaskId] = useState("");
+  const [taskId, setTaskId] = useState(initialTaskId ?? "");
   const [estimateId, setEstimateId] = useState("");
   const [note, setNote] = useState("");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -60,6 +61,7 @@ export default function DocumentsModule({ organizationId, locale, role }: Props)
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [scopeTaskId, setScopeTaskId] = useState(initialTaskId ?? "");
 
   const canWrite = role !== "viewer";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -93,10 +95,15 @@ export default function DocumentsModule({ organizationId, locale, role }: Props)
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
   const estimateById = useMemo(() => new Map(estimates.map((item) => [item.id, `${item.reference} · ${item.title}`])), [estimates]);
 
+  const scopedDocuments = useMemo(
+    () => (scopeTaskId ? documents.filter((document) => document.task_id === scopeTaskId) : documents),
+    [documents, scopeTaskId]
+  );
+
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase(locale);
-    if (!normalized) return documents;
-    return documents.filter((document) => {
+    if (!normalized) return scopedDocuments;
+    return scopedDocuments.filter((document) => {
       const haystack = [
         document.name,
         categoryLabels[document.category],
@@ -110,20 +117,20 @@ export default function DocumentsModule({ organizationId, locale, role }: Props)
         .toLocaleLowerCase(locale);
       return haystack.includes(normalized);
     });
-  }, [clientById, documents, estimateById, locale, query, taskById]);
+  }, [clientById, scopedDocuments, estimateById, locale, query, taskById]);
 
   const metrics = useMemo(() => ({
-    total: documents.length,
-    photos: documents.filter((item) => item.category === "photo").length,
-    receipts: documents.filter((item) => item.category === "receipt").length,
-    linked: documents.filter((item) => item.client_id || item.task_id || item.estimate_id).length,
-  }), [documents]);
+    total: scopedDocuments.length,
+    photos: scopedDocuments.filter((item) => item.category === "photo").length,
+    receipts: scopedDocuments.filter((item) => item.category === "receipt").length,
+    linked: scopedDocuments.filter((item) => item.client_id || item.task_id || item.estimate_id).length,
+  }), [scopedDocuments]);
 
   const resetUpload = () => {
     setFile(null);
     setCategory("general");
     setClientId("");
-    setTaskId("");
+    setTaskId(scopeTaskId || "");
     setEstimateId("");
     setNote("");
     setFileInputKey((current) => current + 1);
@@ -246,7 +253,14 @@ export default function DocumentsModule({ organizationId, locale, role }: Props)
 
       <section className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <h2 className="font-semibold">Biblioteca firmei</h2>
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="font-semibold">{scopeTaskId ? "Dosarul lucrării" : "Biblioteca firmei"}</h2>
+            {scopeTaskId ? (
+              <button type="button" onClick={() => { setScopeTaskId(""); setTaskId(""); }} className="max-w-[240px] truncate rounded-full border border-[var(--border)] px-2.5 py-1 text-[10px] text-[var(--muted)]" title="Arată toate documentele">
+                {taskById.get(scopeTaskId) || "Lucrare"} · ×
+              </button>
+            ) : null}
+          </div>
           <input value={query} onChange={(event) => setQuery(event.target.value)} className={`${moduleInputClass} sm:max-w-xs`} placeholder="Caută document…" />
         </div>
 

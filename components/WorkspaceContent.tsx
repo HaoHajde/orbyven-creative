@@ -121,7 +121,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "documents") {
-    return <DocumentsModule organizationId={organizationId} locale={locale} role={role} />;
+    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "expenses") {
@@ -132,7 +132,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "thermal") {
-    return <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} />;
+    return <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialTaskId={intent?.taskId} />;
   }
 
   return <TeamModule organizationId={organizationId} role={role} />;

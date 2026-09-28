@@ -155,6 +155,15 @@ export default function OverviewModule({
           meta: "Lucrare sau task întârziat.",
           level: "urgent",
         });
+      } else if (task.status === "blocked") {
+        attention.push({
+          key: `blocked-${task.id}`,
+          module: "tasks",
+          recordId: task.id,
+          title: task.title,
+          meta: "Lucrare blocată · necesită o decizie.",
+          level: "urgent",
+        });
       } else if (task.priority === "urgent") {
         attention.push({
           key: `urgent-${task.id}`,
@@ -187,11 +196,47 @@ export default function OverviewModule({
       dateKey(new Date(snapshotNow - (6 - index) * 86400000).toISOString(), timeZone)
     );
     const trend = (values: string[]) => days.map((day) => values.filter((value) => dateKey(value, timeZone) === day).length);
-    const recent = [
-      ...snapshot.leads.filter((item) => enabledModules.includes("leads")).map((item) => ({ id: item.id, module: "leads" as const, title: item.name, when: item.created_at, label: "Client / cerere" })),
-      ...snapshot.tasks.filter((item) => enabledModules.includes("tasks")).map((item) => ({ id: item.id, module: "tasks" as const, title: item.title, when: item.created_at, label: "Lucrare" })),
-      ...snapshot.estimates.filter((item) => enabledModules.includes("estimates")).map((item) => ({ id: item.id, module: "estimates" as const, title: item.title, when: item.created_at, label: "Ofertă" })),
-    ].sort((left, right) => right.when.localeCompare(left.when)).slice(0, 4);
+    const timeLabel = (value: string) =>
+      new Intl.DateTimeFormat(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone,
+      }).format(new Date(value));
+
+    const todayQueue = [
+      ...openTasks.flatMap((task) => {
+        const scheduledToday = task.scheduled_at && dateKey(task.scheduled_at, timeZone) === today;
+        const dueToday = task.due_at && dateKey(task.due_at, timeZone) === today;
+        if (!scheduledToday && !dueToday) return [];
+        const moments = [
+          scheduledToday ? task.scheduled_at : null,
+          dueToday ? task.due_at : null,
+        ].filter(Boolean) as string[];
+        const meta = scheduledToday && dueToday
+          ? `Programată ${timeLabel(task.scheduled_at!)} · termen ${timeLabel(task.due_at!)}`
+          : scheduledToday
+            ? `Programată la ${timeLabel(task.scheduled_at!)}`
+            : `Termen astăzi la ${timeLabel(task.due_at!)}`;
+        return [{
+          key: `today-task-${task.id}`,
+          module: "tasks" as const,
+          recordId: task.id,
+          title: task.title,
+          meta,
+          sortAt: moments.sort()[0],
+        }];
+      }),
+      ...todayEvents.map((event) => ({
+        key: `today-event-${event.id}`,
+        module: "calendar" as const,
+        recordId: event.id,
+        title: event.title,
+        meta: `Programare la ${timeLabel(event.start_at)}`,
+        sortAt: event.start_at,
+      })),
+    ]
+      .sort((left, right) => left.sortAt.localeCompare(right.sortAt))
+      .slice(0, 5);
 
     return {
       activeLeads,
@@ -205,10 +250,10 @@ export default function OverviewModule({
         calendar: trend(snapshot.events.filter((item) => item.status !== "cancelled").map((item) => item.start_at)),
         estimates: trend(snapshot.trendDates.estimates),
       },
-      recent,
+      todayQueue,
       attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
     };
-  }, [snapshot, snapshotNow, timeZone, enabledModules]);
+  }, [snapshot, snapshotNow, timeZone, enabledModules, locale]);
 
   if (loading) {
     return (
@@ -373,19 +418,30 @@ export default function OverviewModule({
             </article>
 
             <article className="min-w-0 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">ACTIVITY</p>
-              <h2 className="mt-1 text-[15px] font-semibold">Înregistrări recente</h2>
-              {computed.recent.length ? (
+              <div className="flex items-center justify-between gap-3">
+                <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">ASTĂZI</p><h2 className="mt-1 text-[15px] font-semibold">Următoarele acțiuni</h2></div>
+                <span className="rounded-[7px] bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">{computed.todayQueue.length}</span>
+              </div>
+              {computed.todayQueue.length ? (
                 <div className="mt-3 grid gap-1.5">
-                  {computed.recent.map((item) => (
-                    <button key={item.module + item.id} type="button" onClick={() => onOpenModule(item.module, { recordId: item.id })}
-                      className="flex items-center justify-between gap-3 rounded-[9px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-2.5 text-left hover:border-[var(--border-strong)]">
-                      <span className="min-w-0"><span className="block truncate text-[12px] font-semibold">{item.title}</span><span className="mt-0.5 block text-[10px] text-[var(--muted)]">{item.label}</span></span>
-                      <span className="shrink-0 text-[10px] text-[var(--muted-2)]">{new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone }).format(new Date(item.when))}</span>
+                  {computed.todayQueue.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => onOpenModule(item.module, item.module === "calendar" ? undefined : { recordId: item.recordId })}
+                      className="flex items-center justify-between gap-3 rounded-[9px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-2.5 text-left hover:border-[var(--border-strong)]"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-[12px] font-semibold">{item.title}</span>
+                        <span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">{item.meta}</span>
+                      </span>
+                      <span className="shrink-0 text-[10px] font-semibold text-[var(--accent)]">→</span>
                     </button>
                   ))}
                 </div>
-              ) : <p className="mt-4 rounded-[9px] border border-dashed border-[var(--border)] px-4 py-7 text-center text-[12px] text-[var(--muted)]">Încă nu există înregistrări.</p>}
+              ) : (
+                <p className="mt-4 rounded-[9px] border border-dashed border-[var(--border)] px-4 py-7 text-center text-[12px] text-[var(--muted)]">Nimic programat pentru astăzi.</p>
+              )}
             </article>
           </section>
 

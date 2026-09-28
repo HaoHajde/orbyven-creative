@@ -40,6 +40,8 @@ test("module switching, deep-link creation and role props remain intact", () => 
   assert.match(client, /setMobileModuleMenuOpen\(false\)/);
   assert.match(registry, /id: "overview"/);
   assert.match(registry, /id: "thermal"/);
+  assert.match(workspace, /DocumentsModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
+  assert.match(workspace, /ThermalPlannerModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
 });
 
 test("demo iframes wait near the viewport, then keep the existing safe iframe settings", () => {

@@ -60,7 +60,7 @@ const FORM_FIELDS: Partial<Record<OrbyvenModuleId, Field[]>> = {
 const TITLES: Record<OrbyvenModuleId, string> = {
   overview: "Prezentare generală", leads: "Clienți", tasks: "Lucrări",
   calendar: "Calendar", estimates: "Oferte & devize", documents: "Documente",
-  expenses: "Cheltuieli", team: "Echipă",
+  expenses: "Cheltuieli", thermal: "Planșă Termică", team: "Echipă",
 };
 const STATUS_OPTIONS: Partial<Record<OrbyvenModuleId, string[]>> = {
   leads: ["new", "contacted", "qualified", "proposal", "won", "lost"],
@@ -104,6 +104,7 @@ function rowSummary(row: Row, module: OrbyvenModuleId) {
   if (module === "estimates") return currency(row.total_cents, row.currency);
   if (module === "documents") return [row.category, row.size_bytes ? Math.round(Number(row.size_bytes) / 1024) + " KB" : null].filter(Boolean).join(" · ");
   if (module === "expenses") return currency(row.amount_cents, row.currency) + " · " + formatDate(row.occurred_on);
+  if (module === "thermal") return ["rev. " + String(row.revision ?? 0), formatDate(row.updated_at)].filter(Boolean).join(" · ");
   if (module === "team") return [row.job_title, row.email].filter(Boolean).join(" · ");
   return "";
 }
@@ -218,6 +219,26 @@ export default function App() {
           activeModule === "estimates" ? await listEstimates(org) :
           activeModule === "documents" ? await listDocuments(org) :
           activeModule === "expenses" ? await listExpenses(org) :
+          activeModule === "thermal" ? await (async () => {
+            const [works, sketchesResult] = await Promise.all([
+              listWorkTasks(org),
+              orbyvenSupabase.from("thermal_sketches")
+                .select("task_id,revision,updated_at")
+                .eq("organization_id", org)
+                .order("updated_at", { ascending: false }),
+            ]);
+            if (sketchesResult.error) throw sketchesResult.error;
+            const workById = new Map(works.map((work) => [work.id, work]));
+            return (sketchesResult.data ?? []).map((sketch) => ({
+              id: sketch.task_id,
+              task_id: sketch.task_id,
+              title: workById.get(sketch.task_id)?.title ?? "Planșă termică",
+              client_id: workById.get(sketch.task_id)?.client_id ?? null,
+              revision: sketch.revision,
+              updated_at: sketch.updated_at,
+              status: "salvată",
+            }));
+          })() :
           await listTeamMembers(org);
         setRows(result as unknown as Row[]);
       }
@@ -517,7 +538,7 @@ export default function App() {
                   <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
                     activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." :
                     ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
-                {panel === "workspace" && activeModule !== "overview" && canWrite && (activeModule !== "expenses" || canFinance) && (
+                {panel === "workspace" && activeModule !== "overview" && activeModule !== "thermal" && canWrite && (activeModule !== "expenses" || canFinance) && (
                   <button className="primary add-button" onClick={() => openCreate(activeModule)}>+ Adaugă</button>
                 )}
               </section>
