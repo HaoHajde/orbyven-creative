@@ -43,8 +43,10 @@ export default function ClientWorkspace() {
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("orbyven-dashboard-theme");
-    if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-    const timer = window.setTimeout(() => void loadWorkspace(), 0);
+    const timer = window.setTimeout(() => {
+      if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+      void loadWorkspace();
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [loadWorkspace]);
 
