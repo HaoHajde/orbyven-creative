@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
+import SeoRelatedLinks from "@/components/seo/SeoRelatedLinks";
 import SeoShell from "@/components/seo/SeoShell";
 import type { SeoLandingPage as SeoLandingPageData } from "@/lib/seo-foundation";
 
@@ -101,18 +102,12 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
         </div>
       </section>
 
-      <section className="px-5 py-16 sm:px-7 md:px-10">
-        <div className="mx-auto max-w-[1380px]">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="mr-2 text-[10px] font-bold uppercase tracking-[.18em] text-black/35">Continuă cu</span>
-            {page.related.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition hover:border-black/25">
-                {item.label} →
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SeoRelatedLinks
+        currentPath={page.path}
+        links={page.related}
+        eyebrow="Continuă explorarea"
+        title="Exemple, ghiduri și direcții care au legătură cu proiectul."
+      />
     </SeoShell>
   );
 }

@@ -6,7 +6,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 const modules = [
   "Overview", "Leads", "Tasks", "Calendar",
-  "Estimates", "Documents", "Expenses", "Team",
+  "Estimates", "Documents", "Expenses", "ThermalPlanner", "Team",
 ];
 const workspace = read("components/WorkspaceContent.tsx");
 const preview = read("components/FeaturedTemplatePreview.tsx");
@@ -30,7 +30,7 @@ test("only the active workspace module is imported at runtime", () => {
 });
 
 test("module switching, deep-link creation and role props remain intact", () => {
-  for (const id of ["overview", "leads", "tasks", "calendar", "estimates", "documents", "expenses"]) {
+  for (const id of ["overview", "leads", "tasks", "calendar", "estimates", "documents", "expenses", "thermal"]) {
     assert.ok(workspace.includes(`activeModule === "${id}"`), `${id}: navigation branch removed`);
   }
   for (const arg of ["initialCreate", "initialRecordId", "initialClientId", "initialTaskId", "organizationId", "role", "onOpenModule"]) {
@@ -39,6 +39,7 @@ test("module switching, deep-link creation and role props remain intact", () => 
   assert.match(client, /enabledModules\.includes\(id\)/);
   assert.match(client, /setMobileModuleMenuOpen\(false\)/);
   assert.match(registry, /id: "overview"/);
+  assert.match(registry, /id: "thermal"/);
 });
 
 test("demo iframes wait near the viewport, then keep the existing safe iframe settings", () => {

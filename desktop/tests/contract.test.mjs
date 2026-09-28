@@ -49,7 +49,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.3.0");
+  assert.equal(config.version, "0.3.1");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -67,4 +67,25 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
     assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
   }
+});
+
+test("NSIS installer carries ORBYVEN visual identity", () => {
+  const nsis = config.bundle.windows.nsis;
+  const generator = content("../scripts/generate-installer-brand.ps1");
+  assert.equal(nsis.installerIcon, "icons/icon.ico");
+  assert.equal(nsis.uninstallerIcon, "icons/icon.ico");
+  assert.equal(nsis.headerImage, "installer/orbyven-header.bmp");
+  assert.equal(nsis.uninstallerHeaderImage, "installer/orbyven-header.bmp");
+  assert.equal(nsis.sidebarImage, "installer/orbyven-sidebar.bmp");
+  assert.equal(nsis.startMenuFolder, "ORBYVEN");
+  assert.equal(nsis.installMode, "currentUser");
+  assert.equal(nsis.compression, "lzma");
+  assert.match(manifest.scripts["installer:brand"], /generate-installer-brand\.ps1/);
+  assert.match(manifest.scripts.build, /npm run icons && npm run installer:brand && tauri build/);
+  assert.match(generator, /150 57/);
+  assert.match(generator, /164 314/);
+  assert.match(generator, /#070B16/);
+  assert.match(generator, /#627BFF/);
+  assert.match(generator, /ORBYVEN/);
+  assert.match(generator, /Business workspace/);
 });

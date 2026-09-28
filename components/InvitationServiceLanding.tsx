@@ -2,6 +2,24 @@ import Link from "next/link";
 
 type Preview = { href: string; title: string; description: string };
 
+const invitationCategories = [
+  {
+    href: "/invitatii-nunta",
+    label: "Invitații de nuntă",
+    copy: "Poveste, program, locații și RSVP într-un singur link.",
+  },
+  {
+    href: "/invitatii-botez",
+    label: "Invitații de botez",
+    copy: "Modele personalizabile pentru fetiță sau băiețel.",
+  },
+  {
+    href: "/invitatii-majorat",
+    label: "Invitații de majorat",
+    copy: "Concept digital pentru 18 ani, cu program, locație și RSVP.",
+  },
+] as const;
+
 export default function InvitationServiceLanding({
   label,
   title,
@@ -21,6 +39,9 @@ export default function InvitationServiceLanding({
   relatedLabel: string;
   faq: { question: string; answer: string }[];
 }) {
+  const currentInvitationPath = invitationCategories.find((item) => item.label === label)?.href;
+  const relatedInvitationCategories = invitationCategories.filter((item) => item.href !== currentInvitationPath);
+
   return (
     <main className="min-h-screen bg-[#080912] text-[#f5f5fc]">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-8 sm:px-8">
@@ -86,6 +107,23 @@ export default function InvitationServiceLanding({
         </div>
       </section>
 
+      <section aria-labelledby="alte-invitatii" className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#bcb6ff]">Colecția ORBYVEN</p>
+        <h2 id="alte-invitatii" className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">Alte tipuri de invitații digitale.</h2>
+        <div className="mt-9 grid gap-4 md:grid-cols-2">
+          {relatedInvitationCategories.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group rounded-[26px] border border-white/10 bg-white/[.04] p-6 transition hover:border-[#ada7ff]/55"
+            >
+              <span className="text-xl font-semibold">{item.label} <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
+              <span className="mt-3 block text-sm leading-6 text-white/58">{item.copy}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section aria-labelledby="intrebari-frecvente" className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
         <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#bcb6ff]">Întrebări frecvente</p>
         <h2 id="intrebari-frecvente" className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">Ce merită să știi înainte să alegi.</h2>
@@ -112,6 +150,7 @@ export default function InvitationServiceLanding({
         <nav aria-label="Alte servicii" className="flex flex-wrap gap-5">
           <Link href="/invitatii-nunta">Invitații de nuntă</Link>
           <Link href="/invitatii-botez">Invitații de botez</Link>
+          <Link href="/invitatii-majorat">Invitații de majorat</Link>
           <Link href="/servicii">Web design</Link>
           <Link href="/legal/privacy">Confidențialitate</Link>
         </nav>

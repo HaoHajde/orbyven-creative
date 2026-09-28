@@ -3,9 +3,9 @@
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
@@ -13,45 +13,362 @@ type Service = {
   number: string;
   title: string;
   line: string;
+  href: string;
+  linkLabel: string;
   tags: string[];
   gradient: string;
+};
+
+type ModulePreview = {
+  id: string;
+  label: string;
+  eyebrow: string;
+  title: string;
+  note: string;
+  rows: string[];
 };
 
 const services: Service[] = [
   {
     number: "01",
     title: "Website",
-    line: "Prezență clară pentru firmă, servicii și contact.",
-    tags: ["Responsive", "SEO de bază", "Formulare"],
-    gradient: "radial-gradient(circle at 18% 20%, rgba(116,86,255,.34), transparent 32%), radial-gradient(circle at 82% 72%, rgba(61,39,122,.34), transparent 36%), linear-gradient(135deg, #0d0917, #160e28 58%, #08070d)",
+    line: "Prezență clară, rapidă și construită în jurul afacerii.",
+    href: "/creare-site",
+    linkLabel: "Creare site pentru firme",
+    tags: ["Responsive", "SEO", "Formulare"],
+    gradient: "radial-gradient(circle at 16% 18%, rgba(135,102,255,.34), transparent 31%), radial-gradient(circle at 82% 78%, rgba(67,46,130,.30), transparent 37%), linear-gradient(140deg,#0d0918,#17102a 58%,#08070d)",
   },
   {
     number: "02",
     title: "Landing page",
-    line: "O singură ofertă. O singură acțiune importantă.",
+    line: "O ofertă, o direcție și un traseu simplu către conversie.",
+    href: "/site-prezentare",
+    linkLabel: "Site de prezentare și landing pages",
     tags: ["Campanii", "Conversie", "Analytics"],
-    gradient: "radial-gradient(circle at 76% 18%, rgba(86,124,255,.30), transparent 30%), radial-gradient(circle at 18% 76%, rgba(82,55,170,.28), transparent 34%), linear-gradient(135deg, #090b17, #101630 58%, #07080d)",
+    gradient: "radial-gradient(circle at 76% 18%, rgba(82,126,255,.31), transparent 31%), radial-gradient(circle at 16% 78%, rgba(89,61,176,.28), transparent 36%), linear-gradient(140deg,#090b18,#10162e 58%,#07080d)",
   },
   {
     number: "03",
     title: "Redesign",
-    line: "Păstrăm ce funcționează. Refacem ce te ține în urmă.",
+    line: "Păstrăm ce funcționează și reconstruim experiența care te încetinește.",
+    href: "/redesign-site",
+    linkLabel: "Serviciu de redesign website",
     tags: ["UI", "UX", "Performanță"],
-    gradient: "radial-gradient(circle at 22% 26%, rgba(189,86,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(91,46,141,.30), transparent 35%), linear-gradient(135deg, #110914, #211027 58%, #09070b)",
+    gradient: "radial-gradient(circle at 22% 24%, rgba(190,88,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(92,49,147,.28), transparent 36%), linear-gradient(140deg,#110914,#201027 58%,#09070b)",
   },
   {
     number: "04",
     title: "Experiență digitală",
-    line: "Proiecte speciale: invitații, microsite-uri și interacțiuni custom.",
+    line: "Invitații, microsite-uri și interacțiuni construite pentru context.",
+    href: "/invitatii-nunta",
+    linkLabel: "Invitații și experiențe digitale",
     tags: ["RSVP", "Microsite", "Custom"],
-    gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.34), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.18), transparent 36%), linear-gradient(135deg, #0a0914, #171326 55%, #07070b)",
+    gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.36), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.20), transparent 36%), linear-gradient(140deg,#0a0914,#171326 55%,#07070b)",
   },
 ];
 
+const modulePreviews: ModulePreview[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    eyebrow: "CONTROL",
+    title: "Ce cere atenție acum.",
+    note: "Semnale și acțiuni, nu grafice de decor.",
+    rows: ["Cereri noi", "Lucrări apropiate de termen", "Oferte de urmărit"],
+  },
+  {
+    id: "clients",
+    label: "Clienți",
+    eyebrow: "CRM LIGHT",
+    title: "Istoricul rămâne lângă client.",
+    note: "Cerere, contact, lucrare și follow-up în același context.",
+    rows: ["Lead nou · WhatsApp", "Vizită programată", "Ofertă trimisă"],
+  },
+  {
+    id: "work",
+    label: "Lucrări",
+    eyebrow: "OPERATIONS",
+    title: "De la cerere la execuție.",
+    note: "Responsabili, status și următorul pas fără foi separate.",
+    rows: ["Montaj · în lucru", "Recepție · programată", "Materiale · verificate"],
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    eyebrow: "SCHEDULE",
+    title: "Programări cu context.",
+    note: "Fiecare vizită știe clientul, lucrarea și oamenii implicați.",
+    rows: ["09:30 · evaluare", "12:00 · montaj", "16:30 · recepție"],
+  },
+  {
+    id: "offers",
+    label: "Oferte",
+    eyebrow: "COMMERCIAL",
+    title: "Oferta continuă fluxul.",
+    note: "Devizul nu mai este un document izolat de client și lucrare.",
+    rows: ["Draft pregătit", "Trimis clientului", "Acceptat → lucrare"],
+  },
+];
+
+const tableLayout = [
+  { id: "01", x: "11%", y: "19%", guests: 8 },
+  { id: "02", x: "42%", y: "13%", guests: 9 },
+  { id: "03", x: "71%", y: "21%", guests: 8 },
+  { id: "04", x: "18%", y: "58%", guests: 10 },
+  { id: "05", x: "49%", y: "53%", guests: 9 },
+  { id: "06", x: "76%", y: "61%", guests: 8 },
+] as const;
+
 const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
+function Chapter({ children }: { children: ReactNode }) {
+  return (
+    <p className="orbyven-home-kicker">
+      <span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span>
+      <span>{children}</span>
+      <span aria-hidden="true" className="orbyven-home-kicker-line" />
+    </p>
+  );
+}
+
+function ModuleWorkspacePreview({
+  activeId,
+  onChange,
+}: {
+  activeId: string;
+  onChange: (id: string) => void;
+}) {
+  const active = modulePreviews.find((item) => item.id === activeId) ?? modulePreviews[0];
+
+  return (
+    <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--panel)] shadow-[0_28px_100px_rgba(0,0,0,.12)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ORBYVEN / WORKSPACE</p>
+          <p className="mt-1 text-[12px] font-semibold">Context operațional</p>
+        </div>
+        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">DEMO UI</span>
+      </div>
+
+      <div className="grid min-h-[430px] md:grid-cols-[180px_1fr]">
+        <div className="border-b border-[var(--border)] p-3 md:border-b-0 md:border-r">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
+            {modulePreviews.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onChange(item.id)}
+                className={`flex items-center justify-between rounded-[16px] border px-3 py-3 text-left text-[11px] font-semibold transition ${active.id === item.id ? "border-[rgba(165,139,255,.42)] bg-[var(--accent-soft)] text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--surface)]"}`}
+              >
+                <span>{item.label}</span>
+                <span className={`h-1.5 w-1.5 rounded-full ${active.id === item.id ? "bg-[#a58bff]" : "bg-[var(--border-strong)]"}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden p-5 sm:p-7">
+          <div aria-hidden="true" className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[var(--accent-soft)] blur-[90px]" />
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <span className="text-[8px] font-bold uppercase tracking-[.18em] text-[#a58bff]">{active.eyebrow}</span>
+              <span className="h-px w-8 bg-[var(--border-strong)]" />
+              <span className="text-[8px] font-semibold text-[var(--muted-2)]">Activ</span>
+            </div>
+            <h3 className="mt-5 max-w-xl text-[clamp(28px,4vw,46px)] font-semibold leading-[.96] tracking-[-.055em]">{active.title}</h3>
+            <p className="mt-4 max-w-lg text-[12px] leading-6 text-[var(--muted)]">{active.note}</p>
+
+            <div className="mt-8 grid gap-2">
+              {active.rows.map((row, index) => (
+                <motion.div
+                  key={active.id + row}
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: .35, delay: index * .045, ease: easeOut }}
+                  className="flex items-center justify-between rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--accent-soft)] text-[9px] font-bold text-[#a58bff]">0{index + 1}</span>
+                    <span className="text-[11px] font-medium">{row}</span>
+                  </div>
+                  <span className="text-[11px] text-[var(--muted-2)]">→</span>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {["Client", "Context", "Acțiune"].map((item, index) => (
+                <div key={item} className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+                  <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">0{index + 1}</p>
+                  <p className="mt-2 text-[10px] font-semibold">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeatingPreview() {
+  return (
+    <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--panel)] shadow-[0_28px_100px_rgba(0,0,0,.12)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">EVENIMENT / DASHBOARD</p>
+          <p className="mt-1 text-[12px] font-semibold">Poziționare invitați</p>
+        </div>
+        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">EXEMPLU VIZUAL</span>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_235px]">
+        <div className="relative min-h-[430px] overflow-hidden border-b border-[var(--border)] lg:border-b-0 lg:border-r">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-40"
+            style={{
+              backgroundImage:
+                "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+          <div className="absolute left-[5%] top-[5%] rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">SALON A</div>
+          <div className="absolute bottom-[6%] left-1/2 -translate-x-1/2 rounded-[15px] border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] px-6 py-3 text-center">
+            <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[#a58bff]">Masa mirilor</p>
+            <p className="mt-1 text-[10px] font-semibold">Diana & Florin</p>
+          </div>
+
+          {tableLayout.map((table, index) => (
+            <motion.div
+              key={table.id}
+              aria-hidden="true"
+              className="absolute grid h-[88px] w-[88px] place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_12px_35px_rgba(0,0,0,.08)]"
+              style={{ left: table.x, top: table.y }}
+              animate={{ y: [0, index % 2 === 0 ? -3 : 3, 0] }}
+              transition={{ duration: 5 + index * .4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="text-center">
+                <p className="text-[8px] font-bold uppercase tracking-[.12em] text-[#a58bff]">Masa {table.id}</p>
+                <p className="mt-1 text-[10px] font-semibold">{table.guests} invitați</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="p-5">
+          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">RSVP / DEMO</p>
+          <div className="mt-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5">
+            <p className="text-[36px] font-semibold leading-none tracking-[-.06em]">84</p>
+            <p className="mt-2 text-[10px] text-[var(--muted)]">confirmări din 96</p>
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <div className="h-full w-[87%] rounded-full bg-[#a58bff]" />
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {[
+              ["Fără masă", "7"],
+              ["Copii", "9"],
+              ["Mese complete", "4"],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between rounded-[14px] border border-[var(--border)] px-4 py-3">
+                <span className="text-[9px] text-[var(--muted)]">{label}</span>
+                <span className="text-[10px] font-semibold">{value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-[16px] border border-[rgba(165,139,255,.28)] bg-[var(--accent-soft)] p-4">
+            <p className="text-[8px] font-bold uppercase tracking-[.14em] text-[#a58bff]">Context</p>
+            <p className="mt-2 text-[10px] leading-5 text-[var(--muted)]">Confirmarea participării poate alimenta organizarea evenimentului, nu doar o listă.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiPreview() {
+  return (
+    <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--panel)] shadow-[0_28px_100px_rgba(0,0,0,.12)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center rounded-full border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] text-[12px] text-[#a58bff]">✦</span>
+          <div>
+            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ORBYVEN AI</p>
+            <p className="mt-1 text-[12px] font-semibold">Motor contextual</p>
+          </div>
+        </div>
+        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">PREVIEW</span>
+      </div>
+
+      <div className="grid min-h-[430px] lg:grid-cols-[1.02fr_.98fr]">
+        <div className="border-b border-[var(--border)] p-5 sm:p-7 lg:border-b-0 lg:border-r">
+          <div className="max-w-[88%] rounded-[20px] rounded-bl-[6px] bg-[var(--surface)] px-4 py-4 text-[11px] leading-5">
+            Vreau homepage-ul mai premium, dar fără să ating dashboard-ul.
+          </div>
+          <div className="ml-auto mt-4 max-w-[92%] rounded-[20px] rounded-br-[6px] border border-[rgba(165,139,255,.28)] bg-[var(--accent-soft)] px-4 py-4">
+            <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">ORBYVEN AI</p>
+            <p className="mt-2 text-[11px] leading-5 text-[var(--text)]">Am separat cererea în zona publică. Păstrez autentificarea, modulele și logica operațională neschimbate.</p>
+          </div>
+
+          <div className="mt-6 grid grid-cols-4 gap-2">
+            {["Intenție", "Context", "Plan", "Preview"].map((item, index) => (
+              <motion.div
+                key={item}
+                className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-center"
+                animate={{ borderColor: ["var(--border)", index === 2 ? "rgba(165,139,255,.38)" : "var(--border)", "var(--border)"] }}
+                transition={{ duration: 5, repeat: Infinity, delay: index * .55 }}
+              >
+                <p className="text-[7px] font-bold uppercase tracking-[.1em] text-[var(--muted-2)]">0{index + 1}</p>
+                <p className="mt-2 text-[9px] font-semibold">{item}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden p-5 sm:p-7">
+          <div aria-hidden="true" className="absolute -right-24 top-10 h-64 w-64 rounded-full bg-[var(--accent-soft)] blur-[85px]" />
+          <div className="relative">
+            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">PLAN DE ACȚIUNE</p>
+            <div className="mt-5 grid gap-2">
+              {[
+                ["Hero", "rafinez mesajul + ritmul vizual", "modific"],
+                ["Workspace", "păstrez autentificarea și modulele", "protejat"],
+                ["Templates", "folosesc catalogul existent", "context"],
+                ["Publicare", "preview înainte de schimbare", "control"],
+              ].map(([title, note, state], index) => (
+                <div key={title} className="rounded-[17px] border border-[var(--border)] bg-[var(--surface)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface-2)] text-[8px] font-bold text-[var(--muted)]">0{index + 1}</span>
+                      <div>
+                        <p className="text-[10px] font-semibold">{title}</p>
+                        <p className="mt-1 text-[8px] text-[var(--muted)]">{note}</p>
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1.5 text-[7px] font-bold uppercase tracking-[.08em] ${state === "protejat" ? "bg-emerald-500/10 text-emerald-500" : "bg-[var(--accent-soft)] text-[#a58bff]"}`}>{state}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex items-center justify-between rounded-[16px] bg-[var(--button)] px-4 py-4 text-[var(--button-text)]">
+              <div>
+                <p className="text-[8px] font-bold uppercase tracking-[.12em] opacity-45">Următorul pas</p>
+                <p className="mt-1 text-[10px] font-semibold">Generează preview</p>
+              </div>
+              <span className="text-lg">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ServicesPage() {
   const [theme, setTheme] = useState<Theme>("light");
+  const [activeModule, setActiveModule] = useState("overview");
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const hydrate = () => {
@@ -60,7 +377,7 @@ export default function ServicesPage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
     };
     const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
@@ -71,107 +388,172 @@ export default function ServicesPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
       return next;
     });
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#000000" : "#ffffff",
-    "--surface": theme === "dark" ? "#0c0c0e" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#151518" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
+    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
+    "--surface": theme === "dark" ? "#0f0f13" : "#ffffff",
+    "--surface-2": theme === "dark" ? "#17171d" : "#f0f0f5",
+    "--panel": theme === "dark" ? "rgba(14,14,19,.90)" : "rgba(255,255,255,.88)",
+    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
+    "--muted-2": theme === "dark" ? "#73737d" : "#878790",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--button-text": theme === "dark" ? "#08080b" : "#ffffff",
     "--accent": "#4b46ee",
+    "--home-violet": "#a58bff",
+    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
+    "--grid-line": theme === "dark" ? "rgba(255,255,255,.045)" : "rgba(20,20,30,.045)",
   } as CSSProperties;
+
+  const pageBackdrop = theme === "dark"
+    ? "radial-gradient(circle at 78% 14%,rgba(99,73,220,.15),transparent 18%),radial-gradient(circle at 14% 34%,rgba(67,98,190,.08),transparent 18%),radial-gradient(circle at 84% 57%,rgba(143,70,213,.09),transparent 20%),radial-gradient(circle at 20% 78%,rgba(76,60,166,.10),transparent 20%),linear-gradient(180deg,#09090d,#0b0b10 42%,#09090d 100%)"
+    : "radial-gradient(circle at 78% 14%,rgba(99,73,220,.10),transparent 18%),radial-gradient(circle at 14% 34%,rgba(67,98,190,.06),transparent 18%),radial-gradient(circle at 84% 57%,rgba(143,70,213,.055),transparent 20%),radial-gradient(circle at 20% 78%,rgba(76,60,166,.06),transparent 20%),linear-gradient(180deg,#f8f8fb,#f6f6fa 42%,#f8f8fb 100%)";
 
   return (
     <main
-      style={{ ...vars, fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}
+      style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
       className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
-      <SiteHeader theme={theme} compact={false} activePage="services" onToggleTheme={toggleTheme} />
-
-      <section className="relative flex min-h-[82svh] items-end overflow-hidden px-5 pb-16 pt-32 text-white sm:px-6 md:min-h-[92vh] md:px-10 md:pb-24 md:pt-40">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0" style={{ backgroundImage: pageBackdrop }} />
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+          className="absolute inset-0 opacity-[.45]"
           style={{
-            background:
-              "radial-gradient(circle at 76% 20%, rgba(108,78,255,.34), transparent 31%), radial-gradient(circle at 26% 40%, rgba(79,49,153,.25), transparent 36%), linear-gradient(180deg, rgba(30,19,54,.99) 0%, rgba(18,10,34,.98) 45%, rgba(7,5,13,.98) 78%, var(--bg) 100%)",
+            backgroundImage:
+              "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "linear-gradient(to bottom,transparent 0%,black 17%,black 88%,transparent 100%)",
           }}
         />
-        <motion.div
+      </div>
+
+      <SiteHeader theme={theme} compact={false} activePage="services" onToggleTheme={toggleTheme} />
+
+      <section className="relative z-10 flex min-h-[92svh] items-center overflow-hidden px-5 pb-16 pt-32 text-white sm:px-6 md:px-10 md:pb-20 md:pt-40">
+        <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[#08070c]" />
+        <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-[12%] top-[24%] h-56 w-56 rounded-full bg-violet-500/10 blur-[90px]"
-          animate={{ x: [0, 52, -8, 0], y: [0, 20, 46, 0], scale: [1, 1.12, 0.95, 1] }}
-          transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(circle at 75% 26%,rgba(120,86,255,.34),transparent 25%),radial-gradient(circle at 30% 54%,rgba(73,52,147,.24),transparent 31%),linear-gradient(180deg,rgba(20,14,37,.98) 0%,rgba(11,9,20,.94) 62%,transparent 100%)",
+          }}
         />
-        <OrbitalSystem variant="accent" className="left-[74%] top-[46%] opacity-70" />
-        <div className="relative mx-auto w-full max-w-[1500px]">
-          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
-            ORBYVEN · Servicii
-          </motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.95, delay: 0.08, ease: easeOut }} className="mt-6 max-w-[1250px] text-[clamp(54px,8vw,122px)] font-semibold leading-[0.91] tracking-[-0.068em]">
-            Construim digital.<br />Fără balast.
-          </motion.h1>
-          <p className="mt-7 max-w-xl text-[16px] leading-7 text-white/58">
-            Alegi problema. Noi alegem forma potrivită.
-          </p>
+        {!reduceMotion ? (
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-[8%] top-[20%] h-56 w-56 rounded-full bg-violet-500/10 blur-[90px]"
+            animate={{ x: [0, 42, -12, 0], y: [0, 24, 46, 0], scale: [1, 1.16, .96, 1] }}
+            transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ) : null}
+        <OrbitalSystem variant="accent" className="left-[78%] top-[41%] opacity-55" />
+
+        <div className="relative mx-auto grid w-full max-w-[1500px] gap-14 lg:grid-cols-[.92fr_1.08fr] lg:items-end">
+          <div>
+            <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={reduceMotion ? undefined : { opacity: 1, y: 0 }} transition={{ duration: .65 }}>
+              <Chapter>ORBYVEN · Servicii</Chapter>
+            </motion.div>
+            <motion.h1
+              initial={reduceMotion ? false : { opacity: 0, y: 32 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: .95, delay: .06, ease: easeOut }}
+              className="mt-7 max-w-[980px] text-[clamp(58px,8.2vw,128px)] font-semibold leading-[.82] tracking-[-.074em]"
+            >
+              Construim.
+              <br />
+              Conectăm.
+              <br />
+              <span className="text-[#a58bff]">Automatizăm.</span>
+            </motion.h1>
+            <p className="mt-7 max-w-lg text-[14px] leading-7 text-white/58 sm:text-[15px]">Website, workspace și experiențe digitale care pot crește împreună.</p>
+          </div>
+
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 26, scale: .985 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: .9, delay: .16, ease: easeOut }}
+            className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[.035] p-4 shadow-[0_35px_120px_rgba(0,0,0,.30)] backdrop-blur-xl"
+          >
+            <div className="flex items-center justify-between px-2 pb-4">
+              <p className="text-[8px] font-bold uppercase tracking-[.19em] text-white/42">ORBYVEN / SYSTEM MAP</p>
+              <span className="rounded-full border border-white/10 px-3 py-2 text-[8px] font-semibold text-white/45">CONNECTED</span>
+            </div>
+            <div className="relative min-h-[400px] overflow-hidden rounded-[24px] border border-white/8 bg-[#0c0b12]">
+              <div aria-hidden="true" className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] [background-size:34px_34px]" />
+              <div className="absolute left-[7%] top-[12%] w-[37%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
+                <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">01 / PUBLIC</p>
+                <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Website</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">Atrage. Explică. Convertește.</p>
+              </div>
+              <div className="absolute right-[6%] top-[18%] w-[39%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
+                <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">02 / OPERATIONS</p>
+                <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Workspace</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">Clienți. Lucrări. Calendar.</p>
+              </div>
+              <div className="absolute bottom-[10%] left-[16%] w-[35%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
+                <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">03 / EXPERIENCE</p>
+                <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Custom</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">RSVP. Configuratoare. Fluxuri.</p>
+              </div>
+              <div className="absolute bottom-[12%] right-[8%] w-[35%] rounded-[20px] border border-[#a58bff]/30 bg-[#a58bff]/10 p-5">
+                <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#cbbaff]">04 / CONTEXT</p>
+                <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">ORBYVEN AI</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/46">Înțelege intenția și contextul.</p>
+              </div>
+              <svg aria-hidden="true" className="absolute inset-0 h-full w-full opacity-45" viewBox="0 0 700 400" preserveAspectRatio="none">
+                <path d="M220 105 C330 80 330 80 438 115" fill="none" stroke="#a58bff" strokeWidth="1.3" strokeDasharray="5 7" />
+                <path d="M210 160 C245 255 280 285 330 300" fill="none" stroke="#a58bff" strokeWidth="1.3" strokeDasharray="5 7" />
+                <path d="M470 160 C455 235 470 268 500 295" fill="none" stroke="#a58bff" strokeWidth="1.3" strokeDasharray="5 7" />
+                <path d="M335 310 C400 320 430 318 495 310" fill="none" stroke="#a58bff" strokeWidth="1.3" strokeDasharray="5 7" />
+              </svg>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-5 py-14 sm:px-6 md:px-10 md:py-24">
-        <div className="grid gap-5">
+      <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <Chapter>Ce construim</Chapter>
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <h2 className="max-w-4xl text-[clamp(40px,5.5vw,72px)] font-semibold leading-[.92] tracking-[-.06em]">
+            Patru direcții. <span className="text-[var(--home-violet)]">Un singur ecosistem.</span>
+          </h2>
+          <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">Pornim simplu. Adăugăm doar ce rezolvă ceva real.</p>
+        </div>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
           {services.map((service, index) => (
             <motion.article
               key={service.number}
-              initial={{ opacity: 0, y: 34 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.18 }}
-              transition={{ duration: 0.75, delay: index * 0.05, ease: easeOut }}
-              className="group relative min-h-[350px] overflow-hidden rounded-[32px] border border-white/10 px-6 py-7 text-white shadow-[0_24px_80px_rgba(0,0,0,.16)] sm:px-8 sm:py-9 md:min-h-[430px] md:px-10 md:py-10"
+              initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: .15 }}
+              transition={{ duration: .65, delay: index * .045, ease: easeOut }}
+              className="group relative min-h-[260px] overflow-hidden rounded-[30px] border border-white/10 p-6 text-white shadow-[0_20px_70px_rgba(0,0,0,.14)] sm:p-7"
               style={{ background: service.gradient }}
             >
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-white/8 blur-[70px]"
-                animate={{ x: [0, -50, 18, 0], y: [0, 30, 74, 0], scale: [1, 1.18, 0.92, 1] }}
-                transition={{ duration: 13 + index * 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute -bottom-24 left-[12%] h-72 w-72 rounded-full bg-violet-400/10 blur-[80px]"
-                animate={{ x: [0, 60, -24, 0], y: [0, -42, 10, 0] }}
-                transition={{ duration: 16 + index * 1.5, repeat: Infinity, ease: "easeInOut" }}
-              />
-
-              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden px-4">
-                <div className="whitespace-nowrap text-center text-[clamp(82px,14vw,200px)] font-semibold leading-none tracking-[-0.08em] text-white/[0.045] transition duration-700 group-hover:text-white/[0.075]">
-                  {service.title}
-                </div>
-              </div>
-
-              <div className="relative z-10 flex min-h-[294px] flex-col justify-between md:min-h-[350px]">
+              <div aria-hidden="true" className="absolute -right-6 -top-8 text-[120px] font-semibold leading-none tracking-[-.09em] text-white/[.035]">{service.number}</div>
+              <div className="relative flex h-full min-h-[210px] flex-col justify-between">
                 <div className="flex items-start justify-between gap-5">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">{service.number}</span>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <span className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/42">{service.number}</span>
+                  <div className="flex flex-wrap justify-end gap-1.5">
                     {service.tags.map((tag) => (
-                      <span key={tag} className="rounded-full border border-white/12 bg-white/7 px-3 py-2 text-[10px] font-medium text-white/58 backdrop-blur-xl">
-                        {tag}
-                      </span>
+                      <span key={tag} className="rounded-full border border-white/12 bg-white/[.055] px-3 py-2 text-[8px] font-semibold text-white/52">{tag}</span>
                     ))}
                   </div>
                 </div>
-
-                <div className="max-w-4xl">
-                  <h2 className="text-[clamp(42px,6vw,82px)] font-semibold leading-[0.95] tracking-[-0.06em]">{service.title}</h2>
-                  <p className="mt-5 max-w-2xl text-[15px] leading-7 text-white/58 md:text-[17px]">{service.line}</p>
+                <div>
+                  <h3 className="text-[34px] font-semibold leading-[.95] tracking-[-.055em] sm:text-[42px]">{service.title}</h3>
+                  <p className="mt-3 max-w-lg text-[11px] leading-5 text-white/54">{service.line}</p>
+                  <Link href={service.href} className="mt-5 inline-flex items-center gap-2 text-[10px] font-semibold text-white/72 transition group-hover:text-white">
+                    {service.linkLabel}<span>→</span>
+                  </Link>
                 </div>
               </div>
             </motion.article>
@@ -179,56 +561,91 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <section aria-labelledby="web-design-orbyven" className="mx-auto max-w-[1500px] px-5 pb-16 sm:px-6 md:px-10 md:pb-24">
-        <div className="grid gap-9 rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-7 md:grid-cols-[.88fr_1.12fr] md:p-12">
+      <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <Chapter>Workspace modular</Chapter>
+        <div className="mt-5 grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[var(--muted-2)]">Web design · România</p>
-            <h2 id="web-design-orbyven" className="mt-5 text-[38px] font-semibold leading-[1.04] tracking-[-.06em] sm:text-[52px]">Un website construit pentru ce face firma ta.</h2>
+            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Site-ul nu se oprește la <span className="text-[var(--home-violet)]">site.</span></h2>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clienți, lucrări, calendar și oferte pot rămâne legate de același context.</p>
           </div>
-          <div className="flex flex-col justify-between gap-7">
-            <div className="space-y-4 text-[14px] leading-7 text-[var(--muted)]">
-              <p>Un site de prezentare poate reuni serviciile, lucrările și contactul într-un traseu clar, inclusiv pe telefon. Pentru o campanie sau o ofertă punctuală, o pagină de destinație poate avea un singur obiectiv și un formular scurt.</p>
-              <p>Începem cu informațiile pe care un client trebuie să le găsească: ce oferi, cui te adresezi, unde lucrezi și cum primești o cerere. Alegem apoi designul, paginile și funcțiile potrivite. Un proiect poate porni simplu și se poate extinde când apare nevoia.</p>
-            </div>
-            <nav aria-label="Află mai mult despre web design" className="flex flex-wrap gap-2">
+          <div className="flex justify-start lg:justify-end">
+            <Link href="/cerere?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Construiește sistemul →</Link>
+          </div>
+        </div>
+        <div className="mt-9">
+          <ModuleWorkspacePreview activeId={activeModule} onChange={setActiveModule} />
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <Chapter>Evenimente digitale</Chapter>
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="max-w-4xl text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Invitația poate continua după <span className="text-[var(--home-violet)]">RSVP.</span></h2>
+            <p className="mt-5 max-w-lg text-[12px] leading-6 text-[var(--muted)]">Un exemplu de cum confirmările pot deveni organizare, nu doar răspunsuri într-un tabel.</p>
+          </div>
+          <nav aria-label="Servicii de invitații" className="flex flex-wrap gap-2">
+            {[
+              ["/invitatii-nunta", "Nuntă"],
+              ["/invitatii-botez", "Botez"],
+              ["/invitatii-majorat", "Majorat"],
+            ].map(([href, label]) => (
+              <Link key={href} href={href} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[var(--border-strong)]">{label} ↗</Link>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-9">
+          <SeatingPreview />
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <Chapter>ORBYVEN AI</Chapter>
+        <div className="mt-5 grid gap-8 lg:grid-cols-[.74fr_1.26fr] lg:items-end">
+          <div>
+            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Spui intenția. Sistemul păstrează <span className="text-[var(--home-violet)]">contextul.</span></h2>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Preview de produs pentru motorul contextual pe care îl dezvoltăm: cerere, limite, plan și rezultat vizual.</p>
+          </div>
+          <div className="flex justify-start lg:justify-end">
+            <span className="rounded-full border border-[rgba(165,139,255,.26)] bg-[var(--accent-soft)] px-4 py-3 text-[9px] font-semibold text-[#a58bff]">AI · CONTEXT · CONTROL</span>
+          </div>
+        </div>
+        <div className="mt-9">
+          <AiPreview />
+        </div>
+      </section>
+
+      <section aria-labelledby="web-design-orbyven" className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <Chapter>Web design · România</Chapter>
+        <div className="mt-5 grid gap-8 rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[0_24px_80px_rgba(0,0,0,.07)] md:grid-cols-[.9fr_1.1fr] md:p-8">
+          <div>
+            <h2 id="web-design-orbyven" className="max-w-xl text-[34px] font-semibold leading-[.98] tracking-[-.055em] sm:text-[44px]">Clar în față. <span className="text-[var(--home-violet)]">Puternic în spate.</span></h2>
+          </div>
+          <div>
+            <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">Un proiect poate începe ca site de prezentare și poate primi ulterior landing pages, formulare, module operaționale sau experiențe custom. Alegem doar ce are sens pentru business.</p>
+            <nav aria-label="Află mai mult despre web design" className="mt-6 flex flex-wrap gap-2">
               {[
-                { href: "/creare-site", label: "Creare site pentru firme" },
+                { href: "/creare-site", label: "Creare site" },
                 { href: "/site-prezentare", label: "Site de prezentare" },
                 { href: "/web-design-bucuresti", label: "Web design București" },
-                { href: "/redesign-site", label: "Redesign website" },
+                { href: "/redesign-site", label: "Redesign" },
+                { href: "/studii-de-caz", label: "Studii de caz" },
               ].map((item) => (
-                <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 py-3 text-xs font-semibold transition hover:border-[var(--accent)]">{item.label} ↗</Link>
+                <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[#a58bff]">{item.label} ↗</Link>
               ))}
             </nav>
           </div>
         </div>
       </section>
 
-      <section aria-labelledby="servicii-invitatii" className="px-5 py-14 sm:px-6 md:px-10">
-        <div className="mx-auto max-w-[1500px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[var(--muted)]">Evenimente · invitații digitale</p>
-          <h2 id="servicii-invitatii" className="mt-4 text-[40px] font-semibold tracking-[-.055em] sm:text-[54px]">Invitații online create pentru moment.</h2>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--muted)]">Personalizăm invitații digitale cu datele evenimentului, modele interactive și opțiune de confirmare RSVP.</p>
-          <nav aria-label="Servicii de invitații" className="mt-8 grid gap-3 sm:grid-cols-3">
-            {[
-              { href: "/invitatii-nunta", label: "Invitații de nuntă", description: "Model elegant, program și locații." },
-              { href: "/invitatii-botez", label: "Invitații de botez", description: "Modele pentru fetiță și băiețel." },
-              { href: "/invitatii-majorat", label: "Invitații de majorat", description: "Experiență digitală pentru 18 ani." },
-            ].map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-7 transition hover:border-[var(--border-strong)]">
-                <h3 className="text-xl font-semibold">{item.label} ↗</h3>
-                <p className="mt-4 text-sm text-[var(--muted)]">{item.description}</p>
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </section>
-
-      <section className="px-5 pb-8 sm:px-6 md:px-10">
-        <div className="mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
+      <section className="relative z-10 px-5 pb-8 pt-6 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
           <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="max-w-4xl text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">Ai altceva în minte? Spune-ne direct.</h2>
-            <Link href="/cerere?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Trimite cererea →</Link>
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-[.18em] opacity-45">De aici devine al tău</p>
+              <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,62px)] font-semibold leading-[.96] tracking-[-.055em]">Spune-ne ce vrei să rezolvi.</h2>
+            </div>
+            <Link href="/cerere?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]">Începe →</Link>
           </div>
         </div>
       </section>

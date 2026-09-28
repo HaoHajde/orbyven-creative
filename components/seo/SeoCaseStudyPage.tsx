@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
+import SeoRelatedLinks from "@/components/seo/SeoRelatedLinks";
 import SeoShell from "@/components/seo/SeoShell";
 import type { SeoCaseStudy } from "@/lib/seo-foundation";
 
@@ -80,13 +81,12 @@ export default function SeoCaseStudyPage({ page }: { page: SeoCaseStudy }) {
         </div>
       </section>
 
-      <section className="border-t border-black/[.07] px-5 py-16 sm:px-7 md:px-10">
-        <div className="mx-auto flex max-w-[1380px] flex-wrap gap-3">
-          {page.related.map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold">{item.label} →</Link>
-          ))}
-        </div>
-      </section>
+      <SeoRelatedLinks
+        currentPath={page.path}
+        links={page.related}
+        eyebrow="Din pilot către implementare"
+        title="Vezi soluția comercială, contextul și pașii următori."
+      />
     </SeoShell>
   );
 }

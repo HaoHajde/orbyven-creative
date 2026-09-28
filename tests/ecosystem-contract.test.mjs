@@ -42,6 +42,8 @@ test("prerequisites resolve in order without duplicates", () => {
   assert.deepEqual(graph.getEcosystemMissingDependencies("client_offer", new Set(["crm"])), ["work", "estimate"]);
   assert.equal(graph.isReadyForCustomerUse("client_offer"), true);
   assert.equal(graph.isReadyForCustomerUse("efactura_submission"), false);
+  assert.equal(graph.isReadyForCustomerUse("thermal_plan"), true);
+  assert.deepEqual(graph.getEcosystemPrerequisites("thermal_plan"), ["crm", "work"]);
   assert.equal(graph.isReadyForCustomerUse("estimate"), true);
 });
 

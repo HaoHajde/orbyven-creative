@@ -10,6 +10,9 @@ const primaryNav = [
 ];
 
 const footerLinks = [
+  { href: "/servicii", label: "Servicii digitale" },
+  { href: "/studii-de-caz", label: "Studii de caz" },
+  { href: "/ghid", label: "Ghid web design" },
   { href: "/creare-site", label: "Creare site" },
   { href: "/site-prezentare", label: "Site de prezentare" },
   { href: "/web-design-bucuresti", label: "Web design București" },

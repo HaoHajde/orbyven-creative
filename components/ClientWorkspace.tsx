@@ -159,6 +159,10 @@ export default function ClientWorkspace() {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
 
     const currentlyEnabled = workspace.enabledModules.includes(id);
+    if (!currentlyEnabled && !workspace.entitledModules.includes(id)) {
+      setActionError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      return;
+    }
     const previousModules = workspace.enabledModules;
     const nextModules = currentlyEnabled
       ? previousModules.filter((moduleId) => moduleId !== id)
@@ -302,6 +306,7 @@ export default function ClientWorkspace() {
             { label: "OVERVIEW", ids: ["overview"] as OrbyvenModuleId[] },
             { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] as OrbyvenModuleId[] },
             { label: "OPERATIONS", ids: ["documents", "expenses", "team"] as OrbyvenModuleId[] },
+            { label: "SPECIALIZATE", ids: ["thermal"] as OrbyvenModuleId[] },
           ]).map((group) => {
             const items = enabledDefinitions.filter((definition) => group.ids.includes(definition.id));
             if (!items.length) return null;
@@ -343,6 +348,7 @@ export default function ClientWorkspace() {
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
+              entitledModules={workspace.entitledModules}
               onToggle={toggleModule}
               onClose={() => setPanel("workspace")}
               canManage={canManageModules}
@@ -469,6 +475,7 @@ const modulePaths: Record<OrbyvenModuleId, string> = {
   estimates: "M5 2h10l4 4v16H5z M15 2v5h4 M8 12h8 M8 16h8 M8 19h5",
   documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
   expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
+  thermal: "M3 20h18 M5 20V9l7-6 7 6v11 M8 20v-5h8v5 M7 11h10 M12 8v5",
   team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
 };
 
