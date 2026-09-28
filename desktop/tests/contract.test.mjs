@@ -14,7 +14,7 @@ test("desktop ships its own compiled local UI rather than loading the website", 
   assert.equal(config.build.devUrl, "http://localhost:1420");
   assert.equal(config.build.beforeDevCommand, "npm run dev:web");
   assert.equal(config.app.windows[0].url, undefined);
-  assert.equal(manifest.scripts["build:web"], "vite build");
+  assert.match(manifest.scripts["build:web"], /sync:web-assets.*vite build/);
   assert.match(content("../src/App.tsx"), /ORBYVEN · Desktop Workspace/);
 });
 
@@ -49,7 +49,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.3.1");
+  assert.equal(config.version, "0.4.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -63,7 +63,7 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   assert.match(app, /setOrganizationModuleEnabled/);
   assert.match(app, /setCommandOpen/);
   assert.match(app, /Ctrl K/);
-  assert.match(css, /grid-template-columns:206px minmax\(0,1fr\)/);
+  assert.match(css, /--workspace-sidebar-width/);
   for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
     assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
   }
@@ -88,4 +88,39 @@ test("NSIS installer carries ORBYVEN visual identity", () => {
   assert.match(generator, /#627BFF/);
   assert.match(generator, /ORBYVEN/);
   assert.match(generator, /Business workspace/);
+});
+
+test("desktop follows the shared live workspace UI contract", () => {
+  const uiClient = content("../src/ui-contract.ts");
+  const route = content("../../app/api/desktop/ui/route.ts");
+  const contract = content("../../lib/workspace-ui-contract.ts");
+  const website = content("../../components/ClientWorkspace.tsx");
+  const app = content("../src/App.tsx");
+  assert.match(uiClient, /https:\/\/orbyven\.ro\/api\/desktop\/ui/);
+  assert.match(uiClient, /localStorage/);
+  assert.match(uiClient, /WORKSPACE_UI_CONTRACT/);
+  assert.match(route, /WORKSPACE_UI_CONTRACT/);
+  assert.match(route, /Access-Control-Allow-Origin/);
+  assert.match(contract, /SPECIALIZATE/);
+  assert.match(contract, /thermal/);
+  assert.match(website, /WORKSPACE_UI_CONTRACT\.navigationGroups/);
+  assert.match(app, /uiContract\.navigationGroups/);
+  assert.match(app, /loadLiveUiContract/);
+  assert.match(app, /entitledModules/);
+});
+
+test("thermal planner is bundled from the exact web asset and uses the same tenant data", () => {
+  const sync = content("../scripts/sync-web-assets.mjs");
+  const panel = content("../src/ThermalSketchPanel.tsx");
+  const module = content("../src/ThermalModule.tsx");
+  const webPlanner = content("../../public/thermal-planner/index.html");
+  assert.match(sync, /public.*thermal-planner.*index\.html/s);
+  assert.match(manifest.scripts["sync:web-assets"], /sync-web-assets\.mjs/);
+  assert.match(panel, /src="\/thermal-planner\/index\.html"/);
+  assert.doesNotMatch(panel, /src="https:\/\/orbyven\.ro\/thermal-planner/);
+  assert.match(panel, /thermal_sketches/);
+  assert.match(module, /listWorkTasks/);
+  assert.match(module, /listWorkTaskClients/);
+  assert.match(webPlanner, /ORBYVEN/);
+  assert.match(config.app.security.csp, /frame-src 'self'/);
 });
