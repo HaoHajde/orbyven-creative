@@ -9,9 +9,9 @@ import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 
-export default function WorkspaceLoginPage() {
+function WorkspaceLoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
@@ -148,5 +148,14 @@ export default function WorkspaceLoginPage() {
         </AuthPrimaryButton>
       </form>
     </WorkspaceAuthShell>
+  );
+}
+
+
+export default function WorkspaceLoginPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#09090a]" />}>
+      <WorkspaceLoginPageContent />
+    </Suspense>
   );
 }

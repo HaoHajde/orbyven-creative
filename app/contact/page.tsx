@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -63,7 +63,7 @@ function PaymentBadges() {
   );
 }
 
-export default function ContactPage() {
+function ContactPageContent() {
   const searchParams = useSearchParams();
   const queryPlan = searchParams.get("plan");
   const initialPlan: BillingPlanId = isBillingPlanId(queryPlan) ? queryPlan : "business";
@@ -373,5 +373,14 @@ export default function ContactPage() {
 
       <SiteFooter theme={theme} activePage="contact" />
     </main>
+  );
+}
+
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#f8f8fb]" />}>
+      <ContactPageContent />
+    </Suspense>
   );
 }

@@ -9,7 +9,7 @@ import { BILLING_PLANS, isBillingPlanId } from "@/lib/billing/public-config";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 
 function slugify(value: string) {
   return value
@@ -22,7 +22,7 @@ function slugify(value: string) {
     .slice(0, 48);
 }
 
-export default function WorkspaceOnboardingPage() {
+function WorkspaceOnboardingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planValue = searchParams.get("plan");
@@ -242,5 +242,14 @@ export default function WorkspaceOnboardingPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+
+export default function WorkspaceOnboardingPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#fbfbfd] dark:bg-black" />}>
+      <WorkspaceOnboardingPageContent />
+    </Suspense>
   );
 }

@@ -10,7 +10,7 @@ import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 
 function getSignupErrorMessage(error: { message?: string; status?: number }) {
   const message = (error.message ?? "").toLowerCase();
@@ -47,7 +47,7 @@ function getSignupErrorMessage(error: { message?: string; status?: number }) {
   return "Contul nu a putut fi creat. Verifică datele și încearcă din nou.";
 }
 
-export default function WorkspaceRegisterPage() {
+function WorkspaceRegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
@@ -256,5 +256,14 @@ export default function WorkspaceRegisterPage() {
         </AuthPrimaryButton>
       </form>
     </WorkspaceAuthShell>
+  );
+}
+
+
+export default function WorkspaceRegisterPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#09090a]" />}>
+      <WorkspaceRegisterPageContent />
+    </Suspense>
   );
 }

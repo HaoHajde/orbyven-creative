@@ -3,9 +3,9 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function WorkspaceAuthCallbackPage() {
+function WorkspaceAuthCallbackPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
@@ -61,5 +61,14 @@ export default function WorkspaceAuthCallbackPage() {
         <p className="mt-5 text-sm text-[#6e6e73] dark:text-[#a1a1a6]">{message}</p>
       </div>
     </main>
+  );
+}
+
+
+export default function WorkspaceAuthCallbackPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#fbfbfd] dark:bg-[#09090a]" />}>
+      <WorkspaceAuthCallbackPageContent />
+    </Suspense>
   );
 }
