@@ -43,6 +43,9 @@ const TasksModule = dynamic(() => import("@/components/modules/TasksModule"), {
 const TeamModule = dynamic(() => import("@/components/modules/TeamModule"), {
   loading: WorkspaceModuleLoading,
 });
+const ThermalPlannerModule = dynamic(() => import("@/components/modules/ThermalPlannerModule"), {
+  loading: WorkspaceModuleLoading,
+});
 
 type Props = {
   activeModule: OrbyvenModuleId;
@@ -123,6 +126,10 @@ export default function WorkspaceContent({
 
   if (activeModule === "expenses") {
     return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} />;
+  }
+
+  if (activeModule === "thermal") {
+    return <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} />;
   }
 
   return <TeamModule organizationId={organizationId} role={role} />;
