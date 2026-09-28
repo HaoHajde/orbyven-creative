@@ -110,6 +110,8 @@ export async function loadOverviewSnapshot(
   const nowIso = now.toISOString();
   const trendSince = new Date(now.getTime() - 8 * DAY_MS).toISOString();
   const eventsUntil = new Date(now.getTime() + 2 * DAY_MS).toISOString();
+  const nearTaskFrom = new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString();
+  const nearTaskUntil = new Date(now.getTime() + 36 * 60 * 60 * 1000).toISOString();
   const staleEstimateBefore = new Date(now.getTime() - 3 * DAY_MS).toISOString();
   const [monthStart, nextMonthStart] = monthRange(now, timeZone);
 
@@ -117,6 +119,7 @@ export async function loadOverviewSnapshot(
     activeLeadsCount, openTasksCount, sentEstimatesCount,
     stageCounts,
     recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
+    blockedTasks, scheduledNearTasks, dueNearTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
     events, monthExpenseRows, documentCount, activeTeamCount,
   ] = await Promise.all([
@@ -148,6 +151,20 @@ export async function loadOverviewSnapshot(
       .select("id,title,status,priority,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .eq("priority", "urgent").order("created_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
+    orbyvenSupabase.from("ops_tasks")
+      .select("id,title,status,priority,due_at,scheduled_at,created_at")
+      .eq("organization_id", organizationId).eq("status", "blocked")
+      .order("updated_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
+    orbyvenSupabase.from("ops_tasks")
+      .select("id,title,status,priority,due_at,scheduled_at,created_at")
+      .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
+      .gte("scheduled_at", nearTaskFrom).lte("scheduled_at", nearTaskUntil)
+      .order("scheduled_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
+    orbyvenSupabase.from("ops_tasks")
+      .select("id,title,status,priority,due_at,scheduled_at,created_at")
+      .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
+      .gte("due_at", nearTaskFrom).lte("due_at", nearTaskUntil)
+      .order("due_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
     orbyvenSupabase.from("sales_estimates")
       .select("id,reference,title,status,total_cents,currency,updated_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
@@ -186,14 +203,20 @@ export async function loadOverviewSnapshot(
 
   const [planned, inProgress, blocked, done, cancelled] = stageCounts;
   for (const result of [recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
-    recentEstimates, staleEstimates]) {
+    blockedTasks, scheduledNearTasks, dueNearTasks, recentEstimates, staleEstimates]) {
     if (result.error) throw result.error;
   }
 
   return {
     leads: uniqueRecords(recentLeads.data ?? [], (overdueLeads.data ?? []).slice(0, ATTENTION_LIMIT)),
-    tasks: uniqueRecords(recentTasks.data ?? [], (overdueTasks.data ?? []).slice(0, ATTENTION_LIMIT),
-      (urgentTasks.data ?? []).slice(0, ATTENTION_LIMIT)),
+    tasks: uniqueRecords(
+      recentTasks.data ?? [],
+      (overdueTasks.data ?? []).slice(0, ATTENTION_LIMIT),
+      (urgentTasks.data ?? []).slice(0, ATTENTION_LIMIT),
+      (blockedTasks.data ?? []).slice(0, ATTENTION_LIMIT),
+      scheduledNearTasks.data ?? [],
+      dueNearTasks.data ?? []
+    ),
     events,
     estimates: uniqueRecords(recentEstimates.data ?? [], (staleEstimates.data ?? []).slice(0, ATTENTION_LIMIT)),
     activeLeadsCount,
@@ -206,7 +229,7 @@ export async function loadOverviewSnapshot(
       estimates: estimateTrend.map((row) => row.created_at),
     },
     monthExpensesCents: monthExpenseRows.reduce((sum, row) => sum + Number(row.amount_cents), 0),
-    attentionHasMore: [overdueLeads, overdueTasks, urgentTasks, staleEstimates]
+    attentionHasMore: [overdueLeads, overdueTasks, urgentTasks, blockedTasks, staleEstimates]
       .some((result) => (result.data?.length ?? 0) > ATTENTION_LIMIT),
     documentCount,
     activeTeamCount,
