@@ -1,15 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const root = fileURLToPath(new URL("../", import.meta.url));
 const client = fileURLToPath(new URL("./src/client.ts", import.meta.url));
+const nextDynamic = fileURLToPath(new URL("./src/next-dynamic-shim.tsx", import.meta.url));
 
 export default defineConfig({
-  plugins: [react()],
-  // The desktop app uses its own plain CSS, not the parent Next.js Tailwind/PostCSS config.
-  css: { postcss: { plugins: [] } },
+  plugins: [react(), tailwindcss()],
   root: directory,
   resolve: {
     alias: [
