@@ -13,7 +13,9 @@ import {
 import {
   WORKSPACE_NAV_GROUPS,
   WORKSPACE_ROLE_LABELS,
+  WORKSPACE_THEME_TOKENS,
   workspaceThemeVars,
+  type WorkspacePresentationConfig,
   type WorkspaceTheme,
 } from "@/lib/workspace-ui";
 import {
@@ -30,9 +32,10 @@ type Props = {
   initialWorkspace: OrbyvenWorkspace;
   brand: ReactNode;
   onLogout: () => Promise<void> | void;
+  presentation?: WorkspacePresentationConfig | null;
 };
 
-export default function WorkspaceShell({ initialWorkspace, brand, onLogout }: Props) {
+export default function WorkspaceShell({ initialWorkspace, brand, onLogout, presentation }: Props) {
   const [theme, setTheme] = useState<WorkspaceTheme>("dark");
   const [panel, setPanel] = useState<Panel>("workspace");
   const [activeModule, setActiveModule] = useState<OrbyvenModuleId>("overview");
@@ -163,7 +166,12 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout }: Pr
     await onLogout();
   };
 
-  const vars = workspaceThemeVars(theme);
+  const vars = {
+    ...workspaceThemeVars(theme),
+    ...(presentation?.themeTokens?.[theme] ?? WORKSPACE_THEME_TOKENS[theme]),
+  } as React.CSSProperties;
+  const navGroups = presentation?.navGroups ?? WORKSPACE_NAV_GROUPS;
+  const roleLabels = presentation?.roleLabels ?? WORKSPACE_ROLE_LABELS;
 
   return (
       <WorkspaceStateScreen
@@ -240,10 +248,10 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout }: Pr
         <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
-            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{WORKSPACE_ROLE_LABELS[workspace.membership.role]} · Workspace activ</p>
+            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
           </div>
 
-          {WORKSPACE_NAV_GROUPS.map((group) => {
+          {navGroups.map((group) => {
             const items = enabledDefinitions.filter((definition) => group.ids.includes(definition.id));
             if (!items.length) return null;
             return (
