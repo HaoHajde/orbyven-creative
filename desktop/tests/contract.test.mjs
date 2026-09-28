@@ -64,9 +64,12 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   assert.match(app, /setCommandOpen/);
   assert.match(app, /Ctrl K/);
   assert.match(css, /--workspace-sidebar-width/);
-  for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS"]) {
-    assert.ok(app.includes(label) && website.includes(label), "Shared nav group: " + label);
+  const contract = content("../../lib/workspace-ui-contract.ts");
+  for (const label of ["OVERVIEW", "BUSINESS", "OPERATIONS", "SPECIALIZATE"]) {
+    assert.ok(contract.includes(label), "Shared nav group: " + label);
   }
+  assert.match(website, /WORKSPACE_UI_CONTRACT\.navigationGroups/);
+  assert.match(app, /uiContract\.navigationGroups/);
 });
 
 test("NSIS installer carries ORBYVEN visual identity", () => {
