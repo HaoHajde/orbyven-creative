@@ -208,3 +208,11 @@ kbd{border:1px solid var(--border);background:var(--surface-2);border-radius:5px
   .desktop-workspace .overview-greeting h2{font-size:26px}
   .desktop-workspace .role-pill{display:none}
 }
+
+
+.desktop-shared-shell{min-height:100vh;position:relative}
+.desktop-sync-badge{position:fixed;right:14px;bottom:12px;z-index:120;display:flex;align-items:center;gap:6px;
+ padding:6px 9px;border:1px solid rgba(126,154,221,.16);border-radius:999px;background:rgba(7,11,22,.74);
+ color:#94a6c1;font-size:9px;letter-spacing:.03em;backdrop-filter:blur(12px);pointer-events:none}
+.desktop-sync-badge .online-dot{width:6px;height:6px;margin:0;background:#52d9aa;box-shadow:0 0 10px rgba(82,217,170,.45)}
+@media(max-width:700px){.desktop-sync-badge{right:8px;bottom:7px;padding:5px 7px;font-size:8px}}
