@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -147,4 +147,32 @@ test("document storage and legacy lead gateway cannot bypass module or repeat-em
   assert.match(pilotMigration, /private\.is_billing_module_allowed\(/);
   assert.match(pilotMigration, /create trigger orbyven_legacy_lead_email_limit/);
   assert.match(pilotMigration, /pg_advisory_xact_lock/);
+});
+
+
+test("repository migration filenames match exact production versions for deterministic historical matches", () => {
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907095853_orbyven_multi_tenant_foundation.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907100000_orbyven_multi_tenant_foundation.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907104116_crm_leads_module.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907113000_crm_leads_module.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907104750_crm_leads_module_performance.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907115000_crm_leads_module_performance.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907112426_ops_tasks_module.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907123000_ops_tasks_module.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907120323_orbyven_billing_foundation.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907130000_orbyven_billing_foundation.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907122455_platform_core_auth_provisioning_v2.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907133000_platform_core_auth_provisioning_v2.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907121018_calendar_module.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260907140000_calendar_module.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260908051308_public_project_request_rpc.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260908051500_public_project_request_rpc.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260908061840_complete_workspace_business_modules.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260908063000_complete_workspace_business_modules.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260925105411_commercial_issuer_snapshots.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260923164000_commercial_issuer_snapshots.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260925105415_ai_editor_calls_actor_fk_index.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260925135500_ai_editor_calls_actor_fk_index.sql", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260927152501_alpha06_material_catalog_revisions.sql", import.meta.url)), true);
+  assert.equal(existsSync(new URL("../supabase/migrations/20260925150000_alpha06_material_catalog_revisions.sql", import.meta.url)), false);
 });
