@@ -8,12 +8,14 @@ import {
   listWorkTaskChecklist,
   listWorkTaskClients,
   listWorkTasks,
+  loadWorkTaskContext,
   setWorkTaskChecklistItemDone,
   setWorkTaskProgress,
   setWorkTaskStatus,
   type WorkTask,
   type WorkTaskChecklistItem,
   type WorkTaskClient,
+  type WorkTaskContext,
   type WorkTaskKind,
   type WorkTaskPriority,
   type WorkTaskStatus,
@@ -137,9 +139,13 @@ export default function TasksModule({
   const [form, setForm] = useState<CreateForm>(() => ({ ...emptyForm, clientId: initialClientId ?? "" }));
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
+  const [workContext, setWorkContext] = useState<WorkTaskContext | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [contextError, setContextError] = useState("");
 
   const canWrite = role !== "viewer";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
+  const canAccessFinances = canDelete;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,6 +206,39 @@ export default function TasksModule({
     };
   }, [organizationId, selectedTask]);
 
+  useEffect(() => {
+    if (!selectedTask) {
+      setWorkContext(null);
+      setContextError("");
+      return;
+    }
+
+    let active = true;
+    setContextLoading(true);
+    setContextError("");
+    void loadWorkTaskContext(organizationId, selectedTask.id, {
+      canAccessFinances,
+      includeThermal: enabledModules.includes("thermal"),
+    })
+      .then((nextContext) => {
+        if (active) setWorkContext(nextContext);
+      })
+      .catch((contextLoadError) => {
+        console.error(contextLoadError);
+        if (active) {
+          setWorkContext(null);
+          setContextError("Dosarul lucrării nu a putut fi încărcat complet.");
+        }
+      })
+      .finally(() => {
+        if (active) setContextLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [organizationId, selectedTask, canAccessFinances, enabledModules]);
+
   const clientById = useMemo(
     () => new Map(clients.map((client) => [client.id, client])),
     [clients]
@@ -233,8 +272,9 @@ export default function TasksModule({
     ).length;
     const urgent = tasks.filter(
       (task) =>
-        task.priority === "urgent" &&
-        !["done", "cancelled"].includes(task.status)
+        !["done", "cancelled"].includes(task.status) &&
+        (task.priority === "urgent" ||
+          Boolean(task.due_at && new Date(task.due_at).getTime() < new Date(snapshotIso).getTime()))
     ).length;
     const todayCount = today
       ? tasks.filter(
@@ -445,7 +485,7 @@ export default function TasksModule({
       <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Active" value={String(metrics.active)} note="de făcut sau în lucru" />
         <Metric label="Astăzi" value={String(metrics.today)} note="programate sau scadente" />
-        <Metric label="Urgente" value={String(metrics.urgent)} note="necesită atenție" />
+        <Metric label="Atenție" value={String(metrics.urgent)} note="urgente sau întârziate" />
         <Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />
       </section>
 
@@ -735,6 +775,18 @@ export default function TasksModule({
         </div>
       )}
       {selectedTask && (
+        <WorkFileSummary
+          task={selectedTask}
+          context={workContext}
+          loading={contextLoading}
+          error={contextError}
+          locale={locale}
+          enabledModules={enabledModules}
+          canAccessFinances={canAccessFinances}
+          onOpenModule={onOpenModule}
+        />
+      )}
+      {selectedTask && (
         <div data-workspace-record-focus={initialRecordId && selectedTask.id === initialRecordId ? "true" : undefined} className="scroll-mt-28">
         <TaskDetail
           task={selectedTask}
@@ -772,6 +824,126 @@ export default function TasksModule({
         }
       `}</style>
     </div>
+  );
+}
+
+function WorkFileSummary({
+  task,
+  context,
+  loading,
+  error,
+  locale,
+  enabledModules,
+  canAccessFinances,
+  onOpenModule,
+}: {
+  task: WorkTask;
+  context: WorkTaskContext | null;
+  loading: boolean;
+  error: string;
+  locale: string;
+  enabledModules: OrbyvenModuleId[];
+  canAccessFinances: boolean;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+}) {
+  const money = (cents: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "RON",
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
+
+  const cards = [
+    enabledModules.includes("estimates")
+      ? {
+          id: "estimates" as const,
+          label: "Oferte",
+          value: context ? String(context.estimatesCount) : "—",
+          note: context
+            ? context.acceptedEstimatesCount
+              ? context.acceptedEstimatesCount + " acceptate"
+              : context.sentEstimatesCount
+                ? context.sentEstimatesCount + " în așteptare"
+                : "fără ofertă trimisă"
+            : "se încarcă",
+          options: context?.latestEstimateId ? { recordId: context.latestEstimateId } : undefined,
+        }
+      : null,
+    enabledModules.includes("calendar")
+      ? {
+          id: "calendar" as const,
+          label: "Programări",
+          value: context ? String(context.eventsCount) : "—",
+          note: context ? context.upcomingEventsCount + " viitoare" : "se încarcă",
+          options: undefined,
+        }
+      : null,
+    enabledModules.includes("documents")
+      ? {
+          id: "documents" as const,
+          label: "Documente",
+          value: context ? String(context.documentsCount) : "—",
+          note: "legate de lucrare",
+          options: { taskId: task.id },
+        }
+      : null,
+    enabledModules.includes("expenses") && canAccessFinances
+      ? {
+          id: "expenses" as const,
+          label: "Cost real",
+          value: context?.expensesCents !== null && context?.expensesCents !== undefined
+            ? money(context.expensesCents)
+            : "—",
+          note: context?.expensesCount !== null && context?.expensesCount !== undefined
+            ? context.expensesCount + " cheltuieli"
+            : "se încarcă",
+          options: { taskId: task.id },
+        }
+      : null,
+    enabledModules.includes("thermal") && task.kind === "work"
+      ? {
+          id: "thermal" as const,
+          label: "Planșă",
+          value: context?.thermalSketch ? "Creată" : context ? "Nouă" : "—",
+          note: "modul specializat",
+          options: { taskId: task.id },
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    id: OrbyvenModuleId;
+    label: string;
+    value: string;
+    note: string;
+    options?: WorkspaceOpenOptions;
+  }>;
+
+  if (!cards.length) return null;
+
+  return (
+    <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)]/60 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">DOSAR LUCRARE</p>
+          <h2 className="mt-1 text-[15px] font-semibold">Tot contextul într-un singur loc</h2>
+        </div>
+        <span className="text-[10px] text-[var(--muted-2)]">{loading ? "Se sincronizează…" : "Live"}</span>
+      </div>
+      {error ? <p className="mt-2 text-[10px] text-amber-500">{error}</p> : null}
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        {cards.map((card) => (
+          <button
+            key={card.id}
+            type="button"
+            onClick={() => onOpenModule(card.id, card.options)}
+            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/70 p-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+          >
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.11em] text-[var(--muted-2)]">{card.label}</span>
+            <span className="mt-1.5 block truncate text-[17px] font-semibold tracking-[-0.03em]">{card.value}</span>
+            <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{card.note}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
