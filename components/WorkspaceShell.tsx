@@ -57,11 +57,6 @@ export default function WorkspaceShell({ initialWorkspace, brand, onLogout, pres
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    setWorkspace(initialWorkspace);
-  }, [initialWorkspace]);
-
-
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
     [workspace]
