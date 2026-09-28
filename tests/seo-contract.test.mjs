@@ -58,3 +58,35 @@ test("SEO landing canonicals and social previews remain distinct", () => {
     assert.ok(!sitemap.includes('path: "' + route + '"'), route);
   }
 });
+
+test("SEO V3.1 connects commercial pages through indexable topic clusters", () => {
+  const clusters = read("lib/seo-clusters.ts");
+  const related = read("components/seo/SeoRelatedLinks.tsx");
+  const landing = read("components/seo/SeoLandingPage.tsx");
+  const caseStudy = read("components/seo/SeoCaseStudyPage.tsx");
+  const guide = read("components/seo/SeoGuidePage.tsx");
+
+  assert.ok(clusters.includes('"/site-pentru-instalatori"'));
+  assert.ok(clusters.includes('"/studii-de-caz/neagu-costica-srl"'));
+  assert.ok(clusters.includes('"/site-pentru-detailing-auto"'));
+  assert.ok(clusters.includes('"/studii-de-caz/haos-customs"'));
+  assert.ok(clusters.includes("isIndexableClusterTarget"));
+  assert.ok(clusters.includes('href.startsWith("/templates/")'));
+  assert.ok(related.includes('href="/cerere"'));
+  for (const source of [landing, caseStudy, guide]) {
+    assert.ok(source.includes("SeoRelatedLinks"));
+  }
+});
+
+test("service and invitation hubs expose descriptive internal links", () => {
+  const services = read("app/servicii/page.tsx");
+  const invitations = read("components/InvitationServiceLanding.tsx");
+  for (const route of ["/creare-site", "/site-prezentare", "/redesign-site", "/studii-de-caz"]) {
+    assert.ok(services.includes(route), route);
+  }
+  for (const route of ["/invitatii-nunta", "/invitatii-botez", "/invitatii-majorat"]) {
+    assert.ok(invitations.includes(route), route);
+  }
+  assert.ok(invitations.includes("relatedInvitationCategories"));
+});
+

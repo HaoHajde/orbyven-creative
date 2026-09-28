@@ -13,6 +13,8 @@ type Service = {
   number: string;
   title: string;
   line: string;
+  href: string;
+  linkLabel: string;
   tags: string[];
   gradient: string;
 };
@@ -22,6 +24,8 @@ const services: Service[] = [
     number: "01",
     title: "Website",
     line: "Prezență clară pentru firmă, servicii și contact.",
+    href: "/creare-site",
+    linkLabel: "Creare site pentru firme",
     tags: ["Responsive", "SEO de bază", "Formulare"],
     gradient: "radial-gradient(circle at 18% 20%, rgba(116,86,255,.34), transparent 32%), radial-gradient(circle at 82% 72%, rgba(61,39,122,.34), transparent 36%), linear-gradient(135deg, #0d0917, #160e28 58%, #08070d)",
   },
@@ -29,6 +33,8 @@ const services: Service[] = [
     number: "02",
     title: "Landing page",
     line: "O singură ofertă. O singură acțiune importantă.",
+    href: "/site-prezentare",
+    linkLabel: "Site de prezentare și landing pages",
     tags: ["Campanii", "Conversie", "Analytics"],
     gradient: "radial-gradient(circle at 76% 18%, rgba(86,124,255,.30), transparent 30%), radial-gradient(circle at 18% 76%, rgba(82,55,170,.28), transparent 34%), linear-gradient(135deg, #090b17, #101630 58%, #07080d)",
   },
@@ -36,6 +42,8 @@ const services: Service[] = [
     number: "03",
     title: "Redesign",
     line: "Păstrăm ce funcționează. Refacem ce te ține în urmă.",
+    href: "/redesign-site",
+    linkLabel: "Serviciu de redesign website",
     tags: ["UI", "UX", "Performanță"],
     gradient: "radial-gradient(circle at 22% 26%, rgba(189,86,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(91,46,141,.30), transparent 35%), linear-gradient(135deg, #110914, #211027 58%, #09070b)",
   },
@@ -43,6 +51,8 @@ const services: Service[] = [
     number: "04",
     title: "Experiență digitală",
     line: "Proiecte speciale: invitații, microsite-uri și interacțiuni custom.",
+    href: "/invitatii-nunta",
+    linkLabel: "Invitații și experiențe digitale",
     tags: ["RSVP", "Microsite", "Custom"],
     gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.34), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.18), transparent 36%), linear-gradient(135deg, #0a0914, #171326 55%, #07070b)",
   },
@@ -172,6 +182,13 @@ export default function ServicesPage() {
                 <div className="max-w-4xl">
                   <h2 className="text-[clamp(42px,6vw,82px)] font-semibold leading-[0.95] tracking-[-0.06em]">{service.title}</h2>
                   <p className="mt-5 max-w-2xl text-[15px] leading-7 text-white/58 md:text-[17px]">{service.line}</p>
+                  <Link
+                    href={service.href}
+                    className="mt-6 inline-flex items-center gap-2 text-[12px] font-semibold text-white/78 transition hover:text-white"
+                  >
+                    {service.linkLabel}
+                    <span aria-hidden="true">→</span>
+                  </Link>
                 </div>
               </div>
             </motion.article>
@@ -196,6 +213,7 @@ export default function ServicesPage() {
                 { href: "/site-prezentare", label: "Site de prezentare" },
                 { href: "/web-design-bucuresti", label: "Web design București" },
                 { href: "/redesign-site", label: "Redesign website" },
+                { href: "/studii-de-caz", label: "Studii de caz ORBYVEN" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--bg)] px-5 py-3 text-xs font-semibold transition hover:border-[var(--accent)]">{item.label} ↗</Link>
               ))}

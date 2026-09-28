@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
+import SeoRelatedLinks from "@/components/seo/SeoRelatedLinks";
 import SeoShell from "@/components/seo/SeoShell";
 import type { SeoGuide } from "@/lib/seo-foundation";
 
@@ -45,16 +44,12 @@ export default function SeoGuidePage({ page }: { page: SeoGuide }) {
           </div>
         </div>
 
-        <footer className="px-5 py-16 sm:px-7 md:px-10">
-          <div className="mx-auto max-w-[920px]">
-            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Continuă cu</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {page.related.map((item) => (
-                <Link key={item.href} href={item.href} className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold">{item.label} →</Link>
-              ))}
-            </div>
-          </div>
-        </footer>
+        <SeoRelatedLinks
+          currentPath={page.path}
+          links={page.related}
+          eyebrow="Aplică ce ai citit"
+          title="Continuă cu serviciul sau exemplul care răspunde aceleiași nevoi."
+        />
       </article>
     </SeoShell>
   );
