@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getWorkspacePresentationConfig } from "@/lib/workspace-ui";
 
 /**
  * Only the public Supabase URL and publishable key are returned here.
@@ -31,7 +32,16 @@ export function GET() {
     );
   }
   return NextResponse.json(
-    { supabaseUrl: url, supabasePublishableKey: publishableKey },
+    {
+      supabaseUrl: url,
+      supabasePublishableKey: publishableKey,
+      workspaceUi: getWorkspacePresentationConfig(),
+      desktop: {
+        latestVersion: "0.4.0",
+        webWorkspacePath: "/workspace",
+        syncMode: "shared-shell-live-config",
+      },
+    },
     { headers: publicHeaders() },
   );
 }
