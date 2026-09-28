@@ -67,3 +67,27 @@ export const WORKSPACE_LAYOUT = {
 export function workspaceThemeVars(theme: WorkspaceTheme): CSSProperties {
   return WORKSPACE_THEME_TOKENS[theme] as CSSProperties;
 }
+
+export type WorkspacePresentationConfig = {
+  revision: string;
+  navGroups: Array<{ label: string; ids: OrbyvenModuleId[] }>;
+  roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string>;
+  themeTokens: Record<WorkspaceTheme, Record<string, string>>;
+  layout: typeof WORKSPACE_LAYOUT;
+};
+
+export function getWorkspacePresentationConfig(): WorkspacePresentationConfig {
+  return {
+    revision: WORKSPACE_UI_REVISION,
+    navGroups: WORKSPACE_NAV_GROUPS.map((group) => ({
+      label: group.label,
+      ids: [...group.ids],
+    })),
+    roleLabels: { ...WORKSPACE_ROLE_LABELS },
+    themeTokens: {
+      dark: { ...WORKSPACE_THEME_TOKENS.dark },
+      light: { ...WORKSPACE_THEME_TOKENS.light },
+    },
+    layout: { ...WORKSPACE_LAYOUT },
+  };
+}
