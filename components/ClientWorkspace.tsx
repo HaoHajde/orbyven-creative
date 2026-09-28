@@ -77,7 +77,7 @@ export default function ClientWorkspace() {
   return (
     <WorkspaceShell
       initialWorkspace={workspace}
-      brand={<BrandLogo compact theme={theme} />}
+      brand={(shellTheme) => <BrandLogo compact theme={shellTheme} />}
       onLogout={logout}
     />
   );
