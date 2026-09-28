@@ -10,6 +10,7 @@ const tasks=read("components/modules/TasksModule.tsx");
 const registry=read("lib/orbyven-modules.ts");
 const workspace=read("components/WorkspaceContent.tsx");
 const client=read("components/ClientWorkspace.tsx");
+const uiContract=read("lib/workspace-ui-contract.ts");
 const baseMigration=read("supabase/migrations/20260927173520_alpha065_thermal_sketches.sql");
 const moduleGuard=read("supabase/migrations/20260928140502_thermal_independent_module_guard.sql");
 const pilotEntitlement=read("supabase/migrations/20260928142037_thermal_pilot_entitlement.sql");
