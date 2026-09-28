@@ -3,6 +3,8 @@
 import BrandLogo from "@/components/BrandLogo";
 import {
   BILLING_PLANS,
+  BILLING_CHECKOUT_ACKNOWLEDGEMENT,
+  BILLING_COMMITMENT_MONTHS,
   LEGAL_DOCUMENT_VERSION,
   PUBLIC_PRICE_TAX_LABEL,
   type BillingPlanId,
@@ -16,6 +18,7 @@ import { useEffect, useState } from "react";
 type BillingSummary = {
   configured: boolean;
   checkoutPaused?: boolean;
+  archivedPortalAvailable?: boolean;
   message?: string;
   billingAccount?: { hasStripeCustomer: boolean; billingEmail: string | null } | null;
   subscription?: {
@@ -114,7 +117,7 @@ export default function WorkspaceBillingPage() {
     }
   };
 
-  const openPortal = async () => {
+  const openPortal = async (archived = false) => {
     if (!workspace) return;
     setAction("portal");
     setError("");
@@ -123,7 +126,7 @@ export default function WorkspaceBillingPage() {
       const response = await fetch("/api/billing/portal", {
         method: "POST",
         headers,
-        body: JSON.stringify({ organizationId: workspace.organization.id }),
+        body: JSON.stringify({ organizationId: workspace.organization.id, archived }),
       });
       const data = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !data.url) throw new Error(data.error || "Portal indisponibil.");
@@ -156,10 +159,20 @@ export default function WorkspaceBillingPage() {
               {workspace?.organization.name || "Organizația ta"} · plan, plăți și drepturi comerciale într-un singur loc.
             </p>
           </div>
+          {summary?.archivedPortalAvailable && (
+            <button
+              type="button"
+              onClick={() => openPortal(true)}
+              disabled={action !== null}
+              className="h-11 rounded-full border border-black/[0.12] px-5 text-sm font-medium disabled:opacity-50"
+            >
+              Facturi și metodă de plată — emitent anterior
+            </button>
+          )}
           {summary?.billingAccount?.hasStripeCustomer && (
             <button
               type="button"
-              onClick={openPortal}
+              onClick={() => openPortal(false)}
               disabled={action !== null}
               className="h-11 rounded-full border border-black/[0.12] px-5 text-sm font-medium disabled:opacity-50"
             >
@@ -213,6 +226,7 @@ export default function WorkspaceBillingPage() {
                   <span className="pb-1 text-xs text-[#6e6e73]">lei / lună</span>
                 </div>
                 <p className="mt-2 text-xs text-[#86868b]">{PUBLIC_PRICE_TAX_LABEL}</p>
+                <p className="mt-2 text-xs text-[#86868b]">Angajament inițial: {BILLING_COMMITMENT_MONTHS} luni · {plan.priceLei*BILLING_COMMITMENT_MONTHS} lei la prețul afișat.</p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-[#6e6e73]">{plan.description}</p>
                 <p className="mt-5 text-xs leading-5 text-[#86868b]">Include: {plan.entitlements.join(", ")}</p>
                 <button
@@ -237,16 +251,18 @@ export default function WorkspaceBillingPage() {
               className="mt-1 h-4 w-4"
             />
             <span>
-              Confirm că reprezint organizația și accept{" "}
-              <Link href="/legal/terms" className="underline underline-offset-4">Termenii și Condițiile</Link>
-              {" "}și{" "}
-              <Link href="/legal/subscriptions" className="underline underline-offset-4">Termenii de abonament B2B</Link>
-              , inclusiv angajamentul inițial de 12 luni. Am consultat și{" "}
-              <Link href="/legal/privacy" className="underline underline-offset-4">Politica de Confidențialitate</Link>.
+              {BILLING_CHECKOUT_ACKNOWLEDGEMENT}
+              {" "}Documente:{" "}
+              <Link href="/legal/terms" className="underline underline-offset-4">Termeni și Condiții</Link>,
+              {" "}<Link href="/legal/subscriptions" className="underline underline-offset-4">Termeni de abonament B2B</Link>,
+              {" "}<Link href="/legal/privacy" className="underline underline-offset-4">Politica de Confidențialitate</Link>.
             </span>
           </label>
         )}
 
+        {workspace?.membership.role==="owner"&&(
+          <p className="mt-8 text-sm"><Link href="/workspace/data-export" className="font-semibold underline underline-offset-4">Predarea și exportul datelor organizației →</Link></p>
+        )}
         <p className="mt-8 max-w-3xl text-xs leading-5 text-[#86868b]">
           Schimbările de plan și anularea nu sunt expuse automat în portalul Stripe. Configurația ORBYVEN păstrează aceste operațiuni sub regulile contractuale ale abonamentului.
         </p>

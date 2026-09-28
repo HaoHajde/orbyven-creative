@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await admin
       .from("billing_webhook_events")
-      .select("provider_event_id,event_type,created_at,processing_error")
+      .select("provider_event_id,event_type,created_at,processing_started_at,processing_error")
       .is("processed_at", null)
       .order("created_at", { ascending: true })
       .limit(100);
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       createdAt: event.created_at,
       state: event.processing_error
         ? "retryable"
-        : now - new Date(event.created_at).getTime() >= STALE_AFTER_MS
+        : now - new Date(event.processing_started_at).getTime() >= STALE_AFTER_MS
           ? "stalled"
           : "pending",
     }));
@@ -83,12 +83,12 @@ export async function POST(request: Request) {
 
     const { data: existing, error: lookupError } = await admin
       .from("billing_webhook_events")
-      .select("event_type,created_at,processed_at,processing_error")
+      .select("event_type,created_at,processing_started_at,processed_at,processing_error")
       .eq("provider_event_id", eventId)
       .maybeSingle();
     if (lookupError) throw lookupError;
     if (!existing || existing.processed_at || existing.processing_error ||
-        Date.now() - new Date(existing.created_at).getTime() < STALE_AFTER_MS) {
+        Date.now() - new Date(existing.processing_started_at).getTime() < STALE_AFTER_MS) {
       return NextResponse.json(
         { error: "event_not_stalled" },
         { status: 409, headers: HEADERS },
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       .eq("provider_event_id", eventId)
       .is("processed_at", null)
       .is("processing_error", null)
-      .lt("created_at", new Date(Date.now() - STALE_AFTER_MS).toISOString())
+      .lt("processing_started_at", new Date(Date.now() - STALE_AFTER_MS).toISOString())
       .select("provider_event_id")
       .maybeSingle();
     if (claimError) throw claimError;
