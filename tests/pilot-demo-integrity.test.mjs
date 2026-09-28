@@ -50,6 +50,11 @@ test("catalog stays in current ORBYVEN category layout and keeps legacy template
   assert.match(home, /function FeaturedCard/);
   assert.match(home, /templateCategories\.map/);
   assert.match(home, /FeaturedTemplatePreview kind=\{item.kind\}/);
+  assert.match(home, /TemplateCardPreviewFrame/);
+  assert.match(home, /sm:h-\[610px\]/);
+  assert.doesNotMatch(home, /sm:grid-cols-\[1\.02fr_\.98fr\]/);
+  assert.match(home, /orbyven-home-kicker/);
+  assert.doesNotMatch(home, /border-t border-\[var\(--border\)\] pt-9/);
 });
 
 test("demo media is local or self-embedded; no missing relative file dependencies", () => {
