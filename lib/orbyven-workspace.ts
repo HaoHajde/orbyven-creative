@@ -21,6 +21,7 @@ export type OrbyvenWorkspace = {
   organization: OrbyvenOrganization;
   membership: OrbyvenMembership;
   enabledModules: OrbyvenModuleId[];
+  entitledModules: OrbyvenModuleId[];
   profile: {
     display_name: string | null;
     greeting_name: string | null;
@@ -122,7 +123,7 @@ export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
   const membership = memberships?.[0] as OrbyvenMembership | undefined;
   if (!membership) return null;
 
-  const [organizationResult, modulesResult, profileResult] = await Promise.all([
+  const [organizationResult, modulesResult, profileResult, entitlementsResult] = await Promise.all([
     orbyvenSupabase
       .from("organizations")
       .select("id,name,slug,legal_name")
@@ -138,15 +139,29 @@ export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
       .select("display_name,greeting_name,logo_url,timezone,locale")
       .eq("organization_id", membership.organization_id)
       .maybeSingle(),
+    orbyvenSupabase
+      .from("organization_entitlements")
+      .select("module_id,enabled,starts_at,ends_at")
+      .eq("organization_id", membership.organization_id),
   ]);
 
   if (organizationResult.error) throw organizationResult.error;
   if (modulesResult.error) throw modulesResult.error;
   if (profileResult.error) throw profileResult.error;
+  if (entitlementsResult.error) throw entitlementsResult.error;
 
+  const now = Date.now();
+  const entitled = new Set(
+    (entitlementsResult.data ?? [])
+      .filter((entry) => entry.enabled &&
+        (!entry.starts_at || new Date(entry.starts_at).getTime() <= now) &&
+        (!entry.ends_at || new Date(entry.ends_at).getTime() > now))
+      .map((entry) => entry.module_id as OrbyvenModuleId)
+      .filter((id) => validModuleIds.has(id))
+  );
   const enabledModules = (modulesResult.data ?? [])
     .map((row) => row.module_id as OrbyvenModuleId)
-    .filter((moduleId) => validModuleIds.has(moduleId));
+    .filter((moduleId) => validModuleIds.has(moduleId) && entitled.has(moduleId));
 
   return {
     user: {
@@ -155,6 +170,7 @@ export async function getCurrentWorkspace(): Promise<OrbyvenWorkspace | null> {
     },
     organization: organizationResult.data as OrbyvenOrganization,
     membership,
+    entitledModules: ["overview", ...Array.from(entitled).filter((id) => id !== "overview")],
     enabledModules: [
       "overview",
       ...enabledModules.filter((moduleId) => moduleId !== "overview"),
