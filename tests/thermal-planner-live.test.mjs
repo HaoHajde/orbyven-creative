@@ -38,7 +38,8 @@ test("thermal planner is an independent optional workspace module, not a Tasks a
   assert.ok(registry.includes('category: "specialized"'));
   assert.ok(workspace.includes('activeModule === "thermal"'));
   assert.ok(workspace.includes('import("@/components/modules/ThermalPlannerModule")'));
-  assert.ok(client.includes('{ label: "SPECIALIZATE", ids: ["thermal"]'));
+  assert.ok(uiContract.includes('{ label: "SPECIALIZATE", ids: ["thermal"] }'));
+  assert.match(client, /WORKSPACE_UI_CONTRACT\.navigationGroups/);
   assert.ok(thermalModule.includes('listWorkTasks(organizationId)'));
   assert.ok(thermalModule.includes('task.kind==="work"'));
   assert.ok(!tasks.includes("ThermalSketchPanel"));
