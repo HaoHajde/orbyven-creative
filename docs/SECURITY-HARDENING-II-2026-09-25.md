@@ -60,4 +60,8 @@ Security Hardening II is rebased conceptually on the current main that already c
 
 ## Production pre-deploy migration result
 
-On 28 September 2026 the first two pre-deploy migrations were applied successfully to ORBYVEN production and recorded by Supabase as versions 20260928140018 and 20260928140022. Post-checks found 28 active entitlement rows across the four expected pilot organizations, the finance restrictive guard, document Storage entitlement guard, legacy lead email throttle and service-role-only IP quota RPC. The final anonymous project-request RPC cutover remains intentionally unapplied until after the new application deployment.
+On 28 September 2026 the first two pre-deploy migrations were applied successfully to ORBYVEN production and recorded by Supabase as versions 20260928140018 and 20260928140022. Post-checks found 28 active entitlement rows across the four expected pilot organizations, the finance restrictive guard, document Storage entitlement guard, legacy lead email throttle and service-role-only IP quota RPC. The final anonymous project-request RPC cutover was applied after the successful Vercel deployment and recorded by Supabase as version 20260928141201. `anon` and `authenticated` no longer have EXECUTE; `service_role` remains the only caller.
+
+## Cutover signature hotfix
+
+The first cutover attempt was rejected transactionally because only the COMMENT statement referenced a non-existent overload with ten text arguments instead of the real nine-text + two-boolean RPC signature. No privilege change persisted from the failed transaction. The corrected migration was then applied successfully as 20260928141201, and the static security suite now asserts all three function signatures use the exact RPC arity.

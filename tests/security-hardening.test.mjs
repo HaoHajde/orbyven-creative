@@ -106,7 +106,7 @@ test("documents check leading content bytes without claiming antivirus protectio
 
 
 const pilotMigration = read("supabase/migrations/20260928140022_pilot_entitlements_private_requests.sql");
-const gatewayCutover = read("supabase/migrations/20260928165200_project_requests_server_only_cutover.sql");
+const gatewayCutover = read("supabase/migrations/20260928141201_project_requests_server_only_cutover.sql");
 const workspace = read("lib/orbyven-workspace.ts");
 const moduleStore = read("components/WorkspaceModuleStore.tsx");
 
@@ -135,6 +135,13 @@ test("public requests cannot bypass the API IP limiter through anonymous RPC", (
   assert.doesNotMatch(publicRequestRoute, /process\.env\.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
   assert.match(gatewayCutover, /from public, anon, authenticated/);
   assert.match(gatewayCutover, /to service_role/);
+  const normalizedCutover = gatewayCutover.replace(/\\s+/g, "");
+  const exactSignature = "text,text,text,text,text,text,text,text,text,boolean,boolean";
+  assert.equal(normalizedCutover.split(exactSignature).length - 1, 3);
+  assert.doesNotMatch(
+    normalizedCutover,
+    /text,text,text,text,text,text,text,text,text,text,boolean,boolean/
+  );
   assert.match(publicRateLimit, /ORBYVEN_REQUEST_RATE_LIMIT_SECRET\?\.trim\(\) \|\| key/);
   assert.match(publicRateLimit, /orbyven:project-request:ip:v1:/);
   assert.match(secondMigration, /revoke all on function public\.claim_project_request_ip_quota\(text\)/);
