@@ -87,12 +87,14 @@ test("Action executor mirrors existing create permissions and claims proposals a
   assert.match(source, /confirmation: "explicit_user_confirmation"/);
 });
 
-test("Agent execution only supports create lead/client, task and calendar in 0.8.1", () => {
+test("Agent execution keeps Finance writes forbidden and estimate creation behind the atomic RPC", () => {
   const source = read("lib/ai/action-server.ts");
   assert.match(source, /create_lead/);
   assert.match(source, /create_client/);
   assert.match(source, /create_task/);
   assert.match(source, /create_calendar_event/);
+  assert.match(source, /create_estimate/);
+  assert.match(source, /rpc\("ai_create_estimate_draft"/);
   assert.doesNotMatch(source, /finance_expenses"\)\s*\.insert/);
   assert.doesNotMatch(source, /sales_estimates"\)\s*\.insert/);
 });
