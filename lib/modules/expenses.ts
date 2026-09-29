@@ -386,7 +386,7 @@ export async function createIncome(
   let clientId = input.clientId || null;
   let taskId = input.taskId || null;
   let estimateId = input.estimateId || null;
-  let commercialDocumentId = input.commercialDocumentId || null;
+  const commercialDocumentId = input.commercialDocumentId || null;
   let currency = (input.currency?.trim() || "RON").toUpperCase();
   let sourceType: "invoice" | "manual" = "manual";
   let invoice: FinanceInvoice | null = null;
