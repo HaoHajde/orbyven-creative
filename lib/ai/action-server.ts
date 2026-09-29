@@ -71,6 +71,9 @@ export async function createMutationIntelligenceResponse(
   available: Set<OrbyvenModuleId>,
   prompt: string
 ): Promise<IntelligenceResponse | null> {
+  const normalizedPrompt = normalize(prompt);
+  if (!/\b(creeaza|adauga|inregistreaza|deschide|programeaza)\b/.test(normalizedPrompt)) return null;
+
   const timeZone = await organizationTimeZone(actor.organizationId);
   const parsed = parseMutationPrompt(prompt, { timeZone });
 
