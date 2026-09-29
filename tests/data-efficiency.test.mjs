@@ -37,7 +37,7 @@ test("exact page boundaries and empty datasets terminate; invalid pages fail clo
   await assert.rejects(readAllPages(() => Promise.resolve({ data: [], error: null }), 0), /Invalid/);
 });
 
-test("Overview uses exact SQL counts, selected small records and current-month expenses", () => {
+test("Overview uses exact SQL counts, selected small records and bounded current-month finance reads", () => {
   assert.match(overview, /count: "exact", head: true/);
   assert.match(overview, /ATTENTION_LIMIT = 16/);
   assert.match(overview, /\.limit\(ATTENTION_LIMIT \+ 1\)/);
@@ -50,8 +50,10 @@ test("Overview uses exact SQL counts, selected small records and current-month e
   assert.match(dashboard, /snapshot\?\.taskStages\.planned/);
   assert.match(dashboard, /snapshot\.activeLeadsCount/);
   assert.match(dashboard, /snapshot\.monthExpensesCents/);
+  assert.match(dashboard, /snapshot\.monthIncomeCents/);
   assert.match(dashboard, /snapshot\.attentionHasMore/);
-  assert.match(dashboard, /canAccessFinances && <SnapshotRow label="Cheltuieli luna aceasta"/);
+  assert.match(dashboard, /canAccessFinances && <SnapshotRow label="Încasări luna aceasta"/);
+  assert.match(dashboard, /canAccessFinances && <SnapshotRow label="Cashflow luna aceasta"/);
   assert.match(overview, /eq\("status", "blocked"\)/);
   assert.match(overview, /scheduledNearTasks/);
   assert.match(overview, /dueNearTasks/);
