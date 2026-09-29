@@ -150,7 +150,8 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
   const urgent = urgentTasks.data ?? [];
   const follow = followUps.data ?? [];
   const events = nextEvents.data ?? [];
-  const attention = overdue.length + urgent.length + follow.length;
+  const attentionTaskIds = new Set([...overdue, ...urgent].map((item) => item.id));
+  const attention = attentionTaskIds.size + follow.length;
 
   const actions: IntelligenceAction[] = [];
   if (available.has("tasks")) actions.push({ kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" });
