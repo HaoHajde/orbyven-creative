@@ -1,6 +1,7 @@
 import { authenticateBillingActor, createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
   IntelligenceResponse,
@@ -50,7 +51,38 @@ async function count(query: PromiseLike<{ count: number | null; error: { message
   return value;
 }
 
-async function operationsResponse(actor: BillingActor): Promise<IntelligenceResponse> {
+async function loadAvailableModules(actor: BillingActor): Promise<Set<OrbyvenModuleId>> {
+  const client = createBillingServiceClient();
+  const [modulesResult, entitlementsResult] = await Promise.all([
+    client.from("organization_modules")
+      .select("module_id,enabled")
+      .eq("organization_id", actor.organizationId)
+      .eq("enabled", true),
+    client.from("organization_entitlements")
+      .select("module_id,enabled,starts_at,ends_at")
+      .eq("organization_id", actor.organizationId)
+      .eq("enabled", true),
+  ]);
+  if (modulesResult.error) throw modulesResult.error;
+  if (entitlementsResult.error) throw entitlementsResult.error;
+
+  const now = Date.now();
+  const entitled = new Set(
+    (entitlementsResult.data ?? [])
+      .filter((row) =>
+        (!row.starts_at || new Date(row.starts_at).getTime() <= now) &&
+        (!row.ends_at || new Date(row.ends_at).getTime() > now))
+      .map((row) => row.module_id as OrbyvenModuleId)
+  );
+  const available = new Set<OrbyvenModuleId>(["overview"]);
+  for (const row of modulesResult.data ?? []) {
+    const moduleId = row.module_id as OrbyvenModuleId;
+    if (entitled.has(moduleId)) available.add(moduleId);
+  }
+  return available;
+}
+
+async function operationsResponse(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
   const client = createBillingServiceClient();
   const now = new Date();
   const nowIso = now.toISOString();
@@ -65,27 +97,33 @@ async function operationsResponse(actor: BillingActor): Promise<IntelligenceResp
     followUps,
     nextEvents,
   ] = await Promise.all([
-    count(client.from("ops_tasks").select("id", { count: "exact", head: true })
-      .eq("organization_id", actor.organizationId).not("status", "in", OPEN_TASKS)),
-    count(client.from("crm_leads").select("id", { count: "exact", head: true })
-      .eq("organization_id", actor.organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)),
-    count(client.from("sales_estimates").select("id", { count: "exact", head: true })
-      .eq("organization_id", actor.organizationId).eq("status", "sent")),
-    client.from("ops_tasks")
+    available.has("tasks")
+      ? count(client.from("ops_tasks").select("id", { count: "exact", head: true })
+          .eq("organization_id", actor.organizationId).not("status", "in", OPEN_TASKS))
+      : Promise.resolve(0),
+    available.has("leads")
+      ? count(client.from("crm_leads").select("id", { count: "exact", head: true })
+          .eq("organization_id", actor.organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS))
+      : Promise.resolve(0),
+    available.has("estimates")
+      ? count(client.from("sales_estimates").select("id", { count: "exact", head: true })
+          .eq("organization_id", actor.organizationId).eq("status", "sent"))
+      : Promise.resolve(0),
+    available.has("tasks") ? client.from("ops_tasks")
       .select("id,title,due_at,priority,status,client_id")
       .eq("organization_id", actor.organizationId)
       .not("status", "in", OPEN_TASKS)
       .lt("due_at", nowIso)
       .order("due_at", { ascending: true })
-      .limit(5),
-    client.from("ops_tasks")
+      .limit(5) : Promise.resolve({ data: [], error: null }),
+    available.has("tasks") ? client.from("ops_tasks")
       .select("id,title,due_at,priority,status,client_id")
       .eq("organization_id", actor.organizationId)
       .not("status", "in", OPEN_TASKS)
       .eq("priority", "urgent")
       .order("updated_at", { ascending: false })
-      .limit(5),
-    client.from("crm_leads")
+      .limit(5) : Promise.resolve({ data: [], error: null }),
+    available.has("leads") ? client.from("crm_leads")
       .select("id,name,next_follow_up_at")
       .eq("organization_id", actor.organizationId)
       .eq("kind", "lead")
@@ -93,15 +131,15 @@ async function operationsResponse(actor: BillingActor): Promise<IntelligenceResp
       .not("next_follow_up_at", "is", null)
       .lte("next_follow_up_at", tomorrowIso)
       .order("next_follow_up_at")
-      .limit(5),
-    client.from("calendar_events")
+      .limit(5) : Promise.resolve({ data: [], error: null }),
+    available.has("calendar") ? client.from("calendar_events")
       .select("id,title,start_at,client_id,task_id")
       .eq("organization_id", actor.organizationId)
       .neq("status", "cancelled")
       .gte("start_at", nowIso)
       .lte("start_at", tomorrowIso)
       .order("start_at")
-      .limit(5),
+      .limit(5) : Promise.resolve({ data: [], error: null }),
   ]);
 
   for (const result of [overdueTasks, urgentTasks, followUps, nextEvents]) {
@@ -114,11 +152,10 @@ async function operationsResponse(actor: BillingActor): Promise<IntelligenceResp
   const events = nextEvents.data ?? [];
   const attention = overdue.length + urgent.length + follow.length;
 
-  const actions: IntelligenceAction[] = [
-    { kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" },
-    { kind: "open_module", label: "Vezi calendarul", moduleId: "calendar" },
-  ];
-  if (follow.length) actions.unshift({ kind: "open_module", label: "Vezi follow-up-urile", moduleId: "leads" });
+  const actions: IntelligenceAction[] = [];
+  if (available.has("tasks")) actions.push({ kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" });
+  if (available.has("calendar")) actions.push({ kind: "open_module", label: "Vezi calendarul", moduleId: "calendar" });
+  if (follow.length && available.has("leads")) actions.unshift({ kind: "open_module", label: "Vezi follow-up-urile", moduleId: "leads" });
 
   return {
     specialist: "operations",
@@ -136,7 +173,14 @@ async function operationsResponse(actor: BillingActor): Promise<IntelligenceResp
   };
 }
 
-async function financeResponse(actor: BillingActor): Promise<IntelligenceResponse> {
+async function financeResponse(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
+  if (!available.has("expenses")) {
+    return {
+      specialist: "finance",
+      answer: "Modulul Finanțe nu este activ în acest workspace.",
+      facts: [], actions: [], generatedBy: "orbyven_core",
+    };
+  }
   if (!FINANCE_ROLES.has(actor.role)) {
     return {
       specialist: "finance",
@@ -234,7 +278,14 @@ async function financeResponse(actor: BillingActor): Promise<IntelligenceRespons
   };
 }
 
-async function documentsResponse(actor: BillingActor): Promise<IntelligenceResponse> {
+async function documentsResponse(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
+  if (!available.has("documents")) {
+    return {
+      specialist: "documents",
+      answer: "Modulul Documente nu este activ în acest workspace.",
+      facts: [], actions: [], generatedBy: "orbyven_core",
+    };
+  }
   const client = createBillingServiceClient();
   const [documentCount, recent] = await Promise.all([
     count(client.from("ops_documents").select("id", { count: "exact", head: true })
@@ -272,10 +323,10 @@ function webDesignResponse(): IntelligenceResponse {
   };
 }
 
-async function generalResponse(actor: BillingActor): Promise<IntelligenceResponse> {
-  const operations = await operationsResponse(actor);
-  const canFinance = FINANCE_ROLES.has(actor.role);
-  const finance = canFinance ? await financeResponse(actor) : null;
+async function generalResponse(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
+  const operations = await operationsResponse(actor, available);
+  const canFinance = FINANCE_ROLES.has(actor.role) && available.has("expenses");
+  const finance = canFinance ? await financeResponse(actor, available) : null;
 
   return {
     specialist: "general",
@@ -294,19 +345,22 @@ export async function answerIntelligenceRequest(
   prompt: string
 ): Promise<IntelligenceResponse> {
   const actor = await authenticateBillingActor(request, organizationId, false);
-  const intent = routeIntelligencePrompt(prompt);
+  const [intent, available] = await Promise.all([
+    Promise.resolve(routeIntelligencePrompt(prompt)),
+    loadAvailableModules(actor),
+  ]);
 
   switch (intent.specialist) {
     case "finance":
-      return financeResponse(actor);
+      return financeResponse(actor, available);
     case "documents":
-      return documentsResponse(actor);
+      return documentsResponse(actor, available);
     case "web_design":
       return webDesignResponse();
     case "operations":
-      return operationsResponse(actor);
+      return operationsResponse(actor, available);
     default:
-      return generalResponse(actor);
+      return generalResponse(actor, available);
   }
 }
 
