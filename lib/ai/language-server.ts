@@ -5,14 +5,10 @@ import {
   languageOutputPreservesNumbers,
   shouldUseLanguageLayer,
 } from "@/lib/ai/language-policy";
-
-type LanguageConfig = {
-  provider: "openai";
-  apiKey: string;
-  model: string;
-  dailyLimit: number;
-  minuteLimit: number;
-};
+import {
+  getLanguageRuntimeConfig,
+  type LanguageRuntimeConfig,
+} from "@/lib/ai/language-readiness";
 
 type OpenAiResponsePayload = {
   output_text?: unknown;
@@ -25,32 +21,6 @@ type OpenAiResponsePayload = {
     output_tokens?: unknown;
   };
 };
-
-function boundedInt(value: string | undefined, fallback: number, min: number, max: number) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
-}
-
-function languageConfig(): LanguageConfig | null {
-  if (process.env.ORBYVEN_LANGUAGE_LAYER_ENABLED?.trim().toLowerCase() !== "true") {
-    return null;
-  }
-  if (process.env.ORBYVEN_LANGUAGE_PROVIDER?.trim().toLowerCase() !== "openai") {
-    return null;
-  }
-
-  const apiKey = process.env.ORBYVEN_LANGUAGE_OPENAI_API_KEY?.trim() ?? "";
-  const model = process.env.ORBYVEN_LANGUAGE_MODEL?.trim() ?? "";
-  if (!apiKey || !model || model.length > 120) return null;
-
-  return {
-    provider: "openai",
-    apiKey,
-    model,
-    dailyLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_DAILY_LIMIT, 30, 1, 200),
-    minuteLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_MINUTE_LIMIT, 4, 1, 20),
-  };
-}
 
 function extractOutputText(payload: OpenAiResponsePayload): string {
   if (typeof payload.output_text === "string" && payload.output_text.trim()) {
@@ -72,7 +42,7 @@ function extractOutputText(payload: OpenAiResponsePayload): string {
 async function claimLanguageQuota(
   actor: BillingActor,
   conversationId: string | null,
-  config: LanguageConfig
+  config: LanguageRuntimeConfig
 ): Promise<string | null> {
   const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_language_claim", {
@@ -126,7 +96,7 @@ export async function maybePolishIntelligenceResponse(
   prompt: string,
   response: IntelligenceResponse
 ): Promise<IntelligenceResponse & { languageEnhanced?: boolean }> {
-  const config = languageConfig();
+  const config = getLanguageRuntimeConfig();
   if (!config || !shouldUseLanguageLayer(prompt, response)) return response;
 
   const requestId = await claimLanguageQuota(actor, conversationId, config);
