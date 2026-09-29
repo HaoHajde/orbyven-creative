@@ -8,6 +8,7 @@ import {
   persistAssistantResponse,
 } from "@/lib/ai/conversation-server";
 import { resolveConversationFollowUp } from "@/lib/ai/context-resolver";
+import { maybePolishIntelligenceResponse } from "@/lib/ai/language-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,11 +57,18 @@ export async function POST(request: Request) {
         }
       : result;
 
-    await persistAssistantResponse(actor, conversation.id, contextualResult);
+    const finalResult = await maybePolishIntelligenceResponse(
+      actor,
+      conversation.id,
+      prompt,
+      contextualResult
+    );
+
+    await persistAssistantResponse(actor, conversation.id, finalResult);
 
     return NextResponse.json(
       {
-        ...contextualResult,
+        ...finalResult,
         conversationId: conversation.id,
         contextUsed: context.usedContext,
       },
