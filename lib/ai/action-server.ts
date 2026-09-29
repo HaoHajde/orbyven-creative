@@ -79,11 +79,15 @@ export async function createMutationIntelligenceResponse(
 
   if (parsed.kind === "none") return null;
 
-  if (!available.has(parsed.targetModule)) {
+  const targetModule = parsed.kind === "proposal"
+    ? parsed.proposal.targetModule
+    : parsed.targetModule;
+
+  if (!available.has(targetModule)) {
     return {
       specialist: "operations",
       answer: "Acțiunea a fost înțeleasă, dar modulul necesar nu este activ în acest workspace.",
-      facts: [{ label: "Modul necesar", value: parsed.targetModule }],
+      facts: [{ label: "Modul necesar", value: targetModule }],
       actions: [],
       generatedBy: "orbyven_core",
     };
