@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -58,6 +58,12 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   const [loading, setLoading] = useState(false);
   const [proposalBusy, setProposalBusy] = useState(false);
   const [error, setError] = useState("");
+  const messageSequence = useRef(0);
+
+  const nextLocalKey = (prefix: string) => {
+    messageSequence.current += 1;
+    return `${prefix}-${messageSequence.current}`;
+  };
 
   const canSend = useMemo(() => prompt.trim().length >= 2 && !loading, [prompt, loading]);
 
@@ -92,7 +98,8 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
 
   useEffect(() => {
     if (!open) return;
-    void loadConversations();
+    const timer = window.setTimeout(() => void loadConversations(), 0);
+    return () => window.clearTimeout(timer);
     // organizationId is stable for the mounted workspace; reopening refreshes history.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, organizationId]);
@@ -155,7 +162,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     const requestPrompt = (value ?? prompt).trim();
     if (requestPrompt.length < 2 || loading) return;
 
-    const localUserKey = `user-${Date.now()}`;
+    const localUserKey = nextLocalKey("user");
     setMessages((current) => [...current, {
       key: localUserKey,
       role: "user",
@@ -190,7 +197,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
       if (!result.ok) throw new Error(body.error || "ORBYVEN Intelligence nu a răspuns.");
       if (body.conversationId) setConversationId(body.conversationId);
       setMessages((current) => [...current, {
-        key: `assistant-${Date.now()}`,
+        key: nextLocalKey("assistant"),
         role: "assistant",
         content: body.answer,
         specialist: body.specialist,
@@ -252,7 +259,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
       clearProposalAction(action.proposalId);
       const created = body.result;
       setMessages((current) => [...current, {
-        key: `decision-${Date.now()}`,
+        key: nextLocalKey("decision"),
         role: "assistant",
         specialist: "operations",
         content: body.message || (body.status === "rejected"
