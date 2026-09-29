@@ -32,6 +32,14 @@ test("Invoice issuance and payment state require finance authorization", () => {
   assert.match(hardening, /private\.can_access_org_finances\(new\.organization_id\)/);
 });
 
+
+test("Finance roles retain invoice tracking when Estimates is disabled", () => {
+  const bridge = read("supabase/migrations/20260929114300_finance_v2_commercial_document_entitlement_bridge.sql");
+  assert.match(bridge, /is_billing_module_allowed\(organization_id, 'estimates'\)/);
+  assert.match(bridge, /is_billing_module_allowed\(organization_id, 'expenses'\)/);
+  assert.match(bridge, /can_access_org_finances\(organization_id\)/);
+});
+
 test("Finance service links income to invoice, work and customer and blocks overpayment", () => {
   const service = read("lib/modules/expenses.ts");
   assert.match(service, /export async function createIncome/);
