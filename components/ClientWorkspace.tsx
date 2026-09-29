@@ -281,6 +281,7 @@ export default function ClientWorkspace() {
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
+              role={workspace.membership.role}
               onOpenModule={openModule}
             />
             <WorkspaceActivityCenter
