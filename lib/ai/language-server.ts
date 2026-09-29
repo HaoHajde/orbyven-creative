@@ -99,6 +99,16 @@ export function languageOutputPreservesNumbers(
   return true;
 }
 
+const EXECUTION_CLAIM =
+  /\b(am|ai|a|au|este|sunt|a fost|au fost)\s+(creat\w*|modificat\w*|trimis\w*|platit\w*|plătit\w*|sters\w*|șters\w*|programat\w*|inregistrat\w*|înregistrat\w*)\b/i;
+
+export function languageOutputPreservesExecutionClaims(
+  output: string,
+  canonicalInput: string
+) {
+  return !EXECUTION_CLAIM.test(output) || EXECUTION_CLAIM.test(canonicalInput);
+}
+
 async function claimLanguageQuota(
   actor: BillingActor,
   conversationId: string | null,
@@ -202,7 +212,8 @@ export async function maybePolishIntelligenceResponse(
     const polished = extractOutputText(payload).slice(0, 1800).trim();
     if (
       !polished ||
-      !languageOutputPreservesNumbers(polished, canonicalPayload)
+      !languageOutputPreservesNumbers(polished, canonicalPayload) ||
+      !languageOutputPreservesExecutionClaims(polished, canonicalPayload)
     ) {
       await finishLanguageQuota(requestId, false, usage, "OUTPUT_GUARD");
       return response;
