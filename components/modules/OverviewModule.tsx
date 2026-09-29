@@ -127,6 +127,8 @@ export default function OverviewModule({
       (estimate) => estimate.status === "sent"
     );
     const monthExpenses = snapshot.monthExpensesCents;
+    const monthIncome = snapshot.monthIncomeCents;
+    const monthCashFlow = monthIncome - monthExpenses;
 
     const attention: Attention[] = [];
     for (const lead of activeLeads) {
@@ -244,6 +246,8 @@ export default function OverviewModule({
       todayEvents,
       sentEstimates,
       monthExpenses,
+      monthIncome,
+      monthCashFlow,
       trends: {
         leads: trend(snapshot.trendDates.leads),
         tasks: trend(snapshot.trendDates.tasks),
@@ -446,7 +450,8 @@ export default function OverviewModule({
           </section>
 
           <section aria-label="Rezumat operațional" className="mt-2.5 grid gap-2 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-2 sm:grid-cols-2 xl:grid-cols-4">
-            {canAccessFinances && <SnapshotRow label="Cheltuieli luna aceasta" value={formatMoney(computed.monthExpenses, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />}
+            {canAccessFinances && <SnapshotRow label="Încasări luna aceasta" value={formatMoney(computed.monthIncome, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />}
+            {canAccessFinances && <SnapshotRow label="Cashflow luna aceasta" value={formatMoney(computed.monthCashFlow, locale)} onClick={() => onOpenModule("expenses")} enabled={enabledModules.includes("expenses")} />}
             <SnapshotRow label="Documente" value={String(snapshot.documentCount)} onClick={() => onOpenModule("documents")} enabled={enabledModules.includes("documents")} />
             <SnapshotRow label="Echipă activă" value={String(snapshot.activeTeamCount)} onClick={() => onOpenModule("team")} enabled={enabledModules.includes("team")} />
             <SnapshotRow label="Module active" value={String(enabledModules.filter((id) => id !== "overview").length)} enabled />
