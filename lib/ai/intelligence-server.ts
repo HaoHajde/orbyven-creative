@@ -1,6 +1,7 @@
 import { authenticateBillingActor, createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
+import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
@@ -346,10 +347,11 @@ export async function answerIntelligenceRequest(
   prompt: string
 ): Promise<IntelligenceResponse> {
   const actor = await authenticateBillingActor(request, organizationId, false);
-  const [intent, available] = await Promise.all([
-    Promise.resolve(routeIntelligencePrompt(prompt)),
-    loadAvailableModules(actor),
-  ]);
+  const available = await loadAvailableModules(actor);
+  const mutation = await createMutationIntelligenceResponse(actor, available, prompt);
+  if (mutation) return mutation;
+
+  const intent = routeIntelligencePrompt(prompt);
 
   switch (intent.specialist) {
     case "finance":
