@@ -10,6 +10,7 @@ import {
 } from "@/lib/ai/action-parser";
 import type { IntelligenceMutationType, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { appendAssistantConversationMessage } from "@/lib/ai/conversation-server";
 
 const MUTATION_ROLES = new Set(["owner", "admin", "manager", "member"]);
 
@@ -26,6 +27,7 @@ type ProposalRow = {
   result_type: string | null;
   result_id: string | null;
   failure_code: string | null;
+  conversation_id: string | null;
 };
 
 export type ActionDecisionResult = {
@@ -78,7 +80,8 @@ async function organizationTimeZone(organizationId: string) {
 export async function createMutationIntelligenceResponse(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>,
-  prompt: string
+  prompt: string,
+  conversationId: string | null = null
 ): Promise<IntelligenceResponse | null> {
   const normalizedPrompt = normalize(prompt);
   if (!/\b(creeaza|adauga|inregistreaza|deschide|programeaza)\b/.test(normalizedPrompt)) return null;
@@ -131,6 +134,7 @@ export async function createMutationIntelligenceResponse(
       action_type: parsed.proposal.actionType,
       payload: parsed.proposal.payload,
       summary: parsed.proposal.summary,
+      conversation_id: conversationId,
     })
     .select("id,expires_at")
     .single();
@@ -525,11 +529,19 @@ export async function decideMutationProposal(
       .eq("organization_id", actor.organizationId)
       .eq("actor_id", actor.userId)
       .eq("status", "pending")
-      .select("id")
+      .select("id,conversation_id")
       .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("PROPOSAL_NOT_PENDING");
-    return { ok: true, status: "rejected", message: "Acțiunea a fost anulată. Nu s-a modificat nimic." };
+    const message = "Acțiunea a fost anulată. Nu s-a modificat nimic.";
+    if (data.conversation_id) {
+      await appendAssistantConversationMessage(actor, data.conversation_id, {
+        specialist: "operations",
+        content: message,
+        facts: [{ label: "Status", value: "Anulată" }],
+      });
+    }
+    return { ok: true, status: "rejected", message };
   }
 
   await client
@@ -549,7 +561,7 @@ export async function decideMutationProposal(
     .eq("actor_id", actor.userId)
     .eq("status", "pending")
     .gt("expires_at", now)
-    .select("id,organization_id,actor_id,action_type,payload,summary,status,expires_at,executed_at,result_type,result_id,failure_code")
+    .select("id,organization_id,actor_id,action_type,payload,summary,status,expires_at,executed_at,result_type,result_id,failure_code,conversation_id")
     .maybeSingle();
   if (claimError) throw claimError;
 
@@ -613,10 +625,21 @@ export async function decideMutationProposal(
     if (finishError) throw finishError;
 
     await writeAudit(actor, proposal, result);
+    const message = "Acțiunea a fost confirmată și executată.";
+    if (proposal.conversation_id) {
+      await appendAssistantConversationMessage(actor, proposal.conversation_id, {
+        specialist: "operations",
+        content: message,
+        facts: [
+          { label: "Status", value: "Creat cu confirmare" },
+          { label: "Modul", value: result.moduleId },
+        ],
+      });
+    }
     return {
       ok: true,
       status: "executed",
-      message: "Acțiunea a fost confirmată și executată.",
+      message,
       result,
     };
   } catch (error) {
