@@ -26,6 +26,49 @@ type OpenAiResponsePayload = {
   };
 };
 
+function boundedInt(value: string | undefined, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+}
+
+function languageConfig(): LanguageConfig | null {
+  if (process.env.ORBYVEN_LANGUAGE_LAYER_ENABLED?.trim().toLowerCase() !== "true") {
+    return null;
+  }
+  if (process.env.ORBYVEN_LANGUAGE_PROVIDER?.trim().toLowerCase() !== "openai") {
+    return null;
+  }
+
+  const apiKey = process.env.ORBYVEN_LANGUAGE_OPENAI_API_KEY?.trim() ?? "";
+  const model = process.env.ORBYVEN_LANGUAGE_MODEL?.trim() ?? "";
+  if (!apiKey || !model || model.length > 120) return null;
+
+  return {
+    provider: "openai",
+    apiKey,
+    model,
+    dailyLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_DAILY_LIMIT, 30, 1, 200),
+    minuteLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_MINUTE_LIMIT, 4, 1, 20),
+  };
+}
+
+function extractOutputText(payload: OpenAiResponsePayload): string {
+  if (typeof payload.output_text === "string" && payload.output_text.trim()) {
+    return payload.output_text.trim();
+  }
+
+  const chunks: string[] = [];
+  for (const item of payload.output ?? []) {
+    if (item.type !== "message") continue;
+    for (const part of item.content ?? []) {
+      if (part.type === "output_text" && typeof part.text === "string") {
+        chunks.push(part.text);
+      }
+    }
+  }
+  return chunks.join("\n").trim();
+}
+
 async function claimLanguageQuota(
   actor: BillingActor,
   conversationId: string | null,
