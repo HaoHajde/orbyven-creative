@@ -49,17 +49,20 @@ export default function WebDesignSpecialist() {
 
   useEffect(() => {
     if (!authorized) return;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = readSiteDraft(JSON.parse(saved));
-        if (parsed) setDraft(parsed);
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = readSiteDraft(JSON.parse(saved));
+          if (parsed) setDraft(parsed);
+        }
+      } catch (error) {
+        console.warn("ORBYVEN Web Design draft could not be restored", error);
+      } finally {
+        setHydrated(true);
       }
-    } catch (error) {
-      console.warn("ORBYVEN Web Design draft could not be restored", error);
-    } finally {
-      setHydrated(true);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [authorized]);
 
   useEffect(() => {
