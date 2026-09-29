@@ -1,5 +1,10 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
+import {
+  languageOutputPreservesExecutionClaims,
+  languageOutputPreservesNumbers,
+  shouldUseLanguageLayer,
+} from "@/lib/ai/language-policy";
 
 type LanguageConfig = {
   provider: "openai";
@@ -20,94 +25,6 @@ type OpenAiResponsePayload = {
     output_tokens?: unknown;
   };
 };
-
-const LANGUAGE_TRIGGER =
-  /\b(explica|explică|analiz\w*|rezum\w*|priorit\w*|recomand\w*|de ce|cum ar trebui|ce inseamna|ce înseamnă|ajuta-ma|ajută-mă|interpreteaz\w*|pe scurt)\b/i;
-
-const MUTATION_VERB =
-  /\b(creeaza|creează|adauga|adaugă|inregistreaza|înregistrează|programeaza|programează)\b/i;
-
-function boundedInt(value: string | undefined, fallback: number, min: number, max: number) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
-}
-
-function languageConfig(): LanguageConfig | null {
-  if (process.env.ORBYVEN_LANGUAGE_LAYER_ENABLED?.trim().toLowerCase() !== "true") {
-    return null;
-  }
-  if (process.env.ORBYVEN_LANGUAGE_PROVIDER?.trim().toLowerCase() !== "openai") {
-    return null;
-  }
-
-  const apiKey = process.env.ORBYVEN_LANGUAGE_OPENAI_API_KEY?.trim() ?? "";
-  const model = process.env.ORBYVEN_LANGUAGE_MODEL?.trim() ?? "";
-  if (!apiKey || !model || model.length > 120) return null;
-
-  return {
-    provider: "openai",
-    apiKey,
-    model,
-    dailyLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_DAILY_LIMIT, 30, 1, 200),
-    minuteLimit: boundedInt(process.env.ORBYVEN_LANGUAGE_MINUTE_LIMIT, 4, 1, 20),
-  };
-}
-
-export function shouldUseLanguageLayer(
-  prompt: string,
-  response: IntelligenceResponse
-) {
-  if (MUTATION_VERB.test(prompt)) return false;
-  if (response.specialist === "web_design") return false;
-  if (response.actions.some((action) => action.kind === "confirm_proposal")) return false;
-  return response.specialist === "general" || LANGUAGE_TRIGGER.test(prompt);
-}
-
-function extractOutputText(payload: OpenAiResponsePayload): string {
-  if (typeof payload.output_text === "string" && payload.output_text.trim()) {
-    return payload.output_text.trim();
-  }
-
-  const chunks: string[] = [];
-  for (const item of payload.output ?? []) {
-    if (item.type !== "message") continue;
-    for (const part of item.content ?? []) {
-      if (part.type === "output_text" && typeof part.text === "string") {
-        chunks.push(part.text);
-      }
-    }
-  }
-  return chunks.join("\n").trim();
-}
-
-function normalizedNumbers(value: string) {
-  const tokens = value.match(/\d[\d.,]*/g) ?? [];
-  return new Set(tokens.map((token) => {
-    const digits = token.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-    return digits || "0";
-  }));
-}
-
-export function languageOutputPreservesNumbers(
-  output: string,
-  canonicalInput: string
-) {
-  const allowed = normalizedNumbers(canonicalInput);
-  for (const token of normalizedNumbers(output)) {
-    if (!allowed.has(token)) return false;
-  }
-  return true;
-}
-
-const EXECUTION_CLAIM =
-  /\b(am|ai|a|au|este|sunt|a fost|au fost)\s+(creat\w*|modificat\w*|trimis\w*|platit\w*|plătit\w*|sters\w*|șters\w*|programat\w*|inregistrat\w*|înregistrat\w*)\b/i;
-
-export function languageOutputPreservesExecutionClaims(
-  output: string,
-  canonicalInput: string
-) {
-  return !EXECUTION_CLAIM.test(output) || EXECUTION_CLAIM.test(canonicalInput);
-}
 
 async function claimLanguageQuota(
   actor: BillingActor,
