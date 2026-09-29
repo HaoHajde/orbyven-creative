@@ -1,0 +1,364 @@
+import type { IntelligenceMutationType } from "@/lib/ai/intelligence-types";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+
+export type LeadActionPayload = {
+  name: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+};
+
+export type TaskActionPayload = {
+  title: string;
+  kind: "task" | "work";
+  priority: "low" | "normal" | "high" | "urgent";
+  description?: string;
+  clientName?: string;
+  location?: string;
+};
+
+export type CalendarActionPayload = {
+  title: string;
+  startAt: string;
+  endAt: string;
+  clientName?: string;
+  location?: string;
+  notes?: string;
+  reminderMinutes?: number;
+  timeZone: string;
+};
+
+export type ParsedMutation =
+  | {
+      actionType: "create_lead" | "create_client";
+      targetModule: "leads";
+      payload: LeadActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
+    }
+  | {
+      actionType: "create_task";
+      targetModule: "tasks";
+      payload: TaskActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
+    }
+  | {
+      actionType: "create_calendar_event";
+      targetModule: "calendar";
+      payload: CalendarActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
+    };
+
+export type MutationParseResult =
+  | { kind: "none" }
+  | { kind: "needs_details"; message: string; targetModule: OrbyvenModuleId }
+  | { kind: "proposal"; proposal: ParsedMutation };
+
+const FIELD_LABELS =
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|locatie|locație|prioritate|titlu|durata|durată|reminder|memento";
+
+function normalize(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function clean(value: string | undefined, max = 240) {
+  const result = value?.trim().replace(/^["„]|["”]$/g, "");
+  return result ? result.slice(0, max) : undefined;
+}
+
+function field(prompt: string, labels: string[], max = 240) {
+  const label = labels.join("|");
+  const pattern = new RegExp(
+    "(?:^|[,;\\n]\\s*)(?:" + label + ")\\s*:\\s*(.+?)(?=\\s*(?:;|\\n|,\\s*(?:" + FIELD_LABELS + ")\\s*:)|$)",
+    "i"
+  );
+  return clean(prompt.match(pattern)?.[1], max);
+}
+
+function fallbackName(prompt: string, entity: "lead" | "client") {
+  const pattern = new RegExp(
+    "(?:creeaz[ăa]|adaug[ăa]|inregistreaz[ăa])\\s+(?:un\\s+|o\\s+)?" + entity + "\\s*[:\\-]?\\s*([^,;\\n]+)",
+    "i"
+  );
+  return clean(prompt.match(pattern)?.[1], 120);
+}
+
+function fallbackTaskTitle(prompt: string) {
+  return clean(
+    prompt.match(
+      /(?:creeaz[ăa]|adaug[ăa]|deschide)\s+(?:o\s+|un\s+)?(?:lucrare|task|sarcin[ăa])\s*[:\-]?\s*([^,;\n]+)/i
+    )?.[1],
+    180
+  );
+}
+
+function priorityFromPrompt(prompt: string): TaskActionPayload["priority"] {
+  const explicit = normalize(field(prompt, ["prioritate"], 40) ?? "");
+  const source = explicit || normalize(prompt);
+  if (/\burgent\w*\b/.test(source)) return "urgent";
+  if (/\b(ridicat\w*|mare|high)\b/.test(source)) return "high";
+  if (/\b(scazut\w*|mica|mic|low)\b/.test(source)) return "low";
+  return "normal";
+}
+
+function timezoneOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+  return Date.UTC(
+    read("year"),
+    read("month") - 1,
+    read("day"),
+    read("hour"),
+    read("minute"),
+    read("second")
+  ) - date.getTime();
+}
+
+function localToIso(
+  dateKey: string,
+  hour: number,
+  minute: number,
+  timeZone: string
+): string | null {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (![year, month, day, hour, minute].every(Number.isFinite)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  const localUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  let instant = new Date(localUtc);
+  for (let index = 0; index < 3; index += 1) {
+    instant = new Date(localUtc - timezoneOffsetMs(instant, timeZone));
+  }
+
+  const verification = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    verification.find((part) => part.type === type)?.value ?? "";
+  const verifiedKey = read("year") + "-" + read("month") + "-" + read("day");
+  if (verifiedKey !== dateKey || Number(read("hour")) !== hour || Number(read("minute")) !== minute) {
+    return null;
+  }
+  return instant.toISOString();
+}
+
+function dateKeyForPrompt(prompt: string, timeZone: string, now: Date) {
+  const normalized = normalize(prompt);
+  const localToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const addDays = (amount: number) => {
+    const [year, month, day] = localToday.split("-").map(Number);
+    const next = new Date(Date.UTC(year, month - 1, day + amount, 12));
+    return [
+      next.getUTCFullYear(),
+      String(next.getUTCMonth() + 1).padStart(2, "0"),
+      String(next.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+  };
+
+  if (/\bpoimaine\b/.test(normalized)) return addDays(2);
+  if (/\bmaine\b/.test(normalized)) return addDays(1);
+  if (/\bazi\b/.test(normalized)) return addDays(0);
+
+  const iso = normalized.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if (iso) {
+    return iso[1] + "-" + String(Number(iso[2])).padStart(2, "0") + "-" + String(Number(iso[3])).padStart(2, "0");
+  }
+
+  const ro = normalized.match(/\b(\d{1,2})[./](\d{1,2})(?:[./](\d{4}))?\b/);
+  if (ro) {
+    const year = ro[3] ? Number(ro[3]) : Number(localToday.slice(0, 4));
+    return String(year) + "-" + String(Number(ro[2])).padStart(2, "0") + "-" + String(Number(ro[1])).padStart(2, "0");
+  }
+  return null;
+}
+
+function calendarTitle(prompt: string) {
+  const explicit = field(prompt, ["titlu"], 180);
+  if (explicit) return explicit;
+
+  const match = prompt.match(
+    /(?:programeaz[ăa]|creeaz[ăa]|adaug[ăa])\s+(?:o\s+|un\s+)?(?:programare|eveniment|[îi]nt[aâ]lnire|vizit[ăa])\s*[:\-]?\s*(.*)$/i
+  );
+  if (!match?.[1]) return undefined;
+  return clean(
+    match[1]
+      .replace(/\b(?:azi|m[âa]ine|poim[âa]ine)\b.*$/i, "")
+      .replace(/\b\d{4}-\d{1,2}-\d{1,2}\b.*$/i, "")
+      .replace(/\b\d{1,2}[./]\d{1,2}(?:[./]\d{4})?\b.*$/i, "")
+      .replace(/\b(?:la|ora)\s+\d{1,2}(?::\d{2})?.*$/i, ""),
+    180
+  );
+}
+
+function formatLocalDate(iso: string, timeZone: string) {
+  return new Intl.DateTimeFormat("ro-RO", {
+    timeZone,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(iso));
+}
+
+export function parseMutationPrompt(
+  prompt: string,
+  options: { timeZone?: string; now?: Date } = {}
+): MutationParseResult {
+  const normalized = normalize(prompt);
+  const timeZone = options.timeZone || "Europe/Bucharest";
+  const now = options.now || new Date();
+
+  const leadMatch = normalized.match(/\b(creeaza|adauga|inregistreaza)\s+(?:un\s+|o\s+)?(lead|client)\b/);
+  if (leadMatch) {
+    const entity = leadMatch[2] as "lead" | "client";
+    const name = field(prompt, ["nume"], 120) || fallbackName(prompt, entity);
+    if (!name) {
+      return { kind: "needs_details", targetModule: "leads", message: "Spune-mi numele lead-ului/clientului pe care vrei să îl creez." };
+    }
+    const payload: LeadActionPayload = {
+      name,
+      company: field(prompt, ["companie", "firma"], 140),
+      email: field(prompt, ["email"], 180),
+      phone: field(prompt, ["telefon", "tel"], 60),
+      note: field(prompt, ["nota", "notă"], 500),
+    };
+    const actionType: IntelligenceMutationType = entity === "client" ? "create_client" : "create_lead";
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType,
+        targetModule: "leads",
+        payload,
+        summary: "Creează " + (entity === "client" ? "clientul" : "lead-ul") + " „" + name + "”",
+        facts: [
+          { label: "Tip", value: entity === "client" ? "Client" : "Lead" },
+          { label: "Nume", value: name },
+          ...(payload.company ? [{ label: "Companie", value: payload.company }] : []),
+          ...(payload.phone ? [{ label: "Telefon", value: payload.phone }] : []),
+        ],
+      },
+    };
+  }
+
+  const taskMatch = normalized.match(/\b(creeaza|adauga|deschide)\s+(?:o\s+|un\s+)?(lucrare|task|sarcina)\b/);
+  if (taskMatch) {
+    const title = field(prompt, ["titlu"], 180) || fallbackTaskTitle(prompt);
+    if (!title) {
+      return { kind: "needs_details", targetModule: "tasks", message: "Spune-mi titlul lucrării sau al task-ului." };
+    }
+    const payload: TaskActionPayload = {
+      title,
+      kind: taskMatch[2] === "lucrare" ? "work" : "task",
+      priority: priorityFromPrompt(prompt),
+      description: field(prompt, ["descriere"], 700),
+      clientName: field(prompt, ["client"], 140),
+      location: field(prompt, ["locatie", "locație"], 240),
+    };
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType: "create_task",
+        targetModule: "tasks",
+        payload,
+        summary: "Creează " + (payload.kind === "work" ? "lucrarea" : "task-ul") + " „" + title + "”",
+        facts: [
+          { label: "Tip", value: payload.kind === "work" ? "Lucrare" : "Task" },
+          { label: "Titlu", value: title },
+          { label: "Prioritate", value: payload.priority },
+          ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+        ],
+      },
+    };
+  }
+
+  const calendarMatch = normalized.match(/\b(programeaza|creeaza|adauga)\s+(?:o\s+|un\s+)?(programare|eveniment|intalnire|vizita)\b/);
+  if (calendarMatch) {
+    const title = calendarTitle(prompt);
+    if (!title) {
+      return { kind: "needs_details", targetModule: "calendar", message: "Spune-mi titlul programării." };
+    }
+    const dateKey = dateKeyForPrompt(prompt, timeZone, now);
+    const time = normalized.match(/\b(?:la|ora)\s*(\d{1,2})(?::(\d{2}))?\b/);
+    if (!dateKey || !time) {
+      return {
+        kind: "needs_details",
+        targetModule: "calendar",
+        message: "Pentru programare am nevoie de dată și oră, de exemplu „mâine la 10:30” sau „30.09.2026 la 10:30”.",
+      };
+    }
+    const hour = Number(time[1]);
+    const minute = Number(time[2] || 0);
+    const startAt = localToIso(dateKey, hour, minute, timeZone);
+    if (!startAt) {
+      return { kind: "needs_details", targetModule: "calendar", message: "Data sau ora nu este validă în fusul orar al workspace-ului." };
+    }
+    const durationRaw = field(prompt, ["durata", "durată"], 30);
+    const durationMatch = normalize(durationRaw || "").match(/(\d{1,3})/);
+    const durationMinutes = durationMatch ? Math.min(480, Math.max(15, Number(durationMatch[1]))) : 60;
+    const endAt = new Date(new Date(startAt).getTime() + durationMinutes * 60000).toISOString();
+    const reminderRaw = field(prompt, ["reminder", "memento"], 30);
+    const reminderMatch = normalize(reminderRaw || "").match(/(\d{1,3})/);
+    const reminderMinutes = reminderMatch ? Math.min(1440, Math.max(0, Number(reminderMatch[1]))) : 30;
+    const payload: CalendarActionPayload = {
+      title,
+      startAt,
+      endAt,
+      clientName: field(prompt, ["client"], 140),
+      location: field(prompt, ["locatie", "locație"], 240),
+      notes: field(prompt, ["nota", "notă", "descriere"], 700),
+      reminderMinutes,
+      timeZone,
+    };
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType: "create_calendar_event",
+        targetModule: "calendar",
+        payload,
+        summary: "Programează „" + title + "” pentru " + formatLocalDate(startAt, timeZone),
+        facts: [
+          { label: "Programare", value: title },
+          { label: "Data", value: formatLocalDate(startAt, timeZone) },
+          { label: "Durată", value: String(durationMinutes) + " min" },
+          ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+        ],
+      },
+    };
+  }
+
+  return { kind: "none" };
+}
