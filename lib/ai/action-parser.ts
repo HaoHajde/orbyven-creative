@@ -49,6 +49,15 @@ export type EstimateActionPayload = {
   items: EstimateItemActionPayload[];
 };
 
+export type DocumentDraftActionPayload = {
+  title: string;
+  content: string;
+  category: "general" | "estimate" | "contract" | "other";
+  clientName?: string;
+  taskTitle?: string;
+  estimateReference?: string;
+};
+
 export type ParsedMutation =
   | {
       actionType: "create_lead" | "create_client";
@@ -77,6 +86,13 @@ export type ParsedMutation =
       payload: EstimateActionPayload;
       summary: string;
       facts: Array<{ label: string; value: string }>;
+    }
+  | {
+      actionType: "create_document_draft";
+      targetModule: "documents";
+      payload: DocumentDraftActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
     };
 
 export type MutationParseResult =
@@ -85,7 +101,7 @@ export type MutationParseResult =
   | { kind: "proposal"; proposal: ParsedMutation };
 
 const FIELD_LABELS =
-  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri";
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|continut|conținut|categorie|client|lucrare|deviz|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri";
 
 function normalize(value: string) {
   return value
@@ -200,6 +216,24 @@ function ronValue(value: number) {
     currency: "RON",
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function documentTitle(prompt: string) {
+  return field(prompt, ["titlu"], 180) || clean(
+    prompt.match(
+      /(?:creeaz[ăa]|adaug[ăa])\s+(?:un\s+|o\s+)?(?:document|not[ăa]\s+document)\s*[:\-]?\s*([^,;\n]+)/i
+    )?.[1],
+    180
+  );
+}
+
+function documentCategory(prompt: string): DocumentDraftActionPayload["category"] | "forbidden" {
+  const raw = normalize(field(prompt, ["categorie"], 40) ?? "general");
+  if (/\b(factura|invoice|bon|chitanta|receipt|foto|fotografie|photo)\b/.test(raw)) return "forbidden";
+  if (/\b(contract)\b/.test(raw)) return "contract";
+  if (/\b(deviz|oferta|estimate)\b/.test(raw)) return "estimate";
+  if (/\b(alt|other)\b/.test(raw)) return "other";
+  return "general";
 }
 
 function timezoneOffsetMs(date: Date, timeZone: string) {
@@ -514,6 +548,63 @@ export function parseMutationPrompt(
           { label: "Total", value: ronValue(total) },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
           ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
+        ],
+      },
+    };
+  }
+
+  const documentMatch = normalized.match(/\b(creeaza|adauga)\s+(?:un\s+|o\s+)?(?:document|nota\s+document)\b/);
+  if (documentMatch) {
+    const title = documentTitle(prompt);
+    if (!title) {
+      return {
+        kind: "needs_details",
+        targetModule: "documents",
+        message: "Spune-mi titlul documentului draft.",
+      };
+    }
+
+    const content = field(prompt, ["continut", "conținut"], 900);
+    if (!content) {
+      return {
+        kind: "needs_details",
+        targetModule: "documents",
+        message: "Adaugă conținutul explicit al documentului prin „conținut: ...”. ORBYVEN 0.8.3 nu inventează încă textul documentului.",
+      };
+    }
+
+    const category = documentCategory(prompt);
+    if (category === "forbidden") {
+      return {
+        kind: "needs_details",
+        targetModule: "documents",
+        message: "Document Draft nu generează facturi, bonuri, chitanțe sau fotografii. Alege categoria general, contract, deviz sau other.",
+      };
+    }
+
+    const payload: DocumentDraftActionPayload = {
+      title,
+      content,
+      category,
+      clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare"], 180),
+      estimateReference: field(prompt, ["deviz"], 180),
+    };
+
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType: "create_document_draft",
+        targetModule: "documents",
+        payload,
+        summary: "Creează documentul DRAFT „" + title + "”",
+        facts: [
+          { label: "Format", value: "TXT privat" },
+          { label: "Categorie", value: category },
+          { label: "Conținut", value: String(content.length) + " caractere" },
+          ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
+          ...(payload.estimateReference ? [{ label: "Deviz", value: payload.estimateReference }] : []),
         ],
       },
     };
