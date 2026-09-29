@@ -535,11 +535,15 @@ export async function decideMutationProposal(
     if (!data) throw new Error("PROPOSAL_NOT_PENDING");
     const message = "Acțiunea a fost anulată. Nu s-a modificat nimic.";
     if (data.conversation_id) {
-      await appendAssistantConversationMessage(actor, data.conversation_id, {
-        specialist: "operations",
-        content: message,
-        facts: [{ label: "Status", value: "Anulată" }],
-      });
+      try {
+        await appendAssistantConversationMessage(actor, data.conversation_id, {
+          specialist: "operations",
+          content: message,
+          facts: [{ label: "Status", value: "Anulată" }],
+        });
+      } catch (historyError) {
+        console.error("ORBYVEN AI conversation outcome persistence failed", historyError);
+      }
     }
     return { ok: true, status: "rejected", message };
   }
@@ -627,14 +631,18 @@ export async function decideMutationProposal(
     await writeAudit(actor, proposal, result);
     const message = "Acțiunea a fost confirmată și executată.";
     if (proposal.conversation_id) {
-      await appendAssistantConversationMessage(actor, proposal.conversation_id, {
-        specialist: "operations",
-        content: message,
-        facts: [
-          { label: "Status", value: "Creat cu confirmare" },
-          { label: "Modul", value: result.moduleId },
-        ],
-      });
+      try {
+        await appendAssistantConversationMessage(actor, proposal.conversation_id, {
+          specialist: "operations",
+          content: message,
+          facts: [
+            { label: "Status", value: "Creat cu confirmare" },
+            { label: "Modul", value: result.moduleId },
+          ],
+        });
+      } catch (historyError) {
+        console.error("ORBYVEN AI conversation outcome persistence failed", historyError);
+      }
     }
     return {
       ok: true,
