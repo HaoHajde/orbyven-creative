@@ -153,6 +153,35 @@ export async function persistAssistantResponse(
   });
 }
 
+
+export async function loadRecentConversationContext(
+  actor: BillingActor,
+  conversationId: string,
+  limit = 8
+): Promise<IntelligenceConversationMessage[]> {
+  const client = createBillingServiceClient();
+  const safeLimit = Math.min(12, Math.max(2, Math.round(limit)));
+  const { data, error } = await client
+    .from("ai_conversation_messages")
+    .select("id,role,specialist,content,facts,created_at")
+    .eq("conversation_id", conversationId)
+    .eq("organization_id", actor.organizationId)
+    .eq("actor_id", actor.userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) throw error;
+  return (data ?? []).reverse().map((row) => ({
+    id: row.id,
+    role: row.role as "user" | "assistant",
+    specialist: (row.specialist ?? null) as IntelligenceSpecialist | null,
+    content: row.content,
+    facts: safeFacts(row.facts),
+    createdAt: row.created_at,
+  }));
+}
+
 export async function listIntelligenceConversations(
   actor: BillingActor,
   limit = 20
