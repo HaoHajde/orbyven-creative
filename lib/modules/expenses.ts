@@ -421,6 +421,25 @@ export async function createIncome(
     clientId = task.client_id || clientId;
   }
 
+  if (!commercialDocumentId && estimateId) {
+    const { data: estimate, error: estimateError } = await orbyvenSupabase
+      .from("sales_estimates")
+      .select("id,client_id,task_id,currency")
+      .eq("organization_id", organizationId)
+      .eq("id", estimateId)
+      .single();
+    if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
+    if (taskId && estimate.task_id && taskId !== estimate.task_id) {
+      throw new Error("Lucrarea nu corespunde devizului.");
+    }
+    if (clientId && estimate.client_id && clientId !== estimate.client_id) {
+      throw new Error("Clientul nu corespunde devizului.");
+    }
+    taskId = estimate.task_id || taskId;
+    clientId = estimate.client_id || clientId;
+    currency = estimate.currency || currency;
+  }
+
   if (clientId) {
     const { data: client, error: clientError } = await orbyvenSupabase
       .from("crm_leads")
