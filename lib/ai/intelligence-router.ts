@@ -12,19 +12,19 @@ function normalize(value: string) {
 const RULES: Array<{ specialist: IntelligenceSpecialist; pattern: RegExp }> = [
   {
     specialist: "web_design",
-    pattern: /\b(site|website|web design|hero|landing|pagina|layout|culori|paleta|font|template|design|seo site|titlu site)\b/,
+    pattern: /\b(site|website|web design|hero|landing|pagin\w*|layout|culor\w*|palet\w*|font\w*|template\w*|design|seo site|titlu site)\b/,
   },
   {
     specialist: "finance",
-    pattern: /\b(finante|financiar|incas|factur|scadent|restant|cashflow|profit|cheltu|venit|bani|plata|platit|de primit)\b/,
+    pattern: /\b(finant\w*|financiar\w*|incas\w*|factur\w*|scadent\w*|restant\w*|cashflow|profit\w*|cheltu\w*|venit\w*|bani|plat\w*|de primit)\b/,
   },
   {
     specialist: "documents",
-    pattern: /\b(document|contract|pdf|fisier|atasament|semnatur|proces verbal|proces-verbal)\b/,
+    pattern: /\b(document\w*|contract\w*|pdf|fisier\w*|atasament\w*|semnatur\w*|proces verbal|proces-verbal)\b/,
   },
   {
     specialist: "operations",
-    pattern: /\b(azi|astazi|task|lucrare|lucrari|client|lead|ofert|deviz|calendar|programar|follow.?up|prioritat|blocat|intarziat|de facut)\b/,
+    pattern: /\b(azi|astazi|task\w*|lucrar\w*|client\w*|lead\w*|ofert\w*|deviz\w*|calendar\w*|programar\w*|follow.?up|prioritat\w*|blocat\w*|intarziat\w*|de facut)\b/,
   },
 ];
 
