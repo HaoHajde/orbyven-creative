@@ -4,6 +4,7 @@ import {
   parseMutationPrompt,
   type CalendarActionPayload,
   type EstimateActionPayload,
+  type DocumentDraftActionPayload,
   type LeadActionPayload,
   type TaskActionPayload,
 } from "@/lib/ai/action-parser";
@@ -59,6 +60,7 @@ function actionModule(actionType: IntelligenceMutationType): OrbyvenModuleId {
   if (actionType === "create_lead" || actionType === "create_client") return "leads";
   if (actionType === "create_task") return "tasks";
   if (actionType === "create_estimate") return "estimates";
+  if (actionType === "create_document_draft") return "documents";
   return "calendar";
 }
 
@@ -383,6 +385,84 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
   return { id: data, type: "sales_estimate", moduleId: "estimates" as const };
 }
 
+function safeGeneratedFileName(title: string) {
+  const cleaned = title
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120);
+  return cleaned || "document";
+}
+
+async function executeDocumentDraft(actor: BillingActor, payload: Record<string, unknown>) {
+  const client = createBillingServiceClient();
+  const input = payload as DocumentDraftActionPayload;
+  const title = requireText(input.title, "document_title", 160);
+  const content = requireText(input.content, "document_content", 900);
+  const category = ["general", "contract", "other"].includes(input.category)
+    ? input.category
+    : "general";
+
+  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
+  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+
+  const fileText = [
+    "ORBYVEN — DRAFT INTERN",
+    "Nesemnat și nevalidat juridic automat.",
+    "",
+    title,
+    "",
+    content,
+  ].join("\n");
+  const bytes = new TextEncoder().encode(fileText);
+  if (bytes.byteLength > 20 * 1024 * 1024) throw new Error("INVALID_DOCUMENT_SIZE");
+
+  const storagePath =
+    actor.organizationId + "/ai/" + globalThis.crypto.randomUUID() + "-" +
+    safeGeneratedFileName(title) + ".txt";
+
+  const { error: uploadError } = await client.storage
+    .from("orbyven-documents")
+    .upload(storagePath, bytes, {
+      contentType: "text/plain",
+      cacheControl: "3600",
+      upsert: false,
+    });
+  if (uploadError) throw new Error("DOCUMENT_STORAGE_FAILED");
+
+  const userNote = optionalText(input.note, 300);
+  const note = [
+    "Draft intern creat prin ORBYVEN AI după confirmare explicită. Nesemnat și nevalidat juridic automat.",
+    userNote,
+  ].filter(Boolean).join(" ");
+
+  const { data, error } = await client
+    .from("ops_documents")
+    .insert({
+      organization_id: actor.organizationId,
+      name: title + ".txt",
+      category,
+      storage_path: storagePath,
+      mime_type: "text/plain",
+      size_bytes: bytes.byteLength,
+      client_id: work.clientId,
+      task_id: work.taskId,
+      estimate_id: null,
+      note,
+      created_by: actor.userId,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    await client.storage.from("orbyven-documents").remove([storagePath]);
+    throw error || new Error("DOCUMENT_CREATE_FAILED");
+  }
+
+  return { id: data.id as string, type: "ops_document", moduleId: "documents" as const };
+}
+
 async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow) {
   if (proposal.action_type === "create_lead" || proposal.action_type === "create_client") {
     return executeLead(actor, proposal.action_type, proposal.payload);
@@ -395,6 +475,9 @@ async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow
   }
   if (proposal.action_type === "create_estimate") {
     return executeEstimate(actor, proposal.payload);
+  }
+  if (proposal.action_type === "create_document_draft") {
+    return executeDocumentDraft(actor, proposal.payload);
   }
   throw new Error("UNSUPPORTED_ACTION");
 }
