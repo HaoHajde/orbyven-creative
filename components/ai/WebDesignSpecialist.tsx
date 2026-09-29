@@ -11,6 +11,7 @@ import {
   type SitePresetId,
 } from "@/lib/ai/site-editor";
 import { applyLocalPreviewCommand } from "@/lib/ai/local-preview-commands";
+import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
 
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 
@@ -28,8 +29,25 @@ export default function WebDesignSpecialist() {
   const [prompt, setPrompt] = useState("");
   const [message, setMessage] = useState("Web Design Specialist este pregătit.");
   const [hydrated, setHydrated] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    void getWorkspaceEntryPath().then((path) => {
+      if (!active) return;
+      if (path !== "/workspace") {
+        router.replace(path);
+        return;
+      }
+      setAuthorized(true);
+    }).catch(() => {
+      if (active) router.replace("/workspace/login");
+    });
+    return () => { active = false; };
+  }, [router]);
+
+  useEffect(() => {
+    if (!authorized) return;
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -46,10 +64,10 @@ export default function WebDesignSpecialist() {
     } finally {
       setHydrated(true);
     }
-  }, []);
+  }, [authorized]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !authorized) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   }, [draft, hydrated]);
 
@@ -98,6 +116,14 @@ export default function WebDesignSpecialist() {
     setDraft(SITE_PRESETS[draft.preset]);
     setMessage("Am resetat preview-ul la presetul selectat.");
   };
+
+  if (!authorized) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#090b13] text-white">
+        <p className="text-[11px] text-white/45">Se verifică accesul ORBYVEN…</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#090b13] text-white">
