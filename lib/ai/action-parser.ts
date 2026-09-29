@@ -49,6 +49,15 @@ export type EstimateActionPayload = {
   items: EstimateItemActionPayload[];
 };
 
+export type DocumentDraftActionPayload = {
+  title: string;
+  category: "general" | "contract" | "other";
+  content: string;
+  clientName?: string;
+  taskTitle?: string;
+  note?: string;
+};
+
 export type ParsedMutation =
   | {
       actionType: "create_lead" | "create_client";
@@ -77,6 +86,13 @@ export type ParsedMutation =
       payload: EstimateActionPayload;
       summary: string;
       facts: Array<{ label: string; value: string }>;
+    }
+  | {
+      actionType: "create_document_draft";
+      targetModule: "documents";
+      payload: DocumentDraftActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
     };
 
 export type MutationParseResult =
@@ -85,7 +101,7 @@ export type MutationParseResult =
   | { kind: "proposal"; proposal: ParsedMutation };
 
 const FIELD_LABELS =
-  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri";
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri|continut|conținut|text|categorie";
 
 function normalize(value: string) {
   return value
@@ -192,6 +208,23 @@ function estimateValidUntil(prompt: string): string | undefined {
   const ro = raw.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
   if (!ro) return undefined;
   return ro[3] + "-" + String(Number(ro[2])).padStart(2, "0") + "-" + String(Number(ro[1])).padStart(2, "0");
+}
+
+
+function documentTitle(prompt: string) {
+  return field(prompt, ["titlu"], 160) || clean(
+    prompt.match(
+      /(?:creeaz[ăa]|adaug[ăa])\s+(?:un\s+|o\s+)?(?:document|raport)\s*(?:draft\s*)?[:\-]?\s*([^,;\n]+)/i
+    )?.[1],
+    160
+  );
+}
+
+function documentCategory(prompt: string): DocumentDraftActionPayload["category"] {
+  const raw = normalize(field(prompt, ["categorie"], 40) || "");
+  if (raw === "contract") return "contract";
+  if (raw === "other" || raw === "alt" || raw === "altele") return "other";
+  return "general";
 }
 
 function ronValue(value: number) {
@@ -512,6 +545,55 @@ export function parseMutationPrompt(
           { label: "Poziții", value: String(items.length) },
           { label: "Subtotal", value: ronValue(subtotal) },
           { label: "Total", value: ronValue(total) },
+          ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
+        ],
+      },
+    };
+  }
+
+
+  const documentMatch = normalized.match(/\b(creeaza|adauga)\s+(?:un\s+|o\s+)?(document|raport)\b/);
+  if (documentMatch) {
+    const title = documentTitle(prompt);
+    if (!title) {
+      return {
+        kind: "needs_details",
+        targetModule: "documents",
+        message: "Spune-mi titlul documentului intern.",
+      };
+    }
+
+    const content = field(prompt, ["continut", "conținut", "text"], 900);
+    if (!content) {
+      return {
+        kind: "needs_details",
+        targetModule: "documents",
+        message: "Adaugă conținutul explicit al documentului, de exemplu „conținut: S-a verificat instalația...”. ORBYVEN nu inventează text juridic sau operațional în această etapă.",
+      };
+    }
+
+    const payload: DocumentDraftActionPayload = {
+      title,
+      category: documentCategory(prompt),
+      content,
+      clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare"], 180),
+      note: field(prompt, ["nota", "notă"], 300),
+    };
+
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType: "create_document_draft",
+        targetModule: "documents",
+        payload,
+        summary: "Creează documentul draft intern „" + title + "”",
+        facts: [
+          { label: "Status", value: "Draft intern" },
+          { label: "Titlu", value: title },
+          { label: "Categorie", value: payload.category },
+          { label: "Conținut", value: content.length + " caractere" },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
           ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
         ],

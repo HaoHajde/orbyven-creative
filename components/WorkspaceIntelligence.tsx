@@ -19,6 +19,7 @@ const QUICK_PROMPTS = [
   "Creează lucrare Revizie centrală; prioritate: urgent",
   "Programează o programare Revizie tehnică mâine la 10:30",
   "Creează deviz Renovare baie; poziție: Montaj, 1 x 1500 lei",
+  "Creează document Raport intervenție; conținut: Verificare finalizată fără probleme.",
   "Vreau să modific site-ul.",
 ];
 
@@ -191,7 +192,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             <header className="border-b border-[var(--border)] px-4 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.2</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.3</p>
                   <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.04em]">Ce vrei să rezolvăm?</h2>
                   <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
                     Un singur AI, specialiști diferiți. Poate pregăti acțiuni reale, dar le execută numai după confirmarea ta explicită.
@@ -312,7 +313,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   Trimite
                 </button>
               </div>
-              <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">0.8.2 Agent Actions · lead/client/lucrare/programare/deviz draft · fiecare modificare necesită confirmare explicită și este auditată.</p>
+              <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">0.8.3 Agent Actions · lead/client/lucrare/programare/deviz/document draft · fiecare modificare necesită confirmare explicită și este auditată.</p>
             </form>
           </section>
         </>
