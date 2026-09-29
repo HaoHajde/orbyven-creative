@@ -3,6 +3,7 @@ import { authenticateBillingActor, createBillingServiceClient } from "@/lib/bill
 import {
   parseMutationPrompt,
   type CalendarActionPayload,
+  type DocumentDraftActionPayload,
   type EstimateActionPayload,
   type LeadActionPayload,
   type TaskActionPayload,
@@ -55,10 +56,21 @@ function optionalText(value: unknown, max: number) {
   return clean ? clean.slice(0, max) : null;
 }
 
+function safeGeneratedFileName(value: string) {
+  const cleaned = value
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 100);
+  return cleaned || "document";
+}
+
 function actionModule(actionType: IntelligenceMutationType): OrbyvenModuleId {
   if (actionType === "create_lead" || actionType === "create_client") return "leads";
   if (actionType === "create_task") return "tasks";
   if (actionType === "create_estimate") return "estimates";
+  if (actionType === "create_document_draft") return "documents";
   return "calendar";
 }
 
@@ -215,6 +227,66 @@ async function resolveWorkContext(
   return {
     taskId: task.id,
     clientId: task.client_id || explicitClientId,
+  };
+}
+
+async function resolveEstimateContext(
+  organizationId: string,
+  estimateReference: string | null | undefined,
+  explicitTaskId: string | null,
+  explicitClientId: string | null
+): Promise<{ estimateId: string | null; taskId: string | null; clientId: string | null }> {
+  if (!estimateReference?.trim()) {
+    return { estimateId: null, taskId: explicitTaskId, clientId: explicitClientId };
+  }
+
+  const client = createBillingServiceClient();
+  const value = estimateReference.trim();
+  const [referenceResult, titleResult] = await Promise.all([
+    client.from("sales_estimates")
+      .select("id,reference,title,client_id,task_id")
+      .eq("organization_id", organizationId)
+      .ilike("reference", value)
+      .limit(5),
+    client.from("sales_estimates")
+      .select("id,reference,title,client_id,task_id")
+      .eq("organization_id", organizationId)
+      .ilike("title", value)
+      .limit(5),
+  ]);
+  if (referenceResult.error) throw referenceResult.error;
+  if (titleResult.error) throw titleResult.error;
+
+  const unique = new Map<string, {
+    id: string;
+    reference: string;
+    title: string;
+    client_id: string | null;
+    task_id: string | null;
+  }>();
+  for (const row of [...(referenceResult.data ?? []), ...(titleResult.data ?? [])]) {
+    unique.set(row.id, row);
+  }
+
+  const target = normalize(value);
+  const matches = [...unique.values()].filter(
+    (row) => normalize(row.reference) === target || normalize(row.title) === target
+  );
+  if (matches.length === 0) throw new Error("ESTIMATE_NOT_FOUND");
+  if (matches.length > 1) throw new Error("ESTIMATE_AMBIGUOUS");
+
+  const estimate = matches[0];
+  if (explicitTaskId && estimate.task_id && explicitTaskId !== estimate.task_id) {
+    throw new Error("ESTIMATE_TASK_MISMATCH");
+  }
+  if (explicitClientId && estimate.client_id && explicitClientId !== estimate.client_id) {
+    throw new Error("ESTIMATE_CLIENT_MISMATCH");
+  }
+
+  return {
+    estimateId: estimate.id,
+    taskId: estimate.task_id || explicitTaskId,
+    clientId: estimate.client_id || explicitClientId,
   };
 }
 
@@ -383,6 +455,69 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
   return { id: data, type: "sales_estimate", moduleId: "estimates" as const };
 }
 
+async function executeDocumentDraft(actor: BillingActor, payload: Record<string, unknown>) {
+  const client = createBillingServiceClient();
+  const input = payload as DocumentDraftActionPayload;
+  const title = requireText(input.title, "document_title", 180);
+  const content = requireText(input.content, "document_content", 900);
+  const allowedCategories = new Set(["general", "estimate", "contract", "other"]);
+  if (!allowedCategories.has(input.category)) throw new Error("INVALID_DOCUMENT_CATEGORY");
+
+  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
+  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const context = await resolveEstimateContext(
+    actor.organizationId,
+    input.estimateReference,
+    work.taskId,
+    work.clientId
+  );
+
+  const fileName = "DRAFT-" + safeGeneratedFileName(title) + ".txt";
+  const storagePath = actor.organizationId + "/generated/" + crypto.randomUUID() + "-" + fileName;
+  const draftBody =
+    "DRAFT — ORBYVEN\n" +
+    "Necesită verificare înainte de utilizare.\n\n" +
+    title + "\n\n" + content + "\n";
+  const encoded = new TextEncoder().encode(draftBody);
+
+  const { error: uploadError } = await client.storage
+    .from("orbyven-documents")
+    .upload(storagePath, encoded, {
+      contentType: "text/plain;charset=utf-8",
+      cacheControl: "3600",
+      upsert: false,
+    });
+  if (uploadError) throw uploadError;
+
+  const { data, error } = await client
+    .from("ops_documents")
+    .insert({
+      organization_id: actor.organizationId,
+      name: fileName,
+      category: input.category,
+      storage_path: storagePath,
+      mime_type: "text/plain",
+      size_bytes: encoded.byteLength,
+      client_id: context.clientId,
+      task_id: context.taskId,
+      estimate_id: context.estimateId,
+      note: "Draft creat prin ORBYVEN AI după confirmare explicită.",
+      created_by: actor.userId,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    const { error: cleanupError } = await client.storage
+      .from("orbyven-documents")
+      .remove([storagePath]);
+    if (cleanupError) console.error("ORBYVEN AI document cleanup failed", cleanupError.message);
+    throw error || new Error("DOCUMENT_CREATE_FAILED");
+  }
+
+  return { id: data.id as string, type: "ops_document", moduleId: "documents" as const };
+}
+
 async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow) {
   if (proposal.action_type === "create_lead" || proposal.action_type === "create_client") {
     return executeLead(actor, proposal.action_type, proposal.payload);
@@ -395,6 +530,9 @@ async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow
   }
   if (proposal.action_type === "create_estimate") {
     return executeEstimate(actor, proposal.payload);
+  }
+  if (proposal.action_type === "create_document_draft") {
+    return executeDocumentDraft(actor, proposal.payload);
   }
   throw new Error("UNSUPPORTED_ACTION");
 }

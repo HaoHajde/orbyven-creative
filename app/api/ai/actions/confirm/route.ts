@@ -14,7 +14,9 @@ function responseError(code: string) {
       "INVALID_ESTIMATE_TITLE","INVALID_ESTIMATE_ITEMS","INVALID_ESTIMATE_QUANTITY",
       "INVALID_ESTIMATE_UNIT_PRICE","INVALID_ESTIMATE_TAX","INVALID_ESTIMATE_VALID_UNTIL",
       "INVALID_ESTIMATE_CURRENCY","INVALID_ESTIMATE_DISCOUNT","INVALID_ESTIMATE_LABOR",
-      "INVALID_ESTIMATE_OTHER_COST"
+      "INVALID_ESTIMATE_OTHER_COST",
+      "ESTIMATE_NOT_FOUND","ESTIMATE_AMBIGUOUS","ESTIMATE_TASK_MISMATCH","ESTIMATE_CLIENT_MISMATCH",
+      "INVALID_DOCUMENT_TITLE","INVALID_DOCUMENT_CONTENT","INVALID_DOCUMENT_CATEGORY"
     ].includes(code) ? 409 :
     500;
 
@@ -29,6 +31,11 @@ function responseError(code: string) {
     code === "TASK_AMBIGUOUS" ? "Există mai multe lucrări cu acest titlu. Folosește titlul exact sau redenumește una dintre ele." :
     code === "TASK_CLIENT_MISMATCH" ? "Clientul indicat nu corespunde clientului legat deja de lucrare." :
     code.startsWith("INVALID_ESTIMATE_") ? "Devizul propus conține date invalide. Reformulează cererea cu poziții, cantități și prețuri explicite." :
+    code === "ESTIMATE_NOT_FOUND" ? "Devizul indicat nu a fost găsit exact în această firmă." :
+    code === "ESTIMATE_AMBIGUOUS" ? "Există mai multe devize cu această referință sau acest titlu. Folosește referința exactă." :
+    code === "ESTIMATE_TASK_MISMATCH" ? "Devizul indicat este legat de altă lucrare." :
+    code === "ESTIMATE_CLIENT_MISMATCH" ? "Devizul indicat este legat de alt client." :
+    code.startsWith("INVALID_DOCUMENT_") ? "Documentul draft conține date invalide. Furnizează titlu și conținut explicit." :
     status === 403 ? "Rolul tău nu permite această acțiune." :
     status === 401 ? "Sesiunea a expirat." :
     "Acțiunea ORBYVEN nu a putut fi executată.";
@@ -65,7 +72,9 @@ export async function POST(request: Request) {
       "INVALID_ESTIMATE_TITLE","INVALID_ESTIMATE_ITEMS","INVALID_ESTIMATE_QUANTITY",
       "INVALID_ESTIMATE_UNIT_PRICE","INVALID_ESTIMATE_TAX","INVALID_ESTIMATE_VALID_UNTIL",
       "INVALID_ESTIMATE_CURRENCY","INVALID_ESTIMATE_DISCOUNT","INVALID_ESTIMATE_LABOR",
-      "INVALID_ESTIMATE_OTHER_COST"
+      "INVALID_ESTIMATE_OTHER_COST",
+      "ESTIMATE_NOT_FOUND","ESTIMATE_AMBIGUOUS","ESTIMATE_TASK_MISMATCH","ESTIMATE_CLIENT_MISMATCH",
+      "INVALID_DOCUMENT_TITLE","INVALID_DOCUMENT_CONTENT","INVALID_DOCUMENT_CATEGORY"
     ].includes(code)) {
       console.error("ORBYVEN AI action failure", error);
     }
