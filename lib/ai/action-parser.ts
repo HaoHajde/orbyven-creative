@@ -29,6 +29,26 @@ export type CalendarActionPayload = {
   timeZone: string;
 };
 
+export type EstimateItemActionPayload = {
+  description: string;
+  quantity: number;
+  unitPriceLei: number;
+};
+
+export type EstimateActionPayload = {
+  title: string;
+  clientName?: string;
+  taskTitle?: string;
+  currency: "RON";
+  discountLei: number;
+  taxRate: number | null;
+  validUntil?: string;
+  notes?: string;
+  plannedLaborLei: number;
+  otherCostLei: number;
+  items: EstimateItemActionPayload[];
+};
+
 export type ParsedMutation =
   | {
       actionType: "create_lead" | "create_client";
@@ -50,6 +70,13 @@ export type ParsedMutation =
       payload: CalendarActionPayload;
       summary: string;
       facts: Array<{ label: string; value: string }>;
+    }
+  | {
+      actionType: "create_estimate";
+      targetModule: "estimates";
+      payload: EstimateActionPayload;
+      summary: string;
+      facts: Array<{ label: string; value: string }>;
     };
 
 export type MutationParseResult =
@@ -58,7 +85,7 @@ export type MutationParseResult =
   | { kind: "proposal"; proposal: ParsedMutation };
 
 const FIELD_LABELS =
-  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|locatie|locație|prioritate|titlu|durata|durată|reminder|memento";
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri";
 
 function normalize(value: string) {
   return value
@@ -107,6 +134,72 @@ function priorityFromPrompt(prompt: string): TaskActionPayload["priority"] {
   if (/\b(ridicat\w*|mare|high)\b/.test(source)) return "high";
   if (/\b(scazut\w*|mica|mic|low)\b/.test(source)) return "low";
   return "normal";
+}
+
+function numericField(prompt: string, labels: string[], max = 40): number | null {
+  const raw = field(prompt, labels, max);
+  if (!raw) return null;
+  const match = raw.replace(",", ".").match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const value = Number(match[0]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function estimateTitle(prompt: string) {
+  return field(prompt, ["titlu"], 180) || clean(
+    prompt.match(
+      /(?:creeaz[ăa]|adaug[ăa])\s+(?:un\s+|o\s+)?(?:deviz|ofert[ăa])\s*[:\-]?\s*([^,;\n]+)/i
+    )?.[1],
+    180
+  );
+}
+
+function estimateItems(prompt: string): EstimateItemActionPayload[] {
+  const rows = prompt
+    .split(/[;\n]+/)
+    .map((row) => row.trim())
+    .filter(Boolean);
+
+  const items: EstimateItemActionPayload[] = [];
+  for (const row of rows) {
+    const itemText = row.match(/^(?:pozitie|poziție|item)\s*:\s*(.+)$/i)?.[1]?.trim();
+    if (!itemText) continue;
+
+    const match = itemText.match(
+      /^(.+?)\s*[,|]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(?:lei|ron)?\s*$/i
+    );
+    if (!match) continue;
+
+    const description = clean(match[1], 500);
+    const quantity = Number(match[2].replace(",", "."));
+    const unitPriceLei = Number(match[3].replace(",", "."));
+    if (!description || !Number.isFinite(quantity) || quantity <= 0 ||
+        !Number.isFinite(unitPriceLei) || unitPriceLei < 0) continue;
+
+    items.push({ description, quantity, unitPriceLei });
+    if (items.length >= 50) break;
+  }
+  return items;
+}
+
+function estimateValidUntil(prompt: string): string | undefined {
+  const raw = field(prompt, ["valabil", "valabilitate"], 30);
+  if (!raw) return undefined;
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) {
+    return iso[1] + "-" + String(Number(iso[2])).padStart(2, "0") + "-" + String(Number(iso[3])).padStart(2, "0");
+  }
+  const ro = raw.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (!ro) return undefined;
+  return ro[3] + "-" + String(Number(ro[2])).padStart(2, "0") + "-" + String(Number(ro[1])).padStart(2, "0");
+}
+
+function ronValue(value: number) {
+  return new Intl.NumberFormat("ro-RO", {
+    style: "currency",
+    currency: "RON",
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function timezoneOffsetMs(date: Date, timeZone: string) {
@@ -355,6 +448,72 @@ export function parseMutationPrompt(
           { label: "Data", value: formatLocalDate(startAt, timeZone) },
           { label: "Durată", value: String(durationMinutes) + " min" },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+        ],
+      },
+    };
+  }
+
+  const estimateMatch = normalized.match(/\b(creeaza|adauga)\s+(?:un\s+|o\s+)?(deviz|oferta)\b/);
+  if (estimateMatch) {
+    const title = estimateTitle(prompt);
+    if (!title) {
+      return {
+        kind: "needs_details",
+        targetModule: "estimates",
+        message: "Spune-mi titlul devizului.",
+      };
+    }
+
+    const items = estimateItems(prompt);
+    if (!items.length) {
+      return {
+        kind: "needs_details",
+        targetModule: "estimates",
+        message: "Adaugă cel puțin o poziție explicită, de exemplu „poziție: Montaj centrală, 1 x 1500 lei”. ORBYVEN nu inventează prețuri.",
+      };
+    }
+
+    const discountLeiRaw = numericField(prompt, ["discount", "reducere"]);
+    const taxRateRaw = numericField(prompt, ["tva"]);
+    const plannedLaborRaw = numericField(prompt, ["manopera"]);
+    const otherCostsRaw = numericField(prompt, ["alte costuri"]);
+    const discountLei = Math.max(0, discountLeiRaw ?? 0);
+    const taxRate = taxRateRaw === null ? null : Math.min(100, Math.max(0, taxRateRaw));
+    const plannedLaborLei = Math.max(0, plannedLaborRaw ?? 0);
+    const otherCostLei = Math.max(0, otherCostsRaw ?? 0);
+    const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPriceLei, 0);
+    const discount = Math.min(subtotal, discountLei);
+    const tax = taxRate === null ? 0 : (subtotal - discount) * (taxRate / 100);
+    const total = Math.max(0, subtotal - discount + tax);
+
+    const payload: EstimateActionPayload = {
+      title,
+      clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare"], 180),
+      currency: "RON",
+      discountLei,
+      taxRate,
+      validUntil: estimateValidUntil(prompt),
+      notes: field(prompt, ["nota", "notă", "descriere"], 700),
+      plannedLaborLei,
+      otherCostLei,
+      items,
+    };
+
+    return {
+      kind: "proposal",
+      proposal: {
+        actionType: "create_estimate",
+        targetModule: "estimates",
+        payload,
+        summary: "Creează devizul draft „" + title + "”",
+        facts: [
+          { label: "Status", value: "Draft" },
+          { label: "Poziții", value: String(items.length) },
+          { label: "Subtotal", value: ronValue(subtotal) },
+          { label: "Total", value: ronValue(total) },
+          ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
         ],
       },
     };
