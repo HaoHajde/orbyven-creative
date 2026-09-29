@@ -388,7 +388,7 @@ export default function ClientWorkspace() {
                   onClick={() => openModule(definition.id, { create: true })}
                   className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
                 >
-                  <span>{definition.id === "leads" ? "Cerere nouă" : definition.id === "tasks" ? "Lucrare nouă" : definition.id === "calendar" ? "Programare nouă" : definition.id === "estimates" ? "Ofertă nouă" : "Cheltuială nouă"}</span>
+                  <span>{definition.id === "leads" ? "Cerere nouă" : definition.id === "tasks" ? "Lucrare nouă" : definition.id === "calendar" ? "Programare nouă" : definition.id === "estimates" ? "Ofertă nouă" : definition.id === "expenses" ? "Înregistrare financiară" : definition.shortName}</span>
                   <span aria-hidden="true" className="text-[var(--muted)]">→</span>
                 </button>
               ))}
