@@ -125,7 +125,7 @@ test("OpenAI Responses call is stateless, bounded and fail-open to canonical res
 test("Language layer sits after deterministic/context resolution and before persisted assistant answer", () => {
   const route = read("app/api/ai/intelligence/route.ts");
   const canonical = route.indexOf("const contextualResult");
-  const language = route.indexOf("maybePolishIntelligenceResponse");
+  const language = route.indexOf("const finalResult = await maybePolishIntelligenceResponse");
   const persisted = route.indexOf("persistAssistantResponse");
   assert.ok(canonical > 0);
   assert.ok(language > canonical);
