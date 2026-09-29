@@ -17,7 +17,8 @@ export type IntelligenceMutationType =
   | "create_lead"
   | "create_client"
   | "create_task"
-  | "create_calendar_event";
+  | "create_calendar_event"
+  | "create_estimate";
 
 export type IntelligenceAction =
   | {

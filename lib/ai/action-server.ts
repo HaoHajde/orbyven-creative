@@ -1,6 +1,12 @@
 import type { BillingActor } from "@/lib/billing/supabase-server";
 import { authenticateBillingActor, createBillingServiceClient } from "@/lib/billing/supabase-server";
-import { parseMutationPrompt, type CalendarActionPayload, type LeadActionPayload, type TaskActionPayload } from "@/lib/ai/action-parser";
+import {
+  parseMutationPrompt,
+  type CalendarActionPayload,
+  type EstimateActionPayload,
+  type LeadActionPayload,
+  type TaskActionPayload,
+} from "@/lib/ai/action-parser";
 import type { IntelligenceMutationType, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
@@ -52,6 +58,7 @@ function optionalText(value: unknown, max: number) {
 function actionModule(actionType: IntelligenceMutationType): OrbyvenModuleId {
   if (actionType === "create_lead" || actionType === "create_client") return "leads";
   if (actionType === "create_task") return "tasks";
+  if (actionType === "create_estimate") return "estimates";
   return "calendar";
 }
 
@@ -178,6 +185,48 @@ async function resolveClientId(
   throw new Error("CLIENT_AMBIGUOUS");
 }
 
+async function resolveWorkContext(
+  organizationId: string,
+  taskTitle: string | null | undefined,
+  explicitClientId: string | null
+): Promise<{ taskId: string | null; clientId: string | null }> {
+  if (!taskTitle?.trim()) return { taskId: null, clientId: explicitClientId };
+
+  const client = createBillingServiceClient();
+  const title = taskTitle.trim();
+  const { data, error } = await client
+    .from("ops_tasks")
+    .select("id,title,client_id,kind")
+    .eq("organization_id", organizationId)
+    .eq("kind", "work")
+    .ilike("title", title)
+    .limit(5);
+  if (error) throw error;
+
+  const target = normalize(title);
+  const matches = (data ?? []).filter((row) => normalize(row.title) === target);
+  if (matches.length === 0) throw new Error("TASK_NOT_FOUND");
+  if (matches.length > 1) throw new Error("TASK_AMBIGUOUS");
+
+  const task = matches[0];
+  if (explicitClientId && task.client_id && explicitClientId !== task.client_id) {
+    throw new Error("TASK_CLIENT_MISMATCH");
+  }
+  return {
+    taskId: task.id,
+    clientId: task.client_id || explicitClientId,
+  };
+}
+
+function leiToCents(value: unknown, field: string) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100_000_000) {
+    throw new Error("INVALID_" + field.toUpperCase());
+  }
+  const cents = Math.round(value * 100);
+  if (!Number.isSafeInteger(cents)) throw new Error("INVALID_" + field.toUpperCase());
+  return cents;
+}
+
 async function executeLead(
   actor: BillingActor,
   actionType: "create_lead" | "create_client",
@@ -275,6 +324,65 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
   return { id: data.id as string, type: "calendar_event", moduleId: "calendar" as const };
 }
 
+async function executeEstimate(actor: BillingActor, payload: Record<string, unknown>) {
+  const client = createBillingServiceClient();
+  const input = payload as EstimateActionPayload;
+  const title = requireText(input.title, "estimate_title", 180);
+  if (input.currency !== "RON") throw new Error("INVALID_ESTIMATE_CURRENCY");
+
+  if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 50) {
+    throw new Error("INVALID_ESTIMATE_ITEMS");
+  }
+
+  const items = input.items.map((item) => {
+    const description = requireText(item.description, "estimate_item", 500);
+    if (typeof item.quantity !== "number" || !Number.isFinite(item.quantity) ||
+        item.quantity <= 0 || item.quantity > 1_000_000) {
+      throw new Error("INVALID_ESTIMATE_QUANTITY");
+    }
+    return {
+      description,
+      quantity: item.quantity,
+      unit_price_cents: leiToCents(item.unitPriceLei, "estimate_unit_price"),
+    };
+  });
+
+  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
+  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+
+  const taxRate = input.taxRate === null
+    ? null
+    : typeof input.taxRate === "number" && Number.isFinite(input.taxRate) && input.taxRate >= 0 && input.taxRate <= 100
+      ? input.taxRate
+      : (() => { throw new Error("INVALID_ESTIMATE_TAX"); })();
+
+  const validUntil = input.validUntil
+    ? /^\d{4}-\d{2}-\d{2}$/.test(input.validUntil)
+      ? input.validUntil
+      : (() => { throw new Error("INVALID_ESTIMATE_VALID_UNTIL"); })()
+    : null;
+
+  const { data, error } = await client.rpc("ai_create_estimate_draft", {
+    p_organization_id: actor.organizationId,
+    p_actor_id: actor.userId,
+    p_title: title,
+    p_client_id: work.clientId,
+    p_task_id: work.taskId,
+    p_currency: "RON",
+    p_discount_cents: leiToCents(input.discountLei ?? 0, "estimate_discount"),
+    p_tax_rate: taxRate,
+    p_valid_until: validUntil,
+    p_notes: optionalText(input.notes, 700),
+    p_planned_labor_cents: leiToCents(input.plannedLaborLei ?? 0, "estimate_labor"),
+    p_other_cost_cents: leiToCents(input.otherCostLei ?? 0, "estimate_other_cost"),
+    p_items: items,
+  });
+  if (error || typeof data !== "string") {
+    throw error || new Error("ESTIMATE_CREATE_FAILED");
+  }
+  return { id: data, type: "sales_estimate", moduleId: "estimates" as const };
+}
+
 async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow) {
   if (proposal.action_type === "create_lead" || proposal.action_type === "create_client") {
     return executeLead(actor, proposal.action_type, proposal.payload);
@@ -284,6 +392,9 @@ async function executeClaimedProposal(actor: BillingActor, proposal: ProposalRow
   }
   if (proposal.action_type === "create_calendar_event") {
     return executeCalendar(actor, proposal.payload);
+  }
+  if (proposal.action_type === "create_estimate") {
+    return executeEstimate(actor, proposal.payload);
   }
   throw new Error("UNSUPPORTED_ACTION");
 }
