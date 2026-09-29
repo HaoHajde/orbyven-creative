@@ -4,6 +4,7 @@ import BrandLogo from "@/components/BrandLogo";
 import WorkspaceOrbitBackground from "@/components/WorkspaceOrbitBackground";
 import WorkspaceContent from "@/components/WorkspaceContent";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
+import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -277,6 +278,14 @@ export default function ClientWorkspace() {
               </button>
             )}
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
+            <WorkspaceActivityCenter
+              organizationId={workspace.organization.id}
+              locale={locale}
+              timeZone={timeZone}
+              role={workspace.membership.role}
+              enabledModules={enabledModules}
+              onOpenModule={openModule}
+            />
             <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
             <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm">{initials || "OR"}</button>
           </div>
