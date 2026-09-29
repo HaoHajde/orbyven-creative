@@ -15,7 +15,9 @@ type Props = {
 const QUICK_PROMPTS = [
   "Ce am de făcut azi?",
   "Ce am de încasat?",
-  "Cum stau lucrările?",
+  "Creează lead Ana Popescu; telefon: 0712345678",
+  "Creează lucrare Revizie centrală; prioritate: urgent",
+  "Programează o programare Revizie tehnică mâine la 10:30",
   "Vreau să modific site-ul.",
 ];
 
@@ -33,6 +35,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState<IntelligenceResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [proposalBusy, setProposalBusy] = useState(false);
   const [error, setError] = useState("");
 
   const canSend = useMemo(() => prompt.trim().length >= 2 && !loading, [prompt, loading]);
@@ -76,7 +79,74 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     void ask();
   };
 
+  const decideProposal = async (
+    action: Extract<IntelligenceResponse["actions"][number], { kind: "confirm_proposal" }>,
+    decision: "confirm" | "reject"
+  ) => {
+    if (proposalBusy) return;
+    setProposalBusy(true);
+    setError("");
+    try {
+      const { data, error: sessionError } = await orbyvenSupabase.auth.getSession();
+      if (sessionError || !data.session?.access_token) throw new Error("Sesiunea a expirat. Reautentifică-te.");
+
+      const result = await fetch("/api/ai/actions/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({
+          organizationId,
+          proposalId: action.proposalId,
+          decision,
+        }),
+      });
+      const body = (await result.json()) as {
+        error?: string;
+        message?: string;
+        status?: "executed" | "rejected";
+        result?: { type: string; id: string; moduleId: OrbyvenModuleId };
+      };
+      if (!result.ok) throw new Error(body.error || "Acțiunea nu a putut fi procesată.");
+
+      if (body.status === "rejected") {
+        setResponse({
+          specialist: "operations",
+          answer: body.message || "Acțiunea a fost anulată.",
+          facts: [{ label: "Status", value: "Anulată" }],
+          actions: [],
+          generatedBy: "orbyven_core",
+        });
+        return;
+      }
+
+      const created = body.result;
+      setResponse({
+        specialist: "operations",
+        answer: body.message || "Acțiunea a fost executată.",
+        facts: [{ label: "Status", value: "Creat cu confirmare" }],
+        actions: created ? [{
+          kind: "open_module",
+          label: "Deschide înregistrarea",
+          moduleId: created.moduleId,
+          recordId: created.id,
+        }] : [],
+        generatedBy: "orbyven_core",
+      });
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Acțiunea nu a putut fi procesată.");
+    } finally {
+      setProposalBusy(false);
+    }
+  };
+
   const runAction = (action: IntelligenceResponse["actions"][number]) => {
+    if (action.kind === "confirm_proposal") {
+      void decideProposal(action, "confirm");
+      return;
+    }
     setOpen(false);
     if (action.kind === "open_path") {
       router.push(action.href);
@@ -120,10 +190,10 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             <header className="border-b border-[var(--border)] px-4 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.1</p>
                   <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.04em]">Ce vrei să rezolvăm?</h2>
                   <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
-                    Un singur AI, specialiști diferiți. Momentan citește și te direcționează; nu modifică date fără confirmare.
+                    Un singur AI, specialiști diferiți. Poate pregăti acțiuni reale, dar le execută numai după confirmarea ta explicită.
                   </p>
                 </div>
                 <button type="button" onClick={() => setOpen(false)} className="text-lg text-[var(--muted)]">×</button>
@@ -180,15 +250,40 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   ) : null}
 
                   {response.actions.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {response.actions.map((action, index) => (
+                    <div className="mt-4 grid gap-2">
+                      {response.actions.map((action, index) => action.kind === "confirm_proposal" ? (
+                        <div key={action.proposalId} className="rounded-[14px] border border-amber-400/20 bg-amber-400/[0.06] p-3">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
+                          <p className="mt-1 text-[9px] leading-4 text-[var(--muted)]">
+                            Propunerea expiră automat dacă nu este confirmată. O singură confirmare poate executa acțiunea.
+                          </p>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              disabled={proposalBusy}
+                              onClick={() => void decideProposal(action, "confirm")}
+                              className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+                            >
+                              {proposalBusy ? "Se execută…" : action.label}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={proposalBusy}
+                              onClick={() => void decideProposal(action, "reject")}
+                              className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold disabled:opacity-40"
+                            >
+                              Renunță
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
                         <button
                           key={`${action.kind}-${index}`}
                           type="button"
                           onClick={() => runAction(action)}
                           className={index === 0
-                            ? "rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)]"
-                            : "rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold"}
+                            ? "w-fit rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)]"
+                            : "w-fit rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold"}
                         >
                           {action.label}
                         </button>
@@ -216,7 +311,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   Trimite
                 </button>
               </div>
-              <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">0.8 Core · read-only · acțiunile de scriere vin cu confirmare explicită într-o etapă ulterioară.</p>
+              <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">0.8.1 Agent Actions · write controlat · fiecare modificare necesită confirmare explicită și este auditată.</p>
             </form>
           </section>
         </>

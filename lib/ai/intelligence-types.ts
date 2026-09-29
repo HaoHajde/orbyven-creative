@@ -13,6 +13,12 @@ export type IntelligenceIntent = {
   normalizedPrompt: string;
 };
 
+export type IntelligenceMutationType =
+  | "create_lead"
+  | "create_client"
+  | "create_task"
+  | "create_calendar_event";
+
 export type IntelligenceAction =
   | {
       kind: "open_module";
@@ -27,6 +33,14 @@ export type IntelligenceAction =
       kind: "open_path";
       label: string;
       href: string;
+    }
+  | {
+      kind: "confirm_proposal";
+      label: string;
+      proposalId: string;
+      actionType: IntelligenceMutationType;
+      expiresAt: string;
+      targetModule: OrbyvenModuleId;
     };
 
 export type IntelligenceResponse = {
