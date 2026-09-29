@@ -7,6 +7,7 @@ import {
   SITE_PRESETS,
   SITE_PRESET_LABELS,
   SECTION_LABELS,
+  readSiteDraft,
   type EditableSite,
   type SitePresetId,
 } from "@/lib/ai/site-editor";
@@ -51,13 +52,8 @@ export default function WebDesignSpecialist() {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === "object") {
-          const preset = typeof parsed.preset === "string" && parsed.preset in SITE_PRESETS
-            ? parsed.preset as SitePresetId
-            : "studio";
-          setDraft({ ...SITE_PRESETS[preset], ...parsed });
-        }
+        const parsed = readSiteDraft(JSON.parse(saved));
+        if (parsed) setDraft(parsed);
       }
     } catch (error) {
       console.warn("ORBYVEN Web Design draft could not be restored", error);
@@ -69,7 +65,7 @@ export default function WebDesignSpecialist() {
   useEffect(() => {
     if (!hydrated || !authorized) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [draft, hydrated]);
+  }, [draft, hydrated, authorized]);
 
   const visibleSections = useMemo(
     () => draft.sectionOrder.filter((section) => !draft.hiddenSections.includes(section)),
