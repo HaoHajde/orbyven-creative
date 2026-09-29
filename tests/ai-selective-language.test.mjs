@@ -126,7 +126,7 @@ test("Language layer sits after deterministic/context resolution and before pers
   const route = read("app/api/ai/intelligence/route.ts");
   const canonical = route.indexOf("const contextualResult");
   const language = route.indexOf("const finalResult = await maybePolishIntelligenceResponse");
-  const persisted = route.indexOf("persistAssistantResponse");
+  const persisted = route.indexOf("await persistAssistantResponse(actor, conversation.id, finalResult)");
   assert.ok(canonical > 0);
   assert.ok(language > canonical);
   assert.ok(persisted > language);
