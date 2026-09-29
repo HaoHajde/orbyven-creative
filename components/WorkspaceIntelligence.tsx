@@ -1,15 +1,30 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
+import type { IntelligenceResponse, IntelligenceSpecialist } from "@/lib/ai/intelligence-types";
 
 type Props = {
   organizationId: string;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+};
+
+type ConversationSummary = {
+  id: string;
+  title: string;
+  updatedAt: string;
+};
+
+type UiMessage = {
+  key: string;
+  role: "user" | "assistant";
+  content: string;
+  specialist: IntelligenceSpecialist | null;
+  facts: Array<{ label: string; value: string }>;
+  actions: IntelligenceResponse["actions"];
 };
 
 const QUICK_PROMPTS = [
@@ -23,7 +38,7 @@ const QUICK_PROMPTS = [
   "Vreau să modific site-ul.",
 ];
 
-const specialistLabels: Record<IntelligenceResponse["specialist"], string> = {
+const specialistLabels: Record<IntelligenceSpecialist, string> = {
   operations: "Operations",
   finance: "Finance",
   web_design: "Web Design",
@@ -35,39 +50,161 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState<IntelligenceResponse | null>(null);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proposalBusy, setProposalBusy] = useState(false);
   const [error, setError] = useState("");
+  const messageSequence = useRef(0);
+
+  const nextLocalKey = (prefix: string) => {
+    messageSequence.current += 1;
+    return `${prefix}-${messageSequence.current}`;
+  };
 
   const canSend = useMemo(() => prompt.trim().length >= 2 && !loading, [prompt, loading]);
+
+  const accessToken = async () => {
+    const { data, error: sessionError } = await orbyvenSupabase.auth.getSession();
+    if (sessionError || !data.session?.access_token) {
+      throw new Error("Sesiunea a expirat. Reautentifică-te.");
+    }
+    return data.session.access_token;
+  };
+
+  const loadConversations = async () => {
+    setHistoryLoading(true);
+    try {
+      const token = await accessToken();
+      const response = await fetch(
+        `/api/ai/conversations?organizationId=${encodeURIComponent(organizationId)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }
+      );
+      const body = (await response.json()) as { conversations?: ConversationSummary[]; error?: string };
+      if (!response.ok) throw new Error(body.error || "Istoricul nu a putut fi încărcat.");
+      setConversations(body.conversations ?? []);
+    } catch (reason) {
+      console.error(reason);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => void loadConversations(), 0);
+    return () => window.clearTimeout(timer);
+    // organizationId is stable for the mounted workspace; reopening refreshes history.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, organizationId]);
+
+  const newConversation = () => {
+    setConversationId(null);
+    setMessages([]);
+    setPrompt("");
+    setError("");
+    setHistoryOpen(false);
+  };
+
+  const loadConversation = async (id: string) => {
+    if (historyLoading) return;
+    setHistoryLoading(true);
+    setError("");
+    try {
+      const token = await accessToken();
+      const response = await fetch(
+        `/api/ai/conversations?organizationId=${encodeURIComponent(organizationId)}&conversationId=${encodeURIComponent(id)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }
+      );
+      const body = (await response.json()) as {
+        conversation?: ConversationSummary;
+        messages?: Array<{
+          id: string;
+          role: "user" | "assistant";
+          specialist: IntelligenceSpecialist | null;
+          content: string;
+          facts: Array<{ label: string; value: string }>;
+        }>;
+        error?: string;
+      };
+      if (!response.ok || !body.conversation) {
+        throw new Error(body.error || "Conversația nu a putut fi încărcată.");
+      }
+      setConversationId(body.conversation.id);
+      setMessages((body.messages ?? []).map((item) => ({
+        key: item.id,
+        role: item.role,
+        content: item.content,
+        specialist: item.specialist,
+        facts: item.facts ?? [],
+        actions: [],
+      })));
+      setHistoryOpen(false);
+      setPrompt("");
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Conversația nu a putut fi încărcată.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const ask = async (value?: string) => {
     const requestPrompt = (value ?? prompt).trim();
     if (requestPrompt.length < 2 || loading) return;
 
-    setPrompt(requestPrompt);
+    const localUserKey = nextLocalKey("user");
+    setMessages((current) => [...current, {
+      key: localUserKey,
+      role: "user",
+      content: requestPrompt,
+      specialist: null,
+      facts: [],
+      actions: [],
+    }]);
+    setPrompt("");
     setLoading(true);
     setError("");
 
     try {
-      const { data, error: sessionError } = await orbyvenSupabase.auth.getSession();
-      if (sessionError || !data.session?.access_token) {
-        throw new Error("Sesiunea a expirat. Reautentifică-te.");
-      }
-
+      const token = await accessToken();
       const result = await fetch("/api/ai/intelligence", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${data.session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ organizationId, prompt: requestPrompt }),
+        body: JSON.stringify({
+          organizationId,
+          prompt: requestPrompt,
+          conversationId,
+        }),
       });
 
-      const body = (await result.json()) as IntelligenceResponse & { error?: string };
+      const body = (await result.json()) as IntelligenceResponse & {
+        conversationId?: string;
+        error?: string;
+      };
       if (!result.ok) throw new Error(body.error || "ORBYVEN Intelligence nu a răspuns.");
-      setResponse(body);
+      if (body.conversationId) setConversationId(body.conversationId);
+      setMessages((current) => [...current, {
+        key: nextLocalKey("assistant"),
+        role: "assistant",
+        content: body.answer,
+        specialist: body.specialist,
+        facts: body.facts,
+        actions: body.actions,
+      }]);
+      void loadConversations();
     } catch (reason) {
       console.error(reason);
       setError(reason instanceof Error ? reason.message : "ORBYVEN Intelligence nu a răspuns.");
@@ -81,6 +218,15 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     void ask();
   };
 
+  const clearProposalAction = (proposalId: string) => {
+    setMessages((current) => current.map((message) => ({
+      ...message,
+      actions: message.actions.filter(
+        (action) => action.kind !== "confirm_proposal" || action.proposalId !== proposalId
+      ),
+    })));
+  };
+
   const decideProposal = async (
     action: Extract<IntelligenceResponse["actions"][number], { kind: "confirm_proposal" }>,
     decision: "confirm" | "reject"
@@ -89,14 +235,12 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     setProposalBusy(true);
     setError("");
     try {
-      const { data, error: sessionError } = await orbyvenSupabase.auth.getSession();
-      if (sessionError || !data.session?.access_token) throw new Error("Sesiunea a expirat. Reautentifică-te.");
-
+      const token = await accessToken();
       const result = await fetch("/api/ai/actions/confirm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${data.session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           organizationId,
@@ -112,30 +256,27 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
       };
       if (!result.ok) throw new Error(body.error || "Acțiunea nu a putut fi procesată.");
 
-      if (body.status === "rejected") {
-        setResponse({
-          specialist: "operations",
-          answer: body.message || "Acțiunea a fost anulată.",
-          facts: [{ label: "Status", value: "Anulată" }],
-          actions: [],
-          generatedBy: "orbyven_core",
-        });
-        return;
-      }
-
+      clearProposalAction(action.proposalId);
       const created = body.result;
-      setResponse({
+      setMessages((current) => [...current, {
+        key: nextLocalKey("decision"),
+        role: "assistant",
         specialist: "operations",
-        answer: body.message || "Acțiunea a fost executată.",
-        facts: [{ label: "Status", value: "Creat cu confirmare" }],
+        content: body.message || (body.status === "rejected"
+          ? "Acțiunea a fost anulată."
+          : "Acțiunea a fost executată."),
+        facts: [{
+          label: "Status",
+          value: body.status === "rejected" ? "Anulată" : "Creat cu confirmare",
+        }],
         actions: created ? [{
           kind: "open_module",
           label: "Deschide înregistrarea",
           moduleId: created.moduleId,
           recordId: created.id,
         }] : [],
-        generatedBy: "orbyven_core",
-      });
+      }]);
+      void loadConversations();
     } catch (reason) {
       console.error(reason);
       setError(reason instanceof Error ? reason.message : "Acțiunea nu a putut fi procesată.");
@@ -160,6 +301,51 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
       taskId: action.taskId,
       estimateId: action.estimateId,
     });
+  };
+
+  const renderAssistantActions = (actions: IntelligenceResponse["actions"]) => {
+    if (!actions.length) return null;
+    return (
+      <div className="mt-3 grid gap-2">
+        {actions.map((action, index) => action.kind === "confirm_proposal" ? (
+          <div key={action.proposalId} className="rounded-[14px] border border-amber-400/20 bg-amber-400/[0.06] p-3">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
+            <p className="mt-1 text-[9px] leading-4 text-[var(--muted)]">
+              Propunerea expiră automat și poate fi executată o singură dată. Nu va reapărea ca acțiune în istoricul salvat.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={proposalBusy}
+                onClick={() => void decideProposal(action, "confirm")}
+                className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+              >
+                {proposalBusy ? "Se execută…" : action.label}
+              </button>
+              <button
+                type="button"
+                disabled={proposalBusy}
+                onClick={() => void decideProposal(action, "reject")}
+                className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold disabled:opacity-40"
+              >
+                Renunță
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            key={`${action.kind}-${index}`}
+            type="button"
+            onClick={() => runAction(action)}
+            className={index === 0
+              ? "w-fit rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)]"
+              : "w-fit rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold"}
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -187,134 +373,149 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
           <section
             role="dialog"
             aria-label="ORBYVEN Intelligence"
-            className="fixed bottom-3 left-3 right-3 z-[92] flex max-h-[78vh] flex-col overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_32px_110px_rgba(0,0,0,0.36)] sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:w-[430px]"
+            className="fixed bottom-3 left-3 right-3 z-[92] flex max-h-[82vh] flex-col overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_32px_110px_rgba(0,0,0,0.36)] sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:w-[460px]"
           >
             <header className="border-b border-[var(--border)] px-4 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.3</p>
-                  <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.04em]">Ce vrei să rezolvăm?</h2>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.4</p>
+                  <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
+                    {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
+                  </h2>
                   <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
-                    Un singur AI, specialiști diferiți. Poate pregăti acțiuni reale, dar le execută numai după confirmarea ta explicită.
+                    Thread-urile sunt private pentru contul tău în această firmă și se sincronizează între device-uri.
                   </p>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} className="text-lg text-[var(--muted)]">×</button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={newConversation}
+                    className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                  >
+                    + Nou
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen((current) => !current)}
+                    className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                  >
+                    Istoric
+                  </button>
+                  <button type="button" onClick={() => setOpen(false)} className="px-1 text-lg text-[var(--muted)]">×</button>
+                </div>
               </div>
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              {!response && !loading ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {QUICK_PROMPTS.map((item) => (
+              {historyOpen ? (
+                <div className="grid gap-2">
+                  {historyLoading ? (
+                    <p className="py-6 text-center text-[10px] text-[var(--muted)]">Se încarcă istoricul…</p>
+                  ) : conversations.length ? conversations.map((item) => (
                     <button
-                      key={item}
+                      key={item.id}
                       type="button"
-                      onClick={() => void ask(item)}
-                      className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[10px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+                      onClick={() => void loadConversation(item.id)}
+                      className={`rounded-[13px] border px-3 py-3 text-left transition ${
+                        item.id === conversationId
+                          ? "border-[#7897ff]/35 bg-[#7897ff]/[0.08]"
+                          : "border-[var(--border)] bg-[var(--surface-2)]/55 hover:border-[var(--border-strong)]"
+                      }`}
                     >
-                      {item}
+                      <span className="block truncate text-[10px] font-semibold">{item.title}</span>
+                      <span className="mt-1 block text-[9px] text-[var(--muted-2)]">
+                        {new Intl.DateTimeFormat("ro-RO", {
+                          day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                        }).format(new Date(item.updatedAt))}
+                      </span>
                     </button>
-                  ))}
+                  )) : (
+                    <p className="py-6 text-center text-[10px] text-[var(--muted)]">Nu ai încă discuții salvate.</p>
+                  )}
                 </div>
-              ) : null}
-
-              {loading ? (
-                <div role="status" className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-7 text-center">
-                  <div className="mx-auto h-6 w-6 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
-                  <p className="mt-3 text-[10px] text-[var(--muted)]">Analizez workspace-ul firmei…</p>
-                </div>
-              ) : null}
-
-              {error ? (
-                <p role="alert" className="rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[10px] leading-4 text-rose-300">{error}</p>
-              ) : null}
-
-              {response && !loading ? (
-                <article>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[9px] font-bold text-[#aab9ff]">
-                      {specialistLabels[response.specialist]}
-                    </span>
-                    <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN Core</span>
-                  </div>
-
-                  <p className="mt-3 text-[13px] leading-6 text-[var(--text)]">{response.answer}</p>
-
-                  {response.facts.length ? (
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      {response.facts.map((fact) => (
-                        <div key={fact.label} className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
-                          <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--muted-2)]">{fact.label}</p>
-                          <p className="mt-1 text-[12px] font-semibold">{fact.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {response.actions.length ? (
-                    <div className="mt-4 grid gap-2">
-                      {response.actions.map((action, index) => action.kind === "confirm_proposal" ? (
-                        <div key={action.proposalId} className="rounded-[14px] border border-amber-400/20 bg-amber-400/[0.06] p-3">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
-                          <p className="mt-1 text-[9px] leading-4 text-[var(--muted)]">
-                            Propunerea expiră automat dacă nu este confirmată. O singură confirmare poate executa acțiunea.
-                          </p>
-                          <div className="mt-3 flex gap-2">
-                            <button
-                              type="button"
-                              disabled={proposalBusy}
-                              onClick={() => void decideProposal(action, "confirm")}
-                              className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-40"
-                            >
-                              {proposalBusy ? "Se execută…" : action.label}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={proposalBusy}
-                              onClick={() => void decideProposal(action, "reject")}
-                              className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold disabled:opacity-40"
-                            >
-                              Renunță
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
+              ) : (
+                <>
+                  {!messages.length && !loading ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {QUICK_PROMPTS.map((item) => (
                         <button
-                          key={`${action.kind}-${index}`}
+                          key={item}
                           type="button"
-                          onClick={() => runAction(action)}
-                          className={index === 0
-                            ? "w-fit rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)]"
-                            : "w-fit rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold"}
+                          onClick={() => void ask(item)}
+                          className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[10px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
                         >
-                          {action.label}
+                          {item}
                         </button>
                       ))}
                     </div>
                   ) : null}
-                </article>
+
+                  <div className="grid gap-3">
+                    {messages.map((message) => message.role === "user" ? (
+                      <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[11px] leading-5 text-[var(--button-text)]">
+                        {message.content}
+                      </div>
+                    ) : (
+                      <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[8px] font-bold text-[#aab9ff]">
+                            {specialistLabels[message.specialist || "general"]}
+                          </span>
+                          <span className="text-[8px] text-[var(--muted-2)]">ORBYVEN</span>
+                        </div>
+                        <p className="mt-2.5 text-[12px] leading-5 text-[var(--text)]">{message.content}</p>
+                        {message.facts.length ? (
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {message.facts.map((fact, index) => (
+                              <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
+                                <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
+                                <p className="mt-1 text-[10px] font-semibold">{fact.value}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {renderAssistantActions(message.actions)}
+                      </article>
+                    ))}
+
+                    {loading ? (
+                      <div role="status" className="mr-16 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-5 text-center">
+                        <div className="mx-auto h-5 w-5 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
+                        <p className="mt-2 text-[9px] text-[var(--muted)]">Analizez workspace-ul firmei…</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              )}
+
+              {error ? (
+                <p role="alert" className="mt-3 rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[10px] leading-4 text-rose-300">{error}</p>
               ) : null}
             </div>
 
-            <form onSubmit={submit} className="border-t border-[var(--border)] p-3">
-              <div className="flex items-end gap-2 rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface-2)]/70 p-2">
-                <textarea
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
-                  rows={1}
-                  placeholder="Întreabă ORBYVEN…"
-                  className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 outline-none placeholder:text-[var(--muted-2)]"
-                />
-                <button
-                  type="submit"
-                  disabled={!canSend}
-                  className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-35"
-                >
-                  Trimite
-                </button>
-              </div>
-              <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">0.8.3 Agent Actions · lead/client/lucrare/programare/deviz/document draft · fiecare modificare necesită confirmare explicită și este auditată.</p>
-            </form>
+            {!historyOpen ? (
+              <form onSubmit={submit} className="border-t border-[var(--border)] p-3">
+                <div className="flex items-end gap-2 rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface-2)]/70 p-2">
+                  <textarea
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
+                    rows={1}
+                    placeholder="Întreabă ORBYVEN…"
+                    className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 outline-none placeholder:text-[var(--muted-2)]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!canSend}
+                    className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-35"
+                  >
+                    Trimite
+                  </button>
+                </div>
+                <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
+                  0.8.4 Memory · mesajele se păstrează server-side; propunerile Agent Actions expirate nu pot fi relansate din istoric.
+                </p>
+              </form>
+            ) : null}
           </section>
         </>
       ) : null}

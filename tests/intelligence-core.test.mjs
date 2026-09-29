@@ -58,5 +58,7 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   const route = read("app/api/ai/intelligence/route.ts");
   assert.match(route, /prompt\.length < 2 \|\| prompt\.length > 1200/);
   assert.match(route, /Cache-Control": "no-store"/);
-  assert.match(route, /answerIntelligenceRequest/);
+  assert.match(route, /answerIntelligenceForActor/);
+  assert.match(route, /ensureConversation/);
+  assert.match(route, /persistAssistantResponse/);
 });

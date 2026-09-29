@@ -341,14 +341,13 @@ async function generalResponse(actor: BillingActor, available: Set<OrbyvenModule
   };
 }
 
-export async function answerIntelligenceRequest(
-  request: Request,
-  organizationId: string,
-  prompt: string
+export async function answerIntelligenceForActor(
+  actor: BillingActor,
+  prompt: string,
+  conversationId: string | null = null
 ): Promise<IntelligenceResponse> {
-  const actor = await authenticateBillingActor(request, organizationId, false);
   const available = await loadAvailableModules(actor);
-  const mutation = await createMutationIntelligenceResponse(actor, available, prompt);
+  const mutation = await createMutationIntelligenceResponse(actor, available, prompt, conversationId);
   if (mutation) return mutation;
 
   const intent = routeIntelligencePrompt(prompt);
@@ -365,6 +364,16 @@ export async function answerIntelligenceRequest(
     default:
       return generalResponse(actor, available);
   }
+}
+
+export async function answerIntelligenceRequest(
+  request: Request,
+  organizationId: string,
+  prompt: string,
+  conversationId: string | null = null
+): Promise<IntelligenceResponse> {
+  const actor = await authenticateBillingActor(request, organizationId, false);
+  return answerIntelligenceForActor(actor, prompt, conversationId);
 }
 
 export function intelligenceSpecialistLabel(value: IntelligenceSpecialist) {
