@@ -4,19 +4,29 @@ export type LanguagePolicyResponse = {
 };
 
 const LANGUAGE_TRIGGER =
-  /\b(explica|explică|analiz\w*|rezum\w*|priorit\w*|recomand\w*|de ce|cum ar trebui|ce inseamna|ce înseamnă|ajuta-ma|ajută-mă|interpreteaz\w*|pe scurt)\b/i;
+  /\b(explica|analiz\w*|rezum\w*|priorit\w*|recomand\w*|de ce|cum ar trebui|ce inseamna|ajuta-ma|interpreteaz\w*|pe scurt)\b/;
 
 const MUTATION_VERB =
-  /\b(creeaza|creează|adauga|adaugă|inregistreaza|înregistrează|programeaza|programează)\b/i;
+  /\b(creeaza|adauga|inregistreaza|programeaza)\b/;
+
+function normalizePrompt(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
 
 export function shouldUseLanguageLayer(
   prompt: string,
   response: LanguagePolicyResponse
 ) {
-  if (MUTATION_VERB.test(prompt)) return false;
+  const normalized = normalizePrompt(prompt);
+  if (MUTATION_VERB.test(normalized)) return false;
   if (response.specialist === "web_design") return false;
   if (response.actions.some((action) => action.kind === "confirm_proposal")) return false;
-  return response.specialist === "general" || LANGUAGE_TRIGGER.test(prompt);
+  return response.specialist === "general" || LANGUAGE_TRIGGER.test(normalized);
 }
 
 function normalizedNumbers(value: string) {
