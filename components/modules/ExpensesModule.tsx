@@ -332,6 +332,7 @@ export default function ExpensesModule({
         note: incomeForm.note,
         clientId: incomeForm.clientId || null,
         taskId: incomeForm.taskId || null,
+        estimateId: incomeForm.invoiceId ? null : (initialEstimateId || null),
         commercialDocumentId: incomeForm.invoiceId || null,
       });
       setIncomeForm(emptyIncomeForm());
