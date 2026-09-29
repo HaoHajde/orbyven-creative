@@ -193,6 +193,7 @@ export async function loadOverviewSnapshot(
       ? readAllPages<{ amount_cents: number }>((from, to) =>
           orbyvenSupabase.from("finance_expenses").select("amount_cents")
             .eq("organization_id", organizationId)
+            .eq("currency", "RON")
             .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
             .order("occurred_on").order("id").range(from, to))
       : Promise.resolve([] as { amount_cents: number }[]),
