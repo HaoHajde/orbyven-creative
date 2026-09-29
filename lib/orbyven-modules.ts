@@ -99,13 +99,13 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
   },
   {
     id: "expenses",
-    name: "Cheltuieli",
-    shortName: "Cheltuieli",
-    description: "Costuri operaționale legate de client, lucrare și document justificativ.",
+    name: "Finanțe",
+    shortName: "Finanțe",
+    description: "Încasări, cheltuieli, scadențe și cashflow operațional legate de client și lucrare.",
     category: "finance",
     color: "#b42318",
     accent: "#fff0ee",
-    features: ["Cheltuieli", "Categorii", "Rezumat lunar"],
+    features: ["Cheltuieli", "Încasări", "Scadențe & cashflow"],
   },
   {
     id: "thermal",

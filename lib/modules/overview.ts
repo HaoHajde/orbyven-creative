@@ -50,6 +50,7 @@ export type OverviewSnapshot = {
   taskStages: Record<"planned" | "in_progress" | "blocked" | "done" | "cancelled", number>;
   trendDates: { leads: string[]; tasks: string[]; estimates: string[] };
   monthExpensesCents: number;
+  monthIncomeCents: number;
   attentionHasMore: boolean;
   documentCount: number;
   activeTeamCount: number;
@@ -121,7 +122,7 @@ export async function loadOverviewSnapshot(
     recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
     blockedTasks, scheduledNearTasks, dueNearTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
-    events, monthExpenseRows, documentCount, activeTeamCount,
+    events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount,
   ] = await Promise.all([
     countRows(orbyvenSupabase.from("crm_leads").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)),
@@ -192,6 +193,15 @@ export async function loadOverviewSnapshot(
       ? readAllPages<{ amount_cents: number }>((from, to) =>
           orbyvenSupabase.from("finance_expenses").select("amount_cents")
             .eq("organization_id", organizationId)
+            .eq("currency", "RON")
+            .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
+            .order("occurred_on").order("id").range(from, to))
+      : Promise.resolve([] as { amount_cents: number }[]),
+    canAccessFinances
+      ? readAllPages<{ amount_cents: number }>((from, to) =>
+          orbyvenSupabase.from("finance_income_entries").select("amount_cents")
+            .eq("organization_id", organizationId)
+            .eq("currency", "RON")
             .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
             .order("occurred_on").order("id").range(from, to))
       : Promise.resolve([] as { amount_cents: number }[]),
@@ -229,6 +239,7 @@ export async function loadOverviewSnapshot(
       estimates: estimateTrend.map((row) => row.created_at),
     },
     monthExpensesCents: monthExpenseRows.reduce((sum, row) => sum + Number(row.amount_cents), 0),
+    monthIncomeCents: monthIncomeRows.reduce((sum, row) => sum + Number(row.amount_cents), 0),
     attentionHasMore: [overdueLeads, overdueTasks, urgentTasks, blockedTasks, staleEstimates]
       .some((result) => (result.data?.length ?? 0) > ATTENTION_LIMIT),
     documentCount,

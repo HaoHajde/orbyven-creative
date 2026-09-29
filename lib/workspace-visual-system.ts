@@ -1,6 +1,6 @@
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
-export const WORKSPACE_UI_REVISION = "2026.09.28.1";
+export const WORKSPACE_UI_REVISION = "2026.09.29.1";
 export const CURRENT_DESKTOP_VERSION = "0.4.0";
 
 export const WORKSPACE_THEME = {
@@ -45,7 +45,8 @@ export const WORKSPACE_LAYOUT = {
 export const WORKSPACE_NAV_GROUPS: ReadonlyArray<{ label: string; ids: readonly OrbyvenModuleId[] }> = [
   { label: "OVERVIEW", ids: ["overview"] },
   { label: "BUSINESS", ids: ["leads", "tasks", "calendar", "estimates"] },
-  { label: "OPERATIONS", ids: ["documents", "expenses", "team"] },
+  { label: "OPERATIONS", ids: ["documents", "team"] },
+  { label: "FINANCE", ids: ["expenses"] },
   { label: "SPECIALIZATE", ids: ["thermal"] },
 ];
 
