@@ -369,43 +369,36 @@ export async function decideMutationProposal(
   }
 
   const proposal = claimed as ProposalRow;
-  const moduleId = actionModule(proposal.action_type);
-
-  const [moduleResult, entitlementResult] = await Promise.all([
-    client.from("organization_modules")
-      .select("enabled")
-      .eq("organization_id", actor.organizationId)
-      .eq("module_id", moduleId)
-      .eq("enabled", true)
-      .maybeSingle(),
-    client.from("organization_entitlements")
-      .select("enabled,starts_at,ends_at")
-      .eq("organization_id", actor.organizationId)
-      .eq("module_id", moduleId)
-      .eq("enabled", true)
-      .maybeSingle(),
-  ]);
-  if (moduleResult.error) throw moduleResult.error;
-  if (entitlementResult.error) throw entitlementResult.error;
-
-  const entitlement = entitlementResult.data;
-  const nowMs = Date.now();
-  const entitled = Boolean(
-    moduleResult.data &&
-    entitlement &&
-    (!entitlement.starts_at || new Date(entitlement.starts_at).getTime() <= nowMs) &&
-    (!entitlement.ends_at || new Date(entitlement.ends_at).getTime() > nowMs)
-  );
-
-  if (!entitled) {
-    await client.from("ai_action_proposals")
-      .update({ status: "failed", failure_code: "MODULE_NOT_AVAILABLE", updated_at: new Date().toISOString() })
-      .eq("id", proposal.id)
-      .eq("status", "executing");
-    throw new Error("MODULE_NOT_AVAILABLE");
-  }
 
   try {
+    const moduleId = actionModule(proposal.action_type);
+    const [moduleResult, entitlementResult] = await Promise.all([
+      client.from("organization_modules")
+        .select("enabled")
+        .eq("organization_id", actor.organizationId)
+        .eq("module_id", moduleId)
+        .eq("enabled", true)
+        .maybeSingle(),
+      client.from("organization_entitlements")
+        .select("enabled,starts_at,ends_at")
+        .eq("organization_id", actor.organizationId)
+        .eq("module_id", moduleId)
+        .eq("enabled", true)
+        .maybeSingle(),
+    ]);
+    if (moduleResult.error) throw moduleResult.error;
+    if (entitlementResult.error) throw entitlementResult.error;
+
+    const entitlement = entitlementResult.data;
+    const nowMs = Date.now();
+    const entitled = Boolean(
+      moduleResult.data &&
+      entitlement &&
+      (!entitlement.starts_at || new Date(entitlement.starts_at).getTime() <= nowMs) &&
+      (!entitlement.ends_at || new Date(entitlement.ends_at).getTime() > nowMs)
+    );
+    if (!entitled) throw new Error("MODULE_NOT_AVAILABLE");
+
     const result = await executeClaimedProposal(actor, proposal);
     const executedAt = new Date().toISOString();
     const { error: finishError } = await client.from("ai_action_proposals")
