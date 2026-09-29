@@ -378,7 +378,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             <header className="border-b border-[var(--border)] px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.4</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.5</p>
                   <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
                     {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                   </h2>
@@ -512,7 +512,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   </button>
                 </div>
                 <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                  0.8.4 Memory · mesajele se păstrează server-side; propunerile Agent Actions expirate nu pot fi relansate din istoric.
+                  0.8.5 Context · follow-up-urile recente pot completa cereri incomplete; orice acțiune rămâne blocată de preview + confirmare explicită.
                 </p>
               </form>
             ) : null}

@@ -4,8 +4,10 @@ import { answerIntelligenceForActor } from "@/lib/ai/intelligence-server";
 import {
   appendUserConversationMessage,
   ensureConversation,
+  loadRecentConversationContext,
   persistAssistantResponse,
 } from "@/lib/ai/conversation-server";
+import { resolveConversationFollowUp } from "@/lib/ai/context-resolver";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,13 +34,36 @@ export async function POST(request: Request) {
 
     const actor = await authenticateBillingActor(request, organizationId, false);
     const conversation = await ensureConversation(actor, conversationId, prompt);
+    const previousMessages = conversationId
+      ? await loadRecentConversationContext(actor, conversation.id)
+      : [];
+    const context = resolveConversationFollowUp(prompt, previousMessages);
+
     await appendUserConversationMessage(actor, conversation.id, prompt);
 
-    const result = await answerIntelligenceForActor(actor, prompt, conversation.id);
-    await persistAssistantResponse(actor, conversation.id, result);
+    const result = await answerIntelligenceForActor(
+      actor,
+      context.effectivePrompt,
+      conversation.id
+    );
+    const contextualResult = context.usedContext
+      ? {
+          ...result,
+          facts: [
+            { label: "Context", value: "Completare din mesajul anterior" },
+            ...result.facts,
+          ].slice(0, 12),
+        }
+      : result;
+
+    await persistAssistantResponse(actor, conversation.id, contextualResult);
 
     return NextResponse.json(
-      { ...result, conversationId: conversation.id },
+      {
+        ...contextualResult,
+        conversationId: conversation.id,
+        contextUsed: context.usedContext,
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {

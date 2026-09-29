@@ -38,8 +38,10 @@ test("Intelligence request persists user and assistant around one authenticated 
   assert.match(route, /authenticateBillingActor\(request, organizationId, false\)/);
   assert.match(route, /ensureConversation\(actor, conversationId, prompt\)/);
   assert.match(route, /appendUserConversationMessage\(actor, conversation\.id, prompt\)/);
-  assert.match(route, /answerIntelligenceForActor\(actor, prompt, conversation\.id\)/);
-  assert.match(route, /persistAssistantResponse\(actor, conversation\.id, result\)/);
+  assert.match(route, /loadRecentConversationContext\(actor, conversation\.id\)/);
+  assert.match(route, /resolveConversationFollowUp\(prompt, previousMessages\)/);
+  assert.match(route, /context\.effectivePrompt/);
+  assert.match(route, /persistAssistantResponse\(actor, conversation\.id, contextualResult\)/);
   assert.match(route, /conversationId: conversation\.id/);
 });
 
