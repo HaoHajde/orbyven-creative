@@ -17,6 +17,13 @@ test("Conversation memory is server-only and scoped by organization plus actor",
   assert.match(migration, /grant select, insert, update, delete on table public\.ai_conversation_messages to service_role/);
 });
 
+test("Conversation memory foreign keys have covering indexes", () => {
+  const indexes = read("supabase/migrations/20260929200335_ai_conversation_memory_fk_indexes.sql");
+  assert.match(indexes, /ai_conversations_actor_id_idx/);
+  assert.match(indexes, /ai_conversation_messages_scope_fk_idx/);
+  assert.match(indexes, /conversation_id, organization_id, actor_id/);
+});
+
 test("Conversation messages persist transcript only, never reusable Agent Action buttons", () => {
   const migration = read("supabase/migrations/20260929195804_ai_conversation_memory.sql");
   const server = read("lib/ai/conversation-server.ts");
