@@ -20,6 +20,9 @@ test("Intelligence server authenticates tenant and keeps Core 0.8 read-only", ()
   assert.match(source, /\.eq\("organization_id", actor\.organizationId\)/);
   assert.doesNotMatch(source, /\.(insert|update|delete|upsert)\s*\(/);
   assert.match(source, /FINANCE_ROLES = new Set\(\["owner", "admin", "manager"\]\)/);
+  assert.match(source, /loadAvailableModules\(actor\)/);
+  assert.match(source, /organization_entitlements/);
+  assert.match(source, /available\.has\("expenses"\)/);
 });
 
 test("Finance specialist uses paged exact cashflow reads and does not expose finance to members", () => {
