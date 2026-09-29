@@ -94,6 +94,12 @@ test("Language telemetry and quota remain server-only", () => {
   assert.match(migration, /v_minute_limit/);
 });
 
+test("AI subsystem covers the Agent Action actor foreign key", () => {
+  const migration = read("supabase/migrations/20260929202417_ai_action_proposals_actor_fk_index.sql");
+  assert.match(migration, /ai_action_proposals_actor_id_idx/);
+  assert.match(migration, /ai_action_proposals \(actor_id\)/);
+});
+
 test("Language provider is explicit opt-in and cannot activate from a legacy OpenAI key alone", () => {
   const server = read("lib/ai/language-server.ts");
   const env = read(".env.example");
