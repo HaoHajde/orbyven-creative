@@ -21,6 +21,51 @@ export type BusinessExpense = {
   updated_at: string;
 };
 
+export type FinanceIncomeEntry = {
+  id: string;
+  organization_id: string;
+  occurred_on: string;
+  source_type: "invoice" | "manual";
+  commercial_document_id: string | null;
+  client_id: string | null;
+  task_id: string | null;
+  estimate_id: string | null;
+  description: string;
+  amount_cents: number;
+  currency: string;
+  payment_method: ExpensePaymentMethod | null;
+  reference: string | null;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FinanceInvoice = {
+  id: string;
+  organization_id: string;
+  estimate_id: string;
+  client_id: string | null;
+  task_id: string | null;
+  document_type: "invoice_draft";
+  reference: string;
+  status: "draft" | "sent" | "accepted" | "issued" | "paid" | "cancelled";
+  title: string;
+  currency: string;
+  total_cents: number;
+  issued_at: string | null;
+  paid_at: string | null;
+  due_on: string | null;
+  external_reference: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FinanceInvoiceWithBalance = FinanceInvoice & {
+  paid_cents: number;
+  outstanding_cents: number;
+};
+
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string; client_id: string | null };
 export type ExpenseDocumentLink = { id: string; name: string };
@@ -39,8 +84,26 @@ export type CreateExpenseInput = {
   estimateId?: string | null;
 };
 
-const FIELDS =
+export type CreateIncomeInput = {
+  occurredOn: string;
+  description: string;
+  amountLei: number;
+  currency?: string;
+  paymentMethod?: ExpensePaymentMethod | null;
+  reference?: string;
+  note?: string;
+  clientId?: string | null;
+  taskId?: string | null;
+  estimateId?: string | null;
+  commercialDocumentId?: string | null;
+};
+
+const EXPENSE_FIELDS =
   "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,estimate_id,created_by,created_at,updated_at";
+const INCOME_FIELDS =
+  "id,organization_id,occurred_on,source_type,commercial_document_id,client_id,task_id,estimate_id,description,amount_cents,currency,payment_method,reference,note,created_by,created_at,updated_at";
+const INVOICE_FIELDS =
+  "id,organization_id,estimate_id,client_id,task_id,document_type,reference,status,title,currency,total_cents,issued_at,paid_at,due_on,external_reference,created_at,updated_at";
 
 function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
@@ -51,16 +114,115 @@ function leiToCents(value: number) {
   return Math.max(0, Math.round(value * 100));
 }
 
+function cleanOptional(value?: string | null) {
+  const cleaned = value?.trim();
+  return cleaned ? cleaned : null;
+}
+
+async function getInvoice(organizationId: string, invoiceId: string): Promise<FinanceInvoice> {
+  const { data, error } = await orbyvenSupabase
+    .from("sales_commercial_documents")
+    .select(INVOICE_FIELDS)
+    .eq("organization_id", organizationId)
+    .eq("id", invoiceId)
+    .eq("document_type", "invoice_draft")
+    .single();
+  if (error || !data) throw new Error("Documentul comercial nu este disponibil în această firmă.");
+  return data as FinanceInvoice;
+}
+
+async function paidForInvoice(organizationId: string, invoiceId: string) {
+  const { data, error } = await orbyvenSupabase
+    .from("finance_income_entries")
+    .select("amount_cents")
+    .eq("organization_id", organizationId)
+    .eq("commercial_document_id", invoiceId);
+  if (error) throw error;
+  return (data ?? []).reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
+}
+
+async function syncInvoicePaidStatus(
+  organizationId: string,
+  invoice: FinanceInvoice,
+  paidCents?: number
+) {
+  if (!["issued", "paid"].includes(invoice.status)) return;
+  const paid = paidCents ?? await paidForInvoice(organizationId, invoice.id);
+  const isPaid = invoice.total_cents > 0 && paid >= invoice.total_cents;
+  const nextStatus = isPaid ? "paid" : "issued";
+  const nextPaidAt = isPaid ? invoice.paid_at || new Date().toISOString() : null;
+  if (invoice.status === nextStatus && invoice.paid_at === nextPaidAt) return;
+
+  const { error } = await orbyvenSupabase
+    .from("sales_commercial_documents")
+    .update({ status: nextStatus, paid_at: nextPaidAt })
+    .eq("organization_id", organizationId)
+    .eq("id", invoice.id)
+    .eq("document_type", "invoice_draft");
+  if (error) throw error;
+}
+
 export async function listExpenses(organizationId: string): Promise<BusinessExpense[]> {
   requireOrganizationId(organizationId);
   const { data, error } = await orbyvenSupabase
     .from("finance_expenses")
-    .select(FIELDS)
+    .select(EXPENSE_FIELDS)
     .eq("organization_id", organizationId)
     .order("occurred_on", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as BusinessExpense[];
+}
+
+export async function listIncomeEntries(organizationId: string): Promise<FinanceIncomeEntry[]> {
+  requireOrganizationId(organizationId);
+  const { data, error } = await orbyvenSupabase
+    .from("finance_income_entries")
+    .select(INCOME_FIELDS)
+    .eq("organization_id", organizationId)
+    .order("occurred_on", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as FinanceIncomeEntry[];
+}
+
+export async function listFinanceInvoices(
+  organizationId: string
+): Promise<FinanceInvoiceWithBalance[]> {
+  requireOrganizationId(organizationId);
+  const [invoiceResult, incomeResult] = await Promise.all([
+    orbyvenSupabase
+      .from("sales_commercial_documents")
+      .select(INVOICE_FIELDS)
+      .eq("organization_id", organizationId)
+      .eq("document_type", "invoice_draft")
+      .order("updated_at", { ascending: false }),
+    orbyvenSupabase
+      .from("finance_income_entries")
+      .select("commercial_document_id,amount_cents")
+      .eq("organization_id", organizationId)
+      .not("commercial_document_id", "is", null),
+  ]);
+  if (invoiceResult.error) throw invoiceResult.error;
+  if (incomeResult.error) throw incomeResult.error;
+
+  const paid = new Map<string, number>();
+  for (const row of incomeResult.data ?? []) {
+    if (!row.commercial_document_id) continue;
+    paid.set(
+      row.commercial_document_id,
+      (paid.get(row.commercial_document_id) ?? 0) + Number(row.amount_cents || 0)
+    );
+  }
+
+  return ((invoiceResult.data ?? []) as FinanceInvoice[]).map((invoice) => {
+    const paidCents = paid.get(invoice.id) ?? 0;
+    return {
+      ...invoice,
+      paid_cents: paidCents,
+      outstanding_cents: Math.max(0, invoice.total_cents - paidCents),
+    };
+  });
 }
 
 export async function listExpenseContexts(organizationId: string) {
@@ -104,12 +266,13 @@ export async function createExpense(
   if (amountCents <= 0) throw new Error("Valoarea trebuie să fie mai mare decât zero.");
 
   let linkedClientId = input.clientId || null;
-  if (input.taskId) {
+  let linkedTaskId = input.taskId || null;
+  if (linkedTaskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
       .select("id,client_id")
       .eq("organization_id", organizationId)
-      .eq("id", input.taskId)
+      .eq("id", linkedTaskId)
       .single();
     if (taskError || !task) throw new Error("Lucrarea nu există în această firmă.");
     if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
@@ -126,15 +289,22 @@ export async function createExpense(
       .single();
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
-  let linkedTaskId=input.taskId || null;
   if (input.estimateId) {
-    const {data: estimate,error: estimateError}=await orbyvenSupabase.from("sales_estimates")
-      .select("id,client_id,task_id").eq("organization_id",organizationId).eq("id",input.estimateId).single();
-    if(estimateError||!estimate)throw new Error("Devizul nu există în această firmă.");
-    if(linkedTaskId&&estimate.task_id&&linkedTaskId!==estimate.task_id)throw new Error("Lucrarea nu corespunde devizului.");
-    if(linkedClientId&&estimate.client_id&&linkedClientId!==estimate.client_id)throw new Error("Clientul nu corespunde devizului.");
-    linkedTaskId=estimate.task_id||linkedTaskId;
-    linkedClientId=estimate.client_id||linkedClientId;
+    const { data: estimate, error: estimateError } = await orbyvenSupabase
+      .from("sales_estimates")
+      .select("id,client_id,task_id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.estimateId)
+      .single();
+    if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
+    if (linkedTaskId && estimate.task_id && linkedTaskId !== estimate.task_id) {
+      throw new Error("Lucrarea nu corespunde devizului.");
+    }
+    if (linkedClientId && estimate.client_id && linkedClientId !== estimate.client_id) {
+      throw new Error("Clientul nu corespunde devizului.");
+    }
+    linkedTaskId = estimate.task_id || linkedTaskId;
+    linkedClientId = estimate.client_id || linkedClientId;
   }
   if (input.documentId) {
     const { data: document, error: documentError } = await orbyvenSupabase
@@ -153,7 +323,7 @@ export async function createExpense(
       organization_id: organizationId,
       occurred_on: input.occurredOn || new Date().toISOString().slice(0, 10),
       category,
-      vendor: input.vendor?.trim() || null,
+      vendor: cleanOptional(input.vendor),
       description,
       amount_cents: amountCents,
       currency: (input.currency?.trim() || "RON").toUpperCase(),
@@ -164,10 +334,134 @@ export async function createExpense(
       document_id: input.documentId || null,
       created_by: authData.user?.id ?? null,
     })
-    .select(FIELDS)
+    .select(EXPENSE_FIELDS)
     .single();
   if (error) throw error;
   return data as BusinessExpense;
+}
+
+export async function markInvoiceIssuedExternally(
+  organizationId: string,
+  invoiceId: string,
+  input: { dueOn: string; externalReference?: string | null }
+): Promise<FinanceInvoice> {
+  requireOrganizationId(organizationId);
+  const invoice = await getInvoice(organizationId, invoiceId);
+  if (invoice.status !== "draft") {
+    throw new Error("Doar o ciornă poate fi confirmată ca emisă extern.");
+  }
+  if (!input.dueOn) throw new Error("Scadența este obligatorie.");
+
+  const now = new Date().toISOString();
+  const { data, error } = await orbyvenSupabase
+    .from("sales_commercial_documents")
+    .update({
+      status: "issued",
+      issued_at: now,
+      due_on: input.dueOn,
+      external_reference: cleanOptional(input.externalReference),
+    })
+    .eq("organization_id", organizationId)
+    .eq("id", invoiceId)
+    .eq("document_type", "invoice_draft")
+    .eq("status", "draft")
+    .select(INVOICE_FIELDS)
+    .single();
+  if (error || !data) {
+    throw new Error("Documentul nu a fost actualizat; reîncarcă modulul.");
+  }
+  return data as FinanceInvoice;
+}
+
+export async function createIncome(
+  organizationId: string,
+  input: CreateIncomeInput
+): Promise<FinanceIncomeEntry> {
+  requireOrganizationId(organizationId);
+  const description = input.description.trim();
+  const amountCents = leiToCents(Number(input.amountLei));
+  if (!description) throw new Error("Descrierea încasării este obligatorie.");
+  if (amountCents <= 0) throw new Error("Suma încasată trebuie să fie mai mare decât zero.");
+
+  let clientId = input.clientId || null;
+  let taskId = input.taskId || null;
+  let estimateId = input.estimateId || null;
+  let commercialDocumentId = input.commercialDocumentId || null;
+  let currency = (input.currency?.trim() || "RON").toUpperCase();
+  let sourceType: "invoice" | "manual" = "manual";
+  let invoice: FinanceInvoice | null = null;
+
+  if (commercialDocumentId) {
+    sourceType = "invoice";
+    invoice = await getInvoice(organizationId, commercialDocumentId);
+    if (!["issued", "paid"].includes(invoice.status)) {
+      throw new Error("Confirmă mai întâi emiterea externă a documentului.");
+    }
+    const alreadyPaid = await paidForInvoice(organizationId, invoice.id);
+    const outstanding = Math.max(0, invoice.total_cents - alreadyPaid);
+    if (outstanding <= 0) throw new Error("Documentul este deja achitat integral.");
+    if (amountCents > outstanding) {
+      throw new Error("Încasarea depășește suma rămasă de primit.");
+    }
+    clientId = invoice.client_id;
+    taskId = invoice.task_id;
+    estimateId = invoice.estimate_id;
+    currency = invoice.currency;
+  } else if (taskId) {
+    const { data: task, error: taskError } = await orbyvenSupabase
+      .from("ops_tasks")
+      .select("id,client_id")
+      .eq("organization_id", organizationId)
+      .eq("id", taskId)
+      .single();
+    if (taskError || !task) throw new Error("Lucrarea nu există în această firmă.");
+    if (clientId && task.client_id && clientId !== task.client_id) {
+      throw new Error("Clientul ales nu corespunde lucrării.");
+    }
+    clientId = task.client_id || clientId;
+  }
+
+  if (clientId) {
+    const { data: client, error: clientError } = await orbyvenSupabase
+      .from("crm_leads")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", clientId)
+      .single();
+    if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
+  }
+
+  const { data: authData } = await orbyvenSupabase.auth.getUser();
+  const { data, error } = await orbyvenSupabase
+    .from("finance_income_entries")
+    .insert({
+      organization_id: organizationId,
+      occurred_on: input.occurredOn || new Date().toISOString().slice(0, 10),
+      source_type: sourceType,
+      commercial_document_id: commercialDocumentId,
+      client_id: clientId,
+      task_id: taskId,
+      estimate_id: estimateId,
+      description,
+      amount_cents: amountCents,
+      currency,
+      payment_method: input.paymentMethod || null,
+      reference: cleanOptional(input.reference),
+      note: cleanOptional(input.note),
+      created_by: authData.user?.id ?? null,
+    })
+    .select(INCOME_FIELDS)
+    .single();
+  if (error) throw error;
+
+  if (invoice) {
+    await syncInvoicePaidStatus(
+      organizationId,
+      invoice,
+      (await paidForInvoice(organizationId, invoice.id))
+    );
+  }
+  return data as FinanceIncomeEntry;
 }
 
 export async function deleteExpense(organizationId: string, expenseId: string) {
@@ -178,4 +472,30 @@ export async function deleteExpense(organizationId: string, expenseId: string) {
     .eq("organization_id", organizationId)
     .eq("id", expenseId);
   if (error) throw error;
+}
+
+export async function deleteIncome(organizationId: string, incomeId: string) {
+  requireOrganizationId(organizationId);
+  const { data: existing, error: loadError } = await orbyvenSupabase
+    .from("finance_income_entries")
+    .select("id,commercial_document_id")
+    .eq("organization_id", organizationId)
+    .eq("id", incomeId)
+    .single();
+  if (loadError || !existing) throw new Error("Încasarea nu mai este disponibilă.");
+
+  const invoice = existing.commercial_document_id
+    ? await getInvoice(organizationId, existing.commercial_document_id)
+    : null;
+
+  const { error } = await orbyvenSupabase
+    .from("finance_income_entries")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("id", incomeId);
+  if (error) throw error;
+
+  if (invoice) {
+    await syncInvoicePaidStatus(organizationId, invoice);
+  }
 }
