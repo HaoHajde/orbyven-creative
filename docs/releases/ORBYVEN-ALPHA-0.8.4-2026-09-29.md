@@ -108,12 +108,15 @@ Production migration:
 
 `20260929195804_ai_conversation_memory.sql`
 
-The migration is additive and includes:
+`20260929200335_ai_conversation_memory_fk_indexes.sql`
+
+The migrations are additive and include:
 - conversation tables;
 - indexes;
 - RLS enabled;
 - service-role-only grants;
-- optional proposal → conversation link.
+- optional proposal → conversation link;
+- covering indexes for the new foreign keys.
 
 ## Release acceptance
 
