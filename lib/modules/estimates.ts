@@ -251,16 +251,82 @@ export async function createEstimate(
   return created as Estimate;
 }
 
+export async function attachAcceptedEstimateToTask(
+  organizationId: string,
+  estimateId: string,
+  taskId: string
+): Promise<Estimate> {
+  requireOrganizationId(organizationId);
+  if (!estimateId.trim() || !taskId.trim()) throw new Error("Devizul și lucrarea sunt obligatorii.");
+
+  const [{ data: estimate, error: estimateError }, { data: task, error: taskError }] =
+    await Promise.all([
+      orbyvenSupabase
+        .from("sales_estimates")
+        .select("id,status,client_id,task_id")
+        .eq("organization_id", organizationId)
+        .eq("id", estimateId)
+        .single(),
+      orbyvenSupabase
+        .from("ops_tasks")
+        .select("id,client_id,kind")
+        .eq("organization_id", organizationId)
+        .eq("id", taskId)
+        .single(),
+    ]);
+
+  if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
+  if (taskError || !task || task.kind !== "work") throw new Error("Lucrarea nu există în această firmă.");
+  if (estimate.status !== "accepted") throw new Error("Doar un deviz acceptat poate porni o lucrare.");
+  if (estimate.task_id && estimate.task_id !== taskId) {
+    throw new Error("Devizul este deja legat de altă lucrare.");
+  }
+  if (estimate.client_id && task.client_id && estimate.client_id !== task.client_id) {
+    throw new Error("Clientul lucrării nu corespunde devizului acceptat.");
+  }
+
+  const { data, error } = await orbyvenSupabase
+    .from("sales_estimates")
+    .update({ task_id: taskId })
+    .eq("organization_id", organizationId)
+    .eq("id", estimateId)
+    .select(ESTIMATE_FIELDS)
+    .single();
+
+  if (error) throw error;
+  return data as Estimate;
+}
+
 export async function setEstimateStatus(
   organizationId: string,
   estimateId: string,
   status: EstimateStatus
 ): Promise<Estimate> {
   requireOrganizationId(organizationId);
+
+  const { data: current, error: currentError } = await orbyvenSupabase
+    .from("sales_estimates")
+    .select("status")
+    .eq("organization_id", organizationId)
+    .eq("id", estimateId)
+    .single();
+  if (currentError || !current) throw new Error("Devizul nu există în această firmă.");
+
+  const allowed: Record<EstimateStatus, EstimateStatus[]> = {
+    draft: ["draft", "sent", "rejected"],
+    sent: ["sent", "accepted", "rejected", "expired"],
+    accepted: ["accepted"],
+    rejected: ["rejected"],
+    expired: ["expired"],
+  };
+  if (!allowed[current.status as EstimateStatus].includes(status)) {
+    throw new Error("Statusul final nu se rescrie. Creează o revizie nouă pentru schimbări ulterioare.");
+  }
+
   const now = new Date().toISOString();
   const patch: Record<string, unknown> = { status };
-  if (status === "sent") patch.sent_at = now;
-  if (status === "accepted") patch.accepted_at = now;
+  if (status === "sent" && current.status !== "sent") patch.sent_at = now;
+  if (status === "accepted" && current.status !== "accepted") patch.accepted_at = now;
 
   const { data, error } = await orbyvenSupabase
     .from("sales_estimates")
