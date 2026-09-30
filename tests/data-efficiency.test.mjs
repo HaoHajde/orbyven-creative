@@ -58,7 +58,10 @@ test("Overview uses exact SQL counts, selected small records and bounded current
   assert.match(overview, /scheduledNearTasks/);
   assert.match(overview, /dueNearTasks/);
   assert.match(dashboard, /todayQueue/);
-  assert.match(dashboard, /Lucrare blocată · necesită o decizie/);
+  assert.match(dashboard, /buildBusinessAutomationSignals/);
+  assert.match(dashboard, /operation_blocked/);
+  assert.match(overview, /7 \* DAY_MS/);
+  assert.match(overview, /\.lte\("start_at", eventsUntil\)/);
 });
 
 test("work dossier reads contextual data without bypassing finance or pagination boundaries", () => {
