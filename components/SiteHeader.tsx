@@ -145,7 +145,7 @@ export default function SiteHeader({
           </div>
 
           {mobileOpen && (
-            <div style={{ backgroundColor: "var(--bg)" }} className="pointer-events-auto mt-2 overflow-hidden rounded-[26px] border border-[var(--border-strong)] p-2 shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
+            <div style={{ backgroundColor: "var(--bg)" }} className="pointer-events-auto mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto overscroll-contain rounded-[26px] border border-[var(--border-strong)] p-2 shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
               <nav className="flex flex-col">
                 {navItems.map((item) => {
                   const active = activePage === item.key;
