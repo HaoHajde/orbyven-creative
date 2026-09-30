@@ -31,6 +31,9 @@ const EstimatesModule = dynamic(() => import("@/components/modules/EstimatesModu
 const ExpensesModule = dynamic(() => import("@/components/modules/ExpensesModule"), {
   loading: WorkspaceModuleLoading,
 });
+const InventoryModule = dynamic(() => import("@/components/modules/InventoryModule"), {
+  loading: WorkspaceModuleLoading,
+});
 const LeadsModule = dynamic(() => import("@/components/modules/LeadsModule"), {
   loading: WorkspaceModuleLoading,
 });
@@ -123,6 +126,10 @@ export default function WorkspaceContent({
 
   if (activeModule === "documents") {
     return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
+  }
+
+  if (activeModule === "inventory") {
+    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "expenses") {
