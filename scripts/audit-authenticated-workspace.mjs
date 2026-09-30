@@ -27,12 +27,17 @@ const browser = await chromium.launch({
 let failed = false;
 try {
   for (const device of [
-    { name: "mobile", viewport: { width: 390, height: 844 }, isMobile: true },
+    { name: "small-mobile", viewport: { width: 320, height: 568 }, isMobile: true },
+    { name: "iphone", viewport: { width: 390, height: 844 }, isMobile: true },
+    { name: "landscape-phone", viewport: { width: 844, height: 390 }, isMobile: true },
+    { name: "tablet", viewport: { width: 768, height: 1024 }, isMobile: true },
     { name: "desktop", viewport: { width: 1366, height: 900 }, isMobile: false },
+    { name: "wide-desktop", viewport: { width: 1920, height: 1080 }, isMobile: false },
   ]) {
     const context = await browser.newContext({
       viewport: device.viewport,
       isMobile: device.isMobile,
+      hasTouch: device.isMobile,
       deviceScaleFactor: device.isMobile ? 2 : 1,
       reducedMotion: "reduce",
     });
@@ -56,6 +61,15 @@ try {
       }));
       if (state.width > state.viewport + 2) throw new Error("Horizontal overflow on workspace");
       if (state.searchCount !== 1) throw new Error("Workspace search instance count differs from one");
+      const aiLauncher = page.getByRole("button", { name: "Deschide ORBYVEN Intelligence" });
+      await aiLauncher.click();
+      const aiDialog = page.getByRole("dialog", { name: "ORBYVEN Intelligence" });
+      await aiDialog.waitFor();
+      const dialogBounds = await aiDialog.boundingBox();
+      if (!dialogBounds || dialogBounds.x < -1 || dialogBounds.y < -1 || dialogBounds.x + dialogBounds.width > device.viewport.width + 1 || dialogBounds.y + dialogBounds.height > device.viewport.height + 1) {
+        throw new Error("ORBYVEN Intelligence escaped the viewport");
+      }
+      await page.getByRole("button", { name: "Închide chatul" }).click();
       if (device.isMobile) {
         const menu = page.getByRole("button", { name: "Deschide meniul modulelor" });
         await menu.click();
