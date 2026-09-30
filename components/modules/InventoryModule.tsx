@@ -133,21 +133,14 @@ export default function InventoryModule({
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  useEffect(() => {
-    if (!initialRecordId || !snapshot) return;
-    if (snapshot.materials.some((item) => item.id === initialRecordId)) {
-      setMovementMaterialId(initialRecordId);
-    }
-  }, [initialRecordId, snapshot]);
-
-  const materials = snapshot?.materials ?? [];
+  const materials = useMemo(() => snapshot?.materials ?? [], [snapshot]);
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
-  const stock = snapshot?.stock ?? [];
+  const stock = useMemo(() => snapshot?.stock ?? [], [snapshot]);
   const purchaseOrders = snapshot?.purchaseOrders ?? [];
   const purchaseItems = snapshot?.purchaseItems ?? [];
   const recentMovements = snapshot?.recentMovements ?? [];
-  const tasks = snapshot?.tasks ?? [];
+  const tasks = useMemo(() => snapshot?.tasks ?? [], [snapshot]);
 
   const supplierById = useMemo(
     () => new Map((snapshot?.suppliers ?? []).map((item) => [item.id, item])),
