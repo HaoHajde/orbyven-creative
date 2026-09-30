@@ -70,13 +70,13 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
   },
   {
     id: "calendar",
-    name: "Programări",
+    name: "Scheduler & calendar",
     shortName: "Calendar",
-    description: "Programări, vizite și intervenții într-un singur calendar.",
+    description: "Programări, lucrări și resurse cu protecție la suprapuneri.",
     category: "operations",
     color: "#0b67c2",
     accent: "#eaf4ff",
-    features: ["Calendar", "Vizite", "Remindere"],
+    features: ["Calendar", "Resurse", "Conflicte"],
   },
   {
     id: "estimates",
@@ -132,13 +132,13 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
   },
   {
     id: "team",
-    name: "Echipă",
+    name: "Echipă & resurse",
     shortName: "Echipă",
-    description: "Oamenii operaționali ai firmei, inclusiv cei fără cont ORBYVEN.",
+    description: "Oameni și resurse operaționale programabile, inclusiv cei fără cont ORBYVEN.",
     category: "people",
     color: "#8b4a11",
     accent: "#fff1e5",
-    features: ["Membri", "Date contact", "Legătură cont"],
+    features: ["Membri", "Vehicule & utilaje", "Legătură scheduler"],
   },
 ];
 
