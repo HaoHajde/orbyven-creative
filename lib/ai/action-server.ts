@@ -541,6 +541,7 @@ async function writeAudit(
   result: { id: string; type: string; moduleId: OrbyvenModuleId }
 ) {
   const client = createBillingServiceClient();
+  const auditPlan = planMeta(proposal.payload);
   const { error } = await client.from("platform_audit_log").insert({
     actor_user_id: actor.userId,
     actor_role: actor.role,
@@ -553,6 +554,9 @@ async function writeAudit(
       action_type: proposal.action_type,
       module_id: result.moduleId,
       confirmation: "explicit_user_confirmation",
+      ...(auditPlan
+        ? { plan_id: auditPlan.id, plan_step: auditPlan.step, plan_total: auditPlan.total }
+        : {}),
     },
   });
   if (error) console.error("ORBYVEN AI audit mirror failed", error.code);
