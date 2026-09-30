@@ -18,6 +18,7 @@ type Props = {
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
   initialRecordId?: string | null;
+  initialTaskId?: string | null;
 };
 
 type PurchaseLine = {
@@ -41,7 +42,7 @@ function quantity(value: number) {
   return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 }).format(value);
 }
 
-export default function DesktopInventoryPanel({ organizationId, locale, role, initialRecordId }: Props) {
+export default function DesktopInventoryPanel({ organizationId, locale, role, initialRecordId, initialTaskId }: Props) {
   const [snapshot, setSnapshot] = useState<InventorySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -53,7 +54,7 @@ export default function DesktopInventoryPanel({ organizationId, locale, role, in
 
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchaseSupplierId, setPurchaseSupplierId] = useState("");
-  const [purchaseTaskId, setPurchaseTaskId] = useState("");
+  const [purchaseTaskId, setPurchaseTaskId] = useState(initialTaskId || "");
   const [purchaseExpectedOn, setPurchaseExpectedOn] = useState("");
   const [purchaseNote, setPurchaseNote] = useState("");
   const [lineKey, setLineKey] = useState(2);
@@ -64,7 +65,7 @@ export default function DesktopInventoryPanel({ organizationId, locale, role, in
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementMode, setMovementMode] = useState<MovementMode>("consumption");
   const [movementMaterialId, setMovementMaterialId] = useState("");
-  const [movementTaskId, setMovementTaskId] = useState("");
+  const [movementTaskId, setMovementTaskId] = useState(initialTaskId || "");
   const [movementQuantity, setMovementQuantity] = useState("1");
   const [movementNote, setMovementNote] = useState("");
 
@@ -163,7 +164,7 @@ export default function DesktopInventoryPanel({ organizationId, locale, role, in
 
   const prepareGapPurchase = (gap: InventoryGap) => {
     setPurchaseSupplierId(gap.preferredSupplierId ?? "");
-    setPurchaseTaskId("");
+    setPurchaseTaskId(initialTaskId || "");
     setPurchaseExpectedOn("");
     setPurchaseNote("Necesar generat din stoc și cererea confirmată.");
     setPurchaseLines([{
@@ -198,7 +199,7 @@ export default function DesktopInventoryPanel({ organizationId, locale, role, in
     if (ok) {
       setPurchaseOpen(false);
       setPurchaseSupplierId("");
-      setPurchaseTaskId("");
+      setPurchaseTaskId(initialTaskId || "");
       setPurchaseExpectedOn("");
       setPurchaseNote("");
       setPurchaseLines([{ key: lineKey, materialId: "", quantity: "1", costLei: "" }]);
