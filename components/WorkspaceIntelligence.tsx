@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -492,191 +493,195 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     );
   };
 
-  return (
-    <>
-      <button
-        type="button"
-        aria-label="Deschide ORBYVEN Intelligence"
-        aria-haspopup="dialog"
-        aria-controls="orbyven-intelligence-dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex h-12 w-12 items-center justify-center rounded-2xl border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_16px_45px_rgba(27,46,112,0.42)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
-      >
-        <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
-          <path d="M7.5 18.25 4 20l.9-3.55A7.1 7.1 0 0 1 3.5 12.2C3.5 7.95 7.25 4.5 12 4.5s8.5 3.45 8.5 7.7-3.75 7.3-8.5 7.3c-1.62 0-3.14-.35-4.5-1.25Z" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="m12 8 .55 1.45L14 10l-1.45.55L12 12l-.55-1.45L10 10l1.45-.55L12 8Z" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="sr-only">ORBYVEN AI</span>
-      </button>
+  if (typeof document === "undefined") return null;
 
-      {open ? (
+  return createPortal(
         <>
           <button
             type="button"
-            aria-label="Închide ORBYVEN Intelligence"
-            className="fixed inset-0 z-[100] cursor-default bg-[#020713]/70 backdrop-blur-[7px]"
-            onClick={() => setOpen(false)}
-          />
-          <section
-            id="orbyven-intelligence-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label="ORBYVEN Intelligence"
-            className="fixed inset-x-3 bottom-3 top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px]"
+            aria-label="Deschide ORBYVEN Intelligence"
+            aria-haspopup="dialog"
+            aria-controls="orbyven-intelligence-dialog"
+            aria-expanded={open}
+            onClick={() => setOpen(true)}
+            className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex h-12 w-12 items-center justify-center rounded-2xl border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_16px_45px_rgba(27,46,112,0.42)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
           >
-            <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.9</p>
-                  <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
-                    {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
-                  </h2>
-                  <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
-                    Thread-urile sunt private pentru contul tău în această firmă și se sincronizează între device-uri.
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={newConversation}
-                    className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
-                  >
-                    + Nou
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHistoryOpen((current) => !current)}
-                    className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
-                  >
-                    Istoric
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Închide chatul"
-                    onClick={() => setOpen(false)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-2)]/60 text-base text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </header>
-
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-              {historyOpen ? (
-                <div className="grid gap-2">
-                  {historyLoading ? (
-                    <p className="py-6 text-center text-[10px] text-[var(--muted)]">Se încarcă istoricul…</p>
-                  ) : conversations.length ? conversations.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => void loadConversation(item.id)}
-                      className={`rounded-[13px] border px-3 py-3 text-left transition ${
-                        item.id === conversationId
-                          ? "border-[#7897ff]/35 bg-[#7897ff]/[0.08]"
-                          : "border-[var(--border)] bg-[var(--surface-2)]/55 hover:border-[var(--border-strong)]"
-                      }`}
-                    >
-                      <span className="block truncate text-[10px] font-semibold">{item.title}</span>
-                      <span className="mt-1 block text-[9px] text-[var(--muted-2)]">
-                        {new Intl.DateTimeFormat("ro-RO", {
-                          day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-                        }).format(new Date(item.updatedAt))}
-                      </span>
-                    </button>
-                  )) : (
-                    <p className="py-6 text-center text-[10px] text-[var(--muted)]">Nu ai încă discuții salvate.</p>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {!messages.length && !loading ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {QUICK_PROMPTS.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => void ask(item)}
-                          className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[10px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-                        >
-                          {item}
-                        </button>
-                      ))}
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+              <path d="M7.5 18.25 4 20l.9-3.55A7.1 7.1 0 0 1 3.5 12.2C3.5 7.95 7.25 4.5 12 4.5s8.5 3.45 8.5 7.7-3.75 7.3-8.5 7.3c-1.62 0-3.14-.35-4.5-1.25Z" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="m12 8 .55 1.45L14 10l-1.45.55L12 12l-.55-1.45L10 10l1.45-.55L12 8Z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="sr-only">ORBYVEN AI</span>
+          </button>
+    
+          {open ? (
+            <>
+              <button
+                type="button"
+                aria-label="Închide ORBYVEN Intelligence"
+                className="fixed inset-0 z-[100] cursor-default bg-[#020713]/70 backdrop-blur-[7px]"
+                onClick={() => setOpen(false)}
+              />
+              <section
+                id="orbyven-intelligence-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label="ORBYVEN Intelligence"
+                className="fixed inset-x-3 bottom-3 top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px]"
+              >
+                <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.9</p>
+                      <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
+                        {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
+                      </h2>
+                      <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
+                        Thread-urile sunt private pentru contul tău în această firmă și se sincronizează între device-uri.
+                      </p>
                     </div>
-                  ) : null}
-
-                  <div className="grid gap-3">
-                    {messages.map((message) => message.role === "user" ? (
-                      <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[11px] leading-5 text-[var(--button-text)]">
-                        {message.content}
-                      </div>
-                    ) : (
-                      <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[8px] font-bold text-[#aab9ff]">
-                            {specialistLabels[message.specialist || "general"]}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={newConversation}
+                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                      >
+                        + Nou
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen((current) => !current)}
+                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                      >
+                        Istoric
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Închide chatul"
+                        onClick={() => setOpen(false)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-2)]/60 text-base text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                </header>
+    
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+                  {historyOpen ? (
+                    <div className="grid gap-2">
+                      {historyLoading ? (
+                        <p className="py-6 text-center text-[10px] text-[var(--muted)]">Se încarcă istoricul…</p>
+                      ) : conversations.length ? conversations.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => void loadConversation(item.id)}
+                          className={`rounded-[13px] border px-3 py-3 text-left transition ${
+                            item.id === conversationId
+                              ? "border-[#7897ff]/35 bg-[#7897ff]/[0.08]"
+                              : "border-[var(--border)] bg-[var(--surface-2)]/55 hover:border-[var(--border-strong)]"
+                          }`}
+                        >
+                          <span className="block truncate text-[10px] font-semibold">{item.title}</span>
+                          <span className="mt-1 block text-[9px] text-[var(--muted-2)]">
+                            {new Intl.DateTimeFormat("ro-RO", {
+                              day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                            }).format(new Date(item.updatedAt))}
                           </span>
-                          <span className="text-[8px] text-[var(--muted-2)]">ORBYVEN</span>
+                        </button>
+                      )) : (
+                        <p className="py-6 text-center text-[10px] text-[var(--muted)]">Nu ai încă discuții salvate.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {!messages.length && !loading ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {QUICK_PROMPTS.map((item) => (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => void ask(item)}
+                              className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[10px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+                            >
+                              {item}
+                            </button>
+                          ))}
                         </div>
-                        <p className="mt-2.5 text-[12px] leading-5 text-[var(--text)]">{message.content}</p>
-                        {message.facts.length ? (
-                          <div className="mt-3 grid grid-cols-2 gap-2">
-                            {message.facts.map((fact, index) => (
-                              <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
-                                <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
-                                <p className="mt-1 text-[10px] font-semibold">{fact.value}</p>
+                      ) : null}
+    
+                      <div className="grid gap-3">
+                        {messages.map((message) => message.role === "user" ? (
+                          <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[11px] leading-5 text-[var(--button-text)]">
+                            {message.content}
+                          </div>
+                        ) : (
+                          <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[8px] font-bold text-[#aab9ff]">
+                                {specialistLabels[message.specialist || "general"]}
+                              </span>
+                              <span className="text-[8px] text-[var(--muted-2)]">ORBYVEN</span>
+                            </div>
+                            <p className="mt-2.5 text-[12px] leading-5 text-[var(--text)]">{message.content}</p>
+                            {message.facts.length ? (
+                              <div className="mt-3 grid grid-cols-2 gap-2">
+                                {message.facts.map((fact, index) => (
+                                  <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
+                                    <p className="mt-1 text-[10px] font-semibold">{fact.value}</p>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            ) : null}
+                            {renderAssistantActions(message.actions)}
+                          </article>
+                        ))}
+    
+                        {loading ? (
+                          <div role="status" className="mr-16 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-5 text-center">
+                            <div className="mx-auto h-5 w-5 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
+                            <p className="mt-2 text-[9px] text-[var(--muted)]">Analizez workspace-ul firmei…</p>
                           </div>
                         ) : null}
-                        {renderAssistantActions(message.actions)}
-                      </article>
-                    ))}
-
-                    {loading ? (
-                      <div role="status" className="mr-16 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-5 text-center">
-                        <div className="mx-auto h-5 w-5 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
-                        <p className="mt-2 text-[9px] text-[var(--muted)]">Analizez workspace-ul firmei…</p>
                       </div>
-                    ) : null}
-                  </div>
-                </>
-              )}
-
-              {error ? (
-                <p role="alert" className="mt-3 rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[10px] leading-4 text-rose-300">{error}</p>
-              ) : null}
-            </div>
-
-            {!historyOpen ? (
-              <form onSubmit={submit} className="border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
-                <div className="flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-                  <textarea
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
-                    rows={1}
-                    placeholder="Întreabă ORBYVEN…"
-                    className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 outline-none placeholder:text-[var(--muted-2)]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!canSend}
-                    className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-35"
-                  >
-                    Trimite
-                  </button>
+                    </>
+                  )}
+    
+                  {error ? (
+                    <p role="alert" className="mt-3 rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[10px] leading-4 text-rose-300">{error}</p>
+                  ) : null}
                 </div>
-                <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                  0.8.9 Plan Mode · Universal Operations rămâne nucleul; cererile multi-acțiune devin pași expliciți, confirmați separat și verificați server-side.
-                </p>
-              </form>
-            ) : null}
-          </section>
+    
+                {!historyOpen ? (
+                  <form onSubmit={submit} className="border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
+                    <div className="flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                      <textarea
+                        value={prompt}
+                        onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
+                        rows={1}
+                        placeholder="Întreabă ORBYVEN…"
+                        className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 outline-none placeholder:text-[var(--muted-2)]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!canSend}
+                        className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-35"
+                      >
+                        Trimite
+                      </button>
+                    </div>
+                    <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
+                      0.8.9 Plan Mode · Universal Operations rămâne nucleul; cererile multi-acțiune devin pași expliciți, confirmați separat și verificați server-side.
+                    </p>
+                  </form>
+                ) : null}
+              </section>
+            </>
+          ) : null}
         </>
-      ) : null}
-    </>
+    ,
+    document.body
   );
 }
