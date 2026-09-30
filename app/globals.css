@@ -57,6 +57,16 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent iOS/iPadOS Safari from zooming the viewport when compact ORBYVEN
+   form controls receive focus. Keep desktop density unchanged. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 img,
 svg,
 video,
