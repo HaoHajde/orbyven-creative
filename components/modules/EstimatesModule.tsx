@@ -27,11 +27,13 @@ import {
   type MaterialLibrary,
 } from "@/lib/modules/materials-catalog";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
+import { evaluateEstimateWorkflow } from "@/lib/modules/estimate-workflow";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type Props = {
   organizationId: string;
   locale: string;
+  timeZone: string;
   role: OrbyvenWorkspace["membership"]["role"];
   enabledModules: OrbyvenModuleId[];
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
@@ -42,6 +44,7 @@ type Props = {
 };
 
 type DraftLine = { key: string; description: string; quantity: string; price: string };
+type EstimateFilter = "all" | EstimateStatus | "attention";
 type FormState = {
   title: string;
   clientId: string;
@@ -72,7 +75,7 @@ function formatMoney(cents: number, currency: string, locale: string) {
 }
 
 export default function EstimatesModule({
-  organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId,
+  organizationId, locale, timeZone, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId,
   initialClientId, initialTaskId,
 }: Props) {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -98,6 +101,7 @@ export default function EstimatesModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState<EstimateFilter>("all");
 
   const canWrite = role !== "viewer";
   useWorkspaceCreateFocus(createOpen);
@@ -155,6 +159,37 @@ export default function EstimatesModule({
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
 
+  const todayKey = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date()),
+    [timeZone]
+  );
+  const workflowById = useMemo(
+    () => new Map(estimates.map((estimate) => [
+      estimate.id,
+      evaluateEstimateWorkflow(estimate, todayKey),
+    ])),
+    [estimates, todayKey]
+  );
+  const filteredEstimates = useMemo(
+    () => estimates.filter((estimate) => {
+      if (statusFilter === "all") return true;
+      const workflow = workflowById.get(estimate.id);
+      if (statusFilter === "attention") {
+        return workflow?.nextAction === "complete_context" ||
+          workflow?.nextAction === "review_expired";
+      }
+      return estimate.status === statusFilter;
+    }),
+    [estimates, statusFilter, workflowById]
+  );
+  const selectedWorkflow = selected ? workflowById.get(selected.id) ?? null : null;
+
   const refreshLibrary=async()=>{setLibrary(await loadMaterialLibrary(organizationId));};
   const addRecipeLine=()=>{
     if(!recipeId)return;
@@ -197,13 +232,23 @@ export default function EstimatesModule({
 
   const metrics = useMemo(() => {
     const accepted = estimates.filter((item) => item.status === "accepted");
+    const waiting = estimates.filter((item) => {
+      const workflow = workflowById.get(item.id);
+      return item.status === "sent" && !workflow?.overdue;
+    });
+    const attention = estimates.filter((item) => {
+      const workflow = workflowById.get(item.id);
+      return workflow?.nextAction === "complete_context" ||
+        workflow?.nextAction === "review_expired";
+    });
     return {
-      total: estimates.length,
-      waiting: estimates.filter((item) => item.status === "sent").length,
+      drafts: estimates.filter((item) => item.status === "draft").length,
+      waiting: waiting.length,
+      attention: attention.length,
       accepted: accepted.length,
       acceptedValue: accepted.reduce((sum, item) => sum + item.total_cents, 0),
     };
-  }, [estimates]);
+  }, [estimates, workflowById]);
 
   const previewTotal = useMemo(() => {
     const subtotal = lines.reduce((sum, line) => sum + (Number(line.quantity) || 0) * (Number(line.price) || 0), 0);
@@ -309,10 +354,11 @@ export default function EstimatesModule({
       />
       <div className="mt-8"><ModuleError message={error} /></div>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <ModuleMetric label="Total" value={String(metrics.total)} note="devize în workspace" />
-        <ModuleMetric label="Așteaptă răspuns" value={String(metrics.waiting)} note="status trimisă" />
-        <ModuleMetric label="Acceptate" value={String(metrics.accepted)} note="confirmate de client" />
+      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-5">
+        <ModuleMetric label="Drafturi" value={String(metrics.drafts)} note="de pregătit / trimis" />
+        <ModuleMetric label="Așteaptă răspuns" value={String(metrics.waiting)} note="trimise și încă valabile" />
+        <ModuleMetric label="Necesită atenție" value={String(metrics.attention)} note="context incomplet / expirate" />
+        <ModuleMetric label="Acceptate" value={String(metrics.accepted)} note="pregătite pentru execuție" />
         <ModuleMetric label="Valoare acceptată" value={formatMoney(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
       </section>
 
@@ -365,8 +411,19 @@ export default function EstimatesModule({
 
       <section className="mt-5 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Toate ofertele</h2><span className="text-xs text-[var(--muted)]">{estimates.length}</span></div>
-          {estimates.length ? <div className="space-y-2">{estimates.map((estimate) => (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="font-semibold">Pipeline comercial</h2><p className="mt-1 text-[11px] text-[var(--muted)]">{filteredEstimates.length} din {estimates.length} oferte</p></div>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as EstimateFilter)} className={`${moduleInputClass} sm:max-w-[210px]`}>
+              <option value="all">Toate</option>
+              <option value="draft">Drafturi</option>
+              <option value="sent">Trimise</option>
+              <option value="accepted">Acceptate</option>
+              <option value="rejected">Respinse</option>
+              <option value="expired">Expirate</option>
+              <option value="attention">Necesită atenție</option>
+            </select>
+          </div>
+          {filteredEstimates.length ? <div className="space-y-2">{filteredEstimates.map((estimate) => (
             <button key={estimate.id} type="button" onClick={() => { setSelectedId(estimate.id); setItems([]); }} className={`w-full rounded-[18px] border p-4 text-left ${selectedId === estimate.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
               <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{estimate.title}</p><p className="mt-1 text-[11px] text-[var(--muted)]">{estimate.reference} · {clientById.get(estimate.client_id || "")?.name || "Fără client"}</p></div><span className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold">{statusLabels[estimate.status]}</span></div>
               <p className="mt-4 text-lg font-semibold">{formatMoney(estimate.total_cents, estimate.currency, locale)}</p>
@@ -378,8 +435,50 @@ export default function EstimatesModule({
           {selected ? <>
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
+
+            {selectedWorkflow && (
+              <section className={`mt-4 rounded-[16px] border p-4 ${selectedWorkflow.overdue ? "border-amber-400/25 bg-amber-400/[0.06]" : "border-[var(--border-strong)] bg-[var(--surface)]/70"}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">ORBYVEN · NEXT ACTION</p>
+                    <h3 className="mt-1.5 text-[15px] font-semibold">{selectedWorkflow.label}</h3>
+                    <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--muted)]">{selectedWorkflow.detail}</p>
+                  </div>
+                  {selectedWorkflow.daysSinceSent !== null && selected.status === "sent" ? (
+                    <span className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[10px] text-[var(--muted)]">{selectedWorkflow.daysSinceSent} zile de la trimitere</span>
+                  ) : null}
+                </div>
+                {canWrite ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(selectedWorkflow.nextAction === "complete_context" || selectedWorkflow.nextAction === "revise") && items.length > 0 ? (
+                      <button type="button" onClick={startRevision} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Creează revizie →</button>
+                    ) : null}
+                    {selectedWorkflow.nextAction === "review_expired" ? (
+                      <>
+                        <button type="button" disabled={saving} onClick={() => void changeStatus("expired")} className="h-9 rounded-full border border-amber-400/30 px-4 text-xs font-semibold text-amber-300 disabled:opacity-40">Marchează expirată</button>
+                        {items.length > 0 ? <button type="button" onClick={startRevision} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Revizie nouă →</button> : null}
+                      </>
+                    ) : null}
+                    {selectedWorkflow.nextAction === "send" ? (
+                      <button type="button" onClick={() => document.getElementById("commercial-flow-" + selected.id)?.scrollIntoView({ behavior: "smooth", block: "start" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pregătește oferta client ↓</button>
+                    ) : null}
+                    {selectedWorkflow.nextAction === "await_response" ? (
+                      <>
+                        <button type="button" disabled={saving} onClick={() => void changeStatus("accepted")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">Clientul a acceptat</button>
+                        <button type="button" disabled={saving} onClick={() => void changeStatus("rejected")} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-40">Clientul a refuzat</button>
+                      </>
+                    ) : null}
+                    {selectedWorkflow.nextAction === "schedule_work" && enabledModules.includes("calendar") ? (
+                      <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Programează lucrarea →</button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
+            )}
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
-            <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
+            <div id={"commercial-flow-" + selected.id} className="scroll-mt-28">
+              <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
+            </div>
             {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
             {canWrite&&items.length>0&&<button type="button" onClick={startRevision} className="mt-4 h-9 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 text-xs font-semibold">+ Creează revizie fără a modifica oferta anterioară</button>}
             <div className="mt-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-3">
@@ -404,7 +503,15 @@ export default function EstimatesModule({
               {canWrite && enabledModules.includes("calendar") && (selected.client_id || selected.task_id) && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
               {canDelete && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
             </div>
-            {canWrite ? <div className="mt-6 flex flex-wrap gap-2">{(["draft", "sent", "accepted", "rejected"] as EstimateStatus[]).map((status) => <button key={status} type="button" disabled={saving || selected.status === status} onClick={() => void changeStatus(status)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">{statusLabels[status]}</button>)}{canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-35">Șterge</button> : null}</div> : null}
+            {canWrite ? <div className="mt-6 flex flex-wrap gap-2">
+              {selected.status === "draft" && selectedWorkflow?.nextAction !== "complete_context" ? <button type="button" disabled={saving} onClick={() => void changeStatus("sent")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Marchează trimisă</button> : null}
+              {selected.status === "sent" && !selectedWorkflow?.overdue ? <>
+                <button type="button" disabled={saving} onClick={() => void changeStatus("accepted")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Acceptată</button>
+                <button type="button" disabled={saving} onClick={() => void changeStatus("rejected")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Respinsă</button>
+                <button type="button" disabled={saving} onClick={() => void changeStatus("expired")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Expirată</button>
+              </> : null}
+              {canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-35">Șterge</button> : null}
+            </div> : null}
           </> : <ModuleEmpty title="Selectează o ofertă" description="Detaliile, pozițiile și statusul apar aici." />}
         </div>
       </section>
