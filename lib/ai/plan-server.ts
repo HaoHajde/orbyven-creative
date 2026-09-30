@@ -28,8 +28,16 @@ function updateBindings(bindings: PlanBindings, proposal: ParsedMutation) {
   }
   if (proposal.actionType === "create_task" && proposal.payload.kind === "work") {
     bindings.workTitle = proposal.payload.title;
+    bindings.orderTitle = undefined;
     if (proposal.payload.clientName) bindings.clientName = proposal.payload.clientName;
     bindings.lastEntity = "work";
+    return;
+  }
+  if (proposal.actionType === "create_task" && proposal.payload.kind === "order") {
+    bindings.orderTitle = proposal.payload.title;
+    bindings.workTitle = undefined;
+    if (proposal.payload.clientName) bindings.clientName = proposal.payload.clientName;
+    bindings.lastEntity = "order";
   }
 }
 
