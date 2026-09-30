@@ -121,7 +121,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "estimates") {
-    return <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
+    return <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} timeZone={timeZone} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "documents") {
