@@ -32,3 +32,5 @@ jobs:
         run: npm run check
       - name: Export iOS bundle
         run: npm run export:ios
+      - name: Validate EAS production profile
+        run: npx eas-cli@24.8.0 config --platform ios --profile production --non-interactive
