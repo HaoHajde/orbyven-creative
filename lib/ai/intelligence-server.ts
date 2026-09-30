@@ -3,6 +3,7 @@ import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
+import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
@@ -89,15 +90,16 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
   const now = new Date();
   const nowIso = now.toISOString();
   const tomorrowIso = new Date(now.getTime() + DAY_MS).toISOString();
+  const sevenDaysIso = new Date(now.getTime() + 7 * DAY_MS).toISOString();
 
   const [
     openTasks,
     activeLeads,
     sentEstimates,
-    overdueTasks,
-    urgentTasks,
+    taskRows,
     followUps,
-    nextEvents,
+    estimateRows,
+    eventRows,
   ] = await Promise.all([
     available.has("tasks")
       ? count(client.from("ops_tasks").select("id", { count: "exact", head: true })
@@ -112,19 +114,11 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
           .eq("organization_id", actor.organizationId).eq("status", "sent"))
       : Promise.resolve(0),
     available.has("tasks") ? client.from("ops_tasks")
-      .select("id,title,due_at,priority,status,client_id")
+      .select("id,title,kind,status,priority,client_id,scheduled_at,due_at,created_at")
       .eq("organization_id", actor.organizationId)
       .not("status", "in", OPEN_TASKS)
-      .lt("due_at", nowIso)
-      .order("due_at", { ascending: true })
-      .limit(5) : Promise.resolve({ data: [], error: null }),
-    available.has("tasks") ? client.from("ops_tasks")
-      .select("id,title,due_at,priority,status,client_id")
-      .eq("organization_id", actor.organizationId)
-      .not("status", "in", OPEN_TASKS)
-      .eq("priority", "urgent")
       .order("updated_at", { ascending: false })
-      .limit(5) : Promise.resolve({ data: [], error: null }),
+      .limit(120) : Promise.resolve({ data: [], error: null }),
     available.has("leads") ? client.from("crm_leads")
       .select("id,name,next_follow_up_at")
       .eq("organization_id", actor.organizationId)
@@ -133,43 +127,120 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
       .not("next_follow_up_at", "is", null)
       .lte("next_follow_up_at", tomorrowIso)
       .order("next_follow_up_at")
-      .limit(5) : Promise.resolve({ data: [], error: null }),
+      .limit(10) : Promise.resolve({ data: [], error: null }),
+    available.has("estimates") ? client.from("sales_estimates")
+      .select("id,reference,title,status,valid_until,client_id,task_id,updated_at")
+      .eq("organization_id", actor.organizationId)
+      .in("status", ["sent", "accepted"])
+      .order("updated_at", { ascending: false })
+      .limit(80) : Promise.resolve({ data: [], error: null }),
     available.has("calendar") ? client.from("calendar_events")
-      .select("id,title,start_at,client_id,task_id")
+      .select("id,title,status,start_at,end_at,assignee,client_id,task_id")
       .eq("organization_id", actor.organizationId)
       .neq("status", "cancelled")
       .gte("start_at", nowIso)
-      .lte("start_at", tomorrowIso)
+      .lte("start_at", sevenDaysIso)
       .order("start_at")
-      .limit(5) : Promise.resolve({ data: [], error: null }),
+      .limit(80) : Promise.resolve({ data: [], error: null }),
   ]);
 
-  for (const result of [overdueTasks, urgentTasks, followUps, nextEvents]) {
+  for (const result of [taskRows, followUps, estimateRows, eventRows]) {
     if (result.error) throw result.error;
   }
 
-  const overdue = overdueTasks.data ?? [];
-  const urgent = urgentTasks.data ?? [];
+  const operations: AutomationOperation[] = (taskRows.data ?? []).map((task) => ({
+    id: task.id,
+    title: task.title,
+    kind: task.kind as AutomationOperation["kind"],
+    status: task.status as AutomationOperation["status"],
+    priority: task.priority as AutomationOperation["priority"],
+    clientId: task.client_id ?? null,
+    scheduledAt: task.scheduled_at ?? null,
+    dueAt: task.due_at ?? null,
+    createdAt: task.created_at,
+  }));
+  const estimates: AutomationEstimate[] = (estimateRows.data ?? []).map((estimate) => ({
+    id: estimate.id,
+    reference: estimate.reference,
+    title: estimate.title,
+    status: estimate.status,
+    validUntil: estimate.valid_until ?? null,
+    clientId: estimate.client_id ?? null,
+    taskId: estimate.task_id ?? null,
+    updatedAt: estimate.updated_at,
+  }));
+  const events: AutomationEvent[] = (eventRows.data ?? []).map((event) => ({
+    id: event.id,
+    title: event.title,
+    status: event.status,
+    startAt: event.start_at,
+    endAt: event.end_at ?? null,
+    assignee: event.assignee ?? null,
+    clientId: event.client_id ?? null,
+    taskId: event.task_id ?? null,
+  }));
+
+  const signals = buildBusinessAutomationSignals({
+    operations,
+    estimates,
+    events,
+    now,
+    locale: "ro-RO",
+    timeZone: "Europe/Bucharest",
+  });
+  const actionableSignals = signals.filter((signal) => signal.level !== "upcoming");
   const follow = followUps.data ?? [];
-  const events = nextEvents.data ?? [];
-  const attentionTaskIds = new Set([...overdue, ...urgent].map((item) => item.id));
-  const attention = attentionTaskIds.size + follow.length;
+  const overdueFollowUps = follow.filter((item) => item.next_follow_up_at && item.next_follow_up_at < nowIso);
+
+  const blockedCount = signals.filter((signal) => signal.rule === "operation_blocked").length;
+  const overdueCount = signals.filter((signal) => signal.rule === "operation_overdue").length;
+  const estimateFollowUpCount = signals.filter((signal) => signal.rule === "estimate_follow_up").length;
+  const conflictCount = signals.filter((signal) => signal.rule === "calendar_conflict").length;
+  const attention = actionableSignals.length + overdueFollowUps.length;
 
   const actions: IntelligenceAction[] = [];
-  if (available.has("tasks")) actions.push({ kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" });
-  if (available.has("calendar")) actions.push({ kind: "open_module", label: "Vezi calendarul", moduleId: "calendar" });
-  if (follow.length && available.has("leads")) actions.unshift({ kind: "open_module", label: "Vezi follow-up-urile", moduleId: "leads" });
+  for (const signal of actionableSignals.slice(0, 3)) {
+    actions.push({
+      kind: "open_module",
+      label: signal.actionLabel,
+      moduleId: signal.module,
+      recordId: signal.open.recordId,
+      clientId: signal.open.clientId,
+      taskId: signal.open.taskId,
+      estimateId: signal.open.estimateId,
+    });
+  }
+  if (!actions.length && follow.length && available.has("leads")) {
+    const lead = follow[0];
+    actions.push({
+      kind: "open_module",
+      label: "Vezi follow-up-ul",
+      moduleId: "leads",
+      recordId: lead.id,
+    });
+  }
+  if (!actions.length && available.has("tasks")) {
+    actions.push({ kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" });
+  }
+
+  const topSignal = actionableSignals[0];
+  const headline = topSignal
+    ? "Prioritatea principală: " + topSignal.title + "."
+    : overdueFollowUps.length
+      ? "Ai follow-up-uri de client care au depășit termenul."
+      : "Nu văd blocaje operaționale urgente în datele disponibile.";
 
   return {
     specialist: "operations",
-    answer: attention
-      ? `Ai ${attention} elemente care merită atenție imediată. Sunt ${openTasks} lucrări deschise, ${activeLeads} lead-uri active și ${sentEstimates} oferte trimise.`
-      : `Nu văd blocaje urgente în datele apropiate. Ai ${openTasks} lucrări deschise, ${activeLeads} lead-uri active și ${sentEstimates} oferte trimise.`,
+    answer:
+      headline +
+      ` În total sunt ${openTasks} lucrări deschise, ${activeLeads} lead-uri active și ${sentEstimates} oferte trimise.` +
+      (attention ? ` ORBYVEN a detectat ${attention} semnale care necesită atenție.` : ""),
     facts: [
-      { label: "Lucrări deschise", value: String(openTasks) },
-      { label: "Întârziate", value: String(overdue.length) },
-      { label: "Follow-up-uri apropiate", value: String(follow.length) },
-      { label: "Programări 24h", value: String(events.length) },
+      { label: "Blocate", value: String(blockedCount) },
+      { label: "Întârziate", value: String(overdueCount) },
+      { label: "Oferte de urmărit", value: String(estimateFollowUpCount) },
+      { label: "Conflicte calendar", value: String(conflictCount) },
     ],
     actions,
     generatedBy: "orbyven_core",
