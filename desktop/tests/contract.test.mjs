@@ -112,3 +112,14 @@ test("live visual manifest keeps desktop aligned with the web workspace", () => 
   assert.match(route, /WORKSPACE_UI_REVISION/);
   assert.match(route, /Cache-Control/);
 });
+
+test("Windows shell allows the responsive layout to reach tablet-size widths", () => {
+  const window = config.app.windows[0];
+  assert.equal(window.resizable, true);
+  assert.ok(window.minWidth <= 650, "Desktop minimum width must allow the compact breakpoint");
+  assert.ok(window.minHeight <= 540, "Desktop minimum height must remain usable on small displays");
+  const css = content("../src/styles.css");
+  assert.match(css, /@media\(max-width:650px\)/);
+  assert.match(css, /\.desktop-workspace \.shell\{display:block\}/);
+  assert.match(css, /\.desktop-workspace \.sidebar nav\{display:flex;gap:6px;overflow:auto\}/);
+});
