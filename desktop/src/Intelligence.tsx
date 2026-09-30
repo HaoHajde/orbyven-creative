@@ -234,7 +234,7 @@ export default function DesktopIntelligence({ organizationId, onOpenModule }: Pr
       const body = await response.json() as {
         error?: string;
         message?: string;
-        result?: { moduleId?: OrbyvenModuleId };
+        result?: { type?: string; id?: string; moduleId?: OrbyvenModuleId };
       };
       if (!response.ok) throw new Error(body.error || "Acțiunea nu a putut fi procesată.");
       setMessages((current) => current.map((message) => ({
