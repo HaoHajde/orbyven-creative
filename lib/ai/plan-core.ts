@@ -1,7 +1,8 @@
 export type PlanBindings = {
   clientName?: string;
   workTitle?: string;
-  lastEntity?: "client" | "work";
+  orderTitle?: string;
+  lastEntity?: "client" | "work" | "order";
 };
 
 const MUTATION_START =
@@ -37,19 +38,25 @@ export function applyPlanBindings(clause: string, bindings: PlanBindings) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (/^programeaza?-?o\b/.test(normalized) && bindings.workTitle) {
-    next = next.replace(/^programeaz(?:[ăa])?-?o\b/i, "Programează programare " + bindings.workTitle);
-    next = next + "; lucrare: " + bindings.workTitle;
+  const operationTitle =
+    bindings.lastEntity === "order" ? bindings.orderTitle :
+    bindings.lastEntity === "work" ? bindings.workTitle :
+    bindings.workTitle || bindings.orderTitle;
+  const operationField = bindings.lastEntity === "order" ? "comanda" : "lucrare";
+
+  if (/^programeaza?-?o\b/.test(normalized) && operationTitle) {
+    next = next.replace(/^programeaz(?:[ăa])?-?o\b/i, "Programează programare " + operationTitle);
+    next = next + "; " + operationField + ": " + operationTitle;
     if (bindings.clientName) next += "; client: " + bindings.clientName;
     return next;
   }
 
-  if (/^pregateste\s+(?:un\s+|o\s+)?deviz(?:ul)?\b/.test(normalized) && bindings.workTitle) {
+  if (/^pregateste\s+(?:un\s+|o\s+)?deviz(?:ul)?\b/.test(normalized) && operationTitle) {
     next = next.replace(
       /^preg[ăa]te[șs]te\s+(?:un\s+|o\s+)?deviz(?:ul)?\b/i,
-      "Creează deviz Deviz " + bindings.workTitle
+      "Creează deviz Deviz " + operationTitle
     );
-    next = next + "; lucrare: " + bindings.workTitle;
+    next = next + "; " + operationField + ": " + operationTitle;
     if (bindings.clientName) next += "; client: " + bindings.clientName;
     return next;
   }
@@ -57,10 +64,18 @@ export function applyPlanBindings(clause: string, bindings: PlanBindings) {
   const pronounReference = /\b(?:pentru|la)\s+(?:el|ea)\b/i.test(next);
   const clientReference = /\bclient(?:ul|ului)\s+(?:respectiv|respectivul|creat|de mai sus)\b/i.test(next);
   const workReference = /\blucrare(?:a|ii)\s+(?:respectiva|respectivă|creata|creată|de mai sus)\b/i.test(next);
+  const orderReference = /\bcomand(?:a|ei|ă)\s+(?:respectiva|respectivă|creata|creată|de mai sus)\b/i.test(next);
 
   if (workReference && bindings.workTitle) {
     next = cleanContextPhrase(next);
     next += "; lucrare: " + bindings.workTitle;
+    if (bindings.clientName) next += "; client: " + bindings.clientName;
+    return next;
+  }
+
+  if (orderReference && bindings.orderTitle) {
+    next = cleanContextPhrase(next);
+    next += "; comanda: " + bindings.orderTitle;
     if (bindings.clientName) next += "; client: " + bindings.clientName;
     return next;
   }
@@ -74,6 +89,10 @@ export function applyPlanBindings(clause: string, bindings: PlanBindings) {
   if (pronounReference && bindings.lastEntity === "work" && bindings.workTitle) {
     next = cleanContextPhrase(next);
     next += "; lucrare: " + bindings.workTitle;
+    if (bindings.clientName) next += "; client: " + bindings.clientName;
+  } else if (pronounReference && bindings.lastEntity === "order" && bindings.orderTitle) {
+    next = cleanContextPhrase(next);
+    next += "; comanda: " + bindings.orderTitle;
     if (bindings.clientName) next += "; client: " + bindings.clientName;
   }
 
