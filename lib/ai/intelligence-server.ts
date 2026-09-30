@@ -114,7 +114,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
           .eq("organization_id", actor.organizationId).eq("status", "sent"))
       : Promise.resolve(0),
     available.has("tasks") ? client.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,scheduled_at,due_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,scheduled_at,due_at,created_at")
       .eq("organization_id", actor.organizationId)
       .not("status", "in", OPEN_TASKS)
       .order("updated_at", { ascending: false })
@@ -154,6 +154,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     kind: task.kind as AutomationOperation["kind"],
     status: task.status as AutomationOperation["status"],
     priority: task.priority as AutomationOperation["priority"],
+    assignee: task.assignee ?? null,
     clientId: task.client_id ?? null,
     scheduledAt: task.scheduled_at ?? null,
     dueAt: task.due_at ?? null,
