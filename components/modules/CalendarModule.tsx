@@ -92,6 +92,31 @@ const typeStyles: Record<CalendarEventType, string> = {
   internal: "bg-emerald-500/10 text-emerald-600",
 };
 
+type NativeBridgeWindow = Window & {
+  ReactNativeWebView?: {
+    postMessage: (message: string) => void;
+  };
+};
+
+function postCalendarReminderBridge(
+  action: "schedule" | "cancel",
+  calendarEvent: CalendarEvent
+) {
+  const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+  if (!bridge) return;
+
+  bridge.postMessage(JSON.stringify({
+    type: action === "schedule"
+      ? "orbyven:schedule-calendar-reminder"
+      : "orbyven:cancel-calendar-reminder",
+    eventId: calendarEvent.id,
+    title: calendarEvent.title,
+    startAt: calendarEvent.start_at,
+    reminderMinutes: calendarEvent.reminder_minutes,
+    location: calendarEvent.location,
+  }));
+}
+
 function dateKeyInTimeZone(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -401,6 +426,9 @@ export default function CalendarModule({
         [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
       );
       setSelectedId(created.id);
+      if (created.status === "scheduled" && created.reminder_minutes !== null) {
+        postCalendarReminderBridge("schedule", created);
+      }
       setCreateOpen(false);
       setForm(emptyForm);
     } catch (createError) {
@@ -431,6 +459,10 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
+      postCalendarReminderBridge(
+        updated.status === "scheduled" ? "schedule" : "cancel",
+        updated
+      );
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
@@ -445,6 +477,7 @@ export default function CalendarModule({
     setError("");
     try {
       await deleteCalendarEvent(organizationId, calendarEvent.id);
+      postCalendarReminderBridge("cancel", calendarEvent);
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
     } catch (deleteError) {
