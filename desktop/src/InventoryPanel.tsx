@@ -17,6 +17,7 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialRecordId?: string | null;
 };
 
 type PurchaseLine = {
@@ -40,7 +41,7 @@ function quantity(value: number) {
   return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 }).format(value);
 }
 
-export default function DesktopInventoryPanel({ organizationId, locale, role }: Props) {
+export default function DesktopInventoryPanel({ organizationId, locale, role, initialRecordId }: Props) {
   const [snapshot, setSnapshot] = useState<InventorySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -97,7 +98,11 @@ export default function DesktopInventoryPanel({ organizationId, locale, role }: 
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const suppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
   const tasks = snapshot?.tasks ?? [];
-  const gaps = snapshot?.stock ?? [];
+  const gaps = useMemo(() => {
+    const next = [...(snapshot?.stock ?? [])];
+    if (initialRecordId) next.sort((left, right) => Number(right.materialId === initialRecordId) - Number(left.materialId === initialRecordId));
+    return next;
+  }, [snapshot, initialRecordId]);
   const purchaseOrders = snapshot?.purchaseOrders ?? [];
   const purchaseItems = snapshot?.purchaseItems ?? [];
   const summary = useMemo(
@@ -355,7 +360,7 @@ export default function DesktopInventoryPanel({ organizationId, locale, role }: 
         <div className="inventory-section-head"><div><p className="eyebrow">PROCUREMENT SIGNALS</p><h3>Ce trebuie cumpărat</h3></div><span>{gaps.filter((gap) => gap.suggestedOrder > 0).length} poziții</span></div>
         <div className="inventory-table">
           {gaps.map((gap) => (
-            <div className={"inventory-row " + gap.state} key={gap.materialId}>
+            <div className={"inventory-row " + gap.state + (gap.materialId === initialRecordId ? " highlighted" : "")} key={gap.materialId}>
               <div><strong>{gap.name}</strong><small>{gap.state === "shortage" ? "Lipsă reală" : gap.state === "low" ? "Sub prag" : "Stoc OK"}</small></div>
               <div><span>În stoc</span><strong>{quantity(gap.onHand)} {gap.unit}</strong></div>
               <div><span>Cerere</span><strong>{quantity(gap.outstandingDemand)} {gap.unit}</strong></div>
