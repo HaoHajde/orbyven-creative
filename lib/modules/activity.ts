@@ -184,6 +184,7 @@ export async function loadWorkspaceActivity(
   });
 
   for (const signal of automationSignals) {
+    if (!enabledModules.includes(signal.module)) continue;
     items.push({
       key: signal.key,
       module: signal.module,
