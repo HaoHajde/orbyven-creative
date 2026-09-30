@@ -114,7 +114,9 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
 
   const clientById = useMemo(() => new Map(clients.map((item) => [item.id, item.name])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
+  const taskContextById = useMemo(() => new Map(tasks.map((item) => [item.id, item])), [tasks]);
   const estimateById = useMemo(() => new Map(estimates.map((item) => [item.id, `${item.reference} · ${item.title}`])), [estimates]);
+  const estimateContextById = useMemo(() => new Map(estimates.map((item) => [item.id, item])), [estimates]);
 
   const scopedDocuments = useMemo(
     () => (scopeTaskId ? documents.filter((document) => document.task_id === scopeTaskId) : documents),
@@ -144,8 +146,26 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     total: scopedDocuments.length,
     photos: scopedDocuments.filter((item) => item.category === "photo").length,
     receipts: scopedDocuments.filter((item) => item.category === "receipt").length,
-    linked: scopedDocuments.filter((item) => item.client_id || item.task_id || item.estimate_id).length,
+    unlinked: scopedDocuments.filter((item) => !item.client_id && !item.task_id && !item.estimate_id).length,
   }), [scopedDocuments]);
+
+  const selectTaskContext = (nextTaskId: string) => {
+    const task = nextTaskId ? taskContextById.get(nextTaskId) : null;
+    setTaskId(nextTaskId);
+    if (task?.client_id) setClientId(task.client_id);
+    if (estimateId) {
+      const estimate = estimateContextById.get(estimateId);
+      if (estimate?.task_id && estimate.task_id !== nextTaskId) setEstimateId("");
+    }
+  };
+
+  const selectEstimateContext = (nextEstimateId: string) => {
+    const estimate = nextEstimateId ? estimateContextById.get(nextEstimateId) : null;
+    setEstimateId(nextEstimateId);
+    if (!estimate) return;
+    if (estimate.task_id) setTaskId(estimate.task_id);
+    if (estimate.client_id) setClientId(estimate.client_id);
+  };
 
   const selectFile = (nextFile: File | null, source: "files" | "camera") => {
     setFile(nextFile);
@@ -235,7 +255,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
 
       <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <ModuleMetric label="Fișiere" value={String(metrics.total)} note="storage privat" />
-        <ModuleMetric label="Legate de context" value={String(metrics.linked)} note="client / lucrare / ofertă" />
+        <ModuleMetric label="Nelegate" value={String(metrics.unlinked)} note="de organizat" />
         <ModuleMetric label="Fotografii" value={String(metrics.photos)} note="poze din teren" />
         <ModuleMetric label="Bonuri" value={String(metrics.receipts)} note="pentru cheltuieli" />
       </section>
@@ -281,19 +301,19 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
               </select>
             </Field>
             <Field label="Client">
-              <select value={clientId} onChange={(event) => setClientId(event.target.value)} className={moduleInputClass}>
+              <select value={clientId} disabled={Boolean(taskContextById.get(taskId)?.client_id || estimateContextById.get(estimateId)?.client_id)} onChange={(event) => setClientId(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
                 <option value="">Fără client</option>
                 {clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </Field>
             <Field label="Lucrare">
-              <select value={taskId} onChange={(event) => setTaskId(event.target.value)} className={moduleInputClass}>
+              <select value={taskId} disabled={Boolean(estimateContextById.get(estimateId)?.task_id)} onChange={(event) => selectTaskContext(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
                 <option value="">Fără lucrare</option>
                 {tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
             </Field>
             <Field label="Ofertă / deviz">
-              <select value={estimateId} onChange={(event) => setEstimateId(event.target.value)} className={moduleInputClass}>
+              <select value={estimateId} onChange={(event) => selectEstimateContext(event.target.value)} className={moduleInputClass}>
                 <option value="">Fără ofertă</option>
                 {estimates.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
               </select>
@@ -303,7 +323,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
             </Field>
           </div>
           <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <p className="text-xs text-[var(--muted)]">Maxim 20 MB. Descărcarea se face prin link temporar securizat.</p>
+            <p className="text-xs text-[var(--muted)]">{taskId || estimateId ? "Contextul este sincronizat automat între client, lucrare și deviz." : "Maxim 20 MB. Descărcarea se face prin link temporar securizat."}</p>
             <button disabled={!file || saving} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se încarcă…" : "Salvează documentul"}</button>
           </div>
         </form>

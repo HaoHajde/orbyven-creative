@@ -267,6 +267,7 @@ export async function createExpense(
 
   let linkedClientId = input.clientId || null;
   let linkedTaskId = input.taskId || null;
+  let linkedEstimateId = input.estimateId || null;
   if (linkedTaskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
@@ -289,12 +290,12 @@ export async function createExpense(
       .single();
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
-  if (input.estimateId) {
+  if (linkedEstimateId) {
     const { data: estimate, error: estimateError } = await orbyvenSupabase
       .from("sales_estimates")
       .select("id,client_id,task_id")
       .eq("organization_id", organizationId)
-      .eq("id", input.estimateId)
+      .eq("id", linkedEstimateId)
       .single();
     if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
     if (linkedTaskId && estimate.task_id && linkedTaskId !== estimate.task_id) {
@@ -309,11 +310,23 @@ export async function createExpense(
   if (input.documentId) {
     const { data: document, error: documentError } = await orbyvenSupabase
       .from("ops_documents")
-      .select("id")
+      .select("id,client_id,task_id,estimate_id")
       .eq("organization_id", organizationId)
       .eq("id", input.documentId)
       .single();
     if (documentError || !document) throw new Error("Documentul nu există în această firmă.");
+    if (linkedClientId && document.client_id && linkedClientId !== document.client_id) {
+      throw new Error("Clientul cheltuielii nu corespunde documentului justificativ.");
+    }
+    if (linkedTaskId && document.task_id && linkedTaskId !== document.task_id) {
+      throw new Error("Lucrarea cheltuielii nu corespunde documentului justificativ.");
+    }
+    if (linkedEstimateId && document.estimate_id && linkedEstimateId !== document.estimate_id) {
+      throw new Error("Devizul cheltuielii nu corespunde documentului justificativ.");
+    }
+    linkedClientId = document.client_id || linkedClientId;
+    linkedTaskId = document.task_id || linkedTaskId;
+    linkedEstimateId = document.estimate_id || linkedEstimateId;
   }
 
   const { data: authData } = await orbyvenSupabase.auth.getUser();
@@ -330,7 +343,7 @@ export async function createExpense(
       payment_method: input.paymentMethod || null,
       client_id: linkedClientId,
       task_id: linkedTaskId,
-      estimate_id: input.estimateId || null,
+      estimate_id: linkedEstimateId,
       document_id: input.documentId || null,
       created_by: authData.user?.id ?? null,
     })

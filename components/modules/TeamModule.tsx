@@ -13,9 +13,13 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import {
   createOperationalResource,
+  createResourceUnavailability,
+  deleteResourceUnavailability,
   listOperationalResources,
+  listResourceUnavailability,
   updateOperationalResource,
   type OperationalResource,
+  type ResourceUnavailability,
 } from "@/lib/modules/resources";
 import { RESOURCE_TYPE_LABELS, type OperationalResourceType } from "@/lib/modules/resource-core";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
@@ -50,6 +54,13 @@ type ResourceForm = {
   notes: string;
 };
 
+type UnavailabilityForm = {
+  resourceId: string;
+  startAt: string;
+  endAt: string;
+  reason: string;
+};
+
 const emptyResourceForm: ResourceForm = {
   name: "",
   resourceType: "vehicle",
@@ -58,6 +69,22 @@ const emptyResourceForm: ResourceForm = {
   location: "",
   notes: "",
 };
+
+const emptyUnavailabilityForm: UnavailabilityForm = {
+  resourceId: "",
+  startAt: "",
+  endAt: "",
+  reason: "",
+};
+
+function formatResourceWindow(value: string) {
+  return new Intl.DateTimeFormat("ro-RO", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 const emptyForm: FormState = {
   displayName: "",
@@ -96,6 +123,9 @@ export default function TeamModule({ organizationId, role }: Props) {
   const [resources, setResources] = useState<OperationalResource[]>([]);
   const [resourceCreateOpen, setResourceCreateOpen] = useState(false);
   const [resourceForm, setResourceForm] = useState<ResourceForm>(emptyResourceForm);
+  const [unavailability, setUnavailability] = useState<ResourceUnavailability[]>([]);
+  const [unavailabilityOpen, setUnavailabilityOpen] = useState(false);
+  const [unavailabilityForm, setUnavailabilityForm] = useState<UnavailabilityForm>(emptyUnavailabilityForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -106,19 +136,25 @@ export default function TeamModule({ organizationId, role }: Props) {
 
   const canWrite = role !== "viewer";
   const canDelete = role === "owner" || role === "admin" || role === "manager";
+  const canManageAvailability = canDelete;
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextMembers, nextAccess, nextResources] = await Promise.all([
+      const now = new Date();
+      const rangeStart = now.toISOString();
+      const rangeEnd = new Date(now.getTime() + 120 * 86400000).toISOString();
+      const [nextMembers, nextAccess, nextResources, nextUnavailability] = await Promise.all([
         listTeamMembers(organizationId),
         listWorkspaceAccessMembers(organizationId),
         listOperationalResources(organizationId, { activeOnly: false }),
+        listResourceUnavailability(organizationId, rangeStart, rangeEnd),
       ]);
       setMembers(nextMembers);
       setAccessMembers(nextAccess);
       setResources(nextResources);
+      setUnavailability(nextUnavailability);
       setSelectedId((current) =>
         current && nextMembers.some((item) => item.id === current)
           ? current
@@ -162,6 +198,8 @@ export default function TeamModule({ organizationId, role }: Props) {
   const activeCount = members.filter((member) => member.status === "active").length;
   const linkedCount = members.filter((member) => member.linked_user_id).length;
   const activeResourceCount = resources.filter((resource) => resource.active).length;
+  const upcomingUnavailability = unavailability;
+  const resourceById = useMemo(() => new Map(resources.map((item) => [item.id, item])), [resources]);
 
   const handleCreateResource = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -200,6 +238,46 @@ export default function TeamModule({ organizationId, role }: Props) {
     } catch (resourceError) {
       console.error(resourceError);
       setError("Statusul resursei nu a putut fi schimbat.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addUnavailability = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canManageAvailability || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const created = await createResourceUnavailability(organizationId, {
+        resourceId: unavailabilityForm.resourceId,
+        startAt: unavailabilityForm.startAt,
+        endAt: unavailabilityForm.endAt,
+        reason: unavailabilityForm.reason,
+      });
+      setUnavailability((current) =>
+        [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
+      );
+      setUnavailabilityForm(emptyUnavailabilityForm);
+      setUnavailabilityOpen(false);
+    } catch (availabilityError) {
+      console.error(availabilityError);
+      setError(availabilityError instanceof Error ? availabilityError.message : "Indisponibilitatea nu a putut fi salvată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeUnavailability = async (item: ResourceUnavailability) => {
+    if (!canManageAvailability || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      await deleteResourceUnavailability(organizationId, item.id);
+      setUnavailability((current) => current.filter((entry) => entry.id !== item.id));
+    } catch (availabilityError) {
+      console.error(availabilityError);
+      setError("Indisponibilitatea nu a putut fi ștearsă.");
     } finally {
       setSaving(false);
     }
@@ -399,6 +477,43 @@ export default function TeamModule({ organizationId, role }: Props) {
             </div>
             <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Adaugă resursa"}</button></div>
           </form>
+        ) : null}
+
+        {canManageAvailability ? (
+          <div className="mt-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)]/55 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Disponibilitate</p>
+                <p className="mt-1 text-sm font-semibold">{upcomingUnavailability.length} intervale viitoare</p>
+                <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Concediu, service, rezervare internă sau orice perioadă în care resursa nu poate fi programată.</p>
+              </div>
+              <button type="button" onClick={() => setUnavailabilityOpen((value) => !value)} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">
+                {unavailabilityOpen ? "Închide" : "+ Indisponibilitate"}
+              </button>
+            </div>
+            {unavailabilityOpen ? (
+              <form onSubmit={addUnavailability} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.2fr_auto] xl:items-end">
+                <Field label="Resursă *"><select required value={unavailabilityForm.resourceId} onChange={(event) => setUnavailabilityForm((current) => ({ ...current, resourceId: event.target.value }))} className={moduleInputClass}><option value="">Alege resursa</option>{resources.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+                <Field label="De la *"><input required type="datetime-local" value={unavailabilityForm.startAt} onChange={(event) => setUnavailabilityForm((current) => ({ ...current, startAt: event.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Până la *"><input required type="datetime-local" value={unavailabilityForm.endAt} onChange={(event) => setUnavailabilityForm((current) => ({ ...current, endAt: event.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Motiv"><input value={unavailabilityForm.reason} onChange={(event) => setUnavailabilityForm((current) => ({ ...current, reason: event.target.value }))} className={moduleInputClass} placeholder="Concediu / service / rezervat" /></Field>
+                <button disabled={saving} className="h-11 rounded-[10px] bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">Blochează intervalul</button>
+              </form>
+            ) : null}
+            {upcomingUnavailability.length ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {upcomingUnavailability.slice(0, 9).map((item) => (
+                  <div key={item.id} className="rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0"><p className="truncate text-xs font-semibold">{resourceById.get(item.resource_id)?.name || "Resursă"}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{formatResourceWindow(item.start_at)} → {formatResourceWindow(item.end_at)}</p></div>
+                      <button type="button" disabled={saving} onClick={() => void removeUnavailability(item)} className="text-[10px] font-semibold text-rose-400 disabled:opacity-40">Șterge</button>
+                    </div>
+                    {item.reason ? <p className="mt-2 truncate text-[10px] text-[var(--muted-2)]">{item.reason}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

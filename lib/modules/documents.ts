@@ -28,8 +28,8 @@ export type BusinessDocument = {
 };
 
 export type DocumentLink = { id: string; name: string };
-export type DocumentTaskLink = { id: string; title: string };
-export type DocumentEstimateLink = { id: string; reference: string; title: string };
+export type DocumentTaskLink = { id: string; title: string; client_id: string | null };
+export type DocumentEstimateLink = { id: string; reference: string; title: string; client_id: string | null; task_id: string | null };
 
 export type UploadDocumentInput = {
   file: File;
@@ -112,12 +112,12 @@ export async function listDocumentContexts(organizationId: string) {
       .order("name", { ascending: true }),
     orbyvenSupabase
       .from("ops_tasks")
-      .select("id,title")
+      .select("id,title,client_id")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
       .from("sales_estimates")
-      .select("id,reference,title")
+      .select("id,reference,title,client_id,task_id")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
   ]);
@@ -139,6 +139,51 @@ export async function uploadDocument(
 ): Promise<BusinessDocument> {
   requireOrganizationId(organizationId);
   await validateDocumentFile(input.file);
+
+  let linkedClientId = input.clientId || null;
+  let linkedTaskId = input.taskId || null;
+
+  if (input.estimateId) {
+    const { data: estimate, error: estimateError } = await orbyvenSupabase
+      .from("sales_estimates")
+      .select("id,client_id,task_id")
+      .eq("organization_id", organizationId)
+      .eq("id", input.estimateId)
+      .single();
+    if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
+    if (linkedTaskId && estimate.task_id && linkedTaskId !== estimate.task_id) {
+      throw new Error("Lucrarea aleasă nu corespunde devizului.");
+    }
+    if (linkedClientId && estimate.client_id && linkedClientId !== estimate.client_id) {
+      throw new Error("Clientul ales nu corespunde devizului.");
+    }
+    linkedTaskId = estimate.task_id || linkedTaskId;
+    linkedClientId = estimate.client_id || linkedClientId;
+  }
+
+  if (linkedTaskId) {
+    const { data: task, error: taskError } = await orbyvenSupabase
+      .from("ops_tasks")
+      .select("id,client_id")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedTaskId)
+      .single();
+    if (taskError || !task) throw new Error("Lucrarea nu există în această firmă.");
+    if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
+      throw new Error("Clientul ales nu corespunde lucrării.");
+    }
+    linkedClientId = task.client_id || linkedClientId;
+  }
+
+  if (linkedClientId) {
+    const { data: client, error: clientError } = await orbyvenSupabase
+      .from("crm_leads")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedClientId)
+      .single();
+    if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
+  }
 
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const objectName = `${crypto.randomUUID()}-${safeFileName(input.file.name)}`;
@@ -162,8 +207,8 @@ export async function uploadDocument(
       storage_path: path,
       mime_type: input.file.type || null,
       size_bytes: input.file.size,
-      client_id: input.clientId || null,
-      task_id: input.taskId || null,
+      client_id: linkedClientId,
+      task_id: linkedTaskId,
       estimate_id: input.estimateId || null,
       note: input.note?.trim() || null,
       created_by: authData.user?.id ?? null,

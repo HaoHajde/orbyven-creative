@@ -175,6 +175,59 @@ export async function updateOperationalResource(
   return { ...data, capacity: Number(data.capacity || 1) } as OperationalResource;
 }
 
+export async function createResourceUnavailability(
+  organizationId: string,
+  input: { resourceId: string; startAt: string; endAt: string; reason?: string }
+): Promise<ResourceUnavailability> {
+  requireOrganizationId(organizationId);
+  if (!input.resourceId.trim()) throw new Error("Alege resursa.");
+  const startAt = new Date(input.startAt);
+  const endAt = new Date(input.endAt);
+  if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) {
+    throw new Error("Intervalul de indisponibilitate nu este valid.");
+  }
+  if (endAt <= startAt) throw new Error("Finalul indisponibilității trebuie să fie după început.");
+
+  const { data: resource, error: resourceError } = await orbyvenSupabase
+    .from("ops_resources")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("id", input.resourceId)
+    .single();
+  if (resourceError || !resource) throw new Error("Resursa nu există în această firmă.");
+
+  const { data: authData } = await orbyvenSupabase.auth.getUser();
+  const { data, error } = await orbyvenSupabase
+    .from("ops_resource_unavailability")
+    .insert({
+      organization_id: organizationId,
+      resource_id: input.resourceId,
+      start_at: startAt.toISOString(),
+      end_at: endAt.toISOString(),
+      reason: input.reason?.trim() || null,
+      created_by: authData.user?.id ?? null,
+    })
+    .select("id,resource_id,start_at,end_at,reason")
+    .single();
+
+  if (error) throw new Error(schedulerErrorMessage(error));
+  return data as ResourceUnavailability;
+}
+
+export async function deleteResourceUnavailability(
+  organizationId: string,
+  unavailabilityId: string
+) {
+  requireOrganizationId(organizationId);
+  if (!unavailabilityId.trim()) throw new Error("unavailability_id is required.");
+  const { error } = await orbyvenSupabase
+    .from("ops_resource_unavailability")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("id", unavailabilityId);
+  if (error) throw error;
+}
+
 export async function listResourceUnavailability(
   organizationId: string,
   rangeStart: string,
