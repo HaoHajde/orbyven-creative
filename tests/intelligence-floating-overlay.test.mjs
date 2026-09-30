@@ -9,9 +9,11 @@ const source = readFileSync(
 );
 
 test("ORBYVEN Intelligence launcher is viewport-fixed and does not occupy workspace layout", () => {
-  assert.match(source, /className="fixed bottom-\[calc\(5\.75rem\+env\(safe-area-inset-bottom\)\)\] right-3/);
+  assert.match(source, /className="fixed bottom-\\[calc\\(1rem\\+env\\(safe-area-inset-bottom\\)\\)\\] right-4/);
   assert.doesNotMatch(source, /return \(\s*<div className="relative">/);
   assert.match(source, /aria-controls="orbyven-intelligence-dialog"/);
+  assert.match(source, /createPortal/);
+  assert.match(source, /document\.body/);
 });
 
 test("ORBYVEN Intelligence opens as a modal overlay with mobile-safe scrolling", () => {
