@@ -148,6 +148,25 @@ export async function loadWorkspaceActivity(
     purchaseOrdersResult.error;
   if (firstError) throw firstError;
 
+  const calendarEventIds = (eventsResult.data ?? []).map((event) => event.id);
+  const resourceAssignmentsResult =
+    enabledModules.includes("calendar") && calendarEventIds.length
+      ? await orbyvenSupabase
+          .from("calendar_event_resources")
+          .select("event_id")
+          .eq("organization_id", organizationId)
+          .in("event_id", calendarEventIds)
+      : { data: [], error: null };
+  if (resourceAssignmentsResult.error) throw resourceAssignmentsResult.error;
+
+  const resourceCountByEvent = new Map<string, number>();
+  for (const assignment of resourceAssignmentsResult.data ?? []) {
+    resourceCountByEvent.set(
+      assignment.event_id,
+      (resourceCountByEvent.get(assignment.event_id) ?? 0) + 1
+    );
+  }
+
   for (const lead of leadsResult.data ?? []) {
     if (!lead.next_follow_up_at) continue;
     const overdue = lead.next_follow_up_at < nowIso;
@@ -184,6 +203,7 @@ export async function loadWorkspaceActivity(
     startAt: event.start_at,
     clientId: event.client_id ?? null,
     taskId: event.task_id ?? null,
+    resourceCount: resourceCountByEvent.get(event.id) ?? 0,
   }));
   const estimates: AutomationEstimate[] = (estimatesResult.data ?? []).map((estimate) => ({
     id: estimate.id,
