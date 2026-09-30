@@ -62,7 +62,7 @@ export async function loadWorkspaceActivity(
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult] =
+  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
     await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
@@ -79,7 +79,7 @@ export async function loadWorkspaceActivity(
       enabledModules.includes("tasks")
         ? orbyvenSupabase
             .from("ops_tasks")
-            .select("id,title,kind,status,priority,due_at,scheduled_at,created_at,client_id")
+            .select("id,title,kind,status,priority,assignee,due_at,scheduled_at,created_at,client_id")
             .eq("organization_id", organizationId)
             .not("status", "in", '("done","cancelled")')
             .order("updated_at", { ascending: false })
@@ -88,7 +88,7 @@ export async function loadWorkspaceActivity(
       enabledModules.includes("calendar")
         ? orbyvenSupabase
             .from("calendar_events")
-            .select("id,title,status,start_at,client_id,task_id")
+            .select("id,title,status,start_at,end_at,assignee,client_id,task_id")
             .eq("organization_id", organizationId)
             .neq("status", "cancelled")
             .gte("start_at", nowIso)
@@ -136,6 +136,14 @@ export async function loadWorkspaceActivity(
             .order("expected_on")
             .limit(10)
         : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("team")
+        ? orbyvenSupabase
+            .from("people_team_members")
+            .select("display_name,status")
+            .eq("organization_id", organizationId)
+            .eq("status", "inactive")
+            .limit(120)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
   const firstError =
@@ -145,27 +153,9 @@ export async function loadWorkspaceActivity(
     estimatesResult.error ??
     invoicesResult.error ??
     inventoryGapsResult.error ??
-    purchaseOrdersResult.error;
+    purchaseOrdersResult.error ??
+    teamResult.error;
   if (firstError) throw firstError;
-
-  const calendarEventIds = (eventsResult.data ?? []).map((event) => event.id);
-  const resourceAssignmentsResult =
-    enabledModules.includes("calendar") && calendarEventIds.length
-      ? await orbyvenSupabase
-          .from("calendar_event_resources")
-          .select("event_id")
-          .eq("organization_id", organizationId)
-          .in("event_id", calendarEventIds)
-      : { data: [], error: null };
-  if (resourceAssignmentsResult.error) throw resourceAssignmentsResult.error;
-
-  const resourceCountByEvent = new Map<string, number>();
-  for (const assignment of resourceAssignmentsResult.data ?? []) {
-    resourceCountByEvent.set(
-      assignment.event_id,
-      (resourceCountByEvent.get(assignment.event_id) ?? 0) + 1
-    );
-  }
 
   for (const lead of leadsResult.data ?? []) {
     if (!lead.next_follow_up_at) continue;
@@ -191,6 +181,7 @@ export async function loadWorkspaceActivity(
     kind: task.kind as AutomationOperation["kind"],
     status: task.status as AutomationOperation["status"],
     priority: task.priority as AutomationOperation["priority"],
+    assignee: task.assignee ?? null,
     clientId: task.client_id ?? null,
     dueAt: task.due_at ?? null,
     scheduledAt: task.scheduled_at ?? null,
@@ -201,9 +192,10 @@ export async function loadWorkspaceActivity(
     title: event.title,
     status: event.status,
     startAt: event.start_at,
+    endAt: event.end_at ?? null,
+    assignee: event.assignee ?? null,
     clientId: event.client_id ?? null,
     taskId: event.task_id ?? null,
-    resourceCount: resourceCountByEvent.get(event.id) ?? 0,
   }));
   const estimates: AutomationEstimate[] = (estimatesResult.data ?? []).map((estimate) => ({
     id: estimate.id,
@@ -223,6 +215,7 @@ export async function loadWorkspaceActivity(
     now,
     locale,
     timeZone,
+    inactiveAssigneeNames: (teamResult.data ?? []).map((member) => member.display_name),
   });
 
   for (const signal of automationSignals) {

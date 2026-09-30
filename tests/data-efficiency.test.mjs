@@ -46,7 +46,9 @@ test("Overview uses exact SQL counts, selected small records and bounded current
   assert.match(overview, /readAllPages<\{ amount_cents: number \}>/);
   assert.match(overview, /\.gte\("occurred_on", monthStart\)\.lt\("occurred_on", nextMonthStart\)/);
   assert.match(overview, /canAccessFinances\s*\? readAllPages/);
-  assert.match(dashboard, /loadOverviewSnapshot\(organizationId, canAccessFinances, timeZone\)/);
+  assert.match(dashboard, /loadOverviewSnapshot\([\s\S]{0,180}enabledModules\.includes\("team"\)/);
+  assert.match(overview, /includeTeam\s*\? countRows/);
+  assert.match(overview, /eq\("status", "inactive"\)[\s\S]{0,120}limit\(120\)/);
   assert.match(dashboard, /snapshot\?\.taskStages\.planned/);
   assert.match(dashboard, /snapshot\.activeLeadsCount/);
   assert.match(dashboard, /snapshot\.monthExpensesCents/);
@@ -58,7 +60,10 @@ test("Overview uses exact SQL counts, selected small records and bounded current
   assert.match(overview, /scheduledNearTasks/);
   assert.match(overview, /dueNearTasks/);
   assert.match(dashboard, /todayQueue/);
-  assert.match(dashboard, /Lucrare blocată · necesită o decizie/);
+  assert.match(dashboard, /buildBusinessAutomationSignals/);
+  assert.match(dashboard, /operation_blocked/);
+  assert.match(overview, /7 \* DAY_MS/);
+  assert.match(overview, /\.lte\("start_at", eventsUntil\)/);
 });
 
 test("work dossier reads contextual data without bypassing finance or pagination boundaries", () => {
@@ -70,6 +75,8 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksUi, /DOSAR OPERAȚIONAL/);
   assert.match(tasksUi, /expensesCents/);
   assert.match(tasksUi, /thermalSketch/);
+  assert.match(tasksUi, /evaluateWorkReadiness/);
+  assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {

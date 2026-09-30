@@ -50,7 +50,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.4.0");
+  assert.equal(config.version, "0.5.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -122,4 +122,60 @@ test("Windows shell allows the responsive layout to reach tablet-size widths", (
   assert.match(css, /@media\(max-width:650px\)/);
   assert.match(css, /\.desktop-workspace \.shell\{display:block\}/);
   assert.match(css, /\.desktop-workspace \.sidebar nav\{display:flex;gap:6px;overflow:auto\}/);
+});
+
+test("Desktop 0.5 includes current web operational surfaces", () => {
+  const app = content("../src/App.tsx");
+  const inventory = content("../src/InventoryPanel.tsx");
+  const activity = content("../src/ActivityCenter.tsx");
+  const intelligence = content("../src/Intelligence.tsx");
+  assert.match(app, /DesktopInventoryPanel/);
+  assert.match(app, /DesktopActivityCenter/);
+  assert.match(app, /DesktopIntelligence/);
+  for (const fn of [
+    "loadInventorySnapshot",
+    "createInventorySupplier",
+    "createPurchaseOrder",
+    "consumeInventoryForTask",
+    "receivePurchaseOrderItem",
+  ]) assert.ok(inventory.includes(fn), "Inventory parity function: " + fn);
+  assert.match(activity, /loadWorkspaceActivity/);
+  assert.match(intelligence, /\/api\/desktop\/ai\/intelligence/);
+  assert.match(intelligence, /\/api\/desktop\/ai\/conversations/);
+  assert.match(intelligence, /\/api\/desktop\/ai\/actions\/confirm/);
+});
+
+test("Desktop AI bridge keeps canonical server authorization and adds only CORS", () => {
+  const cors = content("../../lib/desktop-api-cors.ts");
+  const proxy = content("../../app/api/desktop/ai/intelligence/route.ts");
+  const canonical = content("../../app/api/ai/intelligence/route.ts");
+  const desktopClient = content("../src/client.ts");
+  assert.match(cors, /Access-Control-Allow-Headers/);
+  assert.match(cors, /Authorization, Content-Type/);
+  assert.match(proxy, /intelligencePost/);
+  assert.match(canonical, /authenticateBillingActor/);
+  assert.match(desktopClient, /orbyvenSupabase\.auth\.getSession/);
+  assert.match(desktopClient, /Bearer /);
+  assert.doesNotMatch(desktopClient, /service_role|SERVICE_ROLE|STRIPE_SECRET/i);
+});
+
+test("live manifest advertises the exact bundled desktop release", () => {
+  const visual = content("../../lib/workspace-visual-system.ts");
+  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.5\.0"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.4"/);
+});
+
+test("record search matches the live workspace searchable surfaces", () => {
+  const search = content("../src/Search.tsx");
+  const webSearch = content("../../components/WorkspaceSearch.tsx");
+  const app = content("../src/App.tsx");
+  for (const moduleId of ["leads", "tasks", "estimates", "inventory"]) {
+    assert.ok(search.includes(moduleId) && webSearch.includes(moduleId), "Search module: " + moduleId);
+  }
+  assert.match(search, /crm_leads/);
+  assert.match(search, /ops_tasks/);
+  assert.match(search, /sales_estimates/);
+  assert.match(search, /ops_material_catalog/);
+  assert.match(app, /pendingRecordId/);
+  assert.match(app, /DesktopSearch/);
 });
