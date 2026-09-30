@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+dist/
+ios/
+*.mobileprovision
+*.p12
+*.cer
+AuthKey_*.p8

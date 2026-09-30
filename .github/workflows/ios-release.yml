@@ -1,0 +1,54 @@
+name: ORBYVEN iOS TestFlight Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_to_testflight:
+        description: "Submit the finished build to TestFlight"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  release-ios:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ios
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+
+      - name: Verify release credentials
+        shell: bash
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "Missing GitHub secret: EXPO_TOKEN" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "Missing GitHub secret: EAS_PROJECT_ID" && exit 1)
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate iOS source
+        run: |
+          npm run check
+          npm run export:ios
+
+      - name: Link the EAS project
+        run: npx eas-cli@24.8.0 init --id "$EAS_PROJECT_ID" --force --non-interactive
+
+      - name: Build signed App Store archive
+        if: ${{ !inputs.submit_to_testflight }}
+        run: npx eas-cli@24.8.0 build --platform ios --profile production --non-interactive --wait --message "ORBYVEN iOS ${GITHUB_SHA::7}"
+
+      - name: Build and submit to TestFlight
+        if: ${{ inputs.submit_to_testflight }}
+        run: npx eas-cli@24.8.0 build --platform ios --profile production --auto-submit --non-interactive --wait --message "ORBYVEN iOS ${GITHUB_SHA::7}"

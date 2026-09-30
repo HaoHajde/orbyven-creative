@@ -32,3 +32,6 @@ jobs:
         run: npm run check
       - name: Export iOS bundle
         run: npm run export:ios
+      - name: Validate EAS release config
+        run: |
+          node -e "const c=require('./eas.json'); if(c?.build?.production?.distribution!=='store'||c?.build?.production?.autoIncrement!==true||!c?.submit?.production?.ios) process.exit(1)"

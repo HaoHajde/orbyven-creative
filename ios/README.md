@@ -1,37 +1,31 @@
-# ORBYVEN iOS — Alpha 0.1
+# ORBYVEN iOS — Alpha 0.1 / TestFlight foundation
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
-## Scopul Alpha 0.1
+## Ce este gata
 
-Prima versiune este un **native shell** peste workspace-ul ORBYVEN live. Astfel, autentificarea, RLS, modulele, stilul și modificările de dashboard rămân sincronizate 1:1 cu produsul web fără a dubla logica de business.
+Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native în 0.1:
-- aplicație și bundle iOS proprii;
-- splash și chrome ORBYVEN;
-- deep-link scheme `orbyven://`;
+Native:
+- bundle iOS propriu: `ro.orbyven.app`;
+- deep-link `orbyven://`;
 - back/forward gestures;
-- pull-to-refresh iOS;
+- pull-to-refresh;
 - toolbar nativ;
-- handling pentru stare online/offline;
-- linkurile externe sunt deschise în iOS, nu în containerul ORBYVEN;
-- sesiunea web persistă prin cookie storage-ul WebView.
+- online/offline recovery;
+- external link hand-off către iOS;
+- sesiune persistentă;
+- dark/light mode.
 
-Web/shared în 0.1:
-- login și onboarding;
-- workspace;
-- module și permisiuni;
-- date Supabase;
-- AI și funcționalități server;
-- billing și documente.
+Release:
+- `eas.json` cu profile simulator, preview și production;
+- production folosește distribuție App Store/TestFlight;
+- build number administrat remote și incrementat automat;
+- comenzi locale pentru build și TestFlight;
+- workflow GitHub manual pentru build + submit;
+- certificatele și tokenurile nu sunt stocate în repository.
 
-## Securitate
-
-Aplicația nu conține service-role keys, chei de billing sau tokenuri privilegiate. Datele private rămân protejate de mecanismele existente din ORBYVEN Web + Supabase RLS.
-
-Hosturile permise în container sunt `orbyven.ro` și subdomeniile sale. Linkurile externe HTTPS, mailto, tel și sms ies în aplicațiile sistemului.
-
-## Dezvoltare
+## Validare locală
 
 Necesită Node.js 22.13+.
 
@@ -39,27 +33,61 @@ Necesită Node.js 22.13+.
 cd ios
 npm install
 npm run check
-npm start
+npm run export:ios
 ```
 
-Pentru simulator / device local pe macOS:
+## Prima legare la Expo / EAS
+
+Autentifică-te în contul Expo care va deține ORBYVEN:
 
 ```bash
-npm run prebuild:ios
-npm run ios
+cd ios
+npx eas-cli@24.8.0 login
+npx eas-cli@24.8.0 init
 ```
 
-## Publicare
+EAS va adăuga automat project ID-ul aplicației. Pentru CI, project ID-ul se salvează în GitHub ca secret `EAS_PROJECT_ID`; tokenul Expo se salvează ca `EXPO_TOKEN`.
 
-Un build instalabil/TestFlight necesită:
-1. Apple Developer Program;
-2. semnare iOS (certificate/provisioning);
-3. App Store Connect bundle pentru `ro.orbyven.app`;
-4. icon + screenshots finale;
-5. privacy disclosures și review App Store.
+## Build-uri
 
-Nu se comit certificate, provisioning profiles sau secrete Apple.
+Simulator:
 
-## Direcția următoare
+```bash
+npm run build:simulator
+```
 
-Alpha 0.2 va adăuga funcții native care justifică distribuția App Store: push notifications, Face ID/app lock, document scan/upload/share și integrarea deep-link universal. Modulele pot fi apoi migrate gradual la UI React Native complet fără a schimba backend-ul ORBYVEN.
+Build intern pentru device-uri înregistrate:
+
+```bash
+npm run build:preview
+```
+
+Production IPA pentru App Store/TestFlight:
+
+```bash
+npm run build:production
+```
+
+Production + upload automat în TestFlight:
+
+```bash
+npm run testflight
+```
+
+## GitHub release workflow
+
+Workflow-ul `ORBYVEN iOS TestFlight Release` este pornit manual din GitHub Actions. Are nevoie de:
+- `EXPO_TOKEN`;
+- `EAS_PROJECT_ID`;
+- signing credentials Apple configurate în EAS;
+- Apple Developer Program activ.
+
+Poate genera doar build-ul semnat sau îl poate trimite automat în TestFlight.
+
+## Apple
+
+Bundle identifier: `ro.orbyven.app`.
+
+Prima configurare Apple se face interactiv o singură dată cu EAS Credentials / App Store Connect. Nu se comit parole Apple, certificate, provisioning profiles, App Store Connect API private keys sau alte secrete.
+
+După prima asociere, release-urile următoare pot fi lansate din workflow fără Mac, folosind EAS Build + EAS Submit.
