@@ -10,7 +10,7 @@ permissions:
 jobs:
   authenticated-workspace:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       ORBYVEN_QA_EMAIL: ${{ secrets.ORBYVEN_QA_EMAIL }}
       ORBYVEN_QA_PASSWORD: ${{ secrets.ORBYVEN_QA_PASSWORD }}
@@ -35,7 +35,7 @@ jobs:
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
-      - name: Test authenticated dashboard on mobile and desktop
+      - name: Test authenticated dashboard across phone, tablet and desktop matrix
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/audit-authenticated-workspace.mjs
