@@ -121,6 +121,18 @@ const tableLayout = [
 
 const easeOut = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+function useHydrationSafeReducedMotion() {
+  const prefersReducedMotion = useReducedMotion();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setHydrated(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  return hydrated ? Boolean(prefersReducedMotion) : false;
+}
+
 function Chapter({ children }: { children: ReactNode }) {
   return (
     <p className="orbyven-home-kicker">
@@ -368,7 +380,7 @@ function AiPreview() {
 export default function ServicesPage() {
   const [theme, setTheme] = useState<Theme>("light");
   const [activeModule, setActiveModule] = useState("overview");
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   useEffect(() => {
     const hydrate = () => {
