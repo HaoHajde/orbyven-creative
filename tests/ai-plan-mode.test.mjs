@@ -95,7 +95,7 @@ test("Plan confirmation checks the previous proposal before the atomic claim", (
   assert.match(source, /dependencyMeta\.step !== meta\.step - 1/);
 });
 
-test("Calendar execution revalidates and writes the work linkage", () => {
+test("Calendar execution revalidates and writes the universal operation linkage", () => {
   const source = read("lib/ai/action-server.ts");
   const start = source.indexOf("async function executeCalendar");
   const end = source.indexOf("async function executeEstimate");
