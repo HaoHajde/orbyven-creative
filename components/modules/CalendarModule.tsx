@@ -4,10 +4,13 @@ import {
   createCalendarEvent,
   deleteCalendarEvent,
   listCalendarClients,
+  listCalendarConflicts,
   listCalendarEvents,
   listCalendarTasks,
+  countCalendarConflicts,
   setCalendarEventStatus,
   type CalendarClient,
+  type CalendarConflict,
   type CalendarEvent,
   type CalendarEventStatus,
   type CalendarEventType,
@@ -254,6 +257,8 @@ export default function CalendarModule({
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
+  const [conflicts, setConflicts] = useState<CalendarConflict[]>([]);
+  const [conflictAcknowledged, setConflictAcknowledged] = useState(false);
   const [form, setForm] = useState<CreateForm>(() => ({
     ...emptyForm,
     clientId: initialClientId ?? "",
@@ -364,7 +369,8 @@ export default function CalendarModule({
       : 0;
     const completed = events.filter((calendarEvent) => calendarEvent.status === "completed").length;
     const linked = events.filter((calendarEvent) => calendarEvent.client_id || calendarEvent.task_id).length;
-    return { scheduled, today, completed, linked };
+    const conflicts = countCalendarConflicts(events);
+    return { scheduled, today, completed, linked, conflicts };
   }, [events, timeZone, todayKey]);
 
   const openCreate = (dateKey?: string) => {
@@ -373,6 +379,8 @@ export default function CalendarModule({
       date: dateKey || todayKey || weekStartKey,
     });
     setCreateOpen(true);
+    setConflicts([]);
+    setConflictAcknowledged(false);
     setError("");
   };
 
@@ -392,6 +400,8 @@ export default function CalendarModule({
 
   const handleTaskSelection = (taskId: string) => {
     const task = taskId ? taskById.get(taskId) : null;
+    setConflicts([]);
+    setConflictAcknowledged(false);
     setForm((current) => ({
       ...current,
       taskId,
@@ -409,6 +419,19 @@ export default function CalendarModule({
     setError("");
     try {
       const times = toEventTimes(form, timeZone);
+      if (!form.allDay && !conflictAcknowledged) {
+        const nextConflicts = await listCalendarConflicts(
+          organizationId,
+          times.startAt,
+          times.endAt,
+          { assignee: form.assignee, taskId: form.taskId || null }
+        );
+        if (nextConflicts.length) {
+          setConflicts(nextConflicts);
+          setError("");
+          return;
+        }
+      }
       const created = await createCalendarEvent(organizationId, {
         title: form.title,
         eventType: form.eventType,
@@ -430,6 +453,8 @@ export default function CalendarModule({
         postCalendarReminderBridge("schedule", created);
       }
       setCreateOpen(false);
+      setConflicts([]);
+      setConflictAcknowledged(false);
       setForm(emptyForm);
     } catch (createError) {
       console.error(createError);
@@ -506,7 +531,7 @@ export default function CalendarModule({
       <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
         <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
-        <Metric label="Finalizate" value={String(metrics.completed)} note="în săptămâna afișată" />
+        <Metric label="Conflicte" value={String(metrics.conflicts)} note="suprapuneri detectate" />
         <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
       </section>
 
@@ -535,18 +560,39 @@ export default function CalendarModule({
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
             <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-            <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
+            <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
             <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
+            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
             <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
-            <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
-            <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
             <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
             <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
             <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
           </div>
-          <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Adaugă în calendar"}</button></div>
+          {conflicts.length ? (
+            <div className="mt-5 rounded-[16px] border border-amber-400/25 bg-amber-400/[0.06] p-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div>
+                  <p className="text-xs font-semibold text-amber-300">Posibil conflict de programare</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">Aceeași lucrare sau același responsabil are deja un interval care se suprapune.</p>
+                </div>
+                <button type="button" onClick={() => { setConflictAcknowledged(true); setError(""); }} className="h-9 shrink-0 rounded-full border border-amber-400/30 px-4 text-xs font-semibold text-amber-200">
+                  Programează oricum
+                </button>
+              </div>
+              <div className="mt-3 space-y-2">
+                {conflicts.map((conflict) => (
+                  <div key={conflict.id} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[11px]">
+                    <span className="font-semibold">{conflict.title}</span>
+                    <span className="ml-2 text-[var(--muted)]">{formatTime(conflict.start_at, locale, timeZone)}–{formatTime(conflict.end_at, locale, timeZone)} · {conflict.reason === "task" ? "aceeași lucrare" : "același responsabil"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : conflictAcknowledged && conflicts.length ? "Confirmă programarea" : "Adaugă în calendar"}</button></div>
         </form>
       )}
 
