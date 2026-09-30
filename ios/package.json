@@ -1,6 +1,6 @@
 {
   "name": "orbyven-ios",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -16,7 +16,7 @@
     "testflight": "npx eas-cli@24.8.0 build --platform ios --profile production --auto-submit",
     "start:go": "expo start --go --lan",
     "start:tunnel": "expo start --go --tunnel",
-    "test:contract": "node --test tests/app-shell-contract.test.mjs"
+    "test:contract": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "expo": "~57.0.0",
