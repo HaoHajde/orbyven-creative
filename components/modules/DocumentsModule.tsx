@@ -244,7 +244,36 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         <form data-workspace-create-focus={uploadOpen ? "true" : undefined} onSubmit={handleUpload} className="mt-5 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Fișier *">
-              <input key={fileInputKey} type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className={`${moduleInputClass} file:mr-3 file:rounded-full file:border-0 file:bg-[var(--button)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--button-text)]`} />
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => filePickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
+                  Files / iCloud
+                </button>
+                <button type="button" onClick={() => cameraPickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
+                  Fotografiază
+                </button>
+              </div>
+              <input
+                key={"files-" + fileInputKey}
+                ref={filePickerRef}
+                type="file"
+                accept={DOCUMENT_ACCEPT}
+                data-orbyven-document-picker="true"
+                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "files")}
+                className="sr-only"
+              />
+              <input
+                key={"camera-" + fileInputKey}
+                ref={cameraPickerRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                data-orbyven-camera-picker="true"
+                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "camera")}
+                className="sr-only"
+              />
+              <p className="mt-2 truncate text-[11px] text-[var(--muted)]">
+                {file ? file.name + " · " + formatSize(file.size) : "Alege un fișier sau fotografiază un document."}
+              </p>
             </Field>
             <Field label="Categorie">
               <select value={category} onChange={(event) => setCategory(event.target.value as DocumentCategory)} className={moduleInputClass}>
