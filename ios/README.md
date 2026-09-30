@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.4
+# ORBYVEN iOS — Alpha 0.5
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,13 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.4:
+Native Alpha 0.5:
+- remindere locale iOS pentru programările din Calendar;
+- folosește direct câmpul existent `reminder_minutes`, fără tabel paralel;
+- cere permisiunea de notificări doar când este nevoie de primul reminder;
+- anularea/finalizarea/ștergerea programării elimină reminderul local;
+- tap pe notificare deschide ORBYVEN în Calendar și focalizează evenimentul exact;
+- fallback fără push server și fără Apple Developer pentru etapa locală;
 - buton Documente în toolbar-ul nativ;
 - bridge nativ → workspace care deschide direct modulul Documente în modul de încărcare;
 - Files / iCloud picker prin WebView, păstrând sesiunea web/Supabase existentă;
@@ -153,3 +159,12 @@ Face ID nu poate fi testat efectiv în Expo Go pe iOS; Expo cere un development/
 Versiunea 0.4.0 adaugă fluxul iPhone → Documente fără a crea un al doilea client Supabase în aplicația nativă. Fișierul ales din Files/iCloud sau fotografia făcută pe telefon ajunge în formularul web existent, iar upload-ul continuă să treacă prin validarea de tip/semnătură, bucket-ul privat `orbyven-documents` și politicile RLS ale organizației.
 
 În această etapă "Fotografiază" folosește camera iOS prin file capture. Un scanner multi-page cu detectare automată a marginilor poate fi adăugat ulterior în build-ul nativ semnat, fără să schimbăm contractul de storage.
+
+
+## Alpha 0.5
+
+Versiunea 0.5.0 leagă Calendarul ORBYVEN de notificările locale ale iPhone-ului. Când o programare are reminder, shell-ul nativ programează notificarea local la momentul cerut. Dacă reminderul ar fi deja în trecut dar programarea este încă viitoare, notificarea este programată imediat, astfel încât informația să nu fie pierdută.
+
+Programările anulate, finalizate sau șterse își elimină reminderul programat. La apăsarea notificării, aplicația revine în workspace și deschide Calendarul pe evenimentul respectiv.
+
+Notificările locale pot fi testate fără infrastructură push. Push-urile remote rămân o etapă separată deoarece necesită development/store build și credențiale push.

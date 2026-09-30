@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.4 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.5 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.4.0");
+  assert.equal(pkg.version, "0.5.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
