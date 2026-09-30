@@ -36,6 +36,35 @@ npm run check
 npm run export:ios
 ```
 
+## Testare gratuită pe iPhone fără Mac
+
+Pentru dezvoltare putem folosi Expo Go fără Apple Developer Program:
+
+1. instalează Expo Go pe iPhone;
+2. creează sau folosește același cont Expo pe PC și iPhone;
+3. pe Windows:
+
+```bash
+cd ios
+npm install
+npx expo login
+npm run start:go
+```
+
+Scanează QR-ul afișat în terminal. Dacă telefonul nu poate ajunge la PC prin rețeaua locală, instalează `@expo/ngrok` conform documentației Expo și pornește:
+
+```bash
+npm run start:tunnel
+```
+
+Expo Go este mediul de testare. Build-ul ORBYVEN semnat, TestFlight și App Store rămân pe pipeline-ul EAS configurat separat.
+
+## Instalare pe Home Screen fără Apple Developer
+
+Versiunea web ORBYVEN este configurată ca PWA cu start direct în `/workspace`, icon propriu și mod standalone. Pe iPhone: Safari → Share → Add to Home Screen → Open as Web App.
+
+Service worker-ul nu cache-uiește paginile sau răspunsurile private ale workspace-ului; offline păstrează doar shell-ul public și afișează un ecran de reconectare.
+
 ## Prima legare la Expo / EAS
 
 Autentifică-te în contul Expo care va deține ORBYVEN:
