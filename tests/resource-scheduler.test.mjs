@@ -115,6 +115,14 @@ test("calendar and team use the same shared resource engine", () => {
 });
 
 
+test("calendar surfaces work events that still need operational resources", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /Fără resurse/);
+  assert.match(calendar, /Necesită alocare resurse/);
+  assert.match(calendar, /resourceIdsByEvent/);
+  assert.match(calendar, /event_type === "work"/);
+});
+
 test("production scheduler migration preserves RLS and conflict guards", () => {
   const migration = read("supabase/migrations/20260930080226_alpha091_scheduler_resources_core.sql");
   assert.match(migration, /create table if not exists public\.ops_resources/i);
