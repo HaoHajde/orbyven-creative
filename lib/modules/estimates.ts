@@ -257,6 +257,48 @@ export async function setEstimateStatus(
   status: EstimateStatus
 ): Promise<Estimate> {
   requireOrganizationId(organizationId);
+  if (!estimateId.trim()) throw new Error("estimate_id is required.");
+
+  const { data: current, error: currentError } = await orbyvenSupabase
+    .from("sales_estimates")
+    .select(ESTIMATE_FIELDS)
+    .eq("organization_id", organizationId)
+    .eq("id", estimateId)
+    .single();
+  if (currentError || !current) throw new Error("Devizul nu mai este disponibil.");
+
+  const estimate = current as Estimate;
+  if (estimate.status === status) return estimate;
+
+  const allowed: Record<EstimateStatus, readonly EstimateStatus[]> = {
+    draft: ["sent"],
+    sent: ["accepted", "rejected", "expired"],
+    accepted: [],
+    rejected: [],
+    expired: [],
+  };
+  if (!allowed[estimate.status].includes(status)) {
+    throw new Error("Tranziția nu este permisă. Păstrează istoricul și creează o revizie când oferta este deja închisă.");
+  }
+
+  if (status === "sent" || status === "accepted") {
+    const { data: offer, error: offerError } = await orbyvenSupabase
+      .from("sales_commercial_documents")
+      .select("id,status")
+      .eq("organization_id", organizationId)
+      .eq("estimate_id", estimateId)
+      .eq("document_type", "offer")
+      .single();
+    const requiredOfferStatus = status;
+    if (offerError || !offer || offer.status !== requiredOfferStatus) {
+      throw new Error(
+        status === "sent"
+          ? "Trimite oferta client din Circuitul devizului înainte să marchezi devizul trimis."
+          : "Confirmă acceptarea ofertei client din Circuitul devizului înainte să marchezi devizul acceptat."
+      );
+    }
+  }
+
   const now = new Date().toISOString();
   const patch: Record<string, unknown> = { status };
   if (status === "sent") patch.sent_at = now;
@@ -267,9 +309,10 @@ export async function setEstimateStatus(
     .update(patch)
     .eq("organization_id", organizationId)
     .eq("id", estimateId)
+    .eq("status", estimate.status)
     .select(ESTIMATE_FIELDS)
     .single();
-  if (error) throw error;
+  if (error || !data) throw new Error("Statusul nu a fost actualizat; reîncarcă devizul.");
   return data as Estimate;
 }
 
