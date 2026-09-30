@@ -420,7 +420,7 @@ export function parseMutationPrompt(
         actionType: "create_task",
         targetModule: "tasks",
         payload,
-        summary: "Creează " + (payload.kind === "work" ? "lucrarea" : "task-ul") + " „" + title + "”",
+        summary: "Creează " + (payload.kind === "work" ? "lucrarea" : payload.kind === "order" ? "comanda" : "task-ul") + " „" + title + "”",
         facts: [
           { label: "Tip", value: payload.kind === "work" ? "Lucrare" : payload.kind === "order" ? "Comandă" : "Task" },
           { label: "Titlu", value: title },
