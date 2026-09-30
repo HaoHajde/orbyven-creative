@@ -53,6 +53,7 @@ type RecoveryDescriptor = {
   mode: PlanRecoveryMode;
   label: string;
   message: string;
+  suggestedPrompt?: string;
 };
 
 export type PlanRecoveryResult =
@@ -196,6 +197,10 @@ function recoveryDescriptor(
         mode: "needs_input",
         label: "Corectează pasul " + step,
         message: "Pasul are nevoie de context corectat înainte de a putea fi refăcut. ORBYVEN nu va ghici datele lipsă sau ambigue.",
+      suggestedPrompt:
+        storedPlanMeta(row.payload)?.planPrompt ||
+        storedPlanMeta(row.payload)?.sourcePrompt ||
+        row.summary,
       };
     }
     return {
