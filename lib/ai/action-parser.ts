@@ -467,6 +467,7 @@ export function parseMutationPrompt(
       startAt,
       endAt,
       clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare"], 180),
       location: field(prompt, ["locatie", "locație"], 240),
       notes: field(prompt, ["nota", "notă", "descriere"], 700),
       reminderMinutes,
@@ -484,6 +485,7 @@ export function parseMutationPrompt(
           { label: "Data", value: formatLocalDate(startAt, timeZone) },
           { label: "Durată", value: String(durationMinutes) + " min" },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
         ],
       },
     };
