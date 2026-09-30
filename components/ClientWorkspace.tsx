@@ -11,6 +11,10 @@ import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, themeToCssVars } from "@/lib/workspace-visual-system";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import {
+  registerPushDevice,
+  type PushDeviceRegistrationInput,
+} from "@/lib/modules/push-devices";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { scheduleWorkspaceWarp } from "@/lib/workspace-warp";
 import {
@@ -184,6 +188,43 @@ export default function ClientWorkspace() {
       window.removeEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
     };
   }, [openModule]);
+
+  useEffect(() => {
+    const organizationId = workspace?.organization.id;
+    if (!organizationId) return;
+
+    const handleNativePushToken = (event: Event) => {
+      const detail = (event as CustomEvent<PushDeviceRegistrationInput>).detail;
+      if (
+        !detail?.expoPushToken ||
+        (detail.platform !== "ios" && detail.platform !== "android")
+      ) {
+        return;
+      }
+
+      const bridge = (window as Window & {
+        ReactNativeWebView?: { postMessage: (message: string) => void };
+      }).ReactNativeWebView;
+
+      void registerPushDevice(organizationId, detail)
+        .then(() => {
+          bridge?.postMessage(JSON.stringify({ type: "orbyven:push-registered" }));
+        })
+        .catch((reason) => {
+          console.error("Push device registration failed", reason);
+          bridge?.postMessage(
+            JSON.stringify({ type: "orbyven:push-registration-error" })
+          );
+        });
+    };
+
+    window.addEventListener("orbyven:native-push-token", handleNativePushToken);
+    return () =>
+      window.removeEventListener(
+        "orbyven:native-push-token",
+        handleNativePushToken
+      );
+  }, [workspace?.organization.id]);
 
   useEffect(() => {
     if (navigation.token === 0 || panel !== "workspace") return;
