@@ -15,7 +15,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 type Props = {
   organizationId: string;
@@ -25,6 +25,16 @@ type Props = {
   initialRecordId?: string;
   initialTaskId?: string;
 };
+
+const DOCUMENT_ACCEPT = [".pdf",".jpg",".jpeg",".png",".webp",".heic",".heif",".txt",".csv",".doc",".docx",".xls",".xlsx",".ppt",".pptx"].join(",");
+
+type NativeBridgeWindow = Window & { ReactNativeWebView?: { postMessage: (message: string) => void } };
+
+function postNativeBridge(type: string, payload: Record<string, unknown> = {}) {
+  const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+  if (!bridge) return;
+  bridge.postMessage(JSON.stringify({ type, ...payload }));
+}
 
 const categoryLabels: Record<DocumentCategory, string> = {
   general: "General",
@@ -65,6 +75,8 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [scopeTaskId, setScopeTaskId] = useState(initialTaskId ?? "");
+  const filePickerRef = useRef<HTMLInputElement>(null);
+  const cameraPickerRef = useRef<HTMLInputElement>(null);
 
   const canWrite = role !== "viewer";
   const focusedDocumentId =
@@ -135,6 +147,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     linked: scopedDocuments.filter((item) => item.client_id || item.task_id || item.estimate_id).length,
   }), [scopedDocuments]);
 
+  const selectFile = (nextFile: File | null, source: "files" | "camera") => {
+    setFile(nextFile);
+    if (nextFile && source === "camera" && category === "general") setCategory("photo");
+    if (nextFile) postNativeBridge("orbyven:document-selected", { name: nextFile.name, source, size: nextFile.size });
+  };
+
   const resetUpload = () => {
     setFile(null);
     setCategory("general");
@@ -160,10 +178,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         note,
       });
       setDocuments((current) => [created, ...current]);
+      postNativeBridge("orbyven:document-uploaded", { id: created.id, name: created.name });
       resetUpload();
       setUploadOpen(false);
     } catch (saveError) {
       console.error(saveError);
+      postNativeBridge("orbyven:document-upload-error");
       setError(saveError instanceof Error ? saveError.message : "Fișierul nu a putut fi încărcat.");
     } finally {
       setSaving(false);
@@ -224,7 +244,36 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         <form data-workspace-create-focus={uploadOpen ? "true" : undefined} onSubmit={handleUpload} className="mt-5 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Fișier *">
-              <input key={fileInputKey} type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className={`${moduleInputClass} file:mr-3 file:rounded-full file:border-0 file:bg-[var(--button)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--button-text)]`} />
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => filePickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
+                  Files / iCloud
+                </button>
+                <button type="button" onClick={() => cameraPickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
+                  Fotografiază
+                </button>
+              </div>
+              <input
+                key={"files-" + fileInputKey}
+                ref={filePickerRef}
+                type="file"
+                accept={DOCUMENT_ACCEPT}
+                data-orbyven-document-picker="true"
+                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "files")}
+                className="sr-only"
+              />
+              <input
+                key={"camera-" + fileInputKey}
+                ref={cameraPickerRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                data-orbyven-camera-picker="true"
+                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "camera")}
+                className="sr-only"
+              />
+              <p className="mt-2 truncate text-[11px] text-[var(--muted)]">
+                {file ? file.name + " · " + formatSize(file.size) : "Alege un fișier sau fotografiază un document."}
+              </p>
             </Field>
             <Field label="Categorie">
               <select value={category} onChange={(event) => setCategory(event.target.value as DocumentCategory)} className={moduleInputClass}>

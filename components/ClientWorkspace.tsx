@@ -160,6 +160,15 @@ export default function ClientWorkspace() {
   }, [enabledModules]);
 
   useEffect(() => {
+    const handleNativeDocuments = () => {
+      openModule("documents", { create: true });
+    };
+
+    window.addEventListener("orbyven:native-documents", handleNativeDocuments);
+    return () => window.removeEventListener("orbyven:native-documents", handleNativeDocuments);
+  }, [openModule]);
+
+  useEffect(() => {
     if (navigation.token === 0 || panel !== "workspace") return;
 
     const selector = navigation.create

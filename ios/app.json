@@ -2,7 +2,7 @@
   "expo": {
     "name": "ORBYVEN",
     "slug": "orbyven-ios",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "scheme": "orbyven",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,11 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ORBYVEN folosește camera pentru fotografierea documentelor și pozelor din teren.",
+        "NSPhotoLibraryUsageDescription": "ORBYVEN accesează fotografiile selectate de tine pentru a le încărca în documentele firmei."
+      }
     },
     "splash": {
       "backgroundColor": "#08111f",
