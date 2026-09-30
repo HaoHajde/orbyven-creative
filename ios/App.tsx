@@ -16,11 +16,11 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import { WebView, type WebViewNavigation } from "react-native-webview";
+import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.4.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -237,6 +237,28 @@ export default function App() {
     );
   }, [currentUrl]);
 
+  const openDocuments = useCallback(() => {
+    void Haptics.selectionAsync().catch(() => undefined);
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-documents',{detail:{create:true}})); true;",
+    );
+  }, []);
+
+  const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data) as { type?: string };
+      if (message.type === "orbyven:document-uploaded") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      } else if (message.type === "orbyven:document-upload-error") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+      } else if (message.type === "orbyven:document-selected") {
+        void Haptics.selectionAsync().catch(() => undefined);
+      }
+    } catch {
+      // Ignore web messages that do not belong to the ORBYVEN native bridge.
+    }
+  }, []);
+
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
   const text = dark ? "#f4f7ff" : "#101827";
@@ -277,6 +299,7 @@ export default function App() {
           originWhitelist={["https://*", "orbyven://*"]}
           onNavigationStateChange={onNavigationStateChange}
           onShouldStartLoadWithRequest={shouldStart}
+          onMessage={handleWebMessage}
           onLoadStart={() => setConnection("loading")}
           onLoadEnd={() => setConnection("online")}
           onError={() => setConnection("offline")}
@@ -322,6 +345,7 @@ export default function App() {
           setSupportMultipleWindows={false}
           allowsLinkPreview={false}
           allowsInlineMediaPlayback
+          mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
         />
       </View>
 
@@ -331,6 +355,7 @@ export default function App() {
           setCurrentUrl(WORKSPACE_URL);
           setReloadKey((value) => value + 1);
         }} text={text} muted={muted} />
+        <ToolbarButton label="▣+" hint="Documente" onPress={openDocuments} text={text} muted={muted} />
         <ToolbarButton label="↻" hint="Refresh" onPress={() => webRef.current?.reload()} text={text} muted={muted} />
         <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
         <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
