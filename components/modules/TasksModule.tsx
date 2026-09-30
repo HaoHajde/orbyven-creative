@@ -340,7 +340,12 @@ export default function TasksModule({
         description: form.description,
       });
       if (initialEstimateId && created.kind === "work") {
-        await attachAcceptedEstimateToTask(organizationId, initialEstimateId, created.id);
+        try {
+          await attachAcceptedEstimateToTask(organizationId, initialEstimateId, created.id);
+        } catch (linkError) {
+          await deleteWorkTask(organizationId, created.id);
+          throw linkError;
+        }
       }
       setTasks((current) => [created, ...current]);
       setSelectedId(created.id);
