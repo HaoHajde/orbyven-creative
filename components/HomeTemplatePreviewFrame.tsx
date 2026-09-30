@@ -55,7 +55,7 @@ export default function HomeTemplatePreviewFrame({ children }: { children: React
     <div ref={viewportRef} className="orbyven-home-template-viewport relative w-full rounded-[24px] bg-[var(--surface-2)]">
       <div
         ref={previewRef}
-        className="absolute left-1/2 top-0 w-full origin-top"
+        className="pointer-events-none absolute left-1/2 top-0 w-full origin-top select-none"
         style={{ transform: `translateX(-50%) scale(${scale})` }}
       >
         {children}
