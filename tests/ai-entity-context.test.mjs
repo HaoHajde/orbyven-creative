@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
   detectContextEntityReferences,
   findLatestContextEntityCandidate,
-} from "../lib/ai/context-entity-resolver.ts";
+} from "../lib/ai/context-entity-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 const now = new Date("2026-09-30T06:00:00.000Z");
