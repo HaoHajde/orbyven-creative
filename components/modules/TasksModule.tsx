@@ -23,7 +23,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -154,6 +154,7 @@ export default function TasksModule({
   const [contextError, setContextError] = useState("");
 
   const canWrite = role !== "viewer";
+  useWorkspaceCreateFocus(createOpen);
   const canDelete = role === "owner" || role === "admin" || role === "manager";
   const canAccessFinances = canDelete;
 
@@ -512,8 +513,9 @@ export default function TasksModule({
 
       {createOpen && canWrite && (
         <form
+          data-workspace-create-focus={createOpen ? "true" : undefined}
           onSubmit={handleCreate}
-          className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
+          className="mt-4 scroll-mt-28 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
         >
           <div className="flex items-center justify-between gap-4">
             <div>
