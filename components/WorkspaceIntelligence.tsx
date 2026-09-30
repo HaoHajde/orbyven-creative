@@ -121,6 +121,20 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, organizationId]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   const newConversation = () => {
     setConversationId(null);
     setMessages([]);
@@ -479,17 +493,22 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   };
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
         aria-label="Deschide ORBYVEN Intelligence"
         aria-haspopup="dialog"
+        aria-controls="orbyven-intelligence-dialog"
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#7897ff]/25 bg-[linear-gradient(135deg,rgba(82,103,246,0.22),rgba(129,85,255,0.12))] px-3 text-[10px] font-semibold text-[var(--text)] shadow-sm transition hover:border-[#7897ff]/45"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex h-12 w-12 items-center justify-center rounded-2xl border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_16px_45px_rgba(27,46,112,0.42)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
       >
-        <span aria-hidden="true">✦</span>
-        <span className="hidden sm:inline">ORBYVEN AI</span>
+        <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+          <path d="M7.5 18.25 4 20l.9-3.55A7.1 7.1 0 0 1 3.5 12.2C3.5 7.95 7.25 4.5 12 4.5s8.5 3.45 8.5 7.7-3.75 7.3-8.5 7.3c-1.62 0-3.14-.35-4.5-1.25Z" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="m12 8 .55 1.45L14 10l-1.45.55L12 12l-.55-1.45L10 10l1.45-.55L12 8Z" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="sr-only">ORBYVEN AI</span>
       </button>
 
       {open ? (
@@ -497,15 +516,17 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
           <button
             type="button"
             aria-label="Închide ORBYVEN Intelligence"
-            className="fixed inset-0 z-[91] cursor-default bg-black/10 backdrop-blur-[1px]"
+            className="fixed inset-0 z-[100] cursor-default bg-[#020713]/70 backdrop-blur-[7px]"
             onClick={() => setOpen(false)}
           />
           <section
+            id="orbyven-intelligence-dialog"
             role="dialog"
+            aria-modal="true"
             aria-label="ORBYVEN Intelligence"
-            className="fixed bottom-3 left-3 right-3 z-[92] flex max-h-[82vh] flex-col overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_32px_110px_rgba(0,0,0,0.36)] sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:w-[460px]"
+            className="fixed inset-x-3 bottom-3 top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px]"
           >
-            <header className="border-b border-[var(--border)] px-4 py-4">
+            <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.9</p>
@@ -531,12 +552,19 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   >
                     Istoric
                   </button>
-                  <button type="button" onClick={() => setOpen(false)} className="px-1 text-lg text-[var(--muted)]">×</button>
+                  <button
+                    type="button"
+                    aria-label="Închide chatul"
+                    onClick={() => setOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-2)]/60 text-base text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
               {historyOpen ? (
                 <div className="grid gap-2">
                   {historyLoading ? (
@@ -624,8 +652,8 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             </div>
 
             {!historyOpen ? (
-              <form onSubmit={submit} className="border-t border-[var(--border)] p-3">
-                <div className="flex items-end gap-2 rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface-2)]/70 p-2">
+              <form onSubmit={submit} className="border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
+                <div className="flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
                   <textarea
                     value={prompt}
                     onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
@@ -649,6 +677,6 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
           </section>
         </>
       ) : null}
-    </div>
+    </>
   );
 }
