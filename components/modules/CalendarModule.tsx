@@ -379,8 +379,7 @@ export default function CalendarModule({
       date: dateKey || todayKey || weekStartKey,
     });
     setCreateOpen(true);
-    setConflicts([]);
-    setConflictAcknowledged(false);
+    resetConflictCheck();
     setError("");
   };
 
@@ -396,6 +395,11 @@ export default function CalendarModule({
     setWeekStartKey(startOfWeekKey(today));
     setSnapshotIso(nowIso);
     setSelectedId(null);
+  };
+
+  const resetConflictCheck = () => {
+    setConflicts([]);
+    setConflictAcknowledged(false);
   };
 
   const handleTaskSelection = (taskId: string) => {
@@ -560,13 +564,13 @@ export default function CalendarModule({
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
             <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-            <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
+            <Field label="Data"><input required type="date" value={form.date} onChange={(event) => { resetConflictCheck(); setForm((current) => ({ ...current, date: event.target.value })); }} className="calendar-input" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
             <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
+            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => { resetConflictCheck(); setForm((current) => ({ ...current, assignee: event.target.value })); }} placeholder="Ex. Andrei" className="calendar-input" /></Field>
             <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
-            <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
-            <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setConflicts([]); setConflictAcknowledged(false); setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => { resetConflictCheck(); setForm((current) => ({ ...current, startTime: event.target.value })); }} className="calendar-input disabled:opacity-40" /></Field>
+            <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => { resetConflictCheck(); setForm((current) => ({ ...current, endTime: event.target.value })); }} className="calendar-input disabled:opacity-40" /></Field>
             <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
             <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
             <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
