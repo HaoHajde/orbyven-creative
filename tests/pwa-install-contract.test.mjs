@@ -62,5 +62,5 @@ test("Next generated manifest matches the canonical installed workspace experien
   assert.match(generatedManifest, /background_color:\s*"#08111f"/);
   assert.match(generatedManifest, /theme_color:\s*"#08111f"/);
   assert.match(generatedManifest, /orbyven-app-icon\.png/);
-  assert.match(generatedManifest, /purpose:\s*"any maskable"/);
+  assert.match(generatedManifest, /purpose:\s*"maskable"/);
 });
