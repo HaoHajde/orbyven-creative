@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
@@ -10,6 +10,7 @@ import type { IntelligenceResponse, IntelligenceSpecialist } from "@/lib/ai/inte
 
 type Props = {
   organizationId: string;
+  themeVars: CSSProperties;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
@@ -496,21 +497,34 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   if (typeof document === "undefined") return null;
 
   return createPortal(
-        <>
+        <div
+          style={themeVars}
+          className="contents text-[var(--text)]"
+          data-orbyven-intelligence-theme-scope="true"
+        >
+          <>
           <button
             type="button"
-            aria-label="Deschide ORBYVEN Intelligence"
+            aria-label={open ? "Închide ORBYVEN Intelligence" : "Deschide ORBYVEN Intelligence"}
             aria-haspopup="dialog"
             aria-controls="orbyven-intelligence-dialog"
             aria-expanded={open}
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((current) => !current)}
             className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-14 w-14 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
           >
-            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
-              <path d="M7.5 18.25 4 20l.9-3.55A7.1 7.1 0 0 1 3.5 12.2C3.5 7.95 7.25 4.5 12 4.5s8.5 3.45 8.5 7.7-3.75 7.3-8.5 7.3c-1.62 0-3.14-.35-4.5-1.25Z" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="m12 8 .55 1.45L14 10l-1.45.55L12 12l-.55-1.45L10 10l1.45-.55L12 8Z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {!open ? (
+              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
+            ) : null}
+            {open ? (
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.9">
+                <path d="M7 7l10 10M17 7 7 17" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+                <path d="M7.5 18.25 4 20l.9-3.55A7.1 7.1 0 0 1 3.5 12.2C3.5 7.95 7.25 4.5 12 4.5s8.5 3.45 8.5 7.7-3.75 7.3-8.5 7.3c-1.62 0-3.14-.35-4.5-1.25Z" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="m12 8 .55 1.45L14 10l-1.45.55L12 12l-.55-1.45L10 10l1.45-.55L12 8Z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
             <span className="sr-only">ORBYVEN AI</span>
           </button>
     
@@ -527,7 +541,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                 role="dialog"
                 aria-modal="true"
                 aria-label="ORBYVEN Intelligence"
-                className="fixed inset-x-3 bottom-3 top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px]"
+                className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px] text-[var(--text)]"
               >
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
@@ -662,7 +676,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                         onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
                         rows={1}
                         placeholder="Întreabă ORBYVEN…"
-                        className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 outline-none placeholder:text-[var(--muted-2)]"
+                        className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
                       />
                       <button
                         type="submit"
@@ -680,7 +694,8 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
               </section>
             </>
           ) : null}
-        </>
+          </>
+        </div>
     ,
     document.body
   );
