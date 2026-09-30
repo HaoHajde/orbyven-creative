@@ -164,3 +164,18 @@ test("live manifest advertises the exact bundled desktop release", () => {
   assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.5\.0"/);
   assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.3"/);
 });
+
+test("record search matches the live workspace searchable surfaces", () => {
+  const search = content("../src/Search.tsx");
+  const webSearch = content("../../components/WorkspaceSearch.tsx");
+  const app = content("../src/App.tsx");
+  for (const moduleId of ["leads", "tasks", "estimates", "inventory"]) {
+    assert.ok(search.includes(moduleId) && webSearch.includes(moduleId), "Search module: " + moduleId);
+  }
+  assert.match(search, /crm_leads/);
+  assert.match(search, /ops_tasks/);
+  assert.match(search, /sales_estimates/);
+  assert.match(search, /ops_material_catalog/);
+  assert.match(app, /pendingRecordId/);
+  assert.match(app, /DesktopSearch/);
+});
