@@ -34,11 +34,11 @@ export default function WorkspaceAuthShell({
       style={{
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative isolate min-h-[100svh] overflow-x-hidden bg-[#070b16] text-[#f3f6ff] antialiased [--text:#f3f6ff]"
+      className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[#070b16] text-[#f3f6ff] antialiased [--text:#f3f6ff]"
     >
       <WorkspaceOrbitBackground />
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1500px] flex-col px-5 py-5 sm:px-7 sm:py-6 md:px-10">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-7 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] md:px-10">
         <header className="flex items-center justify-between gap-4">
           <BrandLogo compact theme="dark" />
           <Link
@@ -132,7 +132,7 @@ export function AuthField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className={`${styles.authInput} h-full w-full min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#8995af]`}
+          className={`${styles.authInput} h-full w-full min-w-0 flex-1 bg-transparent text-[16px] text-white outline-none placeholder:text-[#8995af] sm:text-[13px]`}
         />
         {passwordField && (
           <button

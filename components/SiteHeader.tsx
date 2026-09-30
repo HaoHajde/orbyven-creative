@@ -78,7 +78,7 @@ export default function SiteHeader({
           visible ? "translate-y-0" : "-translate-y-[calc(100%+20px)]"
         }`}
       >
-        <div className="mx-auto max-w-[1500px] px-4 pt-4 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-[1500px] px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 md:px-10">
           <div
             style={{ backgroundColor: "var(--bg)" }}
             className={`pointer-events-auto flex h-[68px] w-full touch-manipulation items-center justify-between rounded-full border border-[var(--border-strong)] px-4 shadow-[0_8px_28px_rgba(0,0,0,0.10)] md:px-6 md:transition-[height,border-radius] md:duration-300 ${
@@ -145,7 +145,7 @@ export default function SiteHeader({
           </div>
 
           {mobileOpen && (
-            <div style={{ backgroundColor: "var(--bg)" }} className="pointer-events-auto mt-2 overflow-hidden rounded-[26px] border border-[var(--border-strong)] p-2 shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
+            <div style={{ backgroundColor: "var(--bg)" }} className="pointer-events-auto mt-2 max-h-[calc(100dvh-7rem-env(safe-area-inset-top))] overflow-y-auto overscroll-contain rounded-[26px] border border-[var(--border-strong)] p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
               <nav className="flex flex-col">
                 {navItems.map((item) => {
                   const active = activePage === item.key;

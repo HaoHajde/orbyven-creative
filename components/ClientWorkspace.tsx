@@ -235,7 +235,7 @@ export default function ClientWorkspace() {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative isolate min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
       {theme === "dark" ? (
         <WorkspaceOrbitBackground fixed />
@@ -248,7 +248,7 @@ export default function ClientWorkspace() {
       )}
 
       <header
-        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
+        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color:var(--bg)]/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md"
       >
         <div className="mx-auto flex min-h-[65px] max-w-[1520px] flex-wrap items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-4">
@@ -298,7 +298,7 @@ export default function ClientWorkspace() {
       </header>
 
       <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+        <aside className="sticky top-[77px] hidden h-[calc(100dvh-90px-env(safe-area-inset-top))] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
@@ -317,6 +317,7 @@ export default function ClientWorkspace() {
                       <button
                         key={definition.id}
                         type="button"
+                        data-workspace-module={definition.id}
                         onClick={() => openModule(definition.id)}
                         aria-current={active ? "page" : undefined}
                         className={active
@@ -341,7 +342,7 @@ export default function ClientWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
+        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-[calc(7rem+env(safe-area-inset-bottom))] shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100dvh-90px-env(safe-area-inset-top))] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
@@ -370,7 +371,7 @@ export default function ClientWorkspace() {
       </div>
 
       {createMenuOpen && canCreate && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(5rem,env(safe-area-inset-top))] sm:items-center sm:py-[max(1rem,env(safe-area-inset-top))]">
           <button
             type="button"
             aria-label="Închide meniul de creare"
@@ -402,9 +403,9 @@ export default function ClientWorkspace() {
         </div>
       )}
 
-      <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
+      <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[80] -translate-x-1/2 md:hidden">
         {mobileModuleMenuOpen && (
-          <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+          <div className="absolute bottom-[58px] left-1/2 max-h-[calc(100dvh-8rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
             <div className="grid grid-cols-4 gap-2">
               {enabledDefinitions.map((definition) => {
                 const active = panel === "workspace" && activeModule === definition.id;
@@ -412,6 +413,7 @@ export default function ClientWorkspace() {
                   <button
                     key={definition.id}
                     type="button"
+                    data-workspace-module={definition.id}
                     onClick={() => openModule(definition.id)}
                     className={`flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[20px] border px-1 text-center transition active:scale-[0.97] ${
                       active

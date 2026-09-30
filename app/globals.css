@@ -450,3 +450,34 @@ iframe {
 @media (prefers-reduced-motion: reduce) {
   .orbyven-home-invite-card,.orbyven-home-price-grid > .orbyven-home-price { transition: none !important; }
 }
+
+/* Cross-device viewport + touch form baseline.
+   Dynamic viewport units follow mobile browser chrome without forcing full-bleed
+   rendering into unsafe notch areas. */
+@supports (height: 100dvh) {
+  html,
+  body {
+    min-height: 100dvh;
+  }
+
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+
+  .h-screen {
+    height: 100dvh;
+  }
+
+  .max-h-screen {
+    max-height: 100dvh;
+  }
+}
+
+@media (max-width: 767px) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    /* Prevent iOS/WebKit focus zoom while preserving user pinch zoom. */
+    font-size: 16px !important;
+  }
+}
