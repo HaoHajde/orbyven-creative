@@ -32,6 +32,8 @@ export type AutomationEvent = {
   title: string;
   status: string;
   startAt: string;
+  endAt: string | null;
+  assignee: string | null;
   clientId: string | null;
   taskId: string | null;
 };
@@ -42,9 +44,12 @@ export type AutomationSignal = {
     | "operation_overdue"
     | "operation_due_soon"
     | "operation_unplanned"
+    | "operation_blocked"
     | "accepted_estimate_needs_schedule"
     | "estimate_expiring"
-    | "appointment_upcoming";
+    | "estimate_follow_up"
+    | "appointment_upcoming"
+    | "calendar_conflict";
   module: OrbyvenModuleId;
   title: string;
   meta: string;
@@ -79,7 +84,9 @@ export function buildBusinessAutomationSignals(input: {
   const nowIso = input.now.toISOString();
   const tomorrowIso = new Date(input.now.getTime() + DAY_MS).toISOString();
   const staleBefore = new Date(input.now.getTime() - DAY_MS).toISOString();
+  const estimateFollowUpBefore = new Date(input.now.getTime() - 3 * DAY_MS).toISOString();
   const twoDaysDate = new Date(input.now.getTime() + 2 * DAY_MS).toISOString().slice(0, 10);
+  const conflictHorizonIso = new Date(input.now.getTime() + 7 * DAY_MS).toISOString();
   const operations = new Map(input.operations.map((operation) => [operation.id, operation]));
   const scheduledTaskIds = new Set(
     input.events
@@ -150,11 +157,59 @@ export function buildBusinessAutomationSignals(input: {
         },
       });
     }
+
+    if (
+      estimate.status === "sent" &&
+      estimate.updatedAt <= estimateFollowUpBefore &&
+      (!estimate.validUntil || estimate.validUntil > twoDaysDate)
+    ) {
+      const ageDays = Math.max(
+        3,
+        Math.floor((input.now.getTime() - new Date(estimate.updatedAt).getTime()) / DAY_MS)
+      );
+      signals.push({
+        key: "automation:estimate-follow-up:" + estimate.id,
+        rule: "estimate_follow_up",
+        module: "estimates",
+        title: "Ofertă fără răspuns · " + estimate.reference,
+        meta: estimate.title + " · trimisă de " + ageDays + " zile",
+        level: "attention",
+        sortAt: estimate.updatedAt,
+        actionLabel: "Fă follow-up",
+        open: {
+          recordId: estimate.id,
+          clientId: estimate.clientId ?? undefined,
+          taskId: estimate.taskId ?? undefined,
+          estimateId: estimate.id,
+        },
+      });
+    }
   }
 
   for (const operation of input.operations) {
     if (operation.status === "done" || operation.status === "cancelled") continue;
     const noun = operationNoun(operation.kind);
+
+    if (operation.status === "blocked") {
+      signals.push({
+        key: "automation:blocked:" + operation.id,
+        rule: "operation_blocked",
+        module: "tasks",
+        title: noun + " blocat" + (operation.kind === "task" ? "" : "ă") + " · " + operation.title,
+        meta: operation.dueAt && operation.dueAt < nowIso
+          ? "Blocat și cu termen depășit " + dateLabel(operation.dueAt)
+          : "Necesită o decizie înainte de continuare",
+        level: "urgent",
+        sortAt: operation.dueAt ?? operation.createdAt,
+        actionLabel: "Deblochează",
+        open: {
+          recordId: operation.id,
+          clientId: operation.clientId ?? undefined,
+          taskId: operation.id,
+        },
+      });
+      continue;
+    }
 
     if (operation.dueAt && operation.dueAt <= tomorrowIso) {
       const overdue = operation.dueAt < nowIso;
@@ -201,6 +256,43 @@ export function buildBusinessAutomationSignals(input: {
           recordId: operation.id,
           clientId: operation.clientId ?? undefined,
           taskId: operation.id,
+        },
+      });
+    }
+  }
+
+  const conflictCandidates = input.events
+    .filter((event) =>
+      event.status !== "cancelled" &&
+      event.startAt >= nowIso &&
+      event.startAt <= conflictHorizonIso &&
+      Boolean(event.endAt) &&
+      Boolean(event.assignee?.trim())
+    )
+    .sort((left, right) => left.startAt.localeCompare(right.startAt));
+
+  for (let leftIndex = 0; leftIndex < conflictCandidates.length; leftIndex += 1) {
+    const left = conflictCandidates[leftIndex];
+    for (let rightIndex = leftIndex + 1; rightIndex < conflictCandidates.length; rightIndex += 1) {
+      const right = conflictCandidates[rightIndex];
+      if (right.startAt >= (left.endAt as string)) break;
+      if (left.assignee?.trim().toLocaleLowerCase("ro-RO") !== right.assignee?.trim().toLocaleLowerCase("ro-RO")) continue;
+      if (!right.endAt || left.startAt >= right.endAt) continue;
+
+      const conflictAt = right.startAt > left.startAt ? right.startAt : left.startAt;
+      signals.push({
+        key: "automation:calendar-conflict:" + left.id + ":" + right.id,
+        rule: "calendar_conflict",
+        module: "calendar",
+        title: "Conflict calendar · " + left.assignee!.trim(),
+        meta: left.title + " ↔ " + right.title + " · " + dateLabel(conflictAt),
+        level: conflictAt <= tomorrowIso ? "urgent" : "attention",
+        sortAt: conflictAt,
+        actionLabel: "Rezolvă conflictul",
+        open: {
+          recordId: left.id,
+          clientId: left.clientId ?? undefined,
+          taskId: left.taskId ?? undefined,
         },
       });
     }
