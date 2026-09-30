@@ -62,7 +62,7 @@ export async function loadWorkspaceActivity(
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult] =
+  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
     await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
@@ -136,6 +136,14 @@ export async function loadWorkspaceActivity(
             .order("expected_on")
             .limit(10)
         : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("team")
+        ? orbyvenSupabase
+            .from("people_team_members")
+            .select("display_name,status")
+            .eq("organization_id", organizationId)
+            .eq("status", "inactive")
+            .limit(120)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
   const firstError =
@@ -145,7 +153,8 @@ export async function loadWorkspaceActivity(
     estimatesResult.error ??
     invoicesResult.error ??
     inventoryGapsResult.error ??
-    purchaseOrdersResult.error;
+    purchaseOrdersResult.error ??
+    teamResult.error;
   if (firstError) throw firstError;
 
   for (const lead of leadsResult.data ?? []) {
@@ -206,6 +215,7 @@ export async function loadWorkspaceActivity(
     now,
     locale,
     timeZone,
+    inactiveAssigneeNames: (teamResult.data ?? []).map((member) => member.display_name),
   });
 
   for (const signal of automationSignals) {
