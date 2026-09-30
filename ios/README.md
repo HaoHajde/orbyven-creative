@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.2
+# ORBYVEN iOS — Alpha 0.3
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,11 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.2:
+Native Alpha 0.3:
+- privacy shield imediat când aplicația intră în background, astfel încât workspace-ul nu rămâne expus în app switcher;
+- app-lock biometric după 30 secunde în background, când device-ul are biometrie configurată;
+- detecție reală a conexiunii cu `expo-network` și reload automat la revenirea internetului;
+- haptic feedback pentru acțiunile native;
 - share sheet nativ pentru pagina curentă;
 - recovery automat când iOS termină procesul WebView din memorie;
 - user-agent iOS standard păstrat, cu identificator ORBYVEN adăugat;
@@ -129,3 +133,10 @@ După prima asociere, release-urile următoare pot fi lansate din workflow făr�
 ## Alpha 0.2
 
 Versiunea 0.2.0 întărește utilizarea zilnică pe iPhone: păstrează user-agent-ul real de iOS, recuperează WebView-ul după memory pressure, adaugă Share nativ și sincronizează modul standalone al PWA-ului cu evenimentele de resume/visibility.
+
+
+## Alpha 0.3
+
+Versiunea 0.3.0 adaugă un strat local de confidențialitate peste autentificarea ORBYVEN existentă. Privacy shield-ul ascunde imediat workspace-ul când aplicația părăsește foreground-ul. După minimum 30 de secunde în background, aplicația încearcă autentificarea biometrică dacă telefonul are biometrie configurată.
+
+Face ID nu poate fi testat efectiv în Expo Go pe iOS; Expo cere un development/signed build pentru testarea Face ID. În Expo Go, ORBYVEN tratează indisponibilitatea API-ului biometric ca fallback de dezvoltare și nu blochează accesul. Acest app-lock nu înlocuiește autentificarea web/Supabase și nu modifică RLS sau sesiunile server-side.
