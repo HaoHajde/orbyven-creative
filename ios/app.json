@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "ORBYVEN",
+    "slug": "orbyven-ios",
+    "version": "0.1.0",
+    "scheme": "orbyven",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "ro.orbyven.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "splash": {
+      "backgroundColor": "#08111f"
+    },
+    "extra": {
+      "orbyvenBaseUrl": "https://orbyven.ro"
+    }
+  }
+}
