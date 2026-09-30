@@ -204,7 +204,7 @@ async function resolveWorkContext(
     .from("ops_tasks")
     .select("id,title,client_id,kind")
     .eq("organization_id", organizationId)
-    .eq("kind", "work")
+    .in("kind", ["work", "order"])
     .ilike("title", title)
     .limit(5);
   if (error) throw error;
