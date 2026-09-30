@@ -10,6 +10,7 @@ function responseError(code: string) {
     code === "ORG_ACCESS_REQUIRED" || code === "MUTATION_ROLE_REQUIRED" ? 403 :
     [
       "PROPOSAL_EXPIRED","PROPOSAL_ALREADY_EXECUTED","PROPOSAL_NOT_PENDING","MODULE_NOT_AVAILABLE",
+      "PLAN_DEPENDENCY_REQUIRED","PLAN_DEPENDENCY_INVALID",
       "CLIENT_NOT_FOUND","CLIENT_AMBIGUOUS","TASK_NOT_FOUND","TASK_AMBIGUOUS","TASK_CLIENT_MISMATCH",
       "INVALID_ESTIMATE_TITLE","INVALID_ESTIMATE_ITEMS","INVALID_ESTIMATE_QUANTITY",
       "INVALID_ESTIMATE_UNIT_PRICE","INVALID_ESTIMATE_TAX","INVALID_ESTIMATE_VALID_UNTIL",
@@ -24,6 +25,8 @@ function responseError(code: string) {
     code === "PROPOSAL_ALREADY_EXECUTED" ? "Acțiunea a fost deja executată." :
     code === "PROPOSAL_NOT_PENDING" ? "Propunerea nu mai este disponibilă pentru confirmare." :
     code === "MODULE_NOT_AVAILABLE" ? "Modulul necesar nu mai este activ." :
+    code === "PLAN_DEPENDENCY_REQUIRED" ? "Pasul anterior al planului trebuie confirmat și executat mai întâi." :
+    code === "PLAN_DEPENDENCY_INVALID" ? "Dependența planului nu mai este validă. Cere refacerea planului." :
     code === "CLIENT_NOT_FOUND" ? "Clientul indicat nu a fost găsit exact în această firmă." :
     code === "CLIENT_AMBIGUOUS" ? "Există mai multe potriviri pentru client. Folosește numele exact." :
     code === "TASK_NOT_FOUND" ? "Lucrarea indicată nu a fost găsită exact în această firmă." :
@@ -62,7 +65,8 @@ export async function POST(request: Request) {
     if (![
       "AUTH_REQUIRED","ORG_ACCESS_REQUIRED","MUTATION_ROLE_REQUIRED",
       "PROPOSAL_EXPIRED","PROPOSAL_ALREADY_EXECUTED","PROPOSAL_NOT_PENDING",
-      "MODULE_NOT_AVAILABLE","CLIENT_NOT_FOUND","CLIENT_AMBIGUOUS",
+      "MODULE_NOT_AVAILABLE","PLAN_DEPENDENCY_REQUIRED","PLAN_DEPENDENCY_INVALID",
+      "CLIENT_NOT_FOUND","CLIENT_AMBIGUOUS",
       "TASK_NOT_FOUND","TASK_AMBIGUOUS","TASK_CLIENT_MISMATCH",
       "INVALID_ESTIMATE_TITLE","INVALID_ESTIMATE_ITEMS","INVALID_ESTIMATE_QUANTITY",
       "INVALID_ESTIMATE_UNIT_PRICE","INVALID_ESTIMATE_TAX","INVALID_ESTIMATE_VALID_UNTIL",
