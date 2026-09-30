@@ -191,7 +191,7 @@ test("organization bootstrap serializes concurrent first-tenant creation", () =>
 });
 
 
-const anonSurfaceHardening = read("supabase/migrations/20260930183000_anon_surface_hardening.sql");
+const anonSurfaceHardening = read("supabase/migrations/20260930183142_anon_surface_hardening.sql");
 
 test("anonymous Data API grants stay limited to intentional public intake", () => {
   for (const table of [
