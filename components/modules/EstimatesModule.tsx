@@ -17,7 +17,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
@@ -100,6 +100,7 @@ export default function EstimatesModule({
   const [error, setError] = useState("");
 
   const canWrite = role !== "viewer";
+  useWorkspaceCreateFocus(createOpen);
   const canDelete = role === "owner" || role === "admin" || role === "manager";
 
   const load = useCallback(async () => {
@@ -317,7 +318,7 @@ export default function EstimatesModule({
       <MaterialsLibraryPanel organizationId={organizationId} role={role} library={library} onChanged={refreshLibrary} />
 
       {createOpen && canWrite ? (
-        <form onSubmit={handleCreate} className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <form data-workspace-create-focus={createOpen ? "true" : undefined} onSubmit={handleCreate} className="mt-5 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           {revisionSource&&<p className="mb-4 rounded-[12px] border border-[var(--accent)] bg-[var(--accent-soft)] p-3 text-xs font-semibold">Revizie nouă · devizul și oferta anterioară nu sunt suprascrise.</p>}
           {recipeWarning&&<p role="status" className="mb-4 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)] p-3 text-xs">{recipeWarning}</p>}
           <div className="grid gap-4 sm:grid-cols-2">
