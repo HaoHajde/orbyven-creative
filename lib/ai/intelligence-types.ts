@@ -40,6 +40,20 @@ export type IntelligenceAction =
       href: string;
     }
   | {
+      kind: "guided_resolution";
+      label: string;
+      rule: string;
+      title: string;
+      rationale: string;
+      steps: string[];
+      moduleId: OrbyvenModuleId;
+      create?: boolean;
+      recordId?: string;
+      clientId?: string;
+      taskId?: string;
+      estimateId?: string;
+    }
+  | {
       kind: "confirm_proposal";
       label: string;
       proposalId: string;
