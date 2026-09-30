@@ -426,7 +426,12 @@ export default function EstimatesModule({
           {filteredEstimates.length ? <div className="space-y-2">{filteredEstimates.map((estimate) => (
             <button key={estimate.id} type="button" onClick={() => { setSelectedId(estimate.id); setItems([]); }} className={`w-full rounded-[18px] border p-4 text-left ${selectedId === estimate.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
               <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{estimate.title}</p><p className="mt-1 text-[11px] text-[var(--muted)]">{estimate.reference} · {clientById.get(estimate.client_id || "")?.name || "Fără client"}</p></div><span className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold">{statusLabels[estimate.status]}</span></div>
-              <p className="mt-4 text-lg font-semibold">{formatMoney(estimate.total_cents, estimate.currency, locale)}</p>
+              <div className="mt-4 flex items-end justify-between gap-3">
+                <p className="text-lg font-semibold">{formatMoney(estimate.total_cents, estimate.currency, locale)}</p>
+                <span className={`max-w-[150px] truncate text-[10px] font-semibold ${workflowById.get(estimate.id)?.overdue ? "text-amber-400" : "text-[var(--muted)]"}`}>
+                  {workflowById.get(estimate.id)?.label}
+                </span>
+              </div>
             </button>
           ))}</div> : <ModuleEmpty title="Nicio ofertă încă" description="Prima ofertă poate porni direct de la un client și o lucrare existente." />}
         </div>
