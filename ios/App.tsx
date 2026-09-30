@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   statusLoading: { backgroundColor: "#332b55" },
   statusText: { color: "#ffffff", fontWeight: "800", fontSize: 9, letterSpacing: 0.8 },
   content: { flex: 1 },
-  loader: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, zIndex: 10 },
+  loader: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, zIndex: 10 },
   loaderTitle: { fontSize: 20, fontWeight: "800", marginTop: 16, textAlign: "center" },
   loaderText: { fontSize: 13, lineHeight: 19, marginTop: 7, textAlign: "center", maxWidth: 330 },
   retryButton: { marginTop: 18, backgroundColor: "#7458ee", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 },
