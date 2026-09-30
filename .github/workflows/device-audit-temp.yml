@@ -1,0 +1,51 @@
+name: ORBYVEN Temporary Device Audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/device-audit-temp.yml"
+      - "app/**"
+      - "components/**"
+      - "scripts/audit-public-layout.mjs"
+      - "tests/device-integrity.test.mjs"
+      - "ios/**"
+
+permissions:
+  contents: read
+
+jobs:
+  device-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and build
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npm run build
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      - name: Cross-device Chrome audit
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/orbyven-next.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 2
+          done
+          node scripts/audit-public-layout.mjs
