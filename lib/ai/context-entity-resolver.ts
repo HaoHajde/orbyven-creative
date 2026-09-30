@@ -5,7 +5,7 @@ const MAX_ENTITY_CONTEXT_AGE_MS = 30 * 60 * 1000;
 const CLIENT_REF =
   /\bclient(?:ul|ului)\s+(?:acela|acesta|asta|respectiv(?:ul)?|de mai sus|anterior|precedent|despre care (?:vorbeam|am vorbit))\b/;
 const WORK_REF =
-  /\blucrare(?:a|ii)\s+(?:aceea|aceasta|asta|respectiv(?:a)?|de mai sus|anterioara|precedenta|despre care (?:vorbeam|am vorbit))\b/;
+  /\b(?:lucrarea|lucrarii)\s+(?:aceea|aceasta|asta|respectiv(?:a)?|de mai sus|anterioara|precedenta|despre care (?:vorbeam|am vorbit))\b/;
 const EXPLICIT_CLIENT = /(?:^|[,;\n]\s*)client\s*:/;
 const EXPLICIT_WORK = /(?:^|[,;\n]\s*)lucrare\s*:/;
 
@@ -61,7 +61,7 @@ function candidatesFromMessage(
   return [];
 }
 
-function latestCandidate(
+export function findLatestContextEntityCandidate(
   messages: IntelligenceConversationMessage[],
   kind: EntityKind,
   now: Date
@@ -156,6 +156,14 @@ function clarificationFor(kind: EntityKind, reason: "missing_context" | "stale" 
   return `Nu am un ${noun} recent și verificabil la care să se refere mesajul. Spune-mi explicit ${kind === "client" ? "clientul" : "lucrarea"}.`;
 }
 
+export function detectContextEntityReferences(prompt: string) {
+  const normalized = normalize(prompt);
+  return {
+    client: CLIENT_REF.test(normalized) && !EXPLICIT_CLIENT.test(normalized),
+    work: WORK_REF.test(normalized) && !EXPLICIT_WORK.test(normalized),
+  };
+}
+
 export async function resolveContextualEntityReferences(
   actor: BillingActor,
   prompt: string,
@@ -163,10 +171,9 @@ export async function resolveContextualEntityReferences(
   now = new Date()
 ): Promise<ContextEntityResolution> {
   const cleanPrompt = prompt.trim();
-  const normalized = normalize(cleanPrompt);
-
-  const wantsClient = CLIENT_REF.test(normalized) && !EXPLICIT_CLIENT.test(normalized);
-  const wantsWork = WORK_REF.test(normalized) && !EXPLICIT_WORK.test(normalized);
+  const references = detectContextEntityReferences(cleanPrompt);
+  const wantsClient = references.client;
+  const wantsWork = references.work;
 
   if (!wantsClient && !wantsWork) {
     return {
@@ -184,7 +191,7 @@ export async function resolveContextualEntityReferences(
     const requested = kind === "client" ? wantsClient : wantsWork;
     if (!requested) continue;
 
-    const candidate = latestCandidate(messages, kind, now);
+    const candidate = findLatestContextEntityCandidate(messages, kind, now);
     if (!candidate.value) {
       return {
         effectivePrompt: cleanPrompt,
