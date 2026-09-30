@@ -1,7 +1,7 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { readAllPages } from "@/lib/modules/paged-read";
 
-export type WorkTaskKind = "task" | "work";
+export type WorkTaskKind = "task" | "work" | "order";
 export type WorkTaskStatus = "planned" | "in_progress" | "blocked" | "done" | "cancelled";
 export type WorkTaskPriority = "low" | "normal" | "high" | "urgent";
 
