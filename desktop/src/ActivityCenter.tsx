@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadWorkspaceActivity, type WorkspaceActivityItem } from "@/lib/modules/activity";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 
 type Props = {
@@ -9,7 +10,7 @@ type Props = {
   timeZone: string;
   role: OrbyvenWorkspace["membership"]["role"];
   enabledModules: OrbyvenModuleId[];
-  onOpenModule: (moduleId: OrbyvenModuleId) => void;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
 export default function DesktopActivityCenter({
@@ -64,7 +65,13 @@ export default function DesktopActivityCenter({
 
   const openItem = (item: WorkspaceActivityItem) => {
     setOpen(false);
-    onOpenModule(item.module);
+    onOpenModule(item.module, {
+      create: item.create,
+      recordId: item.recordId,
+      clientId: item.clientId,
+      taskId: item.taskId,
+      estimateId: item.estimateId,
+    });
   };
 
   return (
