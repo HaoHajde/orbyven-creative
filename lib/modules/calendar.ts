@@ -37,6 +37,16 @@ export type CalendarTask = {
   client_id: string | null;
 };
 
+export type CalendarConflict = {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string;
+  assignee: string | null;
+  task_id: string | null;
+  reason: "assignee" | "task";
+};
+
 export type CreateCalendarEventInput = {
   title: string;
   eventType?: CalendarEventType;
@@ -139,6 +149,83 @@ export async function listCalendarTasks(
 
   if (error) throw error;
   return (data ?? []) as CalendarTask[];
+}
+
+export async function listCalendarConflicts(
+  organizationId: string,
+  startAt: string,
+  endAt: string,
+  input: { assignee?: string | null; taskId?: string | null; excludeEventId?: string | null }
+): Promise<CalendarConflict[]> {
+  requireOrganizationId(organizationId);
+
+  const start = new Date(startAt);
+  const end = new Date(endAt);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+    throw new Error("Intervalul calendaristic nu este valid.");
+  }
+
+  const assignee = cleanOptional(input.assignee)?.toLocaleLowerCase("ro-RO") ?? null;
+  const taskId = input.taskId || null;
+  if (!assignee && !taskId) return [];
+
+  let query = orbyvenSupabase
+    .from("calendar_events")
+    .select("id,title,start_at,end_at,assignee,task_id")
+    .eq("organization_id", organizationId)
+    .eq("status", "scheduled")
+    .lt("start_at", end.toISOString())
+    .gt("end_at", start.toISOString())
+    .order("start_at", { ascending: true })
+    .limit(50);
+
+  if (input.excludeEventId) query = query.neq("id", input.excludeEventId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return (data ?? []).flatMap((row) => {
+    const sameTask = Boolean(taskId && row.task_id === taskId);
+    const sameAssignee = Boolean(
+      assignee &&
+      row.assignee?.trim().toLocaleLowerCase("ro-RO") === assignee
+    );
+    if (!sameTask && !sameAssignee) return [];
+    return [{
+      id: row.id,
+      title: row.title,
+      start_at: row.start_at,
+      end_at: row.end_at,
+      assignee: row.assignee,
+      task_id: row.task_id,
+      reason: sameTask ? "task" as const : "assignee" as const,
+    }];
+  });
+}
+
+export function countCalendarConflicts(events: CalendarEvent[]): number {
+  const scheduled = events
+    .filter((event) => event.status === "scheduled")
+    .sort((left, right) => left.start_at.localeCompare(right.start_at));
+  const pairs = new Set<string>();
+
+  for (let index = 0; index < scheduled.length; index += 1) {
+    const current = scheduled[index];
+    for (let nextIndex = index + 1; nextIndex < scheduled.length; nextIndex += 1) {
+      const next = scheduled[nextIndex];
+      if (new Date(next.start_at) >= new Date(current.end_at)) break;
+
+      const sameTask = Boolean(current.task_id && current.task_id === next.task_id);
+      const currentAssignee = current.assignee?.trim().toLocaleLowerCase("ro-RO") || "";
+      const nextAssignee = next.assignee?.trim().toLocaleLowerCase("ro-RO") || "";
+      const sameAssignee = Boolean(currentAssignee && currentAssignee === nextAssignee);
+      if (sameTask || sameAssignee) {
+        pairs.add([current.id, next.id].sort().join(":"));
+      }
+    }
+  }
+
+  return pairs.size;
 }
 
 export async function createCalendarEvent(
