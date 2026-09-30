@@ -62,6 +62,12 @@ function operationNoun(kind: AutomationOperationKind) {
   return "Task";
 }
 
+function overdueTitle(operation: AutomationOperation) {
+  const noun = operationNoun(operation.kind);
+  const adjective = operation.kind === "task" ? "întârziat" : "întârziată";
+  return noun + " " + adjective + " · " + operation.title;
+}
+
 export function buildBusinessAutomationSignals(input: {
   operations: AutomationOperation[];
   estimates: AutomationEstimate[];
@@ -157,7 +163,7 @@ export function buildBusinessAutomationSignals(input: {
         rule: overdue ? "operation_overdue" : "operation_due_soon",
         module: "tasks",
         title: overdue
-          ? noun + " întârziată · " + operation.title
+          ? overdueTitle(operation)
           : "Termen apropiat · " + operation.title,
         meta:
           (overdue ? "Termen depășit " : "Scadent ") +
