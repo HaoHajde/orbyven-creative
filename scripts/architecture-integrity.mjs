@@ -12,6 +12,7 @@ const normalize = (value) => value.split("\\").join("/");
 const rel = (file) => normalize(relative(repoRoot, file));
 const kib = (bytes) => (bytes / 1024).toFixed(1) + " KiB";
 const mib = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MiB";
+const sourceBytes = (file) => Buffer.byteLength(readFileSync(file, "utf8").replace(/\r\n/g, "\n"), "utf8");
 const sourceOnly = args.has("--source");
 const webBuildOnly = args.has("--web-build-only");
 const desktopBuildOnly = args.has("--desktop-build-only");
@@ -37,25 +38,25 @@ function sourceFiles(root) {
 function checkSourceBudgets() {
   const webFiles = budgets.source.webRoots.flatMap(sourceFiles);
   const desktopFiles = sourceFiles(budgets.source.desktopRoot);
-  const largeWeb = webFiles.filter((file) => statSync(file).size > budgets.source.webLargeFileThresholdBytes);
-  const largeDesktop = desktopFiles.filter((file) => statSync(file).size > budgets.source.desktopLargeFileThresholdBytes);
+  const largeWeb = webFiles.filter((file) => sourceBytes(file) > budgets.source.webLargeFileThresholdBytes);
+  const largeDesktop = desktopFiles.filter((file) => sourceBytes(file) > budgets.source.desktopLargeFileThresholdBytes);
 
-  for (const file of webFiles.filter((file) => statSync(file).size > budgets.source.webMaxFileBytes)) {
-    errors.push(`Web source exceeds ${kib(budgets.source.webMaxFileBytes)}: ${rel(file)} (${kib(statSync(file).size)}).`);
+  for (const file of webFiles.filter((file) => sourceBytes(file) > budgets.source.webMaxFileBytes)) {
+    errors.push(`Web source exceeds ${kib(budgets.source.webMaxFileBytes)}: ${rel(file)} (${kib(sourceBytes(file))}).`);
   }
   if (largeWeb.length > budgets.source.webMaxLargeFiles) {
     errors.push(`Web large-file count grew to ${largeWeb.length}; baseline is ${budgets.source.webMaxLargeFiles} files over ${kib(budgets.source.webLargeFileThresholdBytes)}. Extract a responsibility instead of growing another monolith.`);
   }
 
-  for (const file of desktopFiles.filter((file) => statSync(file).size > budgets.source.desktopMaxFileBytes)) {
-    errors.push(`Desktop source exceeds ${kib(budgets.source.desktopMaxFileBytes)}: ${rel(file)} (${kib(statSync(file).size)}).`);
+  for (const file of desktopFiles.filter((file) => sourceBytes(file) > budgets.source.desktopMaxFileBytes)) {
+    errors.push(`Desktop source exceeds ${kib(budgets.source.desktopMaxFileBytes)}: ${rel(file)} (${kib(sourceBytes(file))}).`);
   }
   if (largeDesktop.length > budgets.source.desktopMaxLargeFiles) {
     errors.push(`Desktop large-file count grew to ${largeDesktop.length}; baseline is ${budgets.source.desktopMaxLargeFiles}.`);
   }
   for (const file of desktopFiles.filter((file) => extname(file) === ".css")) {
-    if (statSync(file).size > budgets.source.desktopCssMaxFileBytes) {
-      errors.push(`Desktop CSS exceeds ${kib(budgets.source.desktopCssMaxFileBytes)}: ${rel(file)} (${kib(statSync(file).size)}).`);
+    if (sourceBytes(file) > budgets.source.desktopCssMaxFileBytes) {
+      errors.push(`Desktop CSS exceeds ${kib(budgets.source.desktopCssMaxFileBytes)}: ${rel(file)} (${kib(sourceBytes(file))}).`);
     }
   }
 
