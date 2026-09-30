@@ -13,7 +13,9 @@
     "build:simulator": "npx eas-cli@24.8.0 build --platform ios --profile simulator",
     "build:preview": "npx eas-cli@24.8.0 build --platform ios --profile preview",
     "build:production": "npx eas-cli@24.8.0 build --platform ios --profile production",
-    "testflight": "npx eas-cli@24.8.0 build --platform ios --profile production --auto-submit"
+    "testflight": "npx eas-cli@24.8.0 build --platform ios --profile production --auto-submit",
+    "start:go": "expo start --go --lan",
+    "start:tunnel": "expo start --go --tunnel"
   },
   "dependencies": {
     "expo": "~57.0.0",
