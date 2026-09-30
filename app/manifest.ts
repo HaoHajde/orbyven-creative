@@ -7,13 +7,21 @@ export default function manifest(): MetadataRoute.Manifest {
     name: siteConfig.name,
     short_name: siteConfig.shortName,
     description: siteConfig.description,
-    start_url: "/",
+    id: "/workspace",
+    start_url: "/workspace",
     scope: "/",
     display: "standalone",
-    background_color: "#000000",
-    theme_color: "#000000",
+    orientation: "portrait-primary",
+    background_color: "#08111f",
+    theme_color: "#08111f",
     lang: siteConfig.language,
     icons: [
+      {
+        src: "/branding/orbyven-app-icon.png",
+        sizes: "1024x1024",
+        type: "image/png",
+        purpose: "maskable",
+      },
       {
         src: "/branding/orbyven-favicon-96.png",
         sizes: "96x96",
@@ -25,6 +33,13 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
+      },
+    ],
+    shortcuts: [
+      {
+        name: "Workspace",
+        short_name: "Workspace",
+        url: "/workspace",
       },
     ],
   };
