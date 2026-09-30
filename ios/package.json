@@ -1,0 +1,23 @@
+{
+  "name": "orbyven-ios",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "check": "tsc --noEmit",
+    "export:ios": "expo export --platform ios",
+    "prebuild:ios": "expo prebuild --platform ios"
+  },
+  "dependencies": {
+    "expo": "~57.0.0",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-webview": "13.15.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^5.9.2"
+  }
+}
