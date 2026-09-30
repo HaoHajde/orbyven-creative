@@ -11,7 +11,7 @@ export type LeadActionPayload = {
 
 export type TaskActionPayload = {
   title: string;
-  kind: "task" | "work";
+  kind: "task" | "work" | "order";
   priority: "low" | "normal" | "high" | "urgent";
   description?: string;
   clientName?: string;
@@ -101,7 +101,7 @@ export type MutationParseResult =
   | { kind: "proposal"; proposal: ParsedMutation };
 
 const FIELD_LABELS =
-  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri|continut|conținut|text|categorie";
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|comanda|comandă|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri|continut|conținut|text|categorie";
 
 function normalize(value: string) {
   return value
@@ -137,7 +137,7 @@ function fallbackName(prompt: string, entity: "lead" | "client") {
 function fallbackTaskTitle(prompt: string) {
   return clean(
     prompt.match(
-      /(?:creeaz[ăa]|adaug[ăa]|deschide)\s+(?:o\s+|un\s+)?(?:lucrare|task|sarcin[ăa])\s*[:\-]?\s*([^,;\n]+)/i
+      /(?:creeaz[ăa]|adaug[ăa]|deschide)\s+(?:o\s+|un\s+)?(?:lucrare|comand[ăa]|task|sarcin[ăa])\s*[:\-]?\s*([^,;\n]+)/i
     )?.[1],
     180
   );
@@ -400,15 +400,15 @@ export function parseMutationPrompt(
     };
   }
 
-  const taskMatch = normalized.match(/\b(creeaza|adauga|deschide)\s+(?:o\s+|un\s+)?(lucrare|task|sarcina)\b/);
+  const taskMatch = normalized.match(/\b(creeaza|adauga|deschide)\s+(?:o\s+|un\s+)?(lucrare|comanda|task|sarcina)\b/);
   if (taskMatch) {
     const title = field(prompt, ["titlu"], 180) || fallbackTaskTitle(prompt);
     if (!title) {
-      return { kind: "needs_details", targetModule: "tasks", message: "Spune-mi titlul lucrării sau al task-ului." };
+      return { kind: "needs_details", targetModule: "tasks", message: "Spune-mi titlul lucrării, comenzii sau al task-ului." };
     }
     const payload: TaskActionPayload = {
       title,
-      kind: taskMatch[2] === "lucrare" ? "work" : "task",
+      kind: taskMatch[2] === "lucrare" ? "work" : taskMatch[2] === "comanda" ? "order" : "task",
       priority: priorityFromPrompt(prompt),
       description: field(prompt, ["descriere"], 700),
       clientName: field(prompt, ["client"], 140),
@@ -420,9 +420,9 @@ export function parseMutationPrompt(
         actionType: "create_task",
         targetModule: "tasks",
         payload,
-        summary: "Creează " + (payload.kind === "work" ? "lucrarea" : "task-ul") + " „" + title + "”",
+        summary: "Creează " + (payload.kind === "work" ? "lucrarea" : payload.kind === "order" ? "comanda" : "task-ul") + " „" + title + "”",
         facts: [
-          { label: "Tip", value: payload.kind === "work" ? "Lucrare" : "Task" },
+          { label: "Tip", value: payload.kind === "work" ? "Lucrare" : payload.kind === "order" ? "Comandă" : "Task" },
           { label: "Titlu", value: title },
           { label: "Prioritate", value: payload.priority },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
@@ -522,7 +522,7 @@ export function parseMutationPrompt(
     const payload: EstimateActionPayload = {
       title,
       clientName: field(prompt, ["client"], 140),
-      taskTitle: field(prompt, ["lucrare"], 180),
+      taskTitle: field(prompt, ["lucrare", "comanda", "comandă"], 180),
       currency: "RON",
       discountLei,
       taxRate,
@@ -578,7 +578,7 @@ export function parseMutationPrompt(
       category: documentCategory(prompt),
       content,
       clientName: field(prompt, ["client"], 140),
-      taskTitle: field(prompt, ["lucrare"], 180),
+      taskTitle: field(prompt, ["lucrare", "comanda", "comandă"], 180),
       note: field(prompt, ["nota", "notă"], 300),
     };
 

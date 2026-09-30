@@ -88,6 +88,16 @@ const priorityLabels: Record<WorkTaskPriority, string> = {
   urgent: "Urgentă",
 };
 
+const kindLabels: Record<WorkTaskKind, string> = {
+  work: "Lucrare",
+  order: "Comandă",
+  task: "Task",
+};
+
+function kindLabel(kind: WorkTaskKind) {
+  return kindLabels[kind];
+}
+
 const boardStatuses: WorkTaskStatus[] = [
   "planned",
   "in_progress",
@@ -431,7 +441,7 @@ export default function TasksModule({
       setChecklist([]);
     } catch (deleteError) {
       console.error(deleteError);
-      setError("Lucrarea nu a putut fi ștearsă.");
+      setError("Operațiunea nu a putut fi ștearsă.");
     } finally {
       setSaving(false);
     }
@@ -442,14 +452,14 @@ export default function TasksModule({
       <section className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">
-            Operations · Live
+            Operations Core · Live
           </p>
           <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">
-            Lucrări
+            Lucrări & comenzi
           </h1>
           <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">
-            Vezi ce urmează, cine se ocupă, unde trebuie ajuns și ce mai lipsește
-            până la finalizare.
+            Același nucleu pentru lucrări, comenzi și taskuri: responsabil, termen,
+            client, checklist și contextul comercial într-un singur loc.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -481,7 +491,7 @@ export default function TasksModule({
               onClick={() => setCreateOpen((open) => !open)}
               className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white"
             >
-              + Lucrare
+              + Nou
             </button>
           )}
         </div>
@@ -507,9 +517,9 @@ export default function TasksModule({
         >
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-medium text-[var(--muted)]">Lucrare nouă</p>
+              <p className="text-xs font-medium text-[var(--muted)]">Operațiune nouă</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">
-                Pune treaba în sistem.
+                Lucrare, comandă sau task.
               </h2>
             </div>
             <button
@@ -544,6 +554,7 @@ export default function TasksModule({
                 className="input"
               >
                 <option value="work">Lucrare</option>
+                <option value="order">Comandă</option>
                 <option value="task">Task</option>
               </select>
             </Field>
@@ -659,7 +670,7 @@ export default function TasksModule({
               disabled={saving}
               className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50"
             >
-              {saving ? "Se salvează..." : "Creează lucrarea"}
+              {saving ? "Se salvează..." : "Creează"}
             </button>
           </div>
         </form>
@@ -669,7 +680,7 @@ export default function TasksModule({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Caută lucrare, client, responsabil sau locație..."
+          placeholder="Caută lucrare, comandă, client, responsabil sau locație..."
           className="h-11 min-w-0 flex-1 rounded-[16px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm outline-none"
         />
         <select
@@ -694,7 +705,7 @@ export default function TasksModule({
         <div className="mt-4 rounded-[30px] border border-dashed border-[var(--border-strong)] p-10 text-center">
           <h2 className="text-xl font-semibold">Nimic de urmărit aici.</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Creează prima lucrare sau schimbă filtrele.
+            Creează prima lucrare, comandă sau task ori schimbă filtrele.
           </p>
         </div>
       ) : viewMode === "board" && statusFilter !== "cancelled" ? (
@@ -750,9 +761,7 @@ export default function TasksModule({
                     ? clientById.get(task.client_id)?.company ||
                       clientById.get(task.client_id)?.name ||
                       "Client"
-                    : task.kind === "work"
-                      ? "Lucrare"
-                      : "Task"}
+                    : kindLabel(task.kind)}
                 </p>
               </div>
               <ListValue label="Status" value={statusLabels[task.status]} />
@@ -769,13 +778,13 @@ export default function TasksModule({
             <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
           )}
           {canDelete && enabledModules.includes("expenses") && (
-            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială pentru lucrare</button>
+            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială asociată</button>
           )}
-          {canWrite && selectedTask.kind === "work" && enabledModules.includes("estimates") && (
-            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă pentru lucrare</button>
+          {canWrite && selectedTask.kind !== "task" && enabledModules.includes("estimates") && (
+            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă asociată</button>
           )}
           {canWrite && enabledModules.includes("calendar") && (
-            <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare pentru lucrare</button>
+            <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare asociată</button>
           )}
         </div>
       )}
@@ -928,7 +937,7 @@ function WorkFileSummary({
     <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)]/60 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">DOSAR LUCRARE</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">DOSAR OPERAȚIONAL</p>
           <h2 className="mt-1 text-[15px] font-semibold">Tot contextul într-un singur loc</h2>
         </div>
         <span className="text-[10px] text-[var(--muted-2)]">{loading ? "Se sincronizează…" : "Live"}</span>
@@ -977,7 +986,7 @@ function TaskCard({
     >
       <div className="flex items-center justify-between gap-3">
         <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-          {task.kind === "work" ? "Lucrare" : "Task"}
+          {kindLabel(task.kind)}
         </span>
         <span
           className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${
@@ -1051,7 +1060,7 @@ function TaskDetail({
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <p className="text-xs font-medium text-[var(--muted)]">
-              {task.kind === "work" ? "Lucrare" : "Task"} · {priorityLabels[task.priority]}
+              {kindLabel(task.kind)} · {priorityLabels[task.priority]}
             </p>
             <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.045em]">
               {task.title}
@@ -1135,7 +1144,7 @@ function TaskDetail({
               onClick={onDelete}
               className="text-xs font-semibold text-red-500 disabled:opacity-50"
             >
-              Șterge lucrarea
+              Șterge operațiunea
             </button>
           </div>
         )}
@@ -1146,7 +1155,7 @@ function TaskDetail({
           <div>
             <p className="text-xs font-medium text-[var(--muted)]">Checklist</p>
             <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">
-              Pașii lucrării
+              Pașii operațiunii
             </h2>
           </div>
           <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">

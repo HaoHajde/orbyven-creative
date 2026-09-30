@@ -50,6 +50,17 @@ test("Estimate action parses explicit items, totals and commercial context", () 
   assert.ok(result.proposal.facts.some((fact) => fact.label === "Status" && fact.value === "Draft"));
 });
 
+test("Estimate action accepts an order as operational context", () => {
+  const result = parseMutationPrompt(
+    "Creează deviz Comandă corporate; client: Exemplu SRL; comandă: Flori recepție; " +
+    "poziție: Aranjament floral, 1 x 450 lei",
+    { now: fixedNow }
+  );
+  assert.equal(result.kind, "proposal");
+  if (result.kind !== "proposal") return;
+  assert.equal(result.proposal.payload.taskTitle, "Flori recepție");
+});
+
 test("Estimate line parsing supports decimal quantities and prices", () => {
   const result = parseMutationPrompt(
     "Adaugă ofertă Materiale; item: Cablu, 2,5 x 19,90 lei",
@@ -77,7 +88,7 @@ test("Estimate execution resolves client and work in the authenticated organizat
   assert.match(source, /resolveClientId\(actor\.organizationId, input\.clientName\)/);
   assert.match(source, /resolveWorkContext\(actor\.organizationId, input\.taskTitle, explicitClientId\)/);
   assert.match(source, /\.eq\("organization_id", organizationId\)/);
-  assert.match(source, /\.eq\("kind", "work"\)/);
+  assert.match(source, /\.in\("kind", \["work", "order"\]\)/);
   assert.match(source, /TASK_CLIENT_MISMATCH/);
   assert.match(source, /rpc\("ai_create_estimate_draft"/);
 });

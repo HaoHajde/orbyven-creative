@@ -67,7 +67,7 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksData, /\.from\("ops_documents"\)/);
   assert.match(tasksData, /\.from\("calendar_events"\)/);
   assert.match(tasksData, /options\.includeThermal/);
-  assert.match(tasksUi, /DOSAR LUCRARE/);
+  assert.match(tasksUi, /DOSAR OPERAȚIONAL/);
   assert.match(tasksUi, /expensesCents/);
   assert.match(tasksUi, /thermalSketch/);
 });

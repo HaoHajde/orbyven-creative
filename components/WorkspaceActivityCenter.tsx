@@ -76,6 +76,7 @@ export default function WorkspaceActivityCenter({
   const openItem = (item: WorkspaceActivityItem) => {
     setOpen(false);
     const options: WorkspaceOpenOptions = {
+      create: item.create,
       recordId: item.recordId,
       clientId: item.clientId,
       taskId: item.taskId,
@@ -123,13 +124,13 @@ export default function WorkspaceActivityCenter({
             <header className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-2)]">
-                  ORBYVEN · ACTIVITATE
+                  ORBYVEN · AUTOMATION
                 </p>
                 <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.035em]">
-                  De făcut azi
+                  Ce necesită atenție
                 </h2>
                 <p className="mt-1 text-[10px] text-[var(--muted)]">
-                  Lucrări, clienți, oferte, programări și încasări.
+                  Semnale cross-module și următorul pas potrivit.
                 </p>
               </div>
               <button
@@ -165,14 +166,16 @@ export default function WorkspaceActivityCenter({
                         <span className="block truncate text-[11px] font-semibold">{item.title}</span>
                         <span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">{item.meta}</span>
                       </span>
-                      <span className="text-[10px] font-semibold text-[var(--accent)]">→</span>
+                      <span className="shrink-0 text-[9px] font-semibold text-[var(--accent)]">
+                        {item.actionLabel || "Deschide"} →
+                      </span>
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="rounded-[14px] border border-dashed border-[var(--border)] px-4 py-8 text-center">
                   <p className="text-xs font-semibold">Totul este în ordine.</p>
-                  <p className="mt-1 text-[10px] text-[var(--muted)]">Nu există atenționări apropiate.</p>
+                  <p className="mt-1 text-[10px] text-[var(--muted)]">Nu există semnale operaționale care cer intervenție.</p>
                 </div>
               )}
             </div>
