@@ -3,6 +3,7 @@
 import { ModuleError } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
+import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
@@ -25,7 +26,11 @@ type Attention = {
   recordId: string;
   title: string;
   meta: string;
-  level: "urgent" | "normal";
+  level: "urgent" | "attention";
+  sortAt: string;
+  rule?: string;
+  taskId?: string;
+  clientId?: string;
 };
 
 type QuickAction = {
@@ -149,6 +154,8 @@ export default function OverviewModule({
           title: `${lead.name} așteaptă follow-up`,
           meta: "Termenul de revenire a trecut.",
           level: "urgent",
+          sortAt: lead.next_follow_up_at,
+          rule: "lead_follow_up",
         });
       }
     }
@@ -212,7 +219,11 @@ export default function OverviewModule({
         recordId: signal.open.recordId,
         title: signal.title,
         meta: signal.meta,
-        level: signal.level === "urgent" ? "urgent" : "normal",
+        level: signal.level === "urgent" ? "urgent" : "attention",
+        sortAt: signal.sortAt,
+        rule: signal.rule,
+        taskId: signal.open.taskId,
+        clientId: signal.open.clientId,
       });
     }
 
@@ -230,6 +241,10 @@ export default function OverviewModule({
         title: task.title,
         meta: "Prioritate urgentă.",
         level: "urgent",
+        sortAt: task.due_at ?? task.scheduled_at ?? task.created_at,
+        rule: "user_urgent_priority",
+        taskId: task.id,
+        clientId: task.client_id ?? undefined,
       });
     }
 
@@ -294,7 +309,10 @@ export default function OverviewModule({
         estimates: trend(snapshot.trendDates.estimates),
       },
       todayQueue,
-      attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
+      attention: rankNextBestActions(
+        attention.filter((item) => enabledModules.includes(item.module)),
+        { dedupeContext: true }
+      ),
     };
   }, [snapshot, snapshotNow, timeZone, enabledModules, locale]);
 
