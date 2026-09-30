@@ -34,12 +34,62 @@ export type ActionDecisionResult = {
   ok: boolean;
   status: "executed" | "rejected";
   message: string;
+  plan?: {
+    id: string;
+    step: number;
+    total: number;
+  };
   result?: {
     type: string;
     id: string;
     moduleId: OrbyvenModuleId;
   };
 };
+
+function planMeta(payload: Record<string, unknown>) {
+  const raw = payload.__orbyven_plan;
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const id = typeof value.id === "string" ? value.id : "";
+  const step = typeof value.step === "number" ? value.step : Number(value.step);
+  const total = typeof value.total === "number" ? value.total : Number(value.total);
+  const dependsOnProposalId =
+    typeof value.dependsOnProposalId === "string" && value.dependsOnProposalId
+      ? value.dependsOnProposalId
+      : null;
+
+  if (!/^[a-f0-9-]{36}$/i.test(id) || !Number.isInteger(step) || !Number.isInteger(total)) {
+    return null;
+  }
+  if (step < 1 || total < step || total > 8) return null;
+  return { id, step, total, dependsOnProposalId };
+}
+
+async function assertPlanDependency(
+  actor: BillingActor,
+  proposal: { payload: Record<string, unknown> }
+) {
+  const meta = planMeta(proposal.payload);
+  if (!meta?.dependsOnProposalId) return meta;
+
+  const client = createBillingServiceClient();
+  const { data, error } = await client
+    .from("ai_action_proposals")
+    .select("id,status,payload")
+    .eq("id", meta.dependsOnProposalId)
+    .eq("organization_id", actor.organizationId)
+    .eq("actor_id", actor.userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || data.status !== "executed") throw new Error("PLAN_DEPENDENCY_REQUIRED");
+
+  const dependencyMeta = planMeta((data.payload ?? {}) as Record<string, unknown>);
+  if (!dependencyMeta || dependencyMeta.id !== meta.id || dependencyMeta.step !== meta.step - 1) {
+    throw new Error("PLAN_DEPENDENCY_INVALID");
+  }
+  return meta;
+}
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase("ro-RO").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -303,7 +353,8 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
   if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime()) || endAt <= startAt) {
     throw new Error("INVALID_EVENT_TIME");
   }
-  const clientId = await resolveClientId(actor.organizationId, input.clientName);
+  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
+  const operation = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
   const reminder = typeof input.reminderMinutes === "number" && Number.isFinite(input.reminderMinutes)
     ? Math.max(0, Math.min(1440, Math.round(input.reminderMinutes)))
     : 30;
@@ -318,7 +369,8 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
       start_at: startAt.toISOString(),
       end_at: endAt.toISOString(),
       all_day: false,
-      client_id: clientId,
+      client_id: operation.clientId,
+      task_id: operation.taskId,
       location: optionalText(input.location, 240),
       notes: optionalText(input.notes, 700),
       reminder_minutes: reminder,
@@ -492,6 +544,7 @@ async function writeAudit(
   result: { id: string; type: string; moduleId: OrbyvenModuleId }
 ) {
   const client = createBillingServiceClient();
+  const auditPlan = planMeta(proposal.payload);
   const { error } = await client.from("platform_audit_log").insert({
     actor_user_id: actor.userId,
     actor_role: actor.role,
@@ -504,6 +557,9 @@ async function writeAudit(
       action_type: proposal.action_type,
       module_id: result.moduleId,
       confirmation: "explicit_user_confirmation",
+      ...(auditPlan
+        ? { plan_id: auditPlan.id, plan_step: auditPlan.step, plan_total: auditPlan.total }
+        : {}),
     },
   });
   if (error) console.error("ORBYVEN AI audit mirror failed", error.code);
@@ -529,7 +585,7 @@ export async function decideMutationProposal(
       .eq("organization_id", actor.organizationId)
       .eq("actor_id", actor.userId)
       .eq("status", "pending")
-      .select("id,conversation_id")
+      .select("id,conversation_id,payload")
       .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("PROPOSAL_NOT_PENDING");
@@ -545,7 +601,15 @@ export async function decideMutationProposal(
         console.error("ORBYVEN AI conversation outcome persistence failed", historyError);
       }
     }
-    return { ok: true, status: "rejected", message };
+    const rejectedPlan = planMeta((data.payload ?? {}) as Record<string, unknown>);
+    return {
+      ok: true,
+      status: "rejected",
+      message,
+      ...(rejectedPlan
+        ? { plan: { id: rejectedPlan.id, step: rejectedPlan.step, total: rejectedPlan.total } }
+        : {}),
+    };
   }
 
   await client
@@ -556,6 +620,22 @@ export async function decideMutationProposal(
     .eq("actor_id", actor.userId)
     .eq("status", "pending")
     .lte("expires_at", now);
+
+  const { data: pendingForPlan, error: pendingPlanError } = await client
+    .from("ai_action_proposals")
+    .select("payload")
+    .eq("id", proposalId)
+    .eq("organization_id", actor.organizationId)
+    .eq("actor_id", actor.userId)
+    .eq("status", "pending")
+    .gt("expires_at", now)
+    .maybeSingle();
+  if (pendingPlanError) throw pendingPlanError;
+  if (pendingForPlan) {
+    await assertPlanDependency(actor, {
+      payload: (pendingForPlan.payload ?? {}) as Record<string, unknown>,
+    });
+  }
 
   const { data: claimed, error: claimError } = await client
     .from("ai_action_proposals")
@@ -585,6 +665,7 @@ export async function decideMutationProposal(
   const proposal = claimed as ProposalRow;
 
   try {
+    const activePlan = planMeta(proposal.payload);
     const moduleId = actionModule(proposal.action_type);
     const [moduleResult, entitlementResult] = await Promise.all([
       client.from("organization_modules")
@@ -649,6 +730,9 @@ export async function decideMutationProposal(
       status: "executed",
       message,
       result,
+      ...(activePlan
+        ? { plan: { id: activePlan.id, step: activePlan.step, total: activePlan.total } }
+        : {}),
     };
   } catch (error) {
     const failureCode = error instanceof Error ? error.message.slice(0, 120) : "ACTION_EXECUTION_FAILED";
