@@ -1,11 +1,20 @@
-name: ORBYVEN Manual Browser Performance Audit
+name: ORBYVEN Browser Performance & Responsive Audit
 
 # Public and unauthenticated auth routes only. Does not deploy or access private data.
+# Runs on UI-facing pull requests so cross-device regressions fail before merge.
 on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'app/**'
+      - 'components/**'
+      - 'public/**'
+      - 'scripts/audit-responsive-layout.mjs'
+      - 'tests/device-integrity.test.mjs'
       - '.github/workflows/performance-audit.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.*'
 
 permissions:
   contents: read
@@ -27,6 +36,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          npm install --no-save --package-lock=false playwright@1.55.0
       - name: Install Chrome
         id: chrome
         uses: browser-actions/setup-chrome@v1
@@ -34,7 +44,7 @@ jobs:
           chrome-version: stable
       - name: Register Chrome path
         run: echo "CHROME_PATH=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
-      - name: Audit local production build on mobile and desktop
+      - name: Audit local production build across device matrix
         run: |
           set -euo pipefail
           npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/orbyven-next.log 2>&1 &
@@ -48,6 +58,7 @@ jobs:
             curl -fsS "http://127.0.0.1:3000/$route" > /dev/null
           done
           mkdir -p lighthouse
+          node scripts/audit-responsive-layout.mjs
           npm exec --yes --package=lighthouse@12 -- lighthouse --version
           # Only synthetic unauthenticated entry pages; DO NOT claim this
           # captures real login, onboarding or authenticated dashboard UX.
