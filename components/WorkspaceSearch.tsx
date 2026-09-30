@@ -5,7 +5,7 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useEffect, useRef, useState } from "react";
 
-type SearchHit = { module: "leads" | "tasks" | "estimates"; id: string; label: string; description: string };
+type SearchHit = { module: "leads" | "tasks" | "estimates" | "inventory"; id: string; label: string; description: string };
 type Props = {
   organizationId: string;
   enabledModules: OrbyvenModuleId[];
@@ -20,7 +20,7 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
   const [error, setError] = useState("");
   const requestId = useRef(0);
   const root = useRef<HTMLDivElement>(null);
-  const searchModules = enabledModules.filter((id) => ["leads", "tasks", "estimates"].includes(id));
+  const searchModules = enabledModules.filter((id) => ["leads", "tasks", "estimates", "inventory"].includes(id));
   const searchKey = searchModules.join("|");
 
   useEffect(() => {
@@ -54,16 +54,21 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
             ? orbyvenSupabase.from("sales_estimates").select("id,title,reference")
                 .eq("organization_id", organizationId).ilike("title", pattern).limit(5)
             : Promise.resolve(null),
+          searchModules.includes("inventory")
+            ? orbyvenSupabase.from("ops_material_catalog").select("id,name,unit")
+                .eq("organization_id", organizationId).eq("stock_tracked", true).ilike("name", pattern).limit(5)
+            : Promise.resolve(null),
         ]);
         if (currentRequest !== requestId.current) return;
         for (const result of results) {
           if (result?.error) throw result.error;
         }
-        const [leads, tasks, estimates] = results;
+        const [leads, tasks, estimates, inventory] = results;
         setHits([
           ...(leads?.data ?? []).map((item) => ({ module: "leads" as const, id: item.id, label: item.name, description: item.company || "Client / cerere" })),
           ...(tasks?.data ?? []).map((item) => ({ module: "tasks" as const, id: item.id, label: item.title, description: "Lucrare · " + item.status })),
           ...(estimates?.data ?? []).map((item) => ({ module: "estimates" as const, id: item.id, label: item.title, description: "Ofertă · " + item.reference })),
+          ...(inventory?.data ?? []).map((item) => ({ module: "inventory" as const, id: item.id, label: item.name, description: "Stoc · " + item.unit })),
         ]);
       } catch (reason) {
         if (currentRequest !== requestId.current) return;
@@ -75,7 +80,6 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
       }
     }, 280);
     return () => {
-      ++requestId.current;
       window.clearTimeout(timer);
     };
     // searchKey is the stable set of visible, enabled searchable modules.
@@ -114,7 +118,7 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); if (event.key === "Enter" && visibleHits[0] && open && !loading) { event.preventDefault(); choose(visibleHits[0]); } }}
-          placeholder="Caută client, lucrare, ofertă..."
+          placeholder="Caută client, lucrare, ofertă, material..."
           className="w-full min-w-0 bg-transparent text-[12px] text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
         />
         {loading && <span className="h-3 w-3 shrink-0 animate-pulse rounded-full bg-[var(--accent)]/65" aria-label="Se caută" />}

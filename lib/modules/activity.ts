@@ -62,7 +62,7 @@ export async function loadWorkspaceActivity(
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult] =
+  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult] =
     await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
@@ -116,6 +116,26 @@ export async function loadWorkspaceActivity(
             .order("due_on")
             .limit(12)
         : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("inventory")
+        ? orbyvenSupabase
+            .from("ops_inventory_procurement_gaps")
+            .select("material_id,name,unit,suggested_order,outstanding_demand,on_hand,on_order")
+            .eq("organization_id", organizationId)
+            .gt("suggested_order", 0)
+            .order("suggested_order", { ascending: false })
+            .limit(10)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("inventory")
+        ? orbyvenSupabase
+            .from("ops_purchase_orders")
+            .select("id,reference,status,expected_on,task_id")
+            .eq("organization_id", organizationId)
+            .in("status", ["ordered", "partially_received"])
+            .not("expected_on", "is", null)
+            .lte("expected_on", tomorrowDate)
+            .order("expected_on")
+            .limit(10)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
   const firstError =
@@ -123,7 +143,9 @@ export async function loadWorkspaceActivity(
     tasksResult.error ??
     eventsResult.error ??
     estimatesResult.error ??
-    invoicesResult.error;
+    invoicesResult.error ??
+    inventoryGapsResult.error ??
+    purchaseOrdersResult.error;
   if (firstError) throw firstError;
 
   for (const lead of leadsResult.data ?? []) {
@@ -199,6 +221,36 @@ export async function loadWorkspaceActivity(
       meta: signal.meta,
       level: signal.level,
       sortAt: signal.sortAt,
+    });
+  }
+
+  for (const gap of inventoryGapsResult.data ?? []) {
+    items.push({
+      key: "inventory-gap:" + gap.material_id,
+      module: "inventory",
+      recordId: gap.material_id,
+      title: "Aprovizionare necesară · " + gap.name,
+      meta: Number(gap.suggested_order).toLocaleString(locale) + " " + gap.unit + " recomandat de comandat",
+      level: Number(gap.outstanding_demand) > Number(gap.on_hand) + Number(gap.on_order) ? "urgent" : "attention",
+      sortAt: nowIso,
+      actionLabel: "Achiziții",
+      rule: "inventory_shortage",
+    });
+  }
+
+  for (const order of purchaseOrdersResult.data ?? []) {
+    if (!order.expected_on) continue;
+    const overdue = order.expected_on < nowIso.slice(0, 10);
+    items.push({
+      key: "purchase-order:" + order.id,
+      module: "inventory",
+      taskId: order.task_id ?? undefined,
+      title: overdue ? "PO întârziată · " + order.reference : "PO ajunge curând · " + order.reference,
+      meta: (overdue ? "Livrare estimată depășită " : "Livrare estimată ") + dateLabel(order.expected_on, locale, timeZone),
+      level: overdue ? "urgent" : "upcoming",
+      sortAt: order.expected_on + "T12:00:00.000Z",
+      actionLabel: "Deschide",
+      rule: "purchase_order_due",
     });
   }
 

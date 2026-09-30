@@ -17,6 +17,7 @@ export const ALL_BILLING_MODULE_IDS: OrbyvenModuleId[] = [
   "calendar",
   "estimates",
   "documents",
+  "inventory",
   "expenses",
   "team",
 ];

@@ -11,6 +11,7 @@ import { createCalendarEvent, listCalendarEvents, setCalendarEventStatus } from 
 import { createEstimate, listEstimates, setEstimateStatus } from "@/lib/modules/estimates";
 import { createDocumentSignedUrl, listDocuments, uploadDocument, type DocumentCategory } from "@/lib/modules/documents";
 import { createExpense, listExpenses } from "@/lib/modules/expenses";
+import { loadInventorySnapshot } from "@/lib/modules/inventory";
 import { createTeamMember, listTeamMembers, updateTeamMember } from "@/lib/modules/team";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
@@ -61,7 +62,7 @@ const FORM_FIELDS: Partial<Record<OrbyvenModuleId, Field[]>> = {
 const TITLES: Record<OrbyvenModuleId, string> = {
   overview: "Prezentare generală", leads: "Clienți", tasks: "Lucrări",
   calendar: "Calendar", estimates: "Oferte & devize", documents: "Documente",
-  expenses: "Cheltuieli", thermal: "Planșă Termică", team: "Echipă",
+  inventory: "Stoc & achiziții", expenses: "Cheltuieli", thermal: "Planșă Termică", team: "Echipă",
 };
 const STATUS_OPTIONS: Partial<Record<OrbyvenModuleId, string[]>> = {
   leads: ["new", "contacted", "qualified", "proposal", "won", "lost"],
@@ -114,6 +115,7 @@ function rowSummary(row: Row, module: OrbyvenModuleId) {
   if (module === "calendar") return formatDate(row.start_at);
   if (module === "estimates") return currency(row.total_cents, row.currency);
   if (module === "documents") return [row.category, row.size_bytes ? Math.round(Number(row.size_bytes) / 1024) + " KB" : null].filter(Boolean).join(" · ");
+  if (module === "inventory") return [row.on_hand !== undefined ? String(row.on_hand) + " " + String(row.unit ?? "") : null, row.state].filter(Boolean).join(" · ");
   if (module === "expenses") return currency(row.amount_cents, row.currency) + " · " + formatDate(row.occurred_on);
   if (module === "thermal") return ["rev. " + String(row.revision ?? 0), formatDate(row.updated_at)].filter(Boolean).join(" · ");
   if (module === "team") return [row.job_title, row.email].filter(Boolean).join(" · ");
@@ -244,6 +246,14 @@ export default function App() {
             new Date(Date.now() + 365 * 86400000).toISOString()) :
           activeModule === "estimates" ? await listEstimates(org) :
           activeModule === "documents" ? await listDocuments(org) :
+          activeModule === "inventory" ? (await loadInventorySnapshot(org)).stock.map((item) => ({
+            id: item.materialId,
+            name: item.name,
+            on_hand: item.onHand,
+            unit: item.unit,
+            state: item.state,
+            suggested_order: item.suggestedOrder,
+          })) :
           activeModule === "expenses" ? await listExpenses(org) :
           activeModule === "thermal" ? await (async () => {
             const [works, sketchesResult] = await Promise.all([
@@ -589,7 +599,7 @@ export default function App() {
                   <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
                     activeModule === "overview" ? "Tot ce contează pentru afacerea ta, într-un singur loc." :
                     ORBYVEN_MODULES.find((m) => m.id === activeModule)?.description}</p></div>
-                {panel === "workspace" && activeModule !== "overview" && activeModule !== "thermal" && canWrite && (activeModule !== "expenses" || canFinance) && (
+                {panel === "workspace" && activeModule !== "overview" && activeModule !== "thermal" && activeModule !== "inventory" && canWrite && (activeModule !== "expenses" || canFinance) && (
                   <button className="primary add-button" onClick={() => openCreate(activeModule)}>+ Adaugă</button>
                 )}
               </section>

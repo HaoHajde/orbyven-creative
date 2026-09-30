@@ -23,15 +23,24 @@ function validateOffer(source:Source,lines:Line[]){
   if(!lines.length) throw new Error("Devizul nu are poziții.");
   if(["rejected","expired"].includes(source.status)) throw new Error("Devizul respins sau expirat nu poate genera oferta.");
 }
-export async function addMaterialRequirement(org:string,estimateId:string,input:{description:string;quantity:number;unit:string;unitCostCents:number;vendor?:string;estimateItemId?:string}){
+export async function addMaterialRequirement(org:string,estimateId:string,input:{description:string;quantity:number;unit:string;unitCostCents:number;vendor?:string;estimateItemId?:string;materialId?:string}){
   const source=await getSource(org,estimateId);
   if(!["draft","sent"].includes(source.status)) throw new Error("O ofertă acceptată necesită o revizie pentru alte materiale.");
   if(!input.description.trim() || !input.unit.trim() || !Number.isFinite(input.quantity)||input.quantity<=0||!isMoney(input.unitCostCents)) throw new Error("Completează materialul, cantitatea și costul.");
   if(input.estimateItemId && !(await getLines(org,estimateId)).some(x=>x.id===input.estimateItemId)) throw new Error("Poziția nu aparține devizului.");
+  let materialId:string|null=null;
+  let description=input.description.trim(),unit=input.unit.trim(),unitCostCents=input.unitCostCents,vendor=input.vendor?.trim()||null;
+  if(input.materialId){
+    const material=await orbyvenSupabase.from("ops_material_catalog")
+      .select("id,name,unit,unit_cost_cents,vendor").eq("organization_id",org).eq("id",input.materialId).single();
+    if(material.error||!material.data)throw new Error("Materialul nu există în biblioteca firmei.");
+    materialId=material.data.id;description=material.data.name;unit=material.data.unit;
+    unitCostCents=Number(material.data.unit_cost_cents);vendor=material.data.vendor;
+  }
   const {error}=await orbyvenSupabase.from("sales_material_requirements").insert({
     organization_id:org,estimate_id:estimateId,source_estimate_item_id:input.estimateItemId||null,
-    description:input.description.trim(),quantity:input.quantity,unit:input.unit.trim(),unit_cost_cents:input.unitCostCents,
-    vendor:input.vendor?.trim()||null,status:"planned",
+    material_id:materialId,description,quantity:input.quantity,unit,unit_cost_cents:unitCostCents,
+    vendor,status:"planned",
   });
   if(error) throw error;
 }
@@ -56,6 +65,7 @@ export async function addRequirementsFromRecipe(org:string,estimateId:string,est
   if(materialIds.some(id=>!catalog.has(id)))throw new Error("Un material din rețetă nu mai există în biblioteca firmei.");
   const rows=ingredients.data.map((item,i)=>({
     organization_id:org,estimate_id:estimateId,source_recipe_id:recipeId,source_estimate_item_id:line.id,
+    material_id:item.material_id??null,
     description:item.material_id?catalog.get(item.material_id)?.name??item.description:item.description,
     quantity:Number(item.quantity_per_unit)*Number(line.quantity),unit:item.material_id?catalog.get(item.material_id)?.unit??item.unit:item.unit,
     unit_cost_cents:Number(item.material_id?catalog.get(item.material_id)?.unit_cost_cents??item.unit_cost_cents:item.unit_cost_cents),

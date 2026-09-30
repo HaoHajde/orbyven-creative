@@ -5,6 +5,7 @@ export type OrbyvenModuleId =
   | "calendar"
   | "estimates"
   | "documents"
+  | "inventory"
   | "expenses"
   | "thermal"
   | "team";
@@ -96,6 +97,17 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
     color: "#6e4ccf",
     accent: "#f1edff",
     features: ["Storage privat", "Legături context", "Link securizat"],
+  },
+  {
+    id: "inventory",
+    name: "Stoc & achiziții",
+    shortName: "Stoc",
+    description: "Materiale, stoc real, furnizori, comenzi și consum pe lucrare sau comandă.",
+    category: "operations",
+    badge: "Core Ops",
+    color: "#247a67",
+    accent: "#e8f7f1",
+    features: ["Stoc", "Furnizori", "Purchase Orders"],
   },
   {
     id: "expenses",
