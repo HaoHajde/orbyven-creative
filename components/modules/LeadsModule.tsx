@@ -16,7 +16,7 @@ import {
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
-import { useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -100,6 +100,7 @@ export default function LeadsModule({
   const [kindFilter, setKindFilter] = useState<CrmLeadKind | "all">("all");
   const [showCreate, setShowCreate] = useState(initialCreate && role !== "viewer");
   const canWrite = role !== "viewer";
+  useWorkspaceCreateFocus(showCreate);
   const [draft, setDraft] = useState<LeadDraft>(() => emptyDraft(locale));
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
   const [activityBody, setActivityBody] = useState("");
@@ -390,8 +391,9 @@ export default function LeadsModule({
 
       {showCreate && canWrite && (
         <form
+          data-workspace-create-focus={showCreate ? "true" : undefined}
           onSubmit={handleCreateLead}
-          className="mt-8 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
+          className="mt-8 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"
         >
           <div className="flex items-center justify-between gap-4">
             <div>
