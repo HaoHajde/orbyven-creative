@@ -13,8 +13,8 @@ export function splitPlanClauses(prompt: string) {
   if (!source) return [];
 
   const separator = new RegExp(
-    "(?:[.;\\n]+|\\b(?:apoi|dup[ăa]\\s+aceea)\\b|\\b(?:și|si)\\b)\\s*(?=" + MUTATION_START + "\\b)",
-    "gi"
+    "(?:[.;\\n]+|\\b(?:apoi|dup[ăa]\\s+aceea)\\b|\\b(?:și|si)\\b)\\s*(?=" + MUTATION_START + ")",
+    "giu"
   );
 
   return source
