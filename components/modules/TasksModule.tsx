@@ -441,7 +441,7 @@ export default function TasksModule({
       setChecklist([]);
     } catch (deleteError) {
       console.error(deleteError);
-      setError("Lucrarea nu a putut fi ștearsă.");
+      setError("Operațiunea nu a putut fi ștearsă.");
     } finally {
       setSaving(false);
     }
@@ -455,7 +455,7 @@ export default function TasksModule({
             Operations Core · Live
           </p>
           <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">
-            Lucrări
+            Lucrări & comenzi
           </h1>
           <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">
             Același nucleu pentru lucrări, comenzi și taskuri: responsabil, termen,
@@ -491,7 +491,7 @@ export default function TasksModule({
               onClick={() => setCreateOpen((open) => !open)}
               className="h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white"
             >
-              + Lucrare
+              + Nou
             </button>
           )}
         </div>
@@ -778,7 +778,7 @@ export default function TasksModule({
             <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
           )}
           {canDelete && enabledModules.includes("expenses") && (
-            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială pentru lucrare</button>
+            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială asociată</button>
           )}
           {canWrite && selectedTask.kind !== "task" && enabledModules.includes("estimates") && (
             <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă asociată</button>
