@@ -251,7 +251,7 @@ function buildPlanAction(planRows: StoredPlanProposal[]): PlanAction {
         ? "Plan blocat · recovery disponibil"
         : "Revizuiește planul",
     planId: firstMeta.id,
-    expiresAt: planRows[0]?.expires_at,
+    expiresAt: planRows[0].expires_at,
     ...(recovery ? { recovery } : {}),
     steps,
   };
@@ -527,6 +527,26 @@ export async function recoverPlan(
       .eq("status", "pending");
     if (obsoleteError) console.error("ORBYVEN plan supersede marker failed", obsoleteError.code);
   }
+
+  const { error: auditError } = await client.from("platform_audit_log").insert({
+    actor_user_id: actor.userId,
+    actor_role: actor.role,
+    organization_id: actor.organizationId,
+    action: "ai_plan.recovered",
+    target_type: "ai_plan",
+    target_id: newPlanId,
+    metadata: {
+      previous_plan_id: planId,
+      new_plan_id: newPlanId,
+      root_plan_id: blockedMeta.rootPlanId || planId,
+      blocked_step: recovery.blockedStep,
+      recovery_reason: recovery.reason,
+      recovery_attempt: nextAttempt,
+      remaining_steps: remainingRows.length,
+      execution: "proposal_only_explicit_confirmation_required",
+    },
+  });
+  if (auditError) console.error("ORBYVEN Plan Recovery audit mirror failed", auditError.code);
 
   const storedNewRows: StoredPlanProposal[] = newRows.map((row) => ({
     id: row.id,
