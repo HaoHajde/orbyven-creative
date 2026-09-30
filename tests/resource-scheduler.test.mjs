@@ -130,7 +130,7 @@ test("production scheduler migration preserves RLS and conflict guards", () => {
 });
 
 
-const resourcePolicyDedup = read("supabase/migrations/20260930182000_resource_unavailability_rls_dedup.sql");
+const resourcePolicyDedup = read("supabase/migrations/20260930181708_resource_unavailability_rls_dedup.sql");
 
 test("resource unavailability RLS avoids overlapping permissive SELECT policies", () => {
   assert.match(resourcePolicyDedup, /drop policy if exists ops_resource_unavailability_manage_manager/);
