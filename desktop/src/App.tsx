@@ -6,9 +6,11 @@ import DesktopActivityCenter from "./ActivityCenter";
 import DesktopIntelligence from "./Intelligence";
 import DesktopInventoryPanel from "./InventoryPanel";
 import DesktopSearch from "./Search";
+import DesktopOverviewPanel from "./OverviewPanel";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { CURRENT_DESKTOP_VERSION, WORKSPACE_CREATE_MODULES, WORKSPACE_LAYOUT, WORKSPACE_NAV_GROUPS, WORKSPACE_THEME, WORKSPACE_UI_REVISION } from "@/lib/workspace-visual-system";
-import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+
 import { createCrmLead, listCrmLeads, updateCrmLead } from "@/lib/modules/leads";
 import { createWorkTask, listWorkTasks, setWorkTaskStatus } from "@/lib/modules/tasks";
 import { createCalendarEvent, listCalendarEvents, setCalendarEventStatus } from "@/lib/modules/calendar";
@@ -146,7 +148,6 @@ export default function App() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [company, setCompany] = useState("");
   const [activeModule, setActiveModule] = useState<OrbyvenModuleId>("overview");
-  const [overview, setOverview] = useState<OverviewSnapshot | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
   const [query, setQuery] = useState("");
@@ -160,7 +161,7 @@ export default function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
-  const [pendingRecordId, setPendingRecordId] = useState<string | null>(null);
+  const [navigationOptions, setNavigationOptions] = useState<WorkspaceOpenOptions>({});
   const [uiManifest, setUiManifest] = useState<DesktopUiManifest>(BUNDLED_UI_MANIFEST);
   const [liveUiSynced, setLiveUiSynced] = useState(false);
 
@@ -169,15 +170,15 @@ export default function App() {
     const state = await getWorkspaceAccessState();
     setAccessState(state);
     if (state === "login") {
-      setRows([]); setOverview(null); setSelected(null); setWorkspace(null); setScreen("login");
+      setRows([]); setSelected(null); setWorkspace(null); setScreen("login");
       return;
     }
     if (state === "onboarding") {
-      setWorkspace(null); setRows([]); setOverview(null); setScreen("onboarding");
+      setWorkspace(null); setRows([]); setScreen("onboarding");
       return;
     }
     if (state !== "workspace") {
-      setWorkspace(null); setRows([]); setOverview(null); setScreen("access");
+      setWorkspace(null); setRows([]); setScreen("access");
       return;
     }
     const current = await getCurrentWorkspace();
@@ -232,8 +233,6 @@ export default function App() {
     setSelected(null);
     try {
       if (activeModule === "overview") {
-        const snapshot = await loadOverviewSnapshot(org, canFinance, workspace.profile?.timezone || "Europe/Bucharest");
-        setOverview(snapshot);
         setRows([]);
       } else {
         // All reads and writes call the existing ORBYVEN service functions, with org RLS enforced.
@@ -287,16 +286,21 @@ export default function App() {
   useEffect(() => { void loadModule(); }, [loadModule, refresh]);
 
   useEffect(() => {
-    if (!pendingRecordId || activeModule === "inventory" || !rows.length) return;
-    const match = rows.find((row) =>
-      String(row.id ?? "") === pendingRecordId ||
-      String(row.task_id ?? "") === pendingRecordId
-    );
-    if (match) {
-      setSelected(match);
-      setPendingRecordId(null);
-    }
-  }, [rows, pendingRecordId, activeModule]);
+    if (activeModule === "inventory" || navigationOptions.create || !rows.length) return;
+    const targets = [
+      navigationOptions.recordId,
+      navigationOptions.clientId,
+      navigationOptions.taskId,
+      navigationOptions.estimateId,
+    ].filter(Boolean) as string[];
+    if (!targets.length) return;
+    const match = rows.find((row) => targets.some((target) =>
+      [row.id, row.client_id, row.task_id, row.estimate_id]
+        .some((value) => String(value ?? "") === target)
+    ));
+    if (match) setSelected(match);
+    setNavigationOptions({});
+  }, [rows, navigationOptions, activeModule]);
 
   useEffect(() => {
     const onKeys = (event: KeyboardEvent) => {
@@ -326,12 +330,19 @@ export default function App() {
     };
   }, [workspace, showCreate, selected, syncLiveUi]);
 
-  function chooseModule(id: OrbyvenModuleId, recordId?: string) {
+  function chooseModule(id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) {
     if (!workspace?.enabledModules.includes(id)) return;
     if (id === "expenses" && !canFinance) return;
     setPanel("workspace"); setCommandOpen(false); setCreateMenuOpen(false);
-    setPendingRecordId(recordId || null);
-    setActiveModule(id); setRows([]); setQuery(""); setShowCreate(false); setSelected(null); setForm({}); setFile(null);
+    setNavigationOptions(options);
+    setActiveModule(id); setRows([]); setQuery(""); setSelected(null); setFile(null);
+    if (options.create && canWrite) {
+      setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" });
+      setShowCreate(true);
+    } else {
+      setForm({});
+      setShowCreate(false);
+    }
   }
 
   async function toggleModule(id: OrbyvenModuleId) {
@@ -358,9 +369,8 @@ export default function App() {
 
   function openCreate(moduleId: OrbyvenModuleId) {
     if (!canWrite || !workspace?.enabledModules.includes(moduleId) || (moduleId === "expenses" && !canFinance)) return;
-    chooseModule(moduleId);
-    setForm({ occurredOn: new Date().toISOString().slice(0, 10), quantity: "1" });
-    setFile(null); setError(""); setShowCreate(true);
+    chooseModule(moduleId, { create: true });
+    setFile(null); setError("");
   }
   async function login(event: FormEvent) {
     event.preventDefault(); if (busy) return;
@@ -615,7 +625,7 @@ export default function App() {
             </aside>
             <main className="main-area">
               <div className="work-area">
-              {(panel === "modules" || activeModule !== "inventory") && <section className="page-heading">
+              {(panel === "modules" || !["overview", "inventory"].includes(activeModule)) && <section className="page-heading">
                 <div><p className="eyebrow">{panel === "modules" ? "PERSONALIZARE" : "BUSINESS WORKSPACE"}</p>
                   <h1>{panel === "modules" ? "Modulele tale." : TITLES[activeModule] + "."}</h1>
                   <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
@@ -646,103 +656,28 @@ export default function App() {
                   })}
                 </section>
               ) : activeModule === "overview" ? (
-                <div className="overview">
-                  <section className="overview-greeting">
-                    <div><p className="eyebrow">ORBYVEN / OVERVIEW</p>
-                      <h2>Bună, {workspace.profile?.greeting_name || workspace.organization.name.split(" ")[0] || "acolo"}.</h2>
-                      <p>{new Intl.DateTimeFormat(workspace.profile?.locale || "ro-RO", {
-                        weekday: "long", day: "numeric", month: "long",
-                        timeZone: workspace.profile?.timezone || "Europe/Bucharest",
-                      }).format(new Date())} · Rezumatul firmei</p>
-                    </div>
-                    <span className="role-pill"><span className="online-dot" /> {ROLE_LABELS[workspace.membership.role]}</span>
-                  </section>
-                  {busy && !overview ? <p className="muted">Se încarcă rezumatul...</p> : overview && (
-                    <>
-                      <div className="metrics">
-                        {([
-                          ["Cereri active", overview.activeLeadsCount, "leads", "#7c7afa"],
-                          ["Lucrări deschise", overview.openTasksCount, "tasks", "#66aaff"],
-                          ["Programări astăzi", overview.events.filter((event) =>
-                            event.status !== "cancelled" &&
-                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
-                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(event.start_at)) ===
-                            new Intl.DateTimeFormat("en-CA", { timeZone: workspace.profile?.timezone || "Europe/Bucharest",
-                              year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())).length, "calendar", "#70d1eb"],
-                          ["Oferte trimise", overview.sentEstimatesCount, "estimates", "#7ad5b4"],
-                        ] as const).map(([label, count, target, color]) => {
-                          const available = workspace.enabledModules.includes(target);
-                          return <button key={label} className="metric" disabled={!available}
-                            onClick={() => chooseModule(target)} style={{ "--metric-color": color } as CSSProperties}>
-                            <span>{label}</span><strong>{formatNumber(count)}</strong><small>{available ? "Deschide modulul ↗" : "Modul neactivat"}</small>
-                          </button>;
-                        })}
-                      </div>
-                      <div className="overview-bottom">
-                        <article className="surface stage-panel">
-                          <div className="panel-heading"><div><span className="eyebrow">OPERATIONS</span><h3>Lucrări după status</h3></div><small>Rezumat actualizat</small></div>
-                          <div className="stage-chart">
-                            <button type="button" className="stage-ring" disabled={!workspace.enabledModules.includes("tasks")}
-                              onClick={() => chooseModule("tasks")} style={{
-                                background: (() => {
-                                  const stages = [
-                                    ["planned", "#738bff"], ["in_progress", "#66bff0"],
-                                    ["blocked", "#efad77"], ["done", "#6ed3ae"], ["cancelled", "#64748b"],
-                                  ] as const;
-                                  const total = stages.reduce((sum, [stage]) => sum + overview.taskStages[stage], 0);
-                                  if (!total) return "conic-gradient(#2a405e 0 360deg)";
-                                  let progress = 0;
-                                  return "conic-gradient(" + stages.filter(([stage]) => overview.taskStages[stage] > 0)
-                                    .map(([stage,color]) => { const start = progress; progress += overview.taskStages[stage] / total * 360;
-                                      return color + " " + start + "deg " + progress + "deg"; }).join(",") + ")";
-                                })(),
-                              }}>
-                              <span className="stage-ring-inner"><strong>{formatNumber(Object.values(overview.taskStages).reduce((sum, count) => sum + count, 0))}</strong><small>total înregistrări</small></span>
-                            </button>
-                            <div className="stage-legend">
-                              {([
-                                ["planned", "De făcut", "#738bff"], ["in_progress", "În lucru", "#66bff0"],
-                                ["blocked", "Blocate", "#efad77"], ["done", "Finalizate", "#6ed3ae"], ["cancelled", "Anulate", "#64748b"],
-                              ] as const).map(([id,label,color]) => <div key={id}><span className="legend-dot" style={{ background: color }} />{label}<strong>{overview.taskStages[id]}</strong></div>)}
-                            </div>
-                          </div>
-                        </article>
-                        <article className="surface workflow-panel">
-                          <div className="panel-heading"><div><span className="eyebrow">WORKFLOW</span><h3>Fluxul afacerii</h3></div><small>Din modulele tale</small></div>
-                          {([
-                            ["leads", "Cereri active", overview.activeLeadsCount],
-                            ["tasks", "Lucrări deschise", overview.openTasksCount],
-                            ["calendar", "Programări astăzi", overview.events.filter((event) => event.status === "scheduled" && new Date(event.start_at).toDateString() === new Date().toDateString()).length],
-                            ["estimates", "Oferte trimise", overview.sentEstimatesCount],
-                          ] as const).filter(([id]) => workspace.enabledModules.includes(id)).map(([id,label,value]) =>
-                            <button key={id} className="workflow-row" onClick={() => chooseModule(id)}>
-                              <span>{label}</span><strong>{value}</strong><span className="workflow-track"><i style={{ width: Math.max(2, value / Math.max(1,overview.activeLeadsCount,overview.openTasksCount,overview.sentEstimatesCount) * 100) + "%" }} /></span>
-                            </button>)}
-                        </article>
-                      </div>
-                      <div className="overview-bottom activity-panels">
-                        <article className="surface"><span className="eyebrow">ACTIVITATE</span><h3>Lucrări în desfășurare</h3>
-                          {workspace.enabledModules.includes("tasks") && overview.tasks.slice(0, 5).map((task) =>
-                            <button className="activity" key={task.id} onClick={() => chooseModule("tasks")}>
-                              <span><strong>{task.title}</strong><small>{task.status} · {task.priority}</small></span><span>→</span></button>)}
-                          {!overview.tasks.length && <p className="muted">Nicio lucrare recentă.</p>}
-                        </article>
-                        <article className="surface"><span className="eyebrow">URMĂTOARELE ZILE</span><h3>Programări</h3>
-                          {workspace.enabledModules.includes("calendar") && overview.events.slice(0, 5).map((event) =>
-                            <button className="activity" key={event.id} onClick={() => chooseModule("calendar")}>
-                              <span><strong>{event.title}</strong><small>{formatDate(event.start_at)}</small></span><span>→</span></button>)}
-                          {!overview.events.length && <p className="muted">Nu există programări apropiate.</p>}
-                        </article>
-                      </div>
-                    </>
-                  )}
-                </div>
+                <DesktopOverviewPanel
+                  organizationId={workspace.organization.id}
+                  locale={workspace.profile?.locale || "ro-RO"}
+                  timeZone={workspace.profile?.timezone || "Europe/Bucharest"}
+                  greetingName={workspace.profile?.greeting_name || workspace.organization.name.split(" ")[0] || ""}
+                  dateLabel={new Intl.DateTimeFormat(workspace.profile?.locale || "ro-RO", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    timeZone: workspace.profile?.timezone || "Europe/Bucharest",
+                  }).format(new Date())}
+                  enabledModules={workspace.enabledModules}
+                  role={workspace.membership.role}
+                  onOpenModule={chooseModule}
+                />
               ) : activeModule === "inventory" ? (
                 <DesktopInventoryPanel
                   organizationId={workspace.organization.id}
                   locale={workspace.profile?.locale || "ro-RO"}
                   role={workspace.membership.role}
-                  initialRecordId={pendingRecordId}
+                  initialRecordId={navigationOptions.recordId || null}
+                  initialTaskId={navigationOptions.taskId || null}
                 />
               ) : (
                 <section className="surface listing">
