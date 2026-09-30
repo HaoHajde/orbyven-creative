@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.3
+# ORBYVEN iOS — Alpha 0.4
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,13 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.3:
+Native Alpha 0.4:
+- buton Documente în toolbar-ul nativ;
+- bridge nativ → workspace care deschide direct modulul Documente în modul de încărcare;
+- Files / iCloud picker prin WebView, păstrând sesiunea web/Supabase existentă;
+- fotografiere document sau poză din teren cu camera iPhone;
+- feedback haptic când un fișier este selectat, încărcat sau când upload-ul eșuează;
+- permisiuni iOS pentru cameră și librăria foto;
 - privacy shield imediat când aplicația intră în background, astfel încât workspace-ul nu rămâne expus în app switcher;
 - app-lock biometric după 30 secunde în background, când device-ul are biometrie configurată;
 - detecție reală a conexiunii cu `expo-network` și reload automat la revenirea internetului;
@@ -140,3 +146,10 @@ Versiunea 0.2.0 întărește utilizarea zilnică pe iPhone: păstrează user-age
 Versiunea 0.3.0 adaugă un strat local de confidențialitate peste autentificarea ORBYVEN existentă. Privacy shield-ul ascunde imediat workspace-ul când aplicația părăsește foreground-ul. După minimum 30 de secunde în background, aplicația încearcă autentificarea biometrică dacă telefonul are biometrie configurată.
 
 Face ID nu poate fi testat efectiv în Expo Go pe iOS; Expo cere un development/signed build pentru testarea Face ID. În Expo Go, ORBYVEN tratează indisponibilitatea API-ului biometric ca fallback de dezvoltare și nu blochează accesul. Acest app-lock nu înlocuiește autentificarea web/Supabase și nu modifică RLS sau sesiunile server-side.
+
+
+## Alpha 0.4
+
+Versiunea 0.4.0 adaugă fluxul iPhone → Documente fără a crea un al doilea client Supabase în aplicația nativă. Fișierul ales din Files/iCloud sau fotografia făcută pe telefon ajunge în formularul web existent, iar upload-ul continuă să treacă prin validarea de tip/semnătură, bucket-ul privat `orbyven-documents` și politicile RLS ale organizației.
+
+În această etapă "Fotografiază" folosește camera iOS prin file capture. Un scanner multi-page cu detectare automată a marginilor poate fi adăugat ulterior în build-ul nativ semnat, fără să schimbăm contractul de storage.
