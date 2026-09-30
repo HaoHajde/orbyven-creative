@@ -163,9 +163,17 @@ export default function ClientWorkspace() {
     const handleNativeDocuments = () => {
       openModule("documents", { create: true });
     };
+    const handleNativeCalendarRecord = (event: Event) => {
+      const eventId = (event as CustomEvent<{ eventId?: string }>).detail?.eventId;
+      if (eventId) openModule("calendar", { recordId: eventId });
+    };
 
     window.addEventListener("orbyven:native-documents", handleNativeDocuments);
-    return () => window.removeEventListener("orbyven:native-documents", handleNativeDocuments);
+    window.addEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
+    return () => {
+      window.removeEventListener("orbyven:native-documents", handleNativeDocuments);
+      window.removeEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
+    };
   }, [openModule]);
 
   useEffect(() => {
