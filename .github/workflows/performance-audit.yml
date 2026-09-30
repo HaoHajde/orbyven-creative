@@ -6,6 +6,10 @@ on:
   pull_request:
     paths:
       - '.github/workflows/performance-audit.yml'
+      - 'app/**'
+      - 'components/**'
+      - 'scripts/audit-public-layout.mjs'
+      - 'tests/device-integrity.test.mjs'
 
 permissions:
   contents: read
@@ -26,6 +30,7 @@ jobs:
       - name: Install and build
         run: |
           npm ci
+          npm install --no-save --package-lock=false playwright@1.55.0
           npm run build
       - name: Install Chrome
         id: chrome
@@ -47,6 +52,7 @@ jobs:
           for route in templates workspace/login workspace/register workspace/forgot-password workspace/reset-password admin/login control-center/login; do
             curl -fsS "http://127.0.0.1:3000/$route" > /dev/null
           done
+          node scripts/audit-public-layout.mjs
           mkdir -p lighthouse
           npm exec --yes --package=lighthouse@12 -- lighthouse --version
           # Only synthetic unauthenticated entry pages; DO NOT claim this
