@@ -31,7 +31,7 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
   assert.match(app, /LocalAuthentication\.authenticateAsync/);
   assert.match(app, /setPrivacyShielded\(true\)/);
   assert.match(app, /setPrivacyShielded\(false\)/);
-  assert.match(app, /Network\.useNetworkState/);
+  assert.match(app, /Network\.addNetworkStateListener/);
   assert.match(app, /Haptics\.selectionAsync/);
   assert.match(app, /RELOCK_AFTER_MS = 30_000/);
   assert.doesNotMatch(app, /service[_-]?role/i);
