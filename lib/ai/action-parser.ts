@@ -23,6 +23,7 @@ export type CalendarActionPayload = {
   startAt: string;
   endAt: string;
   clientName?: string;
+  taskTitle?: string;
   location?: string;
   notes?: string;
   reminderMinutes?: number;
@@ -412,6 +413,7 @@ export function parseMutationPrompt(
       priority: priorityFromPrompt(prompt),
       description: field(prompt, ["descriere"], 700),
       clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare"], 180),
       location: field(prompt, ["locatie", "locație"], 240),
     };
     return {
@@ -426,6 +428,7 @@ export function parseMutationPrompt(
           { label: "Titlu", value: title },
           { label: "Prioritate", value: payload.priority },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Lucrare", value: payload.taskTitle }] : []),
         ],
       },
     };
