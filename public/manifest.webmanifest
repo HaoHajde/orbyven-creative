@@ -1,0 +1,28 @@
+{
+  "id": "/workspace",
+  "name": "ORBYVEN",
+  "short_name": "ORBYVEN",
+  "description": "ORBYVEN Business Workspace — administrare, automatizări și AI pentru afacerea ta.",
+  "lang": "ro",
+  "start_url": "/workspace",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "icons": [
+    {
+      "src": "/branding/orbyven-app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Workspace",
+      "short_name": "Workspace",
+      "url": "/workspace"
+    }
+  ]
+}
