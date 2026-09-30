@@ -189,3 +189,28 @@ test("organization bootstrap serializes concurrent first-tenant creation", () =>
   assert.match(bootstrapOrganizationHardening, /revoke all on function public\.bootstrap_organization\(text,text,text\[\]\)\s*from public, anon/);
   assert.match(bootstrapOrganizationHardening, /grant execute on function public\.bootstrap_organization\(text,text,text\[\]\)\s*to authenticated/);
 });
+
+
+const anonSurfaceHardening = read("supabase/migrations/20260930183000_anon_surface_hardening.sql");
+
+test("anonymous Data API grants stay limited to intentional public intake", () => {
+  for (const table of [
+    "billing_accounts",
+    "billing_invoices",
+    "billing_terms_acceptances",
+    "billing_webhook_events",
+    "organization_entitlements",
+    "organization_modules",
+    "organization_profiles",
+    "organizations",
+    "platform_audit_log",
+    "platform_staff",
+    "subscriptions",
+  ]) assert.ok(anonSurfaceHardening.includes(`public.${table}`), table);
+  assert.match(anonSurfaceHardening, /from anon/);
+  assert.doesNotMatch(anonSurfaceHardening, /revoke[\s\S]*?public\.leads/i);
+  assert.match(anonSurfaceHardening, /create or replace function public\.set_updated_at\(\)/);
+  assert.match(anonSurfaceHardening, /set search_path = ''/);
+  assert.match(anonSurfaceHardening, /new\.updated_at = pg_catalog\.now\(\)/);
+  assert.match(anonSurfaceHardening, /from public, anon/);
+});
