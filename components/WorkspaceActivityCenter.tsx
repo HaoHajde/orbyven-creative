@@ -119,7 +119,7 @@ export default function WorkspaceActivityCenter({
           <section
             role="dialog"
             aria-label="Atenționări ORBYVEN"
-            className="fixed left-3 right-3 top-[72px] z-[90] max-h-[70vh] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_26px_90px_rgba(0,0,0,0.28)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[390px]"
+            className="fixed left-3 right-3 top-[calc(72px+env(safe-area-inset-top))] z-[90] max-h-[calc(100dvh-5.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_26px_90px_rgba(0,0,0,0.28)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:max-h-[70dvh] sm:w-[390px]"
           >
             <header className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4">
               <div>
@@ -143,7 +143,7 @@ export default function WorkspaceActivityCenter({
               </button>
             </header>
 
-            <div className="max-h-[55vh] overflow-y-auto p-2.5">
+            <div className="max-h-[calc(100dvh-13rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain p-2.5 sm:max-h-[55dvh]">
               {loading && !items.length ? (
                 <p role="status" className="px-3 py-8 text-center text-xs text-[var(--muted)]">
                   Se verifică activitatea…
