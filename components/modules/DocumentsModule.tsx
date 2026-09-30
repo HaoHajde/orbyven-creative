@@ -14,12 +14,15 @@ import {
 } from "@/lib/modules/documents";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  initialCreate?: boolean;
+  initialRecordId?: string;
   initialTaskId?: string;
 };
 
@@ -44,7 +47,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, initialTaskId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, initialCreate = false, initialRecordId, initialTaskId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -55,7 +58,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialT
   const [taskId, setTaskId] = useState(initialTaskId ?? "");
   const [estimateId, setEstimateId] = useState("");
   const [note, setNote] = useState("");
-  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(Boolean(initialCreate && role !== "viewer"));
   const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,6 +67,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialT
   const [scopeTaskId, setScopeTaskId] = useState(initialTaskId ?? "");
 
   const canWrite = role !== "viewer";
+  const focusedDocumentId =
+    initialRecordId && documents.some((document) => document.id === initialRecordId)
+      ? initialRecordId
+      : null;
+  useWorkspaceRecordFocus(initialRecordId, focusedDocumentId, loading);
+  useWorkspaceCreateFocus(uploadOpen);
   const canDelete = role === "owner" || role === "admin" || role === "manager";
 
   const load = useCallback(async () => {
@@ -212,7 +221,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialT
       </section>
 
       {uploadOpen && canWrite ? (
-        <form onSubmit={handleUpload} className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <form data-workspace-create-focus={uploadOpen ? "true" : undefined} onSubmit={handleUpload} className="mt-5 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Fișier *">
               <input key={fileInputKey} type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className={`${moduleInputClass} file:mr-3 file:rounded-full file:border-0 file:bg-[var(--button)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--button-text)]`} />
@@ -267,7 +276,11 @@ export default function DocumentsModule({ organizationId, locale, role, initialT
         {filtered.length ? (
           <div className="mt-5 grid gap-3 lg:grid-cols-2">
             {filtered.map((document) => (
-              <article key={document.id} className="rounded-[22px] border border-[var(--border)] bg-[var(--bg)] p-5">
+              <article
+                key={document.id}
+                data-workspace-record-focus={initialRecordId === document.id ? "true" : undefined}
+                className="scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--bg)] p-5"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{document.name}</p>

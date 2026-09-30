@@ -104,6 +104,7 @@ export default function WorkspaceContent({
       <CalendarModule
         key={navigation.token}
         initialCreate={initialCreate}
+        initialRecordId={intent?.recordId}
         initialClientId={intent?.clientId}
         initialTaskId={intent?.taskId}
         organizationId={organizationId}
@@ -121,7 +122,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "documents") {
-    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialTaskId={intent?.taskId} />;
+    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "expenses") {
