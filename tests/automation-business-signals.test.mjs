@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildBusinessAutomationSignals } from "../lib/automation/business-signals.ts";
+import { rankNextBestActions } from "../lib/automation/next-best-action.ts";
 import { evaluateWorkReadiness } from "../lib/automation/work-readiness.ts";
 
 const now = new Date("2026-09-30T06:00:00.000Z");
@@ -448,4 +449,70 @@ test("Work Readiness wiring is shared by dossier, Activity, Overview and Operati
   assert.match(overview, /execution_without_accepted_estimate/);
   assert.match(intelligence, /operation_assignee_inactive/);
   assert.match(intelligence, /Risc comercial/);
+});
+
+
+test("Next Best Action uses explicit business precedence instead of opaque scoring", () => {
+  const ranked = rankNextBestActions([
+    {
+      key: "follow",
+      level: "urgent",
+      sortAt: "2026-09-29T06:00:00.000Z",
+      rule: "lead_follow_up",
+      module: "leads",
+      recordId: "lead-1",
+    },
+    {
+      key: "blocked",
+      level: "urgent",
+      sortAt: "2026-09-30T06:00:00.000Z",
+      rule: "operation_blocked",
+      module: "tasks",
+      recordId: "task-1",
+      taskId: "task-1",
+    },
+  ]);
+  assert.equal(ranked[0].key, "blocked");
+});
+
+test("Next Best Action collapses duplicate attention for the same operation context", () => {
+  const ranked = rankNextBestActions([
+    {
+      key: "owner",
+      level: "urgent",
+      sortAt: "2026-09-30T08:00:00.000Z",
+      rule: "operation_unassigned",
+      module: "tasks",
+      recordId: "task-1",
+      taskId: "task-1",
+    },
+    {
+      key: "commercial",
+      level: "urgent",
+      sortAt: "2026-09-30T07:00:00.000Z",
+      rule: "execution_without_accepted_estimate",
+      module: "tasks",
+      recordId: "task-1",
+      taskId: "task-1",
+    },
+  ]);
+  assert.equal(ranked.length, 1);
+  assert.equal(ranked[0].key, "owner");
+});
+
+test("Next Best Action remains stable for equal business context", () => {
+  const ranked = rankNextBestActions([
+    { key: "b", level: "attention", sortAt: "2026-09-30T08:00:00.000Z", rule: "estimate_follow_up" },
+    { key: "a", level: "attention", sortAt: "2026-09-30T08:00:00.000Z", rule: "estimate_follow_up" },
+  ], { dedupeContext: false });
+  assert.deepEqual(ranked.map((item) => item.key), ["a", "b"]);
+});
+
+test("Operations AI, Activity and Overview consume the shared Next Best Action engine", () => {
+  const ai = readFileSync(join(process.cwd(), "lib/ai/intelligence-server.ts"), "utf8");
+  const activity = readFileSync(join(process.cwd(), "lib/modules/activity.ts"), "utf8");
+  const overview = readFileSync(join(process.cwd(), "components/modules/OverviewModule.tsx"), "utf8");
+  assert.match(ai, /rankNextBestActions/);
+  assert.match(activity, /rankNextBestActions/);
+  assert.match(overview, /rankNextBestActions/);
 });
