@@ -23,6 +23,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { attachAcceptedEstimateToTask } from "@/lib/modules/estimates";
 import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
 import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
@@ -44,6 +45,7 @@ type Props = {
   initialCreate?: boolean;
   initialRecordId?: string;
   initialClientId?: string;
+  initialEstimateId?: string;
 };
 
 type ViewMode = "board" | "list";
@@ -135,7 +137,7 @@ function dayKey(value: string | null) {
 
 export default function TasksModule({
   organizationId, locale, role, enabledModules, onOpenModule,
-  initialCreate = false, initialRecordId, initialClientId,
+  initialCreate = false, initialRecordId, initialClientId, initialEstimateId,
 }: Props) {
   const [tasks, setTasks] = useState<WorkTask[]>([]);
   const [clients, setClients] = useState<WorkTaskClient[]>([]);
@@ -337,6 +339,9 @@ export default function TasksModule({
           : null,
         description: form.description,
       });
+      if (initialEstimateId && created.kind === "work") {
+        await attachAcceptedEstimateToTask(organizationId, initialEstimateId, created.id);
+      }
       setTasks((current) => [created, ...current]);
       setSelectedId(created.id);
       setForm(emptyForm);
