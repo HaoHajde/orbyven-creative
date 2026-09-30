@@ -65,7 +65,7 @@ function planMeta(payload: Record<string, unknown>) {
   return { id, step, total, dependsOnProposalId };
 }
 
-async function assertPlanDependency(actor: BillingActor, proposal: ProposalRow) {
+async function assertPlanDependency(actor: BillingActor, proposal: { payload: Record<string, unknown> }) {
   const meta = planMeta(proposal.payload);
   if (!meta?.dependsOnProposalId) return meta;
 
@@ -614,6 +614,22 @@ export async function decideMutationProposal(
     .eq("status", "pending")
     .lte("expires_at", now);
 
+  const { data: pendingForPlan, error: pendingPlanError } = await client
+    .from("ai_action_proposals")
+    .select("payload")
+    .eq("id", proposalId)
+    .eq("organization_id", actor.organizationId)
+    .eq("actor_id", actor.userId)
+    .eq("status", "pending")
+    .gt("expires_at", now)
+    .maybeSingle();
+  if (pendingPlanError) throw pendingPlanError;
+  if (pendingForPlan) {
+    await assertPlanDependency(actor, {
+      payload: (pendingForPlan.payload ?? {}) as Record<string, unknown>,
+    });
+  }
+
   const { data: claimed, error: claimError } = await client
     .from("ai_action_proposals")
     .update({ status: "executing", updated_at: now })
@@ -642,7 +658,7 @@ export async function decideMutationProposal(
   const proposal = claimed as ProposalRow;
 
   try {
-    const activePlan = await assertPlanDependency(actor, proposal);
+    const activePlan = planMeta(proposal.payload);
     const moduleId = actionModule(proposal.action_type);
     const [moduleResult, entitlementResult] = await Promise.all([
       client.from("organization_modules")
