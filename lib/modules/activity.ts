@@ -79,7 +79,7 @@ export async function loadWorkspaceActivity(
       enabledModules.includes("tasks")
         ? orbyvenSupabase
             .from("ops_tasks")
-            .select("id,title,kind,status,priority,due_at,scheduled_at,created_at,client_id")
+            .select("id,title,kind,status,priority,assignee,due_at,scheduled_at,created_at,client_id")
             .eq("organization_id", organizationId)
             .not("status", "in", '("done","cancelled")')
             .order("updated_at", { ascending: false })
@@ -172,6 +172,7 @@ export async function loadWorkspaceActivity(
     kind: task.kind as AutomationOperation["kind"],
     status: task.status as AutomationOperation["status"],
     priority: task.priority as AutomationOperation["priority"],
+    assignee: task.assignee ?? null,
     clientId: task.client_id ?? null,
     dueAt: task.due_at ?? null,
     scheduledAt: task.scheduled_at ?? null,
