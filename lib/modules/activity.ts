@@ -8,6 +8,7 @@ import {
   type AutomationEvent,
   type AutomationOperation,
 } from "@/lib/automation/business-signals";
+import { rankNextBestActions } from "@/lib/automation/next-best-action";
 
 export type WorkspaceActivityLevel = "urgent" | "attention" | "upcoming";
 
@@ -334,15 +335,8 @@ export async function loadWorkspaceActivity(
     }
   }
 
-  const rank: Record<WorkspaceActivityLevel, number> = {
-    urgent: 0,
-    attention: 1,
-    upcoming: 2,
-  };
-  return items
-    .sort((left, right) => {
-      const byLevel = rank[left.level] - rank[right.level];
-      return byLevel || left.sortAt.localeCompare(right.sortAt);
-    })
-    .slice(0, 24);
+  return rankNextBestActions(items, {
+    dedupeContext: true,
+    limit: 24,
+  });
 }
