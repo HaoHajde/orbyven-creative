@@ -5,6 +5,7 @@ import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
+import { guidedResolutionForSignal } from "@/lib/automation/resolution-playbooks";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
@@ -216,10 +217,16 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
 
   const actions: IntelligenceAction[] = [];
   for (const signal of nextBestSignals) {
+    const playbook = guidedResolutionForSignal(signal);
     actions.push({
-      kind: "open_module",
-      label: signal.actionLabel,
+      kind: "guided_resolution",
+      label: playbook.label,
+      rule: signal.rule,
+      title: signal.title,
+      rationale: playbook.rationale,
+      steps: playbook.steps,
       moduleId: signal.module,
+      create: signal.open.create,
       recordId: signal.open.recordId,
       clientId: signal.open.clientId,
       taskId: signal.open.taskId,

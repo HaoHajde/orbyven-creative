@@ -283,6 +283,20 @@ export default function DesktopIntelligence({ organizationId, onOpenModule }: Pr
         </button>
       </div>;
     }
+    if (action.kind === "guided_resolution") {
+      return <div key={index} className="ai-plan guided-resolution">
+        <strong>GUIDED RESOLUTION · {action.title}</strong>
+        <small>{action.rationale}</small>
+        {action.steps.map((step, stepIndex) => (
+          <span key={action.rule + "-" + stepIndex}>
+            <i className="plan-dot ready" /> {stepIndex + 1}. {step}
+          </span>
+        ))}
+        <button className="ai-action primary-action" onClick={() => onOpenModule(action.moduleId)}>
+          {action.label} →
+        </button>
+      </div>;
+    }
     if (action.kind === "repair_plan") {
       return <button key={index} className="ai-action" onClick={() => {
         setPrompt(action.suggestedPrompt.slice(0, 1200));

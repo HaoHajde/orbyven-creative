@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
+import { guidedResolutionForSignal } from "../lib/automation/resolution-playbooks.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -61,4 +62,45 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   assert.match(route, /answerIntelligenceForActor/);
   assert.match(route, /ensureConversation/);
   assert.match(route, /persistAssistantResponse/);
+});
+
+
+test("Guided Resolution playbooks explain a deterministic next step without executing it", () => {
+  const blocked = guidedResolutionForSignal({
+    rule: "operation_blocked",
+    actionLabel: "Deblochează",
+  });
+  assert.equal(blocked.label, "Rezolvă blocajul");
+  assert.match(blocked.rationale, /nu poate avansa/i);
+  assert.equal(blocked.steps.length, 3);
+
+  const resource = guidedResolutionForSignal({
+    rule: "appointment_needs_resources",
+    actionLabel: "Alocă resurse",
+  });
+  assert.equal(resource.label, "Pregătește resursele");
+  assert.match(resource.steps.join(" "), /disponibil/i);
+});
+
+test("Operations AI turns ranked priorities into Guided Resolution actions", () => {
+  const source = read("lib/ai/intelligence-server.ts");
+  assert.match(source, /guidedResolutionForSignal/);
+  assert.match(source, /kind: "guided_resolution"/);
+  assert.match(source, /rationale: playbook\.rationale/);
+  assert.match(source, /steps: playbook\.steps/);
+  assert.doesNotMatch(source, /guided_resolution[\s\S]{0,1200}\.(insert|update|delete|upsert)\s*\(/);
+});
+
+test("Guided Resolution is rendered as guidance and only opens bounded workspace context", () => {
+  const ui = read("components/WorkspaceIntelligence.tsx");
+  assert.match(ui, /GUIDED RESOLUTION/);
+  assert.match(ui, /action\.kind === "guided_resolution"/);
+  assert.match(ui, /action\.steps\.map/);
+  assert.match(ui, /onClick=\{\(\) => runAction\(action\)\}/);
+  assert.match(ui, /0\.8\.14 Guided Resolution/);
+});
+
+test("Selective language layer cannot rewrite deterministic Guided Resolution actions", () => {
+  const policy = read("lib/ai/language-policy.ts");
+  assert.match(policy, /action\.kind === "guided_resolution"/);
 });
