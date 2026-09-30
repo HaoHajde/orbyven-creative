@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { buildBusinessAutomationSignals } from "../lib/automation/business-signals.ts";
 
 const now = new Date("2026-09-30T06:00:00.000Z");
