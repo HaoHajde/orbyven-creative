@@ -358,6 +358,18 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  const selectedConflicts = useMemo(
+    () => selectedEvent
+      ? findCalendarConflicts(events, {
+          startAt: selectedEvent.start_at,
+          endAt: selectedEvent.end_at,
+          assignee: selectedEvent.assignee,
+          taskId: selectedEvent.task_id,
+          excludeEventId: selectedEvent.id,
+        })
+      : [],
+    [events, selectedEvent]
+  );
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
   useWorkspaceCreateFocus(createOpen);
@@ -698,6 +710,16 @@ export default function CalendarModule({
         <div className="mt-4 flex flex-wrap gap-2">
           {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
           {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+        </div>
+      )}
+      {selectedEvent && selectedConflicts.length > 0 && (
+        <div className="mt-3 rounded-[16px] border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3">
+          <p className="text-xs font-semibold text-rose-300">Conflict de program detectat</p>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
+            {selectedConflicts.length === 1
+              ? `Se suprapune cu „${selectedConflicts[0].event.title}”.`
+              : `Se suprapune cu ${selectedConflicts.length} programări.`} Modifică intervalul sau responsabilul înainte de execuție.
+          </p>
         </div>
       )}
       {selectedEvent && (
