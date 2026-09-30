@@ -10,6 +10,10 @@ const search = read("components/WorkspaceSearch.tsx");
 const workspace = read("components/ClientWorkspace.tsx");
 const tasksData = read("lib/modules/tasks.ts");
 const tasksUi = read("components/modules/TasksModule.tsx");
+const calendarData = read("lib/modules/calendar.ts");
+const calendarUi = read("components/modules/CalendarModule.tsx");
+const estimatesData = read("lib/modules/estimates.ts");
+const estimatesUi = read("components/modules/EstimatesModule.tsx");
 
 test("exact totals page through 1,000+ records, including the final partial page", async () => {
   const dataset = Array.from({ length: 1203 }, (_, id) => ({ id, amount_cents: id }));
@@ -77,6 +81,27 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksUi, /thermalSketch/);
   assert.match(tasksUi, /evaluateWorkReadiness/);
   assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
+});
+
+test("calendar detects overlaps only inside the organization and requires explicit override", () => {
+  assert.match(calendarData, /export async function listCalendarConflicts/);
+  assert.match(calendarData, /\.eq\("organization_id", organizationId\)/);
+  assert.match(calendarData, /\.eq\("status", "scheduled"\)/);
+  assert.match(calendarData, /\.lt\("start_at", end\.toISOString\(\)\)/);
+  assert.match(calendarData, /\.gt\("end_at", start\.toISOString\(\)\)/);
+  assert.match(calendarData, /export function countCalendarConflicts/);
+  assert.match(calendarUi, /Posibil conflict de programare/);
+  assert.match(calendarUi, /Programează oricum/);
+  assert.match(calendarUi, /conflictAcknowledged/);
+});
+
+test("accepted estimates hand off to a real work without silently rewriting final status", () => {
+  assert.match(estimatesData, /export async function attachAcceptedEstimateToTask/);
+  assert.match(estimatesData, /estimate\.status !== "accepted"/);
+  assert.match(estimatesData, /Statusul final nu se rescrie/);
+  assert.match(estimatesUi, /Pornește lucrarea/);
+  assert.match(tasksUi, /attachAcceptedEstimateToTask/);
+  assert.match(tasksUi, /deleteWorkTask\(organizationId, created\.id\)/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {
