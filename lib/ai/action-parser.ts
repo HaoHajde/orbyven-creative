@@ -11,7 +11,7 @@ export type LeadActionPayload = {
 
 export type TaskActionPayload = {
   title: string;
-  kind: "task" | "work";
+  kind: "task" | "work" | "order";
   priority: "low" | "normal" | "high" | "urgent";
   description?: string;
   clientName?: string;
@@ -137,7 +137,7 @@ function fallbackName(prompt: string, entity: "lead" | "client") {
 function fallbackTaskTitle(prompt: string) {
   return clean(
     prompt.match(
-      /(?:creeaz[ăa]|adaug[ăa]|deschide)\s+(?:o\s+|un\s+)?(?:lucrare|task|sarcin[ăa])\s*[:\-]?\s*([^,;\n]+)/i
+      /(?:creeaz[ăa]|adaug[ăa]|deschide)\s+(?:o\s+|un\s+)?(?:lucrare|comand[ăa]|task|sarcin[ăa])\s*[:\-]?\s*([^,;\n]+)/i
     )?.[1],
     180
   );
@@ -400,15 +400,15 @@ export function parseMutationPrompt(
     };
   }
 
-  const taskMatch = normalized.match(/\b(creeaza|adauga|deschide)\s+(?:o\s+|un\s+)?(lucrare|task|sarcina)\b/);
+  const taskMatch = normalized.match(/\b(creeaza|adauga|deschide)\s+(?:o\s+|un\s+)?(lucrare|comanda|task|sarcina)\b/);
   if (taskMatch) {
     const title = field(prompt, ["titlu"], 180) || fallbackTaskTitle(prompt);
     if (!title) {
-      return { kind: "needs_details", targetModule: "tasks", message: "Spune-mi titlul lucrării sau al task-ului." };
+      return { kind: "needs_details", targetModule: "tasks", message: "Spune-mi titlul lucrării, comenzii sau al task-ului." };
     }
     const payload: TaskActionPayload = {
       title,
-      kind: taskMatch[2] === "lucrare" ? "work" : "task",
+      kind: taskMatch[2] === "lucrare" ? "work" : taskMatch[2] === "comanda" ? "order" : "task",
       priority: priorityFromPrompt(prompt),
       description: field(prompt, ["descriere"], 700),
       clientName: field(prompt, ["client"], 140),
@@ -422,7 +422,7 @@ export function parseMutationPrompt(
         payload,
         summary: "Creează " + (payload.kind === "work" ? "lucrarea" : "task-ul") + " „" + title + "”",
         facts: [
-          { label: "Tip", value: payload.kind === "work" ? "Lucrare" : "Task" },
+          { label: "Tip", value: payload.kind === "work" ? "Lucrare" : payload.kind === "order" ? "Comandă" : "Task" },
           { label: "Titlu", value: title },
           { label: "Prioritate", value: payload.priority },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
