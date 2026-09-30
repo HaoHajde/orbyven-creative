@@ -233,6 +233,7 @@ export default function TasksModule({
         includeDocuments: enabledModules.includes("documents"),
         includeCalendar: enabledModules.includes("calendar"),
         includeExpenses: enabledModules.includes("expenses"),
+        includeInventory: enabledModules.includes("inventory"),
         includeThermal: enabledModules.includes("thermal"),
       })
         .then((nextContext) => {
@@ -904,6 +905,19 @@ function WorkFileSummary({
           options: { taskId: task.id },
         }
       : null,
+    enabledModules.includes("inventory") && task.kind !== "task"
+      ? {
+          id: "inventory" as const,
+          label: "Consum stoc",
+          value: context?.inventoryConsumedCents !== null && context?.inventoryConsumedCents !== undefined
+            ? money(context.inventoryConsumedCents)
+            : "—",
+          note: context?.inventoryMovementsCount !== null && context?.inventoryMovementsCount !== undefined
+            ? context.inventoryMovementsCount + " mișcări"
+            : "se încarcă",
+          options: { taskId: task.id },
+        }
+      : null,
     enabledModules.includes("expenses") && canAccessFinances
       ? {
           id: "expenses" as const,
@@ -946,7 +960,7 @@ function WorkFileSummary({
         <span className="text-[10px] text-[var(--muted-2)]">{loading ? "Se sincronizează…" : "Live"}</span>
       </div>
       {error ? <p className="mt-2 text-[10px] text-amber-500">{error}</p> : null}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
         {cards.map((card) => (
           <button
             key={card.id}
