@@ -128,3 +128,15 @@ test("production scheduler migration preserves RLS and conflict guards", () => {
   assert.match(migration, /calendar_event_resources_insert_operator/i);
   assert.match(migration, /people_team_members_resource_sync/i);
 });
+
+
+const resourcePolicyDedup = read("supabase/migrations/20260930182000_resource_unavailability_rls_dedup.sql");
+
+test("resource unavailability RLS avoids overlapping permissive SELECT policies", () => {
+  assert.match(resourcePolicyDedup, /drop policy if exists ops_resource_unavailability_manage_manager/);
+  assert.match(resourcePolicyDedup, /for insert to authenticated/);
+  assert.match(resourcePolicyDedup, /for update to authenticated/);
+  assert.match(resourcePolicyDedup, /for delete to authenticated/);
+  assert.doesNotMatch(resourcePolicyDedup, /for all to authenticated/);
+  assert.match(resourcePolicyDedup, /m\.role in \('owner','admin','manager'\)/);
+});
