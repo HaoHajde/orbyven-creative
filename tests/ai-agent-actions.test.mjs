@@ -82,7 +82,7 @@ test("Read-only questions never become mutation proposals", () => {
 });
 
 test("Action proposals are server-only with RLS and explicit grants", () => {
-  const migration = read("supabase/migrations/20260929145800_ai_action_proposals.sql");
+  const migration = read("supabase/migrations/20260929145832_ai_action_proposals.sql");
   assert.match(migration, /alter table public\.ai_action_proposals enable row level security/);
   assert.match(migration, /revoke all on table public\.ai_action_proposals from public, anon, authenticated/);
   assert.match(migration, /grant select, insert, update on table public\.ai_action_proposals to service_role/);

@@ -73,7 +73,7 @@ test("Estimate line parsing supports decimal quantities and prices", () => {
 });
 
 test("Estimate DB function is server-only, invoker mode and always creates draft", () => {
-  const migration = read("supabase/migrations/20260929152500_ai_estimate_draft_action.sql");
+  const migration = read("supabase/migrations/20260929151735_ai_estimate_draft_action.sql");
   assert.match(migration, /security invoker/i);
   assert.match(migration, /'create_estimate'/);
   assert.match(migration, /'draft'/);
@@ -96,7 +96,7 @@ test("Estimate execution resolves client and work in the authenticated organizat
 test("Estimate Agent Action cannot auto-send or auto-accept an estimate", () => {
   const parser = read("lib/ai/action-parser.ts");
   const server = read("lib/ai/action-server.ts");
-  const migration = read("supabase/migrations/20260929152500_ai_estimate_draft_action.sql");
+  const migration = read("supabase/migrations/20260929151735_ai_estimate_draft_action.sql");
   assert.doesNotMatch(parser, /status:\s*"sent"/);
   assert.doesNotMatch(server, /status:\s*"sent"/);
   assert.doesNotMatch(server, /status:\s*"accepted"/);

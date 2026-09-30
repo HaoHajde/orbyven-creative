@@ -216,3 +216,15 @@ test("anonymous Data API grants stay limited to intentional public intake", () =
   assert.match(anonSurfaceHardening, /new\.updated_at = pg_catalog\.now\(\)/);
   assert.match(anonSurfaceHardening, /from public, anon/);
 });
+
+
+test("recent AI and iOS migration filenames match exact production history", () => {
+  for (const [current, stale] of [
+    ["20260929145832_ai_action_proposals.sql", "20260929145800_ai_action_proposals.sql"],
+    ["20260929151735_ai_estimate_draft_action.sql", "20260929152500_ai_estimate_draft_action.sql"],
+    ["20260930183644_ios_push_devices.sql", "20260930081030_ios_push_devices.sql"],
+  ]) {
+    assert.equal(existsSync(new URL(`../supabase/migrations/${current}`, import.meta.url)), true, current);
+    assert.equal(existsSync(new URL(`../supabase/migrations/${stale}`, import.meta.url)), false, stale);
+  }
+});
