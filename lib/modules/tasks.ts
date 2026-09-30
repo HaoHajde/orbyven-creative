@@ -1,5 +1,6 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { readAllPages } from "@/lib/modules/paged-read";
+import { loadTaskInventoryConsumption } from "@/lib/modules/inventory";
 
 export type WorkTaskKind = "task" | "work" | "order";
 export type WorkTaskStatus = "planned" | "in_progress" | "blocked" | "done" | "cancelled";
@@ -55,6 +56,8 @@ export type WorkTaskContext = {
   upcomingEventsCount: number;
   expensesCount: number | null;
   expensesCents: number | null;
+  inventoryMovementsCount: number | null;
+  inventoryConsumedCents: number | null;
   thermalSketch: boolean | null;
 };
 
@@ -156,6 +159,7 @@ export async function loadWorkTaskContext(
     includeDocuments: boolean;
     includeCalendar: boolean;
     includeExpenses: boolean;
+    includeInventory: boolean;
     includeThermal: boolean;
   }
 ): Promise<WorkTaskContext> {
@@ -163,7 +167,7 @@ export async function loadWorkTaskContext(
   requireTaskId(taskId);
 
   const nowIso = new Date().toISOString();
-  const [estimatesResult, documentsResult, eventsResult, expenseRows, thermalResult] =
+  const [estimatesResult, documentsResult, eventsResult, expenseRows, inventoryResult, thermalResult] =
     await Promise.all([
       options.includeEstimates
         ? orbyvenSupabase
@@ -201,6 +205,9 @@ export async function loadWorkTaskContext(
               .range(from, to)
           )
         : Promise.resolve(null),
+      options.includeInventory
+        ? loadTaskInventoryConsumption(organizationId, taskId)
+        : Promise.resolve(null),
       options.includeThermal
         ? orbyvenSupabase
             .from("thermal_sketches")
@@ -231,6 +238,8 @@ export async function loadWorkTaskContext(
     expensesCents: expenseRows
       ? expenseRows.reduce((sum, item) => sum + Number(item.amount_cents), 0)
       : null,
+    inventoryMovementsCount: inventoryResult?.count ?? null,
+    inventoryConsumedCents: inventoryResult?.costCents ?? null,
     thermalSketch: options.includeThermal ? (thermalResult.count ?? 0) > 0 : null,
   };
 }
