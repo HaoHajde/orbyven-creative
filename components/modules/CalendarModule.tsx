@@ -16,7 +16,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -318,6 +318,7 @@ export default function CalendarModule({
     [events, selectedId]
   );
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
+  useWorkspaceSelectionWarp(selectedId, loading);
   useWorkspaceCreateFocus(createOpen);
   const filteredEvents = useMemo(
     () => events.filter((calendarEvent) => typeFilter === "all" || calendarEvent.event_type === typeFilter),
@@ -555,7 +556,7 @@ export default function CalendarModule({
       )}
       {selectedEvent && (
         <div
-          data-workspace-record-focus={initialRecordId && selectedEvent.id === initialRecordId ? "true" : undefined}
+          data-workspace-record-focus={selectedEvent ? "true" : undefined}
           className="scroll-mt-28"
         >
           <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />
