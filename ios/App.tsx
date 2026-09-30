@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Network from "expo-network";
+import * as Notifications from "expo-notifications";
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Linking,
   Platform,
@@ -20,10 +22,91 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.4.0";
+const APP_VERSION = "0.5.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
+
+type CalendarReminderMessage = {
+  eventId: string;
+  title: string;
+  startAt: string;
+  reminderMinutes: number | null;
+  location?: string | null;
+};
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+async function notificationsAllowed() {
+  const current = await Notifications.getPermissionsAsync();
+  if (
+    current.granted ||
+    current.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
+  ) {
+    return true;
+  }
+
+  const requested = await Notifications.requestPermissionsAsync();
+  return (
+    requested.granted ||
+    requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
+  );
+}
+
+async function cancelCalendarReminder(eventId: string) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const matches = scheduled.filter(
+    (request) =>
+      request.content.data?.kind === "calendar-event" &&
+      request.content.data?.eventId === eventId
+  );
+  await Promise.all(
+    matches.map((request) =>
+      Notifications.cancelScheduledNotificationAsync(request.identifier)
+    )
+  );
+}
+
+async function scheduleCalendarReminder(message: CalendarReminderMessage) {
+  await cancelCalendarReminder(message.eventId);
+
+  if (message.reminderMinutes === null) return null;
+
+  const startAt = new Date(message.startAt).getTime();
+  if (!Number.isFinite(startAt) || startAt <= Date.now()) return null;
+
+  const allowed = await notificationsAllowed();
+  if (!allowed) throw new Error("notification-permission-denied");
+
+  const requestedAt =
+    startAt - Math.max(0, message.reminderMinutes) * 60 * 1000;
+  const triggerAt = Math.max(Date.now() + 1500, requestedAt);
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: "ORBYVEN · Programare",
+      body: message.location
+        ? message.title + " · " + message.location
+        : message.title,
+      sound: true,
+      data: {
+        kind: "calendar-event",
+        eventId: message.eventId,
+      },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(triggerAt),
+    },
+  });
+}
 
 function isTrustedOrbyvenUrl(url: string) {
   try {
@@ -64,6 +147,7 @@ export default function App() {
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
+  const pendingCalendarEventId = useRef<string | null>(null);
 
   const openNativeLink = useCallback((url: string | null) => {
     if (!url) return;
@@ -237,6 +321,29 @@ export default function App() {
     );
   }, [currentUrl]);
 
+  const flushPendingCalendarIntent = useCallback(() => {
+    const eventId = pendingCalendarEventId.current;
+    if (!eventId) return;
+
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-calendar-record',{detail:{eventId:" +
+        JSON.stringify(eventId) +
+        "}})); true;",
+    );
+  }, []);
+
+  const openCalendarRecord = useCallback((eventId: string) => {
+    pendingCalendarEventId.current = eventId;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      setCurrentUrl(WORKSPACE_URL);
+      setReloadKey((value) => value + 1);
+      return;
+    }
+
+    setTimeout(flushPendingCalendarIntent, 0);
+  }, [currentUrl, flushPendingCalendarIntent]);
+
   const openDocuments = useCallback(() => {
     void Haptics.selectionAsync().catch(() => undefined);
     webRef.current?.injectJavaScript(
@@ -244,15 +351,93 @@ export default function App() {
     );
   }, []);
 
+  useEffect(() => {
+    const handleResponse = (response: Notifications.NotificationResponse) => {
+      const data = response.notification.request.content.data;
+      if (
+        data?.kind === "calendar-event" &&
+        typeof data.eventId === "string"
+      ) {
+        openCalendarRecord(data.eventId);
+        void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+      }
+    };
+
+    void Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) handleResponse(response);
+      })
+      .catch(() => undefined);
+
+    const subscription =
+      Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+    return () => subscription.remove();
+  }, [openCalendarRecord]);
+
   const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
     try {
-      const message = JSON.parse(event.nativeEvent.data) as { type?: string };
+      const message = JSON.parse(event.nativeEvent.data) as {
+        type?: string;
+        eventId?: string;
+        title?: string;
+        startAt?: string;
+        reminderMinutes?: number | null;
+        location?: string | null;
+      };
+
       if (message.type === "orbyven:document-uploaded") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       } else if (message.type === "orbyven:document-upload-error") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
       } else if (message.type === "orbyven:document-selected") {
         void Haptics.selectionAsync().catch(() => undefined);
+      } else if (
+        message.type === "orbyven:schedule-calendar-reminder" &&
+        typeof message.eventId === "string" &&
+        typeof message.title === "string" &&
+        typeof message.startAt === "string"
+      ) {
+        void scheduleCalendarReminder({
+          eventId: message.eventId,
+          title: message.title,
+          startAt: message.startAt,
+          reminderMinutes:
+            typeof message.reminderMinutes === "number"
+              ? message.reminderMinutes
+              : null,
+          location: message.location,
+        })
+          .then(() =>
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success,
+            ).catch(() => undefined),
+          )
+          .catch((error: unknown) => {
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Error,
+            ).catch(() => undefined);
+            if (
+              error instanceof Error &&
+              error.message === "notification-permission-denied"
+            ) {
+              Alert.alert(
+                "Notificări dezactivate",
+                "Activează notificările pentru ORBYVEN din Settings ca să primești reminderele programărilor.",
+              );
+            }
+          });
+      } else if (
+        message.type === "orbyven:cancel-calendar-reminder" &&
+        typeof message.eventId === "string"
+      ) {
+        void cancelCalendarReminder(message.eventId).catch(() => undefined);
+      } else if (
+        message.type === "orbyven:native-calendar-opened" &&
+        typeof message.eventId === "string" &&
+        pendingCalendarEventId.current === message.eventId
+      ) {
+        pendingCalendarEventId.current = null;
       }
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
@@ -301,7 +486,10 @@ export default function App() {
           onShouldStartLoadWithRequest={shouldStart}
           onMessage={handleWebMessage}
           onLoadStart={() => setConnection("loading")}
-          onLoadEnd={() => setConnection("online")}
+          onLoadEnd={() => {
+            setConnection("online");
+            setTimeout(flushPendingCalendarIntent, 0);
+          }}
           onError={() => setConnection("offline")}
           onHttpError={({ nativeEvent }) => {
             if (nativeEvent.statusCode >= 500) setConnection("offline");

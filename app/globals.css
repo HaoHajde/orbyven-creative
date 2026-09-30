@@ -481,3 +481,14 @@ html[data-app-mode="standalone"] a,
 html[data-app-mode="standalone"] button {
   touch-action: manipulation;
 }
+
+
+/* Coarse-pointer form controls stay at 16px+ to avoid iOS zoom and
+   preserve readable touch targets on phones and tablets. */
+@media (max-width: 1024px) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
