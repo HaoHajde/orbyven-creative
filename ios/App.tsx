@@ -49,7 +49,6 @@ function nativeUrlToWebUrl(url: string) {
 export default function App() {
   const webRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
-  const networkState = Network.useNetworkState();
   const dark = colorScheme !== "light";
 
   const [connection, setConnection] = useState<ConnectionState>("loading");
@@ -60,6 +59,7 @@ export default function App() {
   const [privacyShielded, setPrivacyShielded] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [deviceOffline, setDeviceOffline] = useState(false);
 
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
@@ -131,7 +131,11 @@ export default function App() {
   }, [openNativeLink]);
 
   useEffect(() => {
-    void authenticateToUnlock();
+    const timer = setTimeout(() => {
+      void authenticateToUnlock();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [authenticateToUnlock]);
 
   useEffect(() => {
@@ -162,28 +166,46 @@ export default function App() {
   }, [authenticateToUnlock]);
 
   useEffect(() => {
-    const definitelyOffline =
-      networkState.isConnected === false || networkState.isInternetReachable === false;
-    const definitelyOnline =
-      networkState.isConnected === true && networkState.isInternetReachable !== false;
+    let mounted = true;
 
-    if (definitelyOffline) {
-      previousReachability.current = false;
-      setConnection("offline");
-      return;
-    }
+    const applyNetworkState = (state: Network.NetworkState) => {
+      if (!mounted) return;
 
-    if (definitelyOnline && previousReachability.current === false) {
-      previousReachability.current = true;
-      setConnection("loading");
-      webRef.current?.reload();
-      return;
-    }
+      const definitelyOffline =
+        state.isConnected === false || state.isInternetReachable === false;
+      const definitelyOnline =
+        state.isConnected === true && state.isInternetReachable !== false;
 
-    if (definitelyOnline) {
-      previousReachability.current = true;
-    }
-  }, [networkState.isConnected, networkState.isInternetReachable]);
+      setDeviceOffline(definitelyOffline);
+
+      if (definitelyOffline) {
+        previousReachability.current = false;
+        return;
+      }
+
+      if (definitelyOnline && previousReachability.current === false) {
+        previousReachability.current = true;
+        setConnection("loading");
+        webRef.current?.reload();
+        return;
+      }
+
+      if (definitelyOnline) {
+        previousReachability.current = true;
+      }
+    };
+
+    void Network.getNetworkStateAsync()
+      .then(applyNetworkState)
+      .catch(() => undefined);
+
+    const subscription = Network.addNetworkStateListener(applyNetworkState);
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
 
   const onNavigationStateChange = useCallback((state: WebViewNavigation) => {
     setCurrentUrl(state.url);
@@ -220,10 +242,7 @@ export default function App() {
   const text = dark ? "#f4f7ff" : "#101827";
   const muted = dark ? "#91a0b8" : "#617089";
   const border = dark ? "#1a2940" : "#dfe5ef";
-  const effectiveConnection =
-    networkState.isConnected === false || networkState.isInternetReachable === false
-      ? "offline"
-      : connection;
+  const effectiveConnection = deviceOffline ? "offline" : connection;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]}>
