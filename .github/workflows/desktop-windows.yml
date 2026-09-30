@@ -13,6 +13,9 @@ on:
       - 'lib/orbyven-modules.ts'
       - 'lib/ai/**'
       - 'app/api/ai/**'
+      - 'config/architecture-budgets.json'
+      - 'scripts/architecture-integrity.mjs'
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -31,6 +34,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Architecture and lightweight source gate
+        run: node scripts/architecture-integrity.mjs --source
+
       - name: Rust stable for Windows
         uses: dtolnay/rust-toolchain@stable
 
@@ -42,6 +48,9 @@ jobs:
 
       - name: Build branded ORBYVEN Windows NSIS installer
         run: npm run build --prefix desktop
+
+      - name: Desktop bundle and installer budget
+        run: node scripts/architecture-integrity.mjs --desktop-build-only
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
