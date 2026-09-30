@@ -65,6 +65,7 @@ export type IntelligenceAction =
         mode: PlanRecoveryMode;
         label: string;
         message: string;
+        suggestedPrompt?: string;
       };
       steps: Array<{
         proposalId: string;
