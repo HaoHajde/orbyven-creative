@@ -9,6 +9,10 @@ on:
       - 'app/api/desktop/**'
       - 'lib/modules/**'
       - 'lib/orbyven-workspace.ts'
+      - 'lib/workspace-visual-system.ts'
+      - 'lib/orbyven-modules.ts'
+      - 'lib/ai/**'
+      - 'app/api/ai/**'
   workflow_dispatch:
 
 permissions:
@@ -42,7 +46,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: ORBYVEN-Desktop-Windows-v0.4.0
+          name: ORBYVEN-Desktop-Windows-v0.5.0
           path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           retention-days: 14
