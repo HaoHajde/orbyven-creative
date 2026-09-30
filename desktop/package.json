@@ -1,7 +1,7 @@
 {
   "name": "@orbyven/desktop-windows",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "ORBYVEN desktop workspace for Windows with locally bundled UI",
   "type": "module",
   "scripts": {
