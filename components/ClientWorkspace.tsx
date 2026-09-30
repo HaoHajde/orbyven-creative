@@ -317,6 +317,7 @@ export default function ClientWorkspace() {
                       <button
                         key={definition.id}
                         type="button"
+                        data-workspace-module={definition.id}
                         onClick={() => openModule(definition.id)}
                         aria-current={active ? "page" : undefined}
                         className={active
@@ -412,6 +413,7 @@ export default function ClientWorkspace() {
                   <button
                     key={definition.id}
                     type="button"
+                    data-workspace-module={definition.id}
                     onClick={() => openModule(definition.id)}
                     className={`flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[20px] border px-1 text-center transition active:scale-[0.97] ${
                       active
