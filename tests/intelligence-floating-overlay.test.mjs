@@ -7,6 +7,10 @@ const source = readFileSync(
   join(process.cwd(), "components/WorkspaceIntelligence.tsx"),
   "utf8"
 );
+const workspaceSource = readFileSync(
+  join(process.cwd(), "components/ClientWorkspace.tsx"),
+  "utf8"
+);
 
 test("ORBYVEN Intelligence launcher is viewport-fixed and does not occupy workspace layout", () => {
   assert.ok(source.includes('className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4'));
@@ -29,6 +33,7 @@ test("ORBYVEN Intelligence opens as a modal overlay with mobile-safe scrolling",
 
 test("ORBYVEN Intelligence portal keeps workspace theme variables and launcher toggles closed/open", () => {
   assert.match(source, /themeVars: CSSProperties/);
+  assert.match(workspaceSource, /themeVars=\{vars\}/);
   assert.match(source, /style=\{themeVars\}/);
   assert.match(source, /data-orbyven-intelligence-theme-scope="true"/);
   assert.match(source, /text-\[var\(--text\)\]/);
