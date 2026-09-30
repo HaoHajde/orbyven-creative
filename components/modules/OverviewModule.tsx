@@ -154,6 +154,7 @@ export default function OverviewModule({
       kind: task.kind,
       status: task.status as AutomationOperation["status"],
       priority: task.priority as AutomationOperation["priority"],
+      assignee: task.assignee,
       clientId: task.client_id,
       scheduledAt: task.scheduled_at,
       dueAt: task.due_at,
