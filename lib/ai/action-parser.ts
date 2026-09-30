@@ -23,6 +23,7 @@ export type CalendarActionPayload = {
   startAt: string;
   endAt: string;
   clientName?: string;
+  taskTitle?: string;
   location?: string;
   notes?: string;
   reminderMinutes?: number;
@@ -464,6 +465,7 @@ export function parseMutationPrompt(
       startAt,
       endAt,
       clientName: field(prompt, ["client"], 140),
+      taskTitle: field(prompt, ["lucrare", "comanda", "comandă"], 180),
       location: field(prompt, ["locatie", "locație"], 240),
       notes: field(prompt, ["nota", "notă", "descriere"], 700),
       reminderMinutes,
@@ -481,6 +483,7 @@ export function parseMutationPrompt(
           { label: "Data", value: formatLocalDate(startAt, timeZone) },
           { label: "Durată", value: String(durationMinutes) + " min" },
           ...(payload.clientName ? [{ label: "Client", value: payload.clientName }] : []),
+          ...(payload.taskTitle ? [{ label: "Operațiune", value: payload.taskTitle }] : []),
         ],
       },
     };

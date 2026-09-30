@@ -25,7 +25,9 @@ export function shouldUseLanguageLayer(
   const normalized = normalizePrompt(prompt);
   if (MUTATION_VERB.test(normalized)) return false;
   if (response.specialist === "web_design") return false;
-  if (response.actions.some((action) => action.kind === "confirm_proposal")) return false;
+  if (response.actions.some((action) =>
+    action.kind === "confirm_proposal" || action.kind === "review_plan"
+  )) return false;
   return response.specialist === "general" || LANGUAGE_TRIGGER.test(normalized);
 }
 
