@@ -143,14 +143,14 @@ export default function App() {
           }}
           startInLoadingState
           renderLoading={() => (
-            <View style={[styles.loader, { backgroundColor }]}>
+            <View style={[styles.loader, { backgroundColor: background }]}>
               <ActivityIndicator size="large" />
               <Text style={[styles.loaderTitle, { color: text }]}>ORBYVEN</Text>
               <Text style={[styles.loaderText, { color: muted }]}>Sincronizare workspace…</Text>
             </View>
           )}
           renderError={() => (
-            <View style={[styles.loader, { backgroundColor }]}>
+            <View style={[styles.loader, { backgroundColor: background }]}>
               <Text style={[styles.loaderTitle, { color: text }]}>Conexiune indisponibilă</Text>
               <Text style={[styles.loaderText, { color: muted }]}>
                 Verifică internetul și reîncearcă. Datele ORBYVEN nu sunt stocate local în această versiune.
