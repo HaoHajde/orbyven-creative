@@ -606,6 +606,36 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
               </div>
             ) : null}
           </div>
+        ) : action.kind === "guided_resolution" ? (
+          <div key={`guided-${action.rule}-${index}`} className="rounded-[15px] border border-emerald-400/20 bg-emerald-400/[0.055] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300">GUIDED RESOLUTION</p>
+                <p className="mt-1 text-[11px] font-semibold leading-4">{action.title}</p>
+                <p className="mt-1.5 text-[9px] leading-4 text-[var(--muted)]">{action.rationale}</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2 py-1 text-[8px] font-semibold text-emerald-300">
+                {index + 1}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-1.5">
+              {action.steps.map((step, stepIndex) => (
+                <div key={`${action.rule}-step-${stepIndex}`} className="flex items-start gap-2 rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/45 px-2.5 py-2">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] text-[7px] font-bold">
+                    {stepIndex + 1}
+                  </span>
+                  <p className="text-[9px] leading-4 text-[var(--muted)]">{step}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => runAction(action)}
+              className="mt-3 rounded-full bg-[var(--button)] px-3.5 py-2 text-[9px] font-semibold text-[var(--button-text)]"
+            >
+              {action.label}
+            </button>
+          </div>
         ) : action.kind === "repair_plan" ? (
           <div key={`repair-${action.blockedStep}-${index}`} className="rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.06] p-3">
             <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
@@ -686,7 +716,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.14</p>
                       <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -828,7 +858,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                      0.8.13 Next Best Action · responsabilitatea, contextul comercial și dosarul operațional sunt verificate înainte de execuție.
+                      0.8.14 Guided Resolution · prioritățile primesc pași clari și context exact; execuția rămâne controlată și confirmată.
                     </p>
                   </form>
                 ) : null}
