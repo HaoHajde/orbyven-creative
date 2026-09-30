@@ -43,6 +43,7 @@ test("module switching, deep-link creation and role props remain intact", () => 
   assert.match(registry, /id: "inventory"/);
   assert.match(workspace, /DocumentsModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
   assert.match(workspace, /ThermalPlannerModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
+  assert.match(workspace, /TasksModule[^\n]+initialEstimateId=\{intent\?\.estimateId\}/);
 });
 
 test("demo iframes wait near the viewport, then keep the existing safe iframe settings", () => {
