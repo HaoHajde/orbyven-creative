@@ -62,7 +62,6 @@ export async function POST(request: Request) {
           ...clarificationResult,
           conversationId: conversation.id,
           contextUsed: context.usedContext,
-        entityContextUsed: entityContext.usedContext,
           entityContextUsed: false,
         },
         { headers: { "Cache-Control": "no-store" } }
@@ -102,6 +101,7 @@ export async function POST(request: Request) {
         ...finalResult,
         conversationId: conversation.id,
         contextUsed: context.usedContext,
+        entityContextUsed: entityContext.usedContext,
       },
       { headers: { "Cache-Control": "no-store" } }
     );
