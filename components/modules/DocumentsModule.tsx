@@ -178,10 +178,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         note,
       });
       setDocuments((current) => [created, ...current]);
+      postNativeBridge("orbyven:document-uploaded", { id: created.id, name: created.name });
       resetUpload();
       setUploadOpen(false);
     } catch (saveError) {
       console.error(saveError);
+      postNativeBridge("orbyven:document-upload-error");
       setError(saveError instanceof Error ? saveError.message : "Fișierul nu a putut fi încărcat.");
     } finally {
       setSaving(false);
