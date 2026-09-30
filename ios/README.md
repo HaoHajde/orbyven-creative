@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.5
+# ORBYVEN iOS — Alpha 0.6
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,12 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.5:
+Native Alpha 0.6:
+- foundation pentru push remote, cu activare explicită din centrul de atenționări;
+- tokenul Expo Push este obținut numai într-un build legat la EAS și este salvat prin sesiunea web autentificată;
+- registry tenant-scoped pe organizație + utilizator + token, protejat prin RLS;
+- tap pe push poate deschide doar URL-uri ORBYVEN validate sau deep-link-uri `orbyven://`;
+- nu există service-role sau secret Supabase în clientul iOS;
 - remindere locale iOS pentru programările din Calendar;
 - folosește direct câmpul existent `reminder_minutes`, fără tabel paralel;
 - cere permisiunea de notificări doar când este nevoie de primul reminder;
@@ -168,3 +173,10 @@ Versiunea 0.5.0 leagă Calendarul ORBYVEN de notificările locale ale iPhone-ulu
 Programările anulate, finalizate sau șterse își elimină reminderul programat. La apăsarea notificării, aplicația revine în workspace și deschide Calendarul pe evenimentul respectiv.
 
 Notificările locale pot fi testate fără infrastructură push. Push-urile remote rămân o etapă separată deoarece necesită development/store build și credențiale push.
+
+
+## Alpha 0.6
+
+Versiunea 0.6.0 pregătește notificările push remote fără să slăbească autentificarea existentă. Utilizatorul activează explicit alertele din Activity Center; shell-ul nativ obține Expo Push Token numai când există un `projectId` EAS valid, iar workspace-ul autentificat îl persistă în `user_push_devices`. RLS permite fiecărui utilizator să își gestioneze doar propriile dispozitive din organizațiile în care are membership activ.
+
+În această etapă este implementată infrastructura de înregistrare și routing, nu expedierea automată server-side. Pentru push real pe iPhone este necesar un development/store build cu proiectul EAS legat și credențiale Apple Push. Reminderele locale din Alpha 0.5 rămân independente și continuă să funcționeze fără backend de push.
