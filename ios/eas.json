@@ -2,7 +2,7 @@
   "cli": {
     "version": ">=24.4.1 <25.0.0",
     "appVersionSource": "remote",
-    "requireCommit": true
+    "requireCommit": false
   },
   "build": {
     "simulator": {
