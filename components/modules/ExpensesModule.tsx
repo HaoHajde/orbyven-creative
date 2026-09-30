@@ -28,6 +28,7 @@ import {
   moduleInputClass,
 } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useWorkspaceCreateFocus } from "@/components/modules/useWorkspaceRecordFocus";
 
 type Props = {
   organizationId: string;
@@ -168,6 +169,7 @@ export default function ExpensesModule({
     taskId: initialTaskId ?? "",
   }));
   const [expenseOpen, setExpenseOpen] = useState(Boolean(initialCreate && canWrite));
+  useWorkspaceCreateFocus(expenseOpen);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [issueInvoiceId, setIssueInvoiceId] = useState("");
   const [issueDueOn, setIssueDueOn] = useState(inDays(15));
@@ -480,7 +482,7 @@ export default function ExpensesModule({
       </nav>
 
       {expenseOpen && canWrite ? (
-        <form onSubmit={handleExpense} className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <form data-workspace-create-focus={expenseOpen ? "true" : undefined} onSubmit={handleExpense} className="mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <div><h2 className="text-sm font-semibold">Cheltuială nouă</h2><p className="mt-1 text-[10px] text-[var(--muted)]">Leag-o de lucrare pentru profitabilitate reală.</p></div>
             <button type="button" onClick={() => setExpenseOpen(false)} className="text-lg text-[var(--muted)]">×</button>
