@@ -73,6 +73,10 @@ test("a future calendar event suppresses the accepted-offer scheduling signal", 
     signals.some((item) => item.rule === "accepted_estimate_needs_schedule"),
     false
   );
+  assert.equal(
+    signals.some((item) => item.rule === "operation_unplanned"),
+    false
+  );
 });
 
 test("stale unscheduled work or order becomes an actionable automation signal", () => {
