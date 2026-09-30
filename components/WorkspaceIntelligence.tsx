@@ -362,9 +362,26 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
           recordId: created.id,
         }] : [],
       }]);
+      if (body.plan && conversationId) {
+        try {
+          const latestPlan = await loadPlanForConversation(conversationId, token);
+          if (latestPlan) putPlanInMessages(latestPlan);
+        } catch (planRefreshError) {
+          console.error("ORBYVEN plan refresh failed", planRefreshError);
+        }
+      }
       void loadConversations();
     } catch (reason) {
       console.error(reason);
+      if (conversationId) {
+        try {
+          const refreshToken = await accessToken();
+          const latestPlan = await loadPlanForConversation(conversationId, refreshToken);
+          if (latestPlan) putPlanInMessages(latestPlan);
+        } catch (planRefreshError) {
+          console.error("ORBYVEN failed-plan refresh failed", planRefreshError);
+        }
+      }
       setError(reason instanceof Error ? reason.message : "Acțiunea nu a putut fi procesată.");
     } finally {
       setProposalBusy(false);
@@ -562,6 +579,43 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                 );
               })}
             </div>
+            {action.recovery ? (
+              <div className="mt-3 rounded-[13px] border border-[#7897ff]/25 bg-[#7897ff]/[0.08] p-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 text-[11px] text-[#b9c5ff]">↻</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
+                    <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">{action.recovery.message}</p>
+                    <button
+                      type="button"
+                      disabled={proposalBusy}
+                      onClick={() => {
+                        if (action.recovery?.mode === "needs_input") {
+                          preparePromptRepair(action.recovery.suggestedPrompt || "");
+                        } else {
+                          void recoverPlanAction(action);
+                        }
+                      }}
+                      className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
+                    >
+                      {proposalBusy ? "Se pregătește…" : action.recovery.label}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : action.kind === "repair_plan" ? (
+          <div key={`repair-${action.blockedStep}-${index}`} className="rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.06] p-3">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
+            <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">{action.message}</p>
+            <button
+              type="button"
+              onClick={() => preparePromptRepair(action.suggestedPrompt)}
+              className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff]"
+            >
+              {action.label}
+            </button>
           </div>
         ) : (
           <button
