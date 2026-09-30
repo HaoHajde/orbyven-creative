@@ -37,8 +37,8 @@ export function applyPlanBindings(clause: string, bindings: PlanBindings) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (/^programeaz-o\b/.test(normalized) && bindings.workTitle) {
-    next = next.replace(/^programeaz[-ăa]?o\b/i, "Programează programare " + bindings.workTitle);
+  if (/^programeaza?-?o\b/.test(normalized) && bindings.workTitle) {
+    next = next.replace(/^programeaz(?:[ăa])?-?o\b/i, "Programează programare " + bindings.workTitle);
     next = next + "; lucrare: " + bindings.workTitle;
     if (bindings.clientName) next += "; client: " + bindings.clientName;
     return next;
