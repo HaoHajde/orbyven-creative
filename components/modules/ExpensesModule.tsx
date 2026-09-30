@@ -222,11 +222,6 @@ export default function ExpensesModule({
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
   const docById = useMemo(() => new Map(documents.map((item) => [item.id, item.name])), [documents]);
 
-  const visibleExpenses = useMemo(
-    () => evidenceOnly ? scopedExpenses.filter((item) => !item.document_id) : scopedExpenses,
-    [evidenceOnly, scopedExpenses]
-  );
-
   const scopedExpenses = useMemo(
     () => scopeTaskId ? expenses.filter((item) => item.task_id === scopeTaskId) : expenses,
     [expenses, scopeTaskId]
@@ -238,6 +233,11 @@ export default function ExpensesModule({
   const scopedInvoices = useMemo(
     () => scopeTaskId ? invoices.filter((item) => item.task_id === scopeTaskId) : invoices,
     [invoices, scopeTaskId]
+  );
+
+  const visibleExpenses = useMemo(
+    () => evidenceOnly ? scopedExpenses.filter((item) => !item.document_id) : scopedExpenses,
+    [evidenceOnly, scopedExpenses]
   );
 
   const metrics = useMemo(() => {
