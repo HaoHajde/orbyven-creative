@@ -14,6 +14,7 @@ const calendarData = read("lib/modules/calendar.ts");
 const calendarUi = read("components/modules/CalendarModule.tsx");
 const estimatesUi = read("components/modules/EstimatesModule.tsx");
 const ecosystemActions = read("lib/ecosystem/actions.ts");
+const estimatesData = read("lib/modules/estimates.ts");
 
 test("exact totals page through 1,000+ records, including the final partial page", async () => {
   const dataset = Array.from({ length: 1203 }, (_, id) => ({ id, amount_cents: id }));
@@ -95,6 +96,11 @@ test("Wave 2 keeps calendar conflict checks bounded and commercial decisions con
   assert.match(estimatesUi, /Pipeline comercial/);
   assert.match(ecosystemActions, /sincronizarea devizului/);
   assert.match(ecosystemActions, /status:"accepted",accepted_at:now/);
+  assert.match(estimatesData, /draft: \["sent"\]/);
+  assert.match(estimatesData, /sent: \["accepted", "rejected", "expired"\]/);
+  assert.match(estimatesData, /sales_commercial_documents/);
+  assert.match(estimatesData, /requiredOfferStatus = status/);
+  assert.match(estimatesData, /\.eq\("status", estimate\.status\)/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {
