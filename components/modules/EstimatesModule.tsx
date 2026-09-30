@@ -464,7 +464,7 @@ export default function EstimatesModule({
                     ) : null}
                     {selectedWorkflow.nextAction === "await_response" ? (
                       <>
-                        <button type="button" disabled={saving} onClick={() => void changeStatus("accepted")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">Clientul a acceptat</button>
+                        <button type="button" onClick={() => document.getElementById("commercial-flow-" + selected.id)?.scrollIntoView({ behavior: "smooth", block: "start" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Înregistrează răspunsul ↓</button>
                         <button type="button" disabled={saving} onClick={() => void changeStatus("rejected")} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-40">Clientul a refuzat</button>
                       </>
                     ) : null}
@@ -477,7 +477,18 @@ export default function EstimatesModule({
             )}
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
             <div id={"commercial-flow-" + selected.id} className="scroll-mt-28">
-              <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
+              <CommercialWorkflowPanel
+                key={selected.id}
+                organizationId={organizationId}
+                estimate={selected}
+                items={items}
+                locale={locale}
+                role={role}
+                onChanged={() => {
+                  setProfitRefresh(current => current + 1);
+                  void load();
+                }}
+              />
             </div>
             {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
             {canWrite&&items.length>0&&<button type="button" onClick={startRevision} className="mt-4 h-9 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 text-xs font-semibold">+ Creează revizie fără a modifica oferta anterioară</button>}
@@ -504,11 +515,9 @@ export default function EstimatesModule({
               {canDelete && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
             </div>
             {canWrite ? <div className="mt-6 flex flex-wrap gap-2">
-              {selected.status === "draft" && selectedWorkflow?.nextAction !== "complete_context" ? <button type="button" disabled={saving} onClick={() => void changeStatus("sent")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Marchează trimisă</button> : null}
-              {selected.status === "sent" && !selectedWorkflow?.overdue ? <>
-                <button type="button" disabled={saving} onClick={() => void changeStatus("accepted")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Acceptată</button>
-                <button type="button" disabled={saving} onClick={() => void changeStatus("rejected")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Respinsă</button>
-                <button type="button" disabled={saving} onClick={() => void changeStatus("expired")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Expirată</button>
+              {selected.status === "sent" ? <>
+                <button type="button" disabled={saving} onClick={() => void changeStatus("rejected")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Marchează respinsă</button>
+                <button type="button" disabled={saving} onClick={() => void changeStatus("expired")} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold disabled:opacity-35">Marchează expirată</button>
               </> : null}
               {canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-35">Șterge</button> : null}
             </div> : null}
