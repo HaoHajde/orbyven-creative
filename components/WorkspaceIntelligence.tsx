@@ -686,7 +686,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.12</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
                       <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -828,7 +828,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                      0.8.12 Work Readiness · responsabilitatea, contextul comercial și dosarul operațional sunt verificate înainte de execuție.
+                      0.8.13 Next Best Action · responsabilitatea, contextul comercial și dosarul operațional sunt verificate înainte de execuție.
                     </p>
                   </form>
                 ) : null}
