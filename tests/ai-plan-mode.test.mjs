@@ -101,8 +101,8 @@ test("Calendar execution revalidates and writes the universal operation linkage"
   const end = source.indexOf("async function executeEstimate");
   const calendar = source.slice(start, end);
   assert.match(calendar, /resolveWorkContext/);
-  assert.match(calendar, /client_id: work\.clientId/);
-  assert.match(calendar, /task_id: work\.taskId/);
+  assert.match(calendar, /client_id: operation\.clientId/);
+  assert.match(calendar, /task_id: operation\.taskId/);
 });
 
 test("Persisted Plan Mode state is actor and organization scoped", () => {
