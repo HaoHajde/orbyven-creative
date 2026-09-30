@@ -49,3 +49,34 @@ export function useWorkspaceCreateFocus(open: boolean) {
     );
   }, [open]);
 }
+
+/** Warp when the user selects a different record inside the current module. */
+export function useWorkspaceSelectionWarp(
+  selectedRecordId: string | null,
+  loading: boolean
+) {
+  const previousRecordId = useRef<string | null>(null);
+  const ready = useRef(false);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!ready.current) {
+      ready.current = true;
+      previousRecordId.current = selectedRecordId;
+      return;
+    }
+
+    if (!selectedRecordId || selectedRecordId === previousRecordId.current) return;
+    previousRecordId.current = selectedRecordId;
+
+    return scheduleWorkspaceWarp(
+      '[data-workspace-record-focus="true"]',
+      {
+        attempts: 20,
+        delayMs: 35,
+        fallbackSelector: '[data-workspace-module-focus="true"]',
+      }
+    );
+  }, [selectedRecordId, loading]);
+}
