@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
+import * as LocalAuthentication from "expo-local-authentication";
+import * as Network from "expo-network";
 import {
   ActivityIndicator,
   AppState,
@@ -17,7 +20,8 @@ import { WebView, type WebViewNavigation } from "react-native-webview";
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
+const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
 
@@ -46,11 +50,20 @@ export default function App() {
   const webRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
   const dark = colorScheme !== "light";
+
   const [connection, setConnection] = useState<ConnectionState>("loading");
   const [currentUrl, setCurrentUrl] = useState(WORKSPACE_URL);
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [privacyShielded, setPrivacyShielded] = useState(true);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [deviceOffline, setDeviceOffline] = useState(false);
+
+  const lastBackgroundAt = useRef<number | null>(null);
+  const authenticationInProgress = useRef(false);
+  const previousReachability = useRef<boolean | null>(null);
 
   const openNativeLink = useCallback((url: string | null) => {
     if (!url) return;
@@ -60,6 +73,57 @@ export default function App() {
     setReloadKey((value) => value + 1);
   }, []);
 
+  const authenticateToUnlock = useCallback(async () => {
+    if (authenticationInProgress.current) return;
+
+    authenticationInProgress.current = true;
+    setUnlocking(true);
+
+    try {
+      const [hasHardware, isEnrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+
+      const available = hasHardware && isEnrolled;
+      setBiometricAvailable(available);
+
+      if (!available) {
+        setPrivacyShielded(false);
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Deblochează ORBYVEN",
+        cancelLabel: "Anulează",
+        fallbackLabel: "Folosește codul iPhone",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        setPrivacyShielded(false);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+        return;
+      }
+
+      if (result.error === "not_available" || result.error === "passcode_not_set") {
+        // Expo Go cannot test Face ID on iOS. Keep the development shell usable
+        // while the signed ORBYVEN binary will enforce Face ID once available.
+        setBiometricAvailable(false);
+        setPrivacyShielded(false);
+      }
+    } catch {
+      // Biometric app lock is an additional local privacy layer, not the
+      // workspace authentication boundary. Never lock the user out if the
+      // platform biometric API is unavailable.
+      setBiometricAvailable(false);
+      setPrivacyShielded(false);
+    } finally {
+      authenticationInProgress.current = false;
+      setUnlocking(false);
+    }
+  }, []);
+
   useEffect(() => {
     void Linking.getInitialURL().then(openNativeLink);
     const subscription = Linking.addEventListener("url", ({ url }) => openNativeLink(url));
@@ -67,14 +131,80 @@ export default function App() {
   }, [openNativeLink]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      void authenticateToUnlock();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [authenticateToUnlock]);
+
+  useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        webRef.current?.injectJavaScript(
-          "window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); true;",
-        );
+      if (state !== "active") {
+        if (lastBackgroundAt.current === null) {
+          lastBackgroundAt.current = Date.now();
+        }
+        setPrivacyShielded(true);
+        return;
+      }
+
+      webRef.current?.injectJavaScript(
+        "window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); true;",
+      );
+
+      const backgroundAt = lastBackgroundAt.current;
+      lastBackgroundAt.current = null;
+
+      if (backgroundAt === null || Date.now() - backgroundAt >= RELOCK_AFTER_MS) {
+        void authenticateToUnlock();
+      } else {
+        setPrivacyShielded(false);
       }
     });
+
     return () => subscription.remove();
+  }, [authenticateToUnlock]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const applyNetworkState = (state: Network.NetworkState) => {
+      if (!mounted) return;
+
+      const definitelyOffline =
+        state.isConnected === false || state.isInternetReachable === false;
+      const definitelyOnline =
+        state.isConnected === true && state.isInternetReachable !== false;
+
+      setDeviceOffline(definitelyOffline);
+
+      if (definitelyOffline) {
+        previousReachability.current = false;
+        return;
+      }
+
+      if (definitelyOnline && previousReachability.current === false) {
+        previousReachability.current = true;
+        setConnection("loading");
+        webRef.current?.reload();
+        return;
+      }
+
+      if (definitelyOnline) {
+        previousReachability.current = true;
+      }
+    };
+
+    void Network.getNetworkStateAsync()
+      .then(applyNetworkState)
+      .catch(() => undefined);
+
+    const subscription = Network.addNetworkStateListener(applyNetworkState);
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
   }, []);
 
   const onNavigationStateChange = useCallback((state: WebViewNavigation) => {
@@ -102,7 +232,9 @@ export default function App() {
       title: "ORBYVEN",
       message: currentUrl,
       url: currentUrl,
-    });
+    }).then(() =>
+      Haptics.selectionAsync().catch(() => undefined),
+    );
   }, [currentUrl]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
@@ -110,6 +242,7 @@ export default function App() {
   const text = dark ? "#f4f7ff" : "#101827";
   const muted = dark ? "#91a0b8" : "#617089";
   const border = dark ? "#1a2940" : "#dfe5ef";
+  const effectiveConnection = deviceOffline ? "offline" : connection;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]}>
@@ -126,11 +259,11 @@ export default function App() {
         </View>
         <View style={[
           styles.status,
-          connection === "online" ? styles.statusOnline :
-          connection === "offline" ? styles.statusOffline : styles.statusLoading,
+          effectiveConnection === "online" ? styles.statusOnline :
+          effectiveConnection === "offline" ? styles.statusOffline : styles.statusLoading,
         ]}>
           <Text style={styles.statusText}>
-            {connection === "online" ? "LIVE" : connection === "offline" ? "OFFLINE" : "SYNC"}
+            {effectiveConnection === "online" ? "LIVE" : effectiveConnection === "offline" ? "OFFLINE" : "SYNC"}
           </Text>
         </View>
       </View>
@@ -168,7 +301,13 @@ export default function App() {
               <Text style={[styles.loaderText, { color: muted }]}>
                 Verifică internetul și reîncearcă. Datele ORBYVEN nu sunt stocate local în această versiune.
               </Text>
-              <Pressable style={styles.retryButton} onPress={() => setReloadKey((value) => value + 1)}>
+              <Pressable
+                style={styles.retryButton}
+                onPress={() => {
+                  void Haptics.selectionAsync().catch(() => undefined);
+                  setReloadKey((value) => value + 1);
+                }}
+              >
                 <Text style={styles.retryText}>Reîncearcă</Text>
               </Pressable>
             </View>
@@ -196,6 +335,33 @@ export default function App() {
         <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
         <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
       </View>
+
+      {privacyShielded ? (
+        <View style={[styles.privacyShield, { backgroundColor: background }]}>
+          <View style={styles.shieldMark}>
+            <Text style={styles.shieldMarkText}>OC</Text>
+          </View>
+          <Text style={[styles.shieldTitle, { color: text }]}>ORBYVEN protejat</Text>
+          <Text style={[styles.shieldText, { color: muted }]}>
+            Workspace-ul este ascuns cât timp aplicația nu este activă.
+          </Text>
+          {biometricAvailable ? (
+            <Pressable
+              disabled={unlocking}
+              onPress={() => void authenticateToUnlock()}
+              style={({ pressed }) => [
+                styles.unlockButton,
+                pressed && !unlocking ? styles.toolButtonPressed : null,
+                unlocking ? styles.disabled : null,
+              ]}
+            >
+              <Text style={styles.unlockText}>{unlocking ? "Verificare…" : "Deblochează"}</Text>
+            </Pressable>
+          ) : (
+            <ActivityIndicator size="small" style={styles.shieldSpinner} />
+          )}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -215,12 +381,17 @@ function ToolbarButton({
   text: string;
   muted: string;
 }) {
+  const handlePress = () => {
+    void Haptics.selectionAsync().catch(() => undefined);
+    onPress();
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={hint}
       disabled={disabled}
-      onPress={onPress}
+      onPress={handlePress}
       style={({ pressed }) => [styles.toolButton, pressed && !disabled ? styles.toolButtonPressed : null]}
     >
       <Text style={[styles.toolIcon, { color: disabled ? muted : text }, disabled && styles.disabled]}>{label}</Text>
@@ -260,7 +431,17 @@ const styles = StyleSheet.create({
   statusLoading: { backgroundColor: "#332b55" },
   statusText: { color: "#ffffff", fontWeight: "800", fontSize: 9, letterSpacing: 0.8 },
   content: { flex: 1 },
-  loader: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, zIndex: 10 },
+  loader: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    zIndex: 10,
+  },
   loaderTitle: { fontSize: 20, fontWeight: "800", marginTop: 16, textAlign: "center" },
   loaderText: { fontSize: 13, lineHeight: 19, marginTop: 7, textAlign: "center", maxWidth: 330 },
   retryButton: { marginTop: 18, backgroundColor: "#7458ee", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 },
@@ -278,4 +459,51 @@ const styles = StyleSheet.create({
   toolIcon: { fontSize: 23, lineHeight: 25, fontWeight: "600" },
   toolHint: { fontSize: 9, marginTop: 2, fontWeight: "600" },
   disabled: { opacity: 0.35 },
+  privacyShield: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  shieldMark: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "#17132b",
+    borderWidth: 1,
+    borderColor: "#6e56cf",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  shieldMarkText: {
+    color: "#ffffff",
+    fontWeight: "900",
+    letterSpacing: -1.5,
+    fontSize: 22,
+  },
+  shieldTitle: { fontSize: 22, fontWeight: "800", textAlign: "center" },
+  shieldText: {
+    maxWidth: 320,
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  unlockButton: {
+    marginTop: 22,
+    minWidth: 150,
+    borderRadius: 14,
+    backgroundColor: "#7458ee",
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  unlockText: { color: "#ffffff", fontWeight: "800" },
+  shieldSpinner: { marginTop: 22 },
 });
