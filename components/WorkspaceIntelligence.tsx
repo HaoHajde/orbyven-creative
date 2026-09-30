@@ -504,7 +504,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             aria-controls="orbyven-intelligence-dialog"
             aria-expanded={open}
             onClick={() => setOpen(true)}
-            className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex h-12 w-12 items-center justify-center rounded-2xl border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_16px_45px_rgba(27,46,112,0.42)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
+            className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-14 w-14 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
           >
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
