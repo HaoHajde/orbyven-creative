@@ -1,6 +1,6 @@
 -- ORBYVEN iOS Alpha 0.6 — tenant-scoped device registrations for remote push delivery.
 
-create table public.user_push_devices (
+create table if not exists public.user_push_devices (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -14,10 +14,10 @@ create table public.user_push_devices (
   unique (organization_id, user_id, expo_push_token)
 );
 
-create index user_push_devices_org_enabled_idx
+create index if not exists user_push_devices_org_enabled_idx
   on public.user_push_devices (organization_id, enabled, last_seen_at desc);
 
-create index user_push_devices_user_idx
+create index if not exists user_push_devices_user_idx
   on public.user_push_devices (user_id, last_seen_at desc);
 
 drop trigger if exists user_push_devices_set_updated_at on public.user_push_devices;
@@ -27,6 +27,7 @@ for each row execute function public.set_updated_at();
 
 alter table public.user_push_devices enable row level security;
 
+drop policy if exists user_push_devices_select_own on public.user_push_devices;
 create policy user_push_devices_select_own
 on public.user_push_devices for select to authenticated
 using (
@@ -39,6 +40,7 @@ using (
   )
 );
 
+drop policy if exists user_push_devices_insert_own on public.user_push_devices;
 create policy user_push_devices_insert_own
 on public.user_push_devices for insert to authenticated
 with check (
@@ -51,6 +53,7 @@ with check (
   )
 );
 
+drop policy if exists user_push_devices_update_own on public.user_push_devices;
 create policy user_push_devices_update_own
 on public.user_push_devices for update to authenticated
 using (
@@ -72,6 +75,7 @@ with check (
   )
 );
 
+drop policy if exists user_push_devices_delete_own on public.user_push_devices;
 create policy user_push_devices_delete_own
 on public.user_push_devices for delete to authenticated
 using (
