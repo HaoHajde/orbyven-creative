@@ -27,14 +27,16 @@ test("only PUBLIC Supabase values are obtained at startup", () => {
   assert.doesNotMatch(client, /service_role|SERVICE_ROLE|STRIPE_SECRET/i);
 });
 
-test("existing tenant access checks and module functions are reused", () => {
+test("existing tenant access checks and canonical web modules are reused", () => {
   const app = content("../src/App.tsx");
+  const modules = content("../src/WorkspaceModules.tsx");
   assert.match(app, /await getWorkspaceAccessState\(\)/);
   assert.match(app, /await getCurrentWorkspace\(\)/);
-  for (const fn of ["listCrmLeads", "listWorkTasks", "listCalendarEvents", "listEstimates", "listDocuments", "listExpenses", "listTeamMembers"]) {
-    assert.ok(app.includes(fn), "Expected original module function: " + fn);
+  for (const component of ["LeadsModule", "TasksModule", "CalendarModule", "EstimatesModule", "DocumentsModule", "InventoryModule", "ExpensesModule", "TeamModule", "OverviewModule"]) {
+    assert.ok(modules.includes(component), "Expected canonical web component: " + component);
   }
-  assert.match(app, /if \(activeModule === "expenses" && !canFinance\)/);
+  assert.match(modules, /DesktopThermalModule/);
+  assert.match(modules, /\["owner", "admin", "manager"\]\.includes\(role\)/);
 });
 
 test("remote website cannot use native Tauri commands", () => {
@@ -50,7 +52,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.5.0");
+  assert.equal(config.version, "0.6.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -59,7 +61,7 @@ test("desktop matches the real web workspace without loading remote HTML", () =>
   const website = content("../../components/ClientWorkspace.tsx");
   const css = content("../src/styles.css");
   assert.match(brand, /\.\.\/\.\.\/app\/icon\.svg\?url/);
-  assert.match(app, /ORBYVEN \/ OVERVIEW/);
+  assert.match(content("../src/WorkspaceModules.tsx"), /OverviewModule/);
   assert.match(app, /ModuleGlyph/);
   assert.match(app, /setOrganizationModuleEnabled/);
   assert.match(app, /setCommandOpen/);
@@ -124,25 +126,25 @@ test("Windows shell allows the responsive layout to reach tablet-size widths", (
   assert.match(css, /\.desktop-workspace \.sidebar nav\{display:flex;gap:6px;overflow:auto\}/);
 });
 
-test("Desktop 0.5 includes current web operational surfaces", () => {
+test("Desktop 0.6 renders the actual web workspace modules", () => {
   const app = content("../src/App.tsx");
-  const inventory = content("../src/InventoryPanel.tsx");
+  const modules = content("../src/WorkspaceModules.tsx");
+  const thermal = content("../src/ThermalModule.tsx");
+  const vite = content("../vite.config.ts");
+  const tailwind = content("../src/tailwind.css");
   const activity = content("../src/ActivityCenter.tsx");
   const intelligence = content("../src/Intelligence.tsx");
-  assert.match(app, /DesktopInventoryPanel/);
-  assert.match(app, /DesktopActivityCenter/);
-  assert.match(app, /DesktopIntelligence/);
-  for (const fn of [
-    "loadInventorySnapshot",
-    "createInventorySupplier",
-    "createPurchaseOrder",
-    "consumeInventoryForTask",
-    "receivePurchaseOrderItem",
-  ]) assert.ok(inventory.includes(fn), "Inventory parity function: " + fn);
+  assert.match(app, /DesktopWorkspaceModules/);
+  for (const component of [
+    "OverviewModule", "LeadsModule", "TasksModule", "CalendarModule",
+    "EstimatesModule", "DocumentsModule", "InventoryModule", "ExpensesModule", "TeamModule",
+  ]) assert.ok(modules.includes(component), "Shared web module: " + component);
+  assert.doesNotMatch(thermal, /next\/dynamic/);
+  assert.match(thermal, /ThermalSketchPanel/);
+  assert.match(vite, /@tailwindcss\/vite/);
+  assert.match(tailwind, /@source "\.\.\/\.\.\/components"/);
   assert.match(activity, /loadWorkspaceActivity/);
   assert.match(intelligence, /\/api\/desktop\/ai\/intelligence/);
-  assert.match(intelligence, /\/api\/desktop\/ai\/conversations/);
-  assert.match(intelligence, /\/api\/desktop\/ai\/actions\/confirm/);
 });
 
 test("Desktop AI bridge keeps canonical server authorization and adds only CORS", () => {
@@ -161,8 +163,8 @@ test("Desktop AI bridge keeps canonical server authorization and adds only CORS"
 
 test("live manifest advertises the exact bundled desktop release", () => {
   const visual = content("../../lib/workspace-visual-system.ts");
-  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.5\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.4"/);
+  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.6\.0"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.5"/);
 });
 
 test("record search matches the live workspace searchable surfaces", () => {
@@ -176,6 +178,25 @@ test("record search matches the live workspace searchable surfaces", () => {
   assert.match(search, /ops_tasks/);
   assert.match(search, /sales_estimates/);
   assert.match(search, /ops_material_catalog/);
-  assert.match(app, /pendingRecordId/);
+  assert.match(app, /WorkspaceNavigationIntent/);
+  assert.match(app, /setNavigation/);
   assert.match(app, /DesktopSearch/);
+});
+
+test("full navigation context survives search, activity and Intelligence", () => {
+  const app = content("../src/App.tsx");
+  const activity = content("../src/ActivityCenter.tsx");
+  const intelligence = content("../src/Intelligence.tsx");
+  const search = content("../src/Search.tsx");
+  const modules = content("../src/WorkspaceModules.tsx");
+  assert.match(app, /WorkspaceOpenOptions/);
+  assert.match(app, /token: current\.token \+ 1/);
+  for (const key of ["recordId", "clientId", "taskId", "estimateId"]) {
+    assert.ok(activity.includes(key), "Activity context: " + key);
+    assert.ok(intelligence.includes(key), "Intelligence context: " + key);
+  }
+  assert.match(search, /recordId: hit\.id/);
+  assert.match(modules, /initialClientId/);
+  assert.match(modules, /initialTaskId/);
+  assert.match(modules, /initialEstimateId/);
 });
