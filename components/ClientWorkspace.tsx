@@ -165,7 +165,16 @@ export default function ClientWorkspace() {
     };
     const handleNativeCalendarRecord = (event: Event) => {
       const eventId = (event as CustomEvent<{ eventId?: string }>).detail?.eventId;
-      if (eventId) openModule("calendar", { recordId: eventId });
+      if (!eventId) return;
+
+      openModule("calendar", { recordId: eventId });
+      const bridge = (window as Window & {
+        ReactNativeWebView?: { postMessage: (message: string) => void };
+      }).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:native-calendar-opened",
+        eventId,
+      }));
     };
 
     window.addEventListener("orbyven:native-documents", handleNativeDocuments);
