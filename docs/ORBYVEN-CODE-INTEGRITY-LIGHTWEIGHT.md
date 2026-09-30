@@ -6,14 +6,14 @@ This gate protects **integrity, structure and lightweight delivery**. It is inte
 
 ## Current baseline
 - Web: 264 source files; **7** are above 35 KiB. A new eighth large file is blocked.
-- Web hard cap: 70 KiB per source file.
+- Web hard cap: 64 KiB per source file.
 - Desktop: 5 source files; one is above 35 KiB (`desktop/src/App.tsx`, ~49 KiB).
-- Desktop hard cap: 55 KiB/source file; CSS cap 32 KiB.
-- Public assets: ~13 MiB today; cap 15 MiB; new files default to 1 MiB maximum.
+- Desktop hard cap: 52 KiB/source file; CSS cap 30 KiB.
+- Public assets: ~13 MiB today; cap 14 MiB; new files default to 768 KiB maximum.
 - Existing large-media exceptions remain only for the Diana & Florin demo MP3 and mobile background.
 - Web runtime dependencies and Desktop runtime dependencies are explicit allowlists.
 - React/Supabase versions must stay aligned between Web and Desktop.
-- Generated Next static JS and Windows dist/installer have post-build ceilings.
+- Measured Web build: 2.32 MiB static JS total / 230.9 KiB largest chunk. Gate: 4 MiB total / 512 KiB single chunk.\n- Measured Windows build: 0.49 MiB dist / 1.92 MiB installer. Gate: 1.5 MiB dist / 4 MiB installer.
 
 These values are **ceilings, not targets**. When a hotspot is refactored, lower the corresponding baseline instead of filling the freed space again.
 
