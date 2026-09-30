@@ -369,6 +369,16 @@ export default function App() {
     );
   }, []);
 
+  const openNotificationUrl = useCallback((url: string) => {
+    const resolved = url.startsWith("orbyven://")
+      ? nativeUrlToWebUrl(url)
+      : url;
+
+    if (!resolved || !isTrustedOrbyvenUrl(resolved)) return;
+    setCurrentUrl(resolved);
+    setReloadKey((value) => value + 1);
+  }, []);
+
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data;
@@ -377,8 +387,13 @@ export default function App() {
         typeof data.eventId === "string"
       ) {
         openCalendarRecord(data.eventId);
-        void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+      } else if (typeof data?.url === "string") {
+        openNotificationUrl(data.url);
+      } else {
+        return;
       }
+
+      void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     };
 
     void Notifications.getLastNotificationResponseAsync()
@@ -391,7 +406,7 @@ export default function App() {
       Notifications.addNotificationResponseReceivedListener(handleResponse);
 
     return () => subscription.remove();
-  }, [openCalendarRecord]);
+  }, [openCalendarRecord, openNotificationUrl]);
 
   const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
     try {
@@ -404,7 +419,65 @@ export default function App() {
         location?: string | null;
       };
 
-      if (message.type === "orbyven:document-uploaded") {
+      if (message.type === "orbyven:register-push") {
+        void registerForRemotePush()
+          .then((expoPushToken) => {
+            const detail = JSON.stringify({
+              expoPushToken,
+              platform: "ios",
+              appVersion: APP_VERSION,
+            });
+            webRef.current?.injectJavaScript(
+              "window.dispatchEvent(new CustomEvent('orbyven:native-push-token',{detail:" +
+                detail +
+                "})); true;",
+            );
+          })
+          .catch((error: unknown) => {
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Error,
+            ).catch(() => undefined);
+
+            if (
+              error instanceof Error &&
+              error.message === "notification-permission-denied"
+            ) {
+              Alert.alert(
+                "Notificări dezactivate",
+                "Activează notificările pentru ORBYVEN din Settings ca să primești alertele iPhone.",
+              );
+            } else if (
+              error instanceof Error &&
+              error.message === "push-project-not-linked"
+            ) {
+              Alert.alert(
+                "Push pregătit",
+                "ORBYVEN trebuie legat la proiectul EAS și la credențialele Apple Push înainte de activarea notificărilor remote.",
+              );
+            } else {
+              Alert.alert(
+                "Push indisponibil",
+                "Tokenul push nu poate fi creat încă pe acest build.",
+              );
+            }
+          });
+      } else if (message.type === "orbyven:push-registered") {
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => undefined);
+        Alert.alert(
+          "Alerte iPhone activate",
+          "Acest dispozitiv este înregistrat pentru notificările ORBYVEN.",
+        );
+      } else if (message.type === "orbyven:push-registration-error") {
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Error,
+        ).catch(() => undefined);
+        Alert.alert(
+          "Înregistrare nereușită",
+          "ORBYVEN nu a putut salva acest dispozitiv pentru push. Încearcă din nou.",
+        );
+      } else if (message.type === "orbyven:document-uploaded") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       } else if (message.type === "orbyven:document-upload-error") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
