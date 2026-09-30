@@ -99,7 +99,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "tasks") {
-    return <TasksModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} />;
+    return <TasksModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialEstimateId={intent?.estimateId} />;
   }
 
   if (activeModule === "calendar") {
