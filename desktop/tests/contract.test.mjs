@@ -143,6 +143,8 @@ test("Desktop 0.5 includes current web operational surfaces", () => {
   assert.match(intelligence, /\/api\/desktop\/ai\/intelligence/);
   assert.match(intelligence, /\/api\/desktop\/ai\/conversations/);
   assert.match(intelligence, /\/api\/desktop\/ai\/actions\/confirm/);
+  assert.match(intelligence, /action\.kind === "guided_resolution"/);
+  assert.match(intelligence, /GUIDED RESOLUTION/);
 });
 
 test("Desktop AI bridge keeps canonical server authorization and adds only CORS", () => {
