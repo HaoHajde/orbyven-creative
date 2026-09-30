@@ -3,7 +3,7 @@ import type { BillingActor } from "@/lib/billing/supabase-server";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import { parseMutationPrompt, type ParsedMutation } from "@/lib/ai/action-parser";
 import { applyPlanBindings, splitPlanClauses, type PlanBindings } from "@/lib/ai/plan-core";
-import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
+import type { IntelligenceMutationType, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 const PLAN_ROLES = new Set(["owner", "admin", "manager", "member"]);
@@ -142,5 +142,102 @@ export async function createPlanIntelligenceResponse(
       })),
     }],
     generatedBy: "orbyven_core",
+  };
+}
+
+type StoredPlanProposal = {
+  id: string;
+  action_type: IntelligenceMutationType;
+  payload: Record<string, unknown>;
+  summary: string;
+  status: "pending" | "executing" | "executed" | "rejected" | "expired" | "failed";
+  expires_at: string;
+  created_at: string;
+};
+
+function storedPlanMeta(payload: Record<string, unknown>) {
+  const raw = payload.__orbyven_plan;
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const id = typeof value.id === "string" ? value.id : "";
+  const step = typeof value.step === "number" ? value.step : Number(value.step);
+  const total = typeof value.total === "number" ? value.total : Number(value.total);
+  const dependency =
+    typeof value.dependsOnProposalId === "string" && value.dependsOnProposalId
+      ? value.dependsOnProposalId
+      : null;
+  if (!/^[a-f0-9-]{36}$/i.test(id) || !Number.isInteger(step) || !Number.isInteger(total)) return null;
+  if (step < 1 || total < step || total > 8) return null;
+  return { id, step, total, dependency };
+}
+
+export async function loadLatestPlanAction(
+  actor: BillingActor,
+  conversationId: string
+): Promise<Extract<IntelligenceResponse["actions"][number], { kind: "review_plan" }> | null> {
+  const client = createBillingServiceClient();
+  const { data, error } = await client
+    .from("ai_action_proposals")
+    .select("id,action_type,payload,summary,status,expires_at,created_at")
+    .eq("organization_id", actor.organizationId)
+    .eq("actor_id", actor.userId)
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(64);
+
+  if (error) throw error;
+  const rows = (data ?? []) as StoredPlanProposal[];
+  const firstPlanRow = rows.find((row) => storedPlanMeta(row.payload));
+  if (!firstPlanRow) return null;
+  const firstMeta = storedPlanMeta(firstPlanRow.payload);
+  if (!firstMeta) return null;
+
+  const planRows = rows
+    .filter((row) => storedPlanMeta(row.payload)?.id === firstMeta.id)
+    .sort((a, b) => (storedPlanMeta(a.payload)?.step ?? 0) - (storedPlanMeta(b.payload)?.step ?? 0));
+
+  if (planRows.length !== firstMeta.total) return null;
+
+  const now = Date.now();
+  const byId = new Map(planRows.map((row) => [row.id, row]));
+  const steps = planRows.map((row) => {
+    const meta = storedPlanMeta(row.payload);
+    if (!meta) throw new Error("PLAN_METADATA_INVALID");
+
+    const expired = new Date(row.expires_at).getTime() <= now;
+    let status: "ready" | "locked" | "executed" | "rejected" | "expired" | "failed";
+
+    if (row.status === "executed") status = "executed";
+    else if (row.status === "rejected") status = "rejected";
+    else if (row.status === "failed") status = "failed";
+    else if (row.status === "expired" || expired) status = "expired";
+    else if (row.status === "pending") {
+      const dependency = meta.dependency ? byId.get(meta.dependency) : null;
+      status = !dependency || dependency.status === "executed" ? "ready" : "locked";
+    } else {
+      status = "locked";
+    }
+
+    return {
+      proposalId: row.id,
+      index: meta.step,
+      summary: row.summary,
+      actionType: row.action_type,
+      targetModule:
+        row.action_type === "create_lead" || row.action_type === "create_client" ? "leads" as const :
+        row.action_type === "create_task" ? "tasks" as const :
+        row.action_type === "create_calendar_event" ? "calendar" as const :
+        row.action_type === "create_estimate" ? "estimates" as const :
+        "documents" as const,
+      status,
+    };
+  });
+
+  return {
+    kind: "review_plan",
+    label: steps.every((step) => step.status === "executed") ? "Plan finalizat" : "Revizuiește planul",
+    planId: firstMeta.id,
+    expiresAt: planRows[0]?.expires_at ?? firstPlanRow.expires_at,
+    steps,
   };
 }
