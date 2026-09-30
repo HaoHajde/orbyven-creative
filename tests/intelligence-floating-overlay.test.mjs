@@ -9,7 +9,7 @@ const source = readFileSync(
 );
 
 test("ORBYVEN Intelligence launcher is viewport-fixed and does not occupy workspace layout", () => {
-  assert.match(source, /className="fixed bottom-\\[calc\\(1rem\\+env\\(safe-area-inset-bottom\\)\\)\\] right-4/);
+  assert.ok(source.includes('className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4'));
   assert.doesNotMatch(source, /return \(\s*<div className="relative">/);
   assert.match(source, /aria-controls="orbyven-intelligence-dialog"/);
   assert.match(source, /createPortal/);
