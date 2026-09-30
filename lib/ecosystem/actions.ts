@@ -106,10 +106,26 @@ export async function markOfferManually(org:string,estimateId:string,status:"sen
   if(error||!data) throw new Error("Creează mai întâi oferta.");
   if(!commercialSnapshotMatches(source,lines,data)) throw new Error("Oferta nu mai corespunde conținutului devizului; este necesară revizie.");
   if(status==="sent"&&data.status!=="draft") throw new Error("Doar ciorna poate fi marcată trimisă.");
-  if(status==="accepted"&&(data.status!=="sent"||source.status!=="accepted")) throw new Error("Confirmă trimiterea și acceptarea devizului înaintea ofertei.");
+  if(status==="accepted"&&data.status!=="sent") throw new Error("Oferta trebuie marcată trimisă înainte de acceptare.");
+  if(status==="sent"&&![ "draft", "sent" ].includes(source.status)) throw new Error("Devizul nu mai este într-o stare care permite trimiterea.");
+  if(status==="accepted"&&![ "sent", "accepted" ].includes(source.status)) throw new Error("Devizul trebuie să fie trimis înainte de acceptare.");
+
   const changed=await orbyvenSupabase.from("sales_commercial_documents").update({status})
     .eq("organization_id",org).eq("estimate_id",estimateId).eq("id",data.id).eq("status",data.status).select("id").single();
-  if(changed.error||!changed.data) throw new Error("Statusul nu a fost actualizat; reîncarcă.");
+  if(changed.error||!changed.data) throw new Error("Statusul ofertei nu a fost actualizat; reîncarcă.");
+
+  const now=new Date().toISOString();
+  const estimatePatch=status==="sent"
+    ? {status:"sent",sent_at:now}
+    : {status:"accepted",accepted_at:now};
+  const estimateChanged=await orbyvenSupabase.from("sales_estimates").update(estimatePatch)
+    .eq("organization_id",org).eq("id",estimateId).select("id").single();
+
+  if(estimateChanged.error||!estimateChanged.data){
+    await orbyvenSupabase.from("sales_commercial_documents").update({status:data.status})
+      .eq("organization_id",org).eq("estimate_id",estimateId).eq("id",data.id);
+    throw new Error("Oferta a fost revenită la starea anterioară; sincronizarea devizului nu a reușit.");
+  }
 }
 export async function makeInvoiceDraft(org:string,estimateId:string){
   const source=await getSource(org,estimateId),lines=await getLines(org,estimateId);
