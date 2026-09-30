@@ -130,3 +130,122 @@ test("sent estimates retain expiry signals alongside automation rules", () => {
   assert.ok(signal);
   assert.equal(signal.module, "estimates");
 });
+
+
+test("blocked operations become urgent decision signals instead of generic overdue noise", () => {
+  const signals = buildBusinessAutomationSignals({
+    operations: [operation({ status: "blocked", dueAt: "2026-09-29T10:00:00.000Z" })],
+    estimates: [],
+    events: [],
+    now,
+    locale: "ro-RO",
+    timeZone: "Europe/Bucharest",
+  });
+
+  const blocked = signals.find((item) => item.rule === "operation_blocked");
+  assert.ok(blocked);
+  assert.equal(blocked.level, "urgent");
+  assert.equal(blocked.actionLabel, "Deblochează");
+  assert.match(blocked.meta, /termen depășit/i);
+  assert.equal(signals.some((item) => item.rule === "operation_overdue"), false);
+});
+
+test("sent estimate older than three days gets a follow-up signal when expiry is not already urgent", () => {
+  const signals = buildBusinessAutomationSignals({
+    operations: [],
+    estimates: [estimate({
+      status: "sent",
+      taskId: null,
+      validUntil: "2026-10-10",
+      updatedAt: "2026-09-26T05:00:00.000Z",
+    })],
+    events: [],
+    now,
+    locale: "ro-RO",
+    timeZone: "Europe/Bucharest",
+  });
+
+  const signal = signals.find((item) => item.rule === "estimate_follow_up");
+  assert.ok(signal);
+  assert.equal(signal.module, "estimates");
+  assert.equal(signal.actionLabel, "Fă follow-up");
+  assert.match(signal.meta, /4 zile/i);
+});
+
+test("overlapping events for the same named assignee produce one actionable calendar conflict", () => {
+  const signals = buildBusinessAutomationSignals({
+    operations: [],
+    estimates: [],
+    events: [
+      {
+        id: "event-a",
+        title: "Revizie A",
+        status: "scheduled",
+        startAt: "2026-09-30T08:00:00.000Z",
+        endAt: "2026-09-30T10:00:00.000Z",
+        assignee: "Andrei",
+        clientId: "client-a",
+        taskId: "task-a",
+      },
+      {
+        id: "event-b",
+        title: "Revizie B",
+        status: "scheduled",
+        startAt: "2026-09-30T09:00:00.000Z",
+        endAt: "2026-09-30T11:00:00.000Z",
+        assignee: "andrei",
+        clientId: "client-b",
+        taskId: "task-b",
+      },
+    ],
+    now,
+    locale: "ro-RO",
+    timeZone: "Europe/Bucharest",
+  });
+
+  const conflicts = signals.filter((item) => item.rule === "calendar_conflict");
+  assert.equal(conflicts.length, 1);
+  assert.equal(conflicts[0].level, "urgent");
+  assert.equal(conflicts[0].module, "calendar");
+  assert.equal(conflicts[0].open.recordId, "event-a");
+  assert.match(conflicts[0].title, /Andrei/);
+});
+
+test("calendar overlap is not inferred when responsibility is missing or different", () => {
+  const base = {
+    status: "scheduled",
+    startAt: "2026-10-01T08:00:00.000Z",
+    endAt: "2026-10-01T10:00:00.000Z",
+    clientId: null,
+    taskId: null,
+  };
+  const signals = buildBusinessAutomationSignals({
+    operations: [],
+    estimates: [],
+    events: [
+      { id: "event-a", title: "A", assignee: "", ...base },
+      { id: "event-b", title: "B", assignee: "Maria", ...base },
+      { id: "event-c", title: "C", assignee: "Andrei", ...base },
+    ],
+    now,
+    locale: "ro-RO",
+    timeZone: "Europe/Bucharest",
+  });
+
+  assert.equal(signals.some((item) => item.rule === "calendar_conflict"), false);
+});
+
+test("Overview and ORBYVEN Intelligence both consume the shared operational signal engine", () => {
+  const overview = readFileSync(join(process.cwd(), "components/modules/OverviewModule.tsx"), "utf8");
+  const intelligence = readFileSync(join(process.cwd(), "lib/ai/intelligence-server.ts"), "utf8");
+
+  assert.match(overview, /buildBusinessAutomationSignals/);
+  assert.match(overview, /operation_blocked/);
+  assert.match(overview, /estimate_follow_up/);
+  assert.match(overview, /calendar_conflict/);
+
+  assert.match(intelligence, /buildBusinessAutomationSignals/);
+  assert.match(intelligence, /Prioritatea principală/);
+  assert.match(intelligence, /Conflicte calendar/);
+  assert.match(intelligence, /recordId: signal\.open\.recordId/);
+});
