@@ -2,6 +2,7 @@ import { authenticateBillingActor, createBillingServiceClient, type BillingActor
 import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
+import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
@@ -347,6 +348,9 @@ export async function answerIntelligenceForActor(
   conversationId: string | null = null
 ): Promise<IntelligenceResponse> {
   const available = await loadAvailableModules(actor);
+  const plan = await createPlanIntelligenceResponse(actor, available, prompt, conversationId);
+  if (plan) return plan;
+
   const mutation = await createMutationIntelligenceResponse(actor, available, prompt, conversationId);
   if (mutation) return mutation;
 
