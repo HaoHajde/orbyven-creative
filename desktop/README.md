@@ -1,8 +1,11 @@
-# ORBYVEN Desktop v0.4.0 — independent Windows application
+# ORBYVEN Desktop v0.5.0 — independent Windows application
 
-This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.4.0 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
+This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.5.0 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
 ## Architecture
+
+- Parity 0.5: Windows now includes Inventory Core, Activity Center and ORBYVEN Intelligence in the native-installed workspace, using the same RLS-backed module services and authenticated AI routes as web.
+- Desktop AI bridge: `/api/desktop/ai/*` wraps the canonical ORBYVEN Intelligence routes with CORS required by the Tauri local origin; authorization still uses the user's Supabase bearer session and server-side organization checks.
 
 - Live UI manifest: desktop reads `https://orbyven.ro/api/desktop/ui` at startup and whenever the window regains focus. Theme tokens, navigation groups and quick-create module IDs therefore follow the live website without reinstalling the app.
 - Shared source of truth: web and desktop both consume `lib/workspace-visual-system.ts` for theme, layout, navigation and UI revision. Structural React changes still require a desktop release; the app surfaces when the live manifest version differs from the bundled version.
