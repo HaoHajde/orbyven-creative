@@ -11,6 +11,9 @@ const reactDomRuntime = fileURLToPath(new URL("./node_modules/react-dom", import
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Keep Vite from walking up to the Next.js root PostCSS config. Tailwind
+  // is compiled by the dedicated Vite plugin above.
+  css: { postcss: { plugins: [] } },
   root: directory,
   resolve: {
     alias: [
