@@ -94,7 +94,12 @@ export default function OverviewModule({
     setLoading(true);
     setError("");
     try {
-      const nextSnapshot = await loadOverviewSnapshot(organizationId, canAccessFinances, timeZone);
+      const nextSnapshot = await loadOverviewSnapshot(
+        organizationId,
+        canAccessFinances,
+        timeZone,
+        enabledModules.includes("team")
+      );
       setSnapshot(nextSnapshot);
       setSnapshotNow(new Date().getTime());
     } catch (loadError) {
@@ -103,7 +108,7 @@ export default function OverviewModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, canAccessFinances, timeZone]);
+  }, [organizationId, canAccessFinances, timeZone, enabledModules]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -183,6 +188,9 @@ export default function OverviewModule({
     const sharedAttentionRules = new Set([
       "operation_overdue",
       "operation_blocked",
+      "operation_unassigned",
+      "operation_assignee_inactive",
+      "execution_without_accepted_estimate",
       "estimate_follow_up",
       "calendar_conflict",
     ]);
@@ -193,6 +201,7 @@ export default function OverviewModule({
       now: new Date(snapshotNow),
       locale,
       timeZone,
+      inactiveAssigneeNames: snapshot.inactiveTeamNames,
     }).filter((signal) => sharedAttentionRules.has(signal.rule));
 
     for (const signal of sharedSignals) {
