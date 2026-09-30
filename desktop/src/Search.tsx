@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { orbyvenSupabase } from "./client";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 
 type SearchHit = {
   module: "leads" | "tasks" | "estimates" | "inventory";
@@ -12,7 +13,7 @@ type SearchHit = {
 type Props = {
   organizationId: string;
   enabledModules: OrbyvenModuleId[];
-  onOpenModule: (moduleId: OrbyvenModuleId, recordId?: string) => void;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   onOpenCommands: () => void;
 };
 
@@ -127,7 +128,7 @@ export default function DesktopSearch({
     setOpen(false);
     setQuery("");
     setHits([]);
-    onOpenModule(hit.module, hit.id);
+    onOpenModule(hit.module, { recordId: hit.id });
   };
 
   const visibleHits = hits.filter((hit) => searchModules.includes(hit.module));
