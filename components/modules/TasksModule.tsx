@@ -23,7 +23,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -198,6 +198,7 @@ export default function TasksModule({
     [selectedId, tasks]
   );
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
+  useWorkspaceSelectionWarp(selectedId, loading);
 
   useEffect(() => {
     if (!selectedTask) return;
@@ -803,7 +804,7 @@ export default function TasksModule({
         />
       )}
       {selectedTask && (
-        <div data-workspace-record-focus={initialRecordId && selectedTask.id === initialRecordId ? "true" : undefined} className="scroll-mt-28">
+        <div data-workspace-record-focus={selectedTask ? "true" : undefined} className="scroll-mt-28">
         <TaskDetail
           task={selectedTask}
           client={
