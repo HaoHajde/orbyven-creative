@@ -23,6 +23,8 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
+import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
@@ -137,6 +139,7 @@ export default function TasksModule({
 }: Props) {
   const [tasks, setTasks] = useState<WorkTask[]>([]);
   const [clients, setClients] = useState<WorkTaskClient[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [checklist, setChecklist] = useState<WorkTaskChecklistItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialRecordId ?? null);
   const [loading, setLoading] = useState(true);
@@ -162,12 +165,14 @@ export default function TasksModule({
     setLoading(true);
     setError("");
     try {
-      const [nextTasks, nextClients] = await Promise.all([
+      const [nextTasks, nextClients, nextTeam] = await Promise.all([
         listWorkTasks(organizationId),
         listWorkTaskClients(organizationId),
+        enabledModules.includes("team") ? listTeamMembers(organizationId) : Promise.resolve([]),
       ]);
       setTasks(nextTasks);
       setClients(nextClients);
+      setTeamMembers(nextTeam);
       if (initialCreate && initialClientId) {
         const client = nextClients.find((item) => item.id === initialClientId);
         if (client) setForm((current) => ({ ...current, title: current.title || "Lucrare · " + (client.company || client.name) }));
@@ -184,7 +189,7 @@ export default function TasksModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, initialCreate, initialClientId]);
+  }, [organizationId, initialCreate, initialClientId, enabledModules]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -796,6 +801,11 @@ export default function TasksModule({
         <WorkFileSummary
           task={selectedTask}
           context={workContext}
+          checklist={checklist}
+          inactiveAssigneeNames={teamMembers
+            .filter((member) => member.status === "inactive")
+            .map((member) => member.display_name)}
+          snapshotIso={snapshotIso}
           loading={contextLoading}
           error={contextError}
           locale={locale}
@@ -848,6 +858,9 @@ export default function TasksModule({
 function WorkFileSummary({
   task,
   context,
+  checklist,
+  inactiveAssigneeNames,
+  snapshotIso,
   loading,
   error,
   locale,
@@ -857,6 +870,9 @@ function WorkFileSummary({
 }: {
   task: WorkTask;
   context: WorkTaskContext | null;
+  checklist: WorkTaskChecklistItem[];
+  inactiveAssigneeNames: string[];
+  snapshotIso: string;
   loading: boolean;
   error: string;
   locale: string;
@@ -870,6 +886,35 @@ function WorkFileSummary({
       currency: "RON",
       maximumFractionDigits: 0,
     }).format(cents / 100);
+
+  const readiness = context
+    ? evaluateWorkReadiness({
+        operation: {
+          kind: task.kind,
+          status: task.status,
+          assignee: task.assignee,
+          scheduledAt: task.scheduled_at,
+          dueAt: task.due_at,
+          progress: task.progress,
+        },
+        context,
+        checklist: {
+          total: checklist.length,
+          done: checklist.filter((item) => item.done).length,
+        },
+        inactiveAssigneeNames,
+        enabled: {
+          estimates: enabledModules.includes("estimates"),
+          documents: enabledModules.includes("documents"),
+          calendar: enabledModules.includes("calendar"),
+          expenses: enabledModules.includes("expenses"),
+          inventory: enabledModules.includes("inventory"),
+          team: enabledModules.includes("team"),
+        },
+        canAccessFinances,
+        now: snapshotIso ? new Date(snapshotIso) : new Date(0),
+      })
+    : null;
 
   const cards = [
     enabledModules.includes("estimates")
@@ -960,6 +1005,25 @@ function WorkFileSummary({
         <span className="text-[10px] text-[var(--muted-2)]">{loading ? "Se sincronizează…" : "Live"}</span>
       </div>
       {error ? <p className="mt-2 text-[10px] text-amber-500">{error}</p> : null}
+      {readiness ? (
+        <div className={
+          "mt-3 flex flex-col gap-2 rounded-[14px] border px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between " +
+          (readiness.level === "blocked"
+            ? "border-rose-400/25 bg-rose-400/[0.06]"
+            : readiness.level === "attention"
+              ? "border-amber-400/25 bg-amber-400/[0.06]"
+              : "border-emerald-400/20 bg-emerald-400/[0.05]")
+        }>
+          <div className="min-w-0">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--muted-2)]">ORBYVEN · WORK READINESS</p>
+            <p className="mt-1 text-[11px] font-semibold">{readiness.label}</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-[var(--muted)]">{readiness.headline}</p>
+          </div>
+          <span className="shrink-0 rounded-full border border-[var(--border)] px-2.5 py-1 text-[9px] font-semibold text-[var(--muted)]">
+            {readiness.attentionCount ? readiness.attentionCount + " de verificat" : "fără blocaje"}
+          </span>
+        </div>
+      ) : null}
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
         {cards.map((card) => (
           <button

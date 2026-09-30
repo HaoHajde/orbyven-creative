@@ -100,6 +100,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     followUps,
     estimateRows,
     eventRows,
+    inactiveTeamRows,
   ] = await Promise.all([
     available.has("tasks")
       ? count(client.from("ops_tasks").select("id", { count: "exact", head: true })
@@ -114,7 +115,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
           .eq("organization_id", actor.organizationId).eq("status", "sent"))
       : Promise.resolve(0),
     available.has("tasks") ? client.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,scheduled_at,due_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,scheduled_at,due_at,created_at")
       .eq("organization_id", actor.organizationId)
       .not("status", "in", OPEN_TASKS)
       .order("updated_at", { ascending: false })
@@ -142,9 +143,14 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
       .lte("start_at", sevenDaysIso)
       .order("start_at")
       .limit(80) : Promise.resolve({ data: [], error: null }),
+    available.has("team") ? client.from("people_team_members")
+      .select("display_name,status")
+      .eq("organization_id", actor.organizationId)
+      .eq("status", "inactive")
+      .limit(120) : Promise.resolve({ data: [], error: null }),
   ]);
 
-  for (const result of [taskRows, followUps, estimateRows, eventRows]) {
+  for (const result of [taskRows, followUps, estimateRows, eventRows, inactiveTeamRows]) {
     if (result.error) throw result.error;
   }
 
@@ -154,6 +160,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     kind: task.kind as AutomationOperation["kind"],
     status: task.status as AutomationOperation["status"],
     priority: task.priority as AutomationOperation["priority"],
+    assignee: task.assignee ?? null,
     clientId: task.client_id ?? null,
     scheduledAt: task.scheduled_at ?? null,
     dueAt: task.due_at ?? null,
@@ -187,6 +194,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     now,
     locale: "ro-RO",
     timeZone: "Europe/Bucharest",
+    inactiveAssigneeNames: (inactiveTeamRows.data ?? []).map((member) => member.display_name),
   });
   const actionableSignals = signals.filter((signal) => signal.level !== "upcoming");
   const follow = followUps.data ?? [];
@@ -196,6 +204,12 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
   const overdueCount = signals.filter((signal) => signal.rule === "operation_overdue").length;
   const estimateFollowUpCount = signals.filter((signal) => signal.rule === "estimate_follow_up").length;
   const conflictCount = signals.filter((signal) => signal.rule === "calendar_conflict").length;
+  const ownershipCount = signals.filter((signal) =>
+    signal.rule === "operation_unassigned" || signal.rule === "operation_assignee_inactive"
+  ).length;
+  const commercialRiskCount = signals.filter((signal) =>
+    signal.rule === "execution_without_accepted_estimate"
+  ).length;
   const attention = actionableSignals.length + overdueFollowUps.length;
 
   const actions: IntelligenceAction[] = [];
@@ -241,6 +255,8 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
       { label: "Întârziate", value: String(overdueCount) },
       { label: "Oferte de urmărit", value: String(estimateFollowUpCount) },
       { label: "Conflicte calendar", value: String(conflictCount) },
+      { label: "Responsabilitate", value: String(ownershipCount) },
+      { label: "Risc comercial", value: String(commercialRiskCount) },
     ],
     actions,
     generatedBy: "orbyven_core",

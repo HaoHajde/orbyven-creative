@@ -16,6 +16,7 @@ export type OverviewTask = {
   kind: "task" | "work" | "order";
   status: string;
   priority: string;
+  assignee: string | null;
   client_id: string | null;
   due_at: string | null;
   scheduled_at: string | null;
@@ -63,6 +64,7 @@ export type OverviewSnapshot = {
   attentionHasMore: boolean;
   documentCount: number;
   activeTeamCount: number;
+  inactiveTeamNames: string[];
 };
 
 const ATTENTION_LIMIT = 16;
@@ -112,7 +114,8 @@ function uniqueRecords<T extends { id: string }>(...groups: T[][]): T[] {
 export async function loadOverviewSnapshot(
   organizationId: string,
   canAccessFinances: boolean,
-  timeZone: string
+  timeZone: string,
+  includeTeam = false
 ): Promise<OverviewSnapshot> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
 
@@ -131,7 +134,7 @@ export async function loadOverviewSnapshot(
     recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
     blockedTasks, scheduledNearTasks, dueNearTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
-    events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount,
+    events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount, inactiveTeamResult,
   ] = await Promise.all([
     countRows(orbyvenSupabase.from("crm_leads").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)),
@@ -151,27 +154,27 @@ export async function loadOverviewSnapshot(
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)
       .lt("next_follow_up_at", nowIso).order("next_follow_up_at").limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .lt("due_at", nowIso).order("due_at").limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .eq("priority", "urgent").order("created_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).eq("status", "blocked")
       .order("updated_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("scheduled_at", nearTaskFrom).lte("scheduled_at", nearTaskUntil)
       .order("scheduled_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("due_at", nearTaskFrom).lte("due_at", nearTaskUntil)
       .order("due_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
@@ -216,13 +219,23 @@ export async function loadOverviewSnapshot(
       : Promise.resolve([] as { amount_cents: number }[]),
     countRows(orbyvenSupabase.from("ops_documents").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId)),
-    countRows(orbyvenSupabase.from("people_team_members").select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId).eq("status", "active")),
+    includeTeam
+      ? countRows(orbyvenSupabase.from("people_team_members").select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId).eq("status", "active"))
+      : Promise.resolve(0),
+    includeTeam
+      ? orbyvenSupabase.from("people_team_members")
+          .select("display_name,status")
+          .eq("organization_id", organizationId)
+          .eq("status", "inactive")
+          .order("display_name")
+          .limit(120)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   const [planned, inProgress, blocked, done, cancelled] = stageCounts;
   for (const result of [recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
-    blockedTasks, scheduledNearTasks, dueNearTasks, recentEstimates, staleEstimates]) {
+    blockedTasks, scheduledNearTasks, dueNearTasks, recentEstimates, staleEstimates, inactiveTeamResult]) {
     if (result.error) throw result.error;
   }
 
@@ -253,5 +266,6 @@ export async function loadOverviewSnapshot(
       .some((result) => (result.data?.length ?? 0) > ATTENTION_LIMIT),
     documentCount,
     activeTeamCount,
+    inactiveTeamNames: (inactiveTeamResult.data ?? []).map((member) => member.display_name),
   };
 }
