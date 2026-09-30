@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent, type CSSProp
 import { fetchDesktopUiManifest, initializeDesktopClient, orbyvenSupabase, type DesktopUiManifest } from "./client";
 import { getCurrentWorkspace, getWorkspaceAccessState, setOrganizationModuleEnabled, type OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
+import DesktopActivityCenter from "./ActivityCenter";
+import DesktopIntelligence from "./Intelligence";
+import DesktopInventoryPanel from "./InventoryPanel";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { CURRENT_DESKTOP_VERSION, WORKSPACE_CREATE_MODULES, WORKSPACE_LAYOUT, WORKSPACE_NAV_GROUPS, WORKSPACE_THEME, WORKSPACE_UI_REVISION } from "@/lib/workspace-visual-system";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
@@ -11,7 +14,7 @@ import { createCalendarEvent, listCalendarEvents, setCalendarEventStatus } from 
 import { createEstimate, listEstimates, setEstimateStatus } from "@/lib/modules/estimates";
 import { createDocumentSignedUrl, listDocuments, uploadDocument, type DocumentCategory } from "@/lib/modules/documents";
 import { createExpense, listExpenses } from "@/lib/modules/expenses";
-import { loadInventorySnapshot } from "@/lib/modules/inventory";
+
 import { createTeamMember, listTeamMembers, updateTeamMember } from "@/lib/modules/team";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
@@ -62,7 +65,7 @@ const FORM_FIELDS: Partial<Record<OrbyvenModuleId, Field[]>> = {
 const TITLES: Record<OrbyvenModuleId, string> = {
   overview: "Prezentare generală", leads: "Clienți", tasks: "Lucrări",
   calendar: "Calendar", estimates: "Oferte & devize", documents: "Documente",
-  inventory: "Stoc & achiziții", expenses: "Cheltuieli", thermal: "Planșă Termică", team: "Echipă",
+  inventory: "Stoc & achiziții", expenses: "Finanțe", thermal: "Planșă Termică", team: "Echipă",
 };
 const STATUS_OPTIONS: Partial<Record<OrbyvenModuleId, string[]>> = {
   leads: ["new", "contacted", "qualified", "proposal", "won", "lost"],
@@ -246,14 +249,7 @@ export default function App() {
             new Date(Date.now() + 365 * 86400000).toISOString()) :
           activeModule === "estimates" ? await listEstimates(org) :
           activeModule === "documents" ? await listDocuments(org) :
-          activeModule === "inventory" ? (await loadInventorySnapshot(org)).stock.map((item) => ({
-            id: item.materialId,
-            name: item.name,
-            on_hand: item.onHand,
-            unit: item.unit,
-            state: item.state,
-            suggested_order: item.suggestedOrder,
-          })) :
+          activeModule === "inventory" ? [] :
           activeModule === "expenses" ? await listExpenses(org) :
           activeModule === "thermal" ? await (async () => {
             const [works, sketchesResult] = await Promise.all([
@@ -533,7 +529,7 @@ export default function App() {
             </form>
             <button className="text-button" onClick={() => void logout()}>Alt cont</button>
           </section>}
-          <footer className="auth-footer">ORBYVEN DESKTOP v0.4.0 · WINDOWS</footer>
+          <footer className="auth-footer">ORBYVEN DESKTOP v0.5.0 · WINDOWS</footer>
         </main>
       ) : workspace && (
         <div className="desktop-workspace">
@@ -557,6 +553,15 @@ export default function App() {
               <button type="button" className="topbar-modules" onClick={() => { setPanel(panel === "modules" ? "workspace" : "modules"); setCommandOpen(false); }}>
                 {panel === "modules" ? "Înapoi" : "Module"}
               </button>
+              <DesktopIntelligence organizationId={workspace.organization.id} onOpenModule={chooseModule} />
+              <DesktopActivityCenter
+                organizationId={workspace.organization.id}
+                locale={workspace.profile?.locale || "ro-RO"}
+                timeZone={workspace.profile?.timezone || "Europe/Bucharest"}
+                role={workspace.membership.role}
+                enabledModules={workspace.enabledModules}
+                onOpenModule={chooseModule}
+              />
               <button title="Reîncarcă datele" aria-label="Reîncarcă datele" className="icon-button" onClick={() => setRefresh((n) => n + 1)} disabled={busy}>↻</button>
               <button title="Schimbă tema" aria-label="Schimbă tema" className="icon-button" onClick={() => {
                 localStorage.setItem("orbyven-desktop-theme", isDark ? "light" : "dark"); setIsDark(!isDark);
@@ -593,7 +598,7 @@ export default function App() {
             </aside>
             <main className="main-area">
               <div className="work-area">
-              <section className="page-heading">
+              {(panel === "modules" || activeModule !== "inventory") && <section className="page-heading">
                 <div><p className="eyebrow">{panel === "modules" ? "PERSONALIZARE" : "BUSINESS WORKSPACE"}</p>
                   <h1>{panel === "modules" ? "Modulele tale." : TITLES[activeModule] + "."}</h1>
                   <p className="subheading">{panel === "modules" ? "Alege doar instrumentele de care ai nevoie." :
@@ -602,7 +607,7 @@ export default function App() {
                 {panel === "workspace" && activeModule !== "overview" && activeModule !== "thermal" && activeModule !== "inventory" && canWrite && (activeModule !== "expenses" || canFinance) && (
                   <button className="primary add-button" onClick={() => openCreate(activeModule)}>+ Adaugă</button>
                 )}
-              </section>
+              </section>}
               {error && <div role="alert" className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
               {panel === "modules" ? (
                 <section className="module-store">
@@ -715,6 +720,12 @@ export default function App() {
                     </>
                   )}
                 </div>
+              ) : activeModule === "inventory" ? (
+                <DesktopInventoryPanel
+                  organizationId={workspace.organization.id}
+                  locale={workspace.profile?.locale || "ro-RO"}
+                  role={workspace.membership.role}
+                />
               ) : (
                 <section className="surface listing">
                   <div className="listing-tools"><div className="listing-title"><strong>Înregistrări</strong><span>{formatNumber(visibleRows.length)}</span></div>
@@ -731,7 +742,7 @@ export default function App() {
                   <p className="hint">Datele sunt citite din contul tău ORBYVEN și filtrate după companie.</p>
                 </section>
               )}
-              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.4.0 · UI {uiManifest.revision}</span></footer>
+              <footer className="page-footer">ORBYVEN · Desktop Workspace <span>v0.5.0 · UI {uiManifest.revision}</span></footer>
             </div>
           </main>
           {commandOpen && <div className="overlay command-overlay" onMouseDown={(event) => {
