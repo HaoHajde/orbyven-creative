@@ -41,6 +41,20 @@ test("Agent Actions parses work priority and exact client label", () => {
   assert.equal(result.proposal.payload.clientName, "Neagu Costică SRL");
 });
 
+test("Agent Actions treats a business order as the same confirmed operational core", () => {
+  const result = parseMutationPrompt(
+    "Creează comandă Buchet 30 trandafiri; client: Florăria Demo; prioritate: ridicată",
+    { now: fixedNow }
+  );
+  assert.equal(result.kind, "proposal");
+  if (result.kind !== "proposal") return;
+  assert.equal(result.proposal.actionType, "create_task");
+  assert.equal(result.proposal.targetModule, "tasks");
+  assert.equal(result.proposal.payload.kind, "order");
+  assert.equal(result.proposal.payload.clientName, "Florăria Demo");
+  assert.match(result.proposal.summary, /comanda/i);
+});
+
 test("Agent Actions interprets Bucharest relative calendar time and previews it", () => {
   const result = parseMutationPrompt(
     "Programează o programare Revizie tehnică mâine la 10:30; durata: 90; reminder: 15",
