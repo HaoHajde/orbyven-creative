@@ -42,6 +42,7 @@ try {
     const context = await browser.newContext({
       viewport: { width: device.width, height: device.height },
       isMobile: device.isMobile,
+      hasTouch: device.isMobile,
       deviceScaleFactor: device.isMobile ? 2 : 1,
       reducedMotion: "reduce",
     });
@@ -49,44 +50,50 @@ try {
     page.setDefaultTimeout(30000);
 
     for (const route of routes) {
-      let pageErrors = 0;
-      const onPageError = () => { pageErrors += 1; };
+      const pageErrors = [];
+      const onPageError = (error) => { pageErrors.push(error instanceof Error ? error.message : String(error)); };
       page.on("pageerror", onPageError);
       try {
         await page.goto(baseUrl + route, { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(80);
-        const state = await page.evaluate(() => {
-          const width = document.documentElement.scrollWidth;
-          const viewport = window.innerWidth;
-          const bodyText = document.body?.innerText?.trim() || "";
-          const visibleFixed = [...document.querySelectorAll("*")]
-            .filter((element) => {
-              const style = getComputedStyle(element);
-              if (style.position !== "fixed") return false;
-              const rect = element.getBoundingClientRect();
-              return rect.width > 1 && rect.height > 1 && style.visibility !== "hidden" && style.display !== "none";
-            })
-            .map((element) => {
-              const rect = element.getBoundingClientRect();
-              return { left: rect.left, right: rect.right, width: rect.width };
-            });
-          const minTouchFont = [...document.querySelectorAll("input, textarea, select")]
-            .filter((element) => {
-              const input = element;
-              if (input instanceof HTMLInputElement && ["checkbox", "radio", "range", "hidden"].includes(input.type)) return false;
-              const style = getComputedStyle(element);
-              return style.display !== "none" && style.visibility !== "hidden";
-            })
-            .reduce((min, element) => Math.min(min, Number.parseFloat(getComputedStyle(element).fontSize) || 999), 999);
-          return { width, viewport, bodyTextLength: bodyText.length, visibleFixed, minTouchFont };
-        });
+        await page.waitForTimeout(250);
+        const frameStates = [];
+        for (const frame of page.frames()) {
+          try {
+            frameStates.push(await frame.evaluate(() => {
+              const width = document.documentElement.scrollWidth;
+              const viewport = window.innerWidth;
+              const bodyText = document.body?.innerText?.trim() || "";
+              const interactiveFixed = [...document.querySelectorAll("button, a, nav, header, aside, [role='dialog'], [role='menu']")]
+                .filter((element) => {
+                  const style = getComputedStyle(element);
+                  if (style.position !== "fixed" || style.visibility === "hidden" || style.display === "none" || style.pointerEvents === "none" || Number(style.opacity || "1") === 0) return false;
+                  const rect = element.getBoundingClientRect();
+                  return rect.width > 1 && rect.height > 1 && rect.right > 0 && rect.bottom > 0 && rect.left < window.innerWidth && rect.top < window.innerHeight;
+                })
+                .map((element) => {
+                  const rect = element.getBoundingClientRect();
+                  return { left: rect.left, right: rect.right, width: rect.width };
+                });
+              const minTouchFont = [...document.querySelectorAll("input, textarea, select")]
+                .filter((element) => {
+                  if (element instanceof HTMLInputElement && ["checkbox", "radio", "range", "hidden"].includes(element.type)) return false;
+                  const style = getComputedStyle(element);
+                  return style.display !== "none" && style.visibility !== "hidden";
+                })
+                .reduce((min, element) => Math.min(min, Number.parseFloat(getComputedStyle(element).fontSize) || 999), 999);
+              return { width, viewport, bodyTextLength: bodyText.length, interactiveFixed, minTouchFont };
+            }));
+          } catch {
+            // A third-party frame that cannot be inspected must not invalidate the ORBYVEN shell.
+          }
+        }
 
-        if (state.width > state.viewport + 2) throw new Error("horizontal overflow");
-        if (state.bodyTextLength === 0) throw new Error("blank page");
-        if (pageErrors > 0) throw new Error("browser runtime exception");
-        if (device.isMobile && state.minTouchFont < 16) throw new Error("touch form control below 16px");
-        if (state.visibleFixed.some((rect) => rect.left < -3 || rect.right > device.width + 3 || rect.width > device.width + 6)) {
-          throw new Error("fixed element escapes viewport");
+        if (frameStates.some((state) => state.width > state.viewport + 2)) throw new Error("horizontal overflow");
+        if (!frameStates.some((state) => state.bodyTextLength > 0)) throw new Error("blank page");
+        if (pageErrors.length > 0) throw new Error("browser runtime exception: " + pageErrors[0]);
+        if (device.isMobile && frameStates.some((state) => state.minTouchFont < 16)) throw new Error("touch form control below 16px");
+        if (frameStates.some((state) => state.interactiveFixed.some((rect) => rect.left < -3 || rect.right > state.viewport + 3 || rect.width > state.viewport + 6))) {
+          throw new Error("interactive fixed element escapes viewport");
         }
         console.log(`${device.name} ${route}: ok`);
       } catch (error) {
