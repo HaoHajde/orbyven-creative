@@ -15,6 +15,12 @@ type Props = {
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
+type NativeBridgeWindow = Window & {
+  ReactNativeWebView?: {
+    postMessage: (message: string) => void;
+  };
+};
+
 const levelDot = {
   urgent: "bg-rose-400",
   attention: "bg-amber-400",
@@ -33,6 +39,7 @@ export default function WorkspaceActivityCenter({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [nativePushAvailable, setNativePushAvailable] = useState(false);
 
   const canAccessFinances = ["owner", "admin", "manager"].includes(role);
 
@@ -57,6 +64,14 @@ export default function WorkspaceActivityCenter({
   }, [organizationId, enabledModules, canAccessFinances, locale, timeZone]);
 
   useEffect(() => {
+    const bridgeTimer = window.setTimeout(() => {
+      const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+      setNativePushAvailable(Boolean(bridge));
+    }, 0);
+    return () => window.clearTimeout(bridgeTimer);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     const refresh = window.setInterval(() => void load(), 5 * 60 * 1000);
     const onFocus = () => void load();
@@ -72,6 +87,11 @@ export default function WorkspaceActivityCenter({
     () => items.filter((item) => item.level === "urgent").length,
     [items]
   );
+
+  const requestNativePush = () => {
+    const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:register-push" }));
+  };
 
   const openItem = (item: WorkspaceActivityItem) => {
     setOpen(false);
@@ -144,6 +164,23 @@ export default function WorkspaceActivityCenter({
             </header>
 
             <div className="max-h-[calc(100dvh-176px)] overflow-y-auto overscroll-contain p-2.5">
+              {nativePushAvailable ? (
+                <div className="mb-2 flex items-center justify-between gap-3 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold">Alerte pe iPhone</p>
+                    <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                      Primește notificări ORBYVEN și deschide direct contextul relevant.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={requestNativePush}
+                    className="shrink-0 rounded-full border border-[var(--border-strong)] px-3 py-2 text-[10px] font-semibold"
+                  >
+                    Activează
+                  </button>
+                </div>
+              ) : null}
               {loading && !items.length ? (
                 <p role="status" className="px-3 py-8 text-center text-xs text-[var(--muted)]">
                   Se verifică activitatea…
