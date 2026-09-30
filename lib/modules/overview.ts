@@ -16,6 +16,7 @@ export type OverviewTask = {
   kind: "task" | "work" | "order";
   status: string;
   priority: string;
+  assignee: string | null;
   client_id: string | null;
   due_at: string | null;
   scheduled_at: string | null;
@@ -151,27 +152,27 @@ export async function loadOverviewSnapshot(
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)
       .lt("next_follow_up_at", nowIso).order("next_follow_up_at").limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .lt("due_at", nowIso).order("due_at").limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .eq("priority", "urgent").order("created_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).eq("status", "blocked")
       .order("updated_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("scheduled_at", nearTaskFrom).lte("scheduled_at", nearTaskUntil)
       .order("scheduled_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
     orbyvenSupabase.from("ops_tasks")
-      .select("id,title,kind,status,priority,client_id,due_at,scheduled_at,created_at")
+      .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("due_at", nearTaskFrom).lte("due_at", nearTaskUntil)
       .order("due_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
