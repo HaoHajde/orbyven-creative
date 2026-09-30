@@ -119,9 +119,9 @@ export default function App() {
           <View style={styles.mark}>
             <Text style={styles.markText}>OC</Text>
           </View>
-          <View>
-            <Text style={[styles.brand, { color: text }]}>ORBYVEN</Text>
-            <Text style={[styles.subtitle, { color: muted }]}>Business Workspace · iOS</Text>
+          <View style={styles.brandCopy}>
+            <Text numberOfLines={1} style={[styles.brand, { color: text }]}>ORBYVEN</Text>
+            <Text numberOfLines={1} style={[styles.subtitle, { color: muted }]}>Business Workspace · iOS</Text>
           </View>
         </View>
         <View style={[
@@ -240,7 +240,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  brandRow: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
+  brandCopy: { flex: 1, minWidth: 0 },
   mark: {
     width: 38,
     height: 38,
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   markText: { color: "#ffffff", fontWeight: "800", letterSpacing: -1, fontSize: 14 },
   brand: { fontSize: 14, fontWeight: "800", letterSpacing: 1.6 },
   subtitle: { fontSize: 10, marginTop: 2 },
-  status: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
+  status: { flexShrink: 0, marginLeft: 10, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
   statusOnline: { backgroundColor: "#123c31" },
   statusOffline: { backgroundColor: "#4a2327" },
   statusLoading: { backgroundColor: "#332b55" },

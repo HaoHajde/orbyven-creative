@@ -15,6 +15,18 @@ type Theme = "light" | "dark";
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+function useHydrationSafeReducedMotion() {
+  const prefersReducedMotion = useReducedMotion();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setHydrated(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  return hydrated ? Boolean(prefersReducedMotion) : false;
+}
+
 
 
 const templateCategories = [
@@ -103,7 +115,7 @@ const templateCategories = [
 
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.992 }}
@@ -184,7 +196,7 @@ function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; 
 
 export default function TemplatesPage() {
   const [theme, setTheme] = useState<Theme>("light");
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
