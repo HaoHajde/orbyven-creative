@@ -55,7 +55,7 @@ export type IntelligenceAction =
         summary: string;
         actionType: IntelligenceMutationType;
         targetModule: OrbyvenModuleId;
-        status: "ready" | "locked";
+        status: "ready" | "locked" | "executed" | "rejected" | "expired" | "failed";
       }>;
     };
 
