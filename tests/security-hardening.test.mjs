@@ -207,7 +207,9 @@ test("anonymous Data API grants stay limited to intentional public intake", () =
     "platform_staff",
     "subscriptions",
   ]) assert.ok(anonSurfaceHardening.includes(`public.${table}`), table);
-  assert.match(anonSurfaceHardening, /from anon/);
+  assert.match(anonSurfaceHardening, /from anon, authenticated/);
+  assert.match(anonSurfaceHardening, /public\.subscriptions[\s\S]*?from anon, authenticated/);
+  assert.match(anonSurfaceHardening, /public\.organizations[\s\S]*?from anon/);
   assert.doesNotMatch(anonSurfaceHardening, /revoke[\s\S]*?public\.leads/i);
   assert.match(anonSurfaceHardening, /create or replace function public\.set_updated_at\(\)/);
   assert.match(anonSurfaceHardening, /set search_path = ''/);

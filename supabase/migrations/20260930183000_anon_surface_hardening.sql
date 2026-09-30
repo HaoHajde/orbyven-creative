@@ -3,18 +3,23 @@
 -- Remove table privileges as a second boundary; keep the intentional legacy
 -- public leads INSERT flow unchanged.
 
+-- Strictly server-side tables: no anon/authenticated RLS policies exist.
 revoke all privileges on table
   public.billing_accounts,
   public.billing_invoices,
   public.billing_terms_acceptances,
   public.billing_webhook_events,
-  public.organization_entitlements,
-  public.organization_modules,
-  public.organization_profiles,
-  public.organizations,
   public.platform_audit_log,
   public.platform_staff,
   public.subscriptions
+from anon, authenticated;
+
+-- Tenant tables have authenticated RLS policies, so remove only anonymous grants.
+revoke all privileges on table
+  public.organization_entitlements,
+  public.organization_modules,
+  public.organization_profiles,
+  public.organizations
 from anon;
 
 -- Generic updated_at helper: use an empty search_path and remove the default
