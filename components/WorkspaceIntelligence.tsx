@@ -435,9 +435,10 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
       if (!response.ok || !body.mode || !body.plan) {
         throw new Error(body.error || "Planul nu a putut fi refăcut.");
       }
+      const recoveredPlan = body.plan;
 
       if (body.mode === "needs_input") {
-        putPlanInMessages(body.plan);
+        putPlanInMessages(recoveredPlan);
         preparePromptRepair(body.suggestedPrompt || "");
         setMessages((current) => [...current, {
           key: nextLocalKey("recovery-input"),
@@ -459,7 +460,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
           { label: "Recovery", value: "Controlat" },
           { label: "Confirmare", value: "Pas cu pas" },
         ],
-        actions: [body.plan],
+        actions: [recoveredPlan],
       }]);
       void loadConversations();
     } catch (reason) {
