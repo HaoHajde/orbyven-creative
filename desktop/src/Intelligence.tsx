@@ -6,10 +6,11 @@ import type {
   IntelligenceSpecialist,
 } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 
 type Props = {
   organizationId: string;
-  onOpenModule: (moduleId: OrbyvenModuleId) => void;
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
 };
 
 type UiMessage = {
@@ -242,7 +243,7 @@ export default function DesktopIntelligence({ organizationId, onOpenModule }: Pr
           (candidate) => candidate.kind !== "confirm_proposal" || candidate.proposalId !== action.proposalId,
         ),
       })));
-      if (decision === "confirm" && body.result?.moduleId) onOpenModule(body.result.moduleId);
+      if (decision === "confirm" && body.result?.moduleId) onOpenModule(body.result.moduleId, { recordId: body.result.id });
       if (body.message) {
         setMessages((current) => [...current, {
           key: nextKey("system"),
@@ -263,7 +264,7 @@ export default function DesktopIntelligence({ organizationId, onOpenModule }: Pr
 
   const renderAction = (action: IntelligenceAction, index: number) => {
     if (action.kind === "open_module") {
-      return <button key={index} className="ai-action" onClick={() => onOpenModule(action.moduleId)}>
+      return <button key={index} className="ai-action" onClick={() => onOpenModule(action.moduleId, { recordId: action.recordId, clientId: action.clientId, taskId: action.taskId, estimateId: action.estimateId })}>
         {action.label} →
       </button>;
     }
