@@ -78,6 +78,11 @@ try {
                 .filter((element) => {
                   if (element instanceof HTMLInputElement && ["checkbox", "radio", "range", "hidden"].includes(element.type)) return false;
                   const style = getComputedStyle(element);
+                  let node = element;
+                  while (node) {
+                    if (getComputedStyle(node).pointerEvents === "none") return false;
+                    node = node.parentElement;
+                  }
                   return style.display !== "none" && style.visibility !== "hidden";
                 })
                 .reduce((min, element) => Math.min(min, Number.parseFloat(getComputedStyle(element).fontSize) || 999), 999);
