@@ -261,7 +261,7 @@ export default function ClientWorkspace() {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative isolate min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
       {theme === "dark" ? (
         <WorkspaceOrbitBackground fixed />
@@ -325,7 +325,7 @@ export default function ClientWorkspace() {
       </header>
 
       <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100vh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+        <aside className="sticky top-[77px] hidden h-[calc(100dvh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
@@ -370,7 +370,7 @@ export default function ClientWorkspace() {
 
         <section
           data-workspace-module-focus="true"
-          className="min-w-0 scroll-mt-24 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8"
+          className="min-w-0 scroll-mt-24 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100dvh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8"
         >
           {panel === "modules" ? (
             <WorkspaceModuleStore
@@ -400,14 +400,14 @@ export default function ClientWorkspace() {
       </div>
 
       {createMenuOpen && canCreate && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:items-center">
           <button
             type="button"
             aria-label="Închide meniul de creare"
             onClick={() => setCreateMenuOpen(false)}
             className="absolute inset-0 bg-[#020814]/70"
           />
-          <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 w-full max-w-md rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
+          <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Acțiune nouă</p>
@@ -432,9 +432,9 @@ export default function ClientWorkspace() {
         </div>
       )}
 
-      <div className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 md:hidden">
+      <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[80] -translate-x-1/2 md:hidden">
         {mobileModuleMenuOpen && (
-          <div className="absolute bottom-[58px] left-1/2 w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+          <div className="absolute bottom-[58px] left-1/2 max-h-[min(68dvh,560px)] w-[calc(100vw-24px)] max-w-[520px] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
             <div className="grid grid-cols-4 gap-2">
               {enabledDefinitions.map((definition) => {
                 const active = panel === "workspace" && activeModule === definition.id;
