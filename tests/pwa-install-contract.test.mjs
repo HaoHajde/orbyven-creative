@@ -53,3 +53,14 @@ test("installed web app publishes standalone runtime mode without caching privat
   assert.match(layout, /AppModeRuntime/);
   assert.match(css, /data-app-mode="standalone"/);
 });
+
+test("Next generated manifest matches the canonical installed workspace experience", () => {
+  const generatedManifest = read("app/manifest.ts");
+  assert.match(generatedManifest, /id:\s*"\/workspace"/);
+  assert.match(generatedManifest, /start_url:\s*"\/workspace"/);
+  assert.match(generatedManifest, /orientation:\s*"portrait-primary"/);
+  assert.match(generatedManifest, /background_color:\s*"#08111f"/);
+  assert.match(generatedManifest, /theme_color:\s*"#08111f"/);
+  assert.match(generatedManifest, /orbyven-app-icon\.png/);
+  assert.match(generatedManifest, /purpose:\s*"any maskable"/);
+});
