@@ -101,7 +101,7 @@ export type MutationParseResult =
   | { kind: "proposal"; proposal: ParsedMutation };
 
 const FIELD_LABELS =
-  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri|continut|conținut|text|categorie";
+  "nume|companie|firma|email|telefon|tel|nota|notă|descriere|client|lucrare|comanda|comandă|locatie|locație|prioritate|titlu|durata|durată|reminder|memento|pozitie|poziție|item|discount|reducere|tva|valabil|valabilitate|manopera|alte costuri|continut|conținut|text|categorie";
 
 function normalize(value: string) {
   return value
@@ -522,7 +522,7 @@ export function parseMutationPrompt(
     const payload: EstimateActionPayload = {
       title,
       clientName: field(prompt, ["client"], 140),
-      taskTitle: field(prompt, ["lucrare"], 180),
+      taskTitle: field(prompt, ["lucrare", "comanda", "comandă"], 180),
       currency: "RON",
       discountLei,
       taxRate,
@@ -578,7 +578,7 @@ export function parseMutationPrompt(
       category: documentCategory(prompt),
       content,
       clientName: field(prompt, ["client"], 140),
-      taskTitle: field(prompt, ["lucrare"], 180),
+      taskTitle: field(prompt, ["lucrare", "comanda", "comandă"], 180),
       note: field(prompt, ["nota", "notă"], 300),
     };
 
