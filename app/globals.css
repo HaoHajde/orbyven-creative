@@ -450,3 +450,24 @@ iframe {
 @media (prefers-reduced-motion: reduce) {
   .orbyven-home-invite-card,.orbyven-home-price-grid > .orbyven-home-price { transition: none !important; }
 }
+
+
+/* ORBYVEN installed web-app runtime.
+   Keeps the Home Screen version stable without changing browser layout. */
+html[data-app-mode="standalone"],
+html[data-app-mode="standalone"] body {
+  min-height: 100dvh;
+}
+
+html[data-app-mode="standalone"] {
+  overscroll-behavior-y: none;
+}
+
+html[data-app-mode="standalone"] body {
+  -webkit-overflow-scrolling: touch;
+}
+
+html[data-app-mode="standalone"] a,
+html[data-app-mode="standalone"] button {
+  touch-action: manipulation;
+}
