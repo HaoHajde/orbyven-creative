@@ -80,7 +80,6 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
       }
     }, 280);
     return () => {
-      ++requestId.current;
       window.clearTimeout(timer);
     };
     // searchKey is the stable set of visible, enabled searchable modules.
