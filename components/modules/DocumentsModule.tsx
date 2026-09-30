@@ -75,6 +75,8 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [scopeTaskId, setScopeTaskId] = useState(initialTaskId ?? "");
+  const filePickerRef = useRef<HTMLInputElement>(null);
+  const cameraPickerRef = useRef<HTMLInputElement>(null);
 
   const canWrite = role !== "viewer";
   const focusedDocumentId =
@@ -144,6 +146,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     receipts: scopedDocuments.filter((item) => item.category === "receipt").length,
     linked: scopedDocuments.filter((item) => item.client_id || item.task_id || item.estimate_id).length,
   }), [scopedDocuments]);
+
+  const selectFile = (nextFile: File | null, source: "files" | "camera") => {
+    setFile(nextFile);
+    if (nextFile && source === "camera" && category === "general") setCategory("photo");
+    if (nextFile) postNativeBridge("orbyven:document-selected", { name: nextFile.name, source, size: nextFile.size });
+  };
 
   const resetUpload = () => {
     setFile(null);
