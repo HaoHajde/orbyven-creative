@@ -184,6 +184,7 @@ export function buildBusinessAutomationSignals(input: {
       (operation.kind === "work" || operation.kind === "order") &&
       !operation.scheduledAt &&
       !operation.dueAt &&
+      !scheduledTaskIds.has(operation.id) &&
       operation.createdAt <= staleBefore &&
       !acceptedNeedingSchedule.has(operation.id)
     ) {
