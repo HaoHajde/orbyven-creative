@@ -88,7 +88,7 @@ export async function loadWorkspaceActivity(
       enabledModules.includes("calendar")
         ? orbyvenSupabase
             .from("calendar_events")
-            .select("id,title,status,start_at,client_id,task_id")
+            .select("id,title,status,start_at,end_at,assignee,client_id,task_id")
             .eq("organization_id", organizationId)
             .neq("status", "cancelled")
             .gte("start_at", nowIso)
@@ -182,6 +182,8 @@ export async function loadWorkspaceActivity(
     title: event.title,
     status: event.status,
     startAt: event.start_at,
+    endAt: event.end_at ?? null,
+    assignee: event.assignee ?? null,
     clientId: event.client_id ?? null,
     taskId: event.task_id ?? null,
   }));
