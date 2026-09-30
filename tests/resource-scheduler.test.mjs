@@ -113,3 +113,18 @@ test("calendar and team use the same shared resource engine", () => {
   assert.match(service, /calendar_event_resources/);
   assert.match(service, /ops_resources/);
 });
+
+
+test("production scheduler migration preserves RLS and conflict guards", () => {
+  const migration = read("supabase/migrations/20260930080226_alpha091_scheduler_resources_core.sql");
+  assert.match(migration, /create table if not exists public\.ops_resources/i);
+  assert.match(migration, /create table if not exists public\.calendar_event_resources/i);
+  assert.match(migration, /create table if not exists public\.ops_resource_unavailability/i);
+  assert.match(migration, /pg_advisory_xact_lock/i);
+  assert.match(migration, /resource_schedule_conflict/i);
+  assert.match(migration, /resource_unavailable/i);
+  assert.match(migration, /security invoker/i);
+  assert.match(migration, /alter table public\.ops_resources enable row level security/i);
+  assert.match(migration, /calendar_event_resources_insert_operator/i);
+  assert.match(migration, /people_team_members_resource_sync/i);
+});
