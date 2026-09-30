@@ -127,3 +127,62 @@ test("Workspace renders separate per-step confirmation instead of one bulk execu
   assert.match(source, /Fiecare pas se confirmă separat/);
   assert.match(source, /loadPlanForConversation/);
 });
+
+
+test("Plan Recovery keeps missing-detail repair deterministic and user-edited", () => {
+  const source = read("lib/ai/plan-server.ts");
+  const ui = read("components/WorkspaceIntelligence.tsx");
+  assert.match(source, /kind: "repair_plan"/);
+  assert.match(source, /suggestedPrompt: prompt\.slice\(0, 1200\)/);
+  assert.match(ui, /preparePromptRepair/);
+  assert.match(ui, /action\.kind === "repair_plan"/);
+  assert.doesNotMatch(source, /repair_plan[\s\S]{0,700}decideMutationProposal/);
+});
+
+test("Plan Recovery rebuilds only remaining proposal steps with a fresh dependency chain", () => {
+  const source = read("lib/ai/plan-server.ts");
+  assert.match(source, /export async function recoverPlan/);
+  assert.match(source, /meta\.step >= recovery\.blockedStep/);
+  assert.match(source, /const newPlanId = randomUUID\(\)/);
+  assert.match(source, /const newProposalIds = remainingRows\.map\(\(\) => randomUUID\(\)\)/);
+  assert.match(source, /dependsOnProposalId: index > 0 \? newProposalIds\[index - 1\] : null/);
+  assert.match(source, /recoveredFromPlanId: planId/);
+  assert.match(source, /recoveredFromStep: recovery\.blockedStep/);
+  assert.match(source, /PLAN_SUPERSEDED_BY_RECOVERY/);
+  assert.doesNotMatch(source, /recoverPlan[\s\S]{0,9000}executeClaimedProposal/);
+});
+
+test("Plan Recovery asks for corrected input on unsafe deterministic failures", () => {
+  const source = read("lib/ai/plan-server.ts");
+  assert.match(source, /CLIENT_AMBIGUOUS/);
+  assert.match(source, /TASK_CLIENT_MISMATCH/);
+  assert.match(source, /MODULE_NOT_AVAILABLE/);
+  assert.match(source, /mode: "needs_input"/);
+  assert.match(source, /MAX_RECOVERY_ATTEMPTS = 4/);
+  assert.match(source, /ORBYVEN nu va ghici datele lipsă sau ambigue/);
+});
+
+test("Plan Recovery endpoint is authenticated, bounded and no-store", () => {
+  const route = read("app/api/ai/plans/recover/route.ts");
+  assert.match(route, /authenticateBillingActor\(request, organizationId, false\)/);
+  assert.match(route, /recoverPlan\(actor, planId\)/);
+  assert.match(route, /Cache-Control": "no-store"/);
+  assert.match(route, /PLAN_ROLE_REQUIRED/);
+});
+
+test("Recovered plans remain audited and explicitly confirmed step by step", () => {
+  const source = read("lib/ai/plan-server.ts");
+  const ui = read("components/WorkspaceIntelligence.tsx");
+  assert.match(source, /action: "ai_plan\.recovered"/);
+  assert.match(source, /execution: "proposal_only_explicit_confirmation_required"/);
+  assert.match(ui, /PLAN RECOVERY/);
+  assert.match(ui, /recoverPlanAction/);
+  assert.match(ui, /Confirmă pasul/);
+  assert.doesNotMatch(ui, /Confirmă tot/);
+});
+
+test("Selective Language cannot rewrite repair or recovery plan controls", () => {
+  const policy = read("lib/ai/language-policy.ts");
+  assert.match(policy, /action\.kind === "repair_plan"/);
+  assert.match(policy, /action\.kind === "review_plan"/);
+});
