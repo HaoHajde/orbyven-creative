@@ -16,6 +16,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
   useEffect,
@@ -33,6 +34,7 @@ type Props = {
   enabledModules: OrbyvenModuleId[];
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
+  initialRecordId?: string;
   initialClientId?: string;
   initialTaskId?: string;
 };
@@ -213,14 +215,14 @@ function toEventTimes(form: CreateForm, timeZone: string) {
 
 export default function CalendarModule({
   organizationId, locale, timeZone, role, enabledModules, onOpenModule,
-  initialCreate = false, initialClientId, initialTaskId,
+  initialCreate = false, initialRecordId, initialClientId, initialTaskId,
 }: Props) {
   const [weekStartKey, setWeekStartKey] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [clients, setClients] = useState<CalendarClient[]>([]);
   const [tasks, setTasks] = useState<CalendarTask[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialRecordId ?? null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -315,6 +317,8 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
+  useWorkspaceCreateFocus(createOpen);
   const filteredEvents = useMemo(
     () => events.filter((calendarEvent) => typeFilter === "all" || calendarEvent.event_type === typeFilter),
     [events, typeFilter]
@@ -489,7 +493,7 @@ export default function CalendarModule({
       </section>
 
       {createOpen && canWrite && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <form data-workspace-create-focus={createOpen ? "true" : undefined} onSubmit={handleCreate} className="mt-4 scroll-mt-28 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-4">
             <div><p className="text-xs font-medium text-[var(--muted)]">Eveniment nou</p><h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Pune timpul la locul lui.</h2></div>
             <button type="button" onClick={() => setCreateOpen(false)} className="text-sm text-[var(--muted)]">Închide</button>
@@ -549,7 +553,14 @@ export default function CalendarModule({
           {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
         </div>
       )}
-      {selectedEvent && <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />}
+      {selectedEvent && (
+        <div
+          data-workspace-record-focus={initialRecordId && selectedEvent.id === initialRecordId ? "true" : undefined}
+          className="scroll-mt-28"
+        >
+          <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />
+        </div>
+      )}
 
       <style jsx>{`.calendar-input { height: 44px; width: 100%; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; outline: none; color: var(--text); }`}</style>
     </div>
