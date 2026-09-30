@@ -16,6 +16,10 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import {
+  buildAvailabilitySuggestions,
+  findCalendarConflicts,
+} from "@/lib/modules/calendar-planning";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
@@ -166,6 +170,18 @@ function formatTime(value: string, locale: string, timeZone: string) {
     minute: "2-digit",
     timeZone,
   }).format(new Date(value));
+}
+
+function timeInputInTimeZone(value: string, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone,
+  }).formatToParts(new Date(value));
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+  return hour + ":" + minute;
 }
 
 function formatDateTime(value: string, locale: string, timeZone: string) {
@@ -342,6 +358,18 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  const selectedConflicts = useMemo(
+    () => selectedEvent
+      ? findCalendarConflicts(events, {
+          startAt: selectedEvent.start_at,
+          endAt: selectedEvent.end_at,
+          assignee: selectedEvent.assignee,
+          taskId: selectedEvent.task_id,
+          excludeEventId: selectedEvent.id,
+        })
+      : [],
+    [events, selectedEvent]
+  );
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
   useWorkspaceCreateFocus(createOpen);
@@ -353,6 +381,38 @@ export default function CalendarModule({
     () => (snapshotIso ? dateKeyInTimeZone(snapshotIso, timeZone) : ""),
     [snapshotIso, timeZone]
   );
+
+  const planningPreview = useMemo(() => {
+    if (!createOpen || !form.date || (!form.assignee.trim() && !form.taskId)) {
+      return { conflicts: [], slots: [] };
+    }
+    try {
+      const times = toEventTimes(form, timeZone);
+      const conflicts = findCalendarConflicts(events, {
+        startAt: times.startAt,
+        endAt: times.endAt,
+        assignee: form.assignee,
+        taskId: form.taskId || null,
+      });
+      if (form.allDay) return { conflicts, slots: [] };
+
+      const durationMinutes = Math.max(
+        15,
+        Math.round((Date.parse(times.endAt) - Date.parse(times.startAt)) / 60_000)
+      );
+      const slots = buildAvailabilitySuggestions(events, {
+        dayStartAt: zonedWallTimeToIso(form.date, "08:00", timeZone),
+        dayEndAt: zonedWallTimeToIso(form.date, "18:00", timeZone),
+        durationMinutes,
+        assignee: form.assignee,
+        taskId: form.taskId || null,
+        limit: 4,
+      });
+      return { conflicts, slots };
+    } catch {
+      return { conflicts: [], slots: [] };
+    }
+  }, [createOpen, events, form, timeZone]);
   const metrics = useMemo(() => {
     const scheduled = events.filter((calendarEvent) => calendarEvent.status === "scheduled").length;
     const today = todayKey
@@ -363,8 +423,21 @@ export default function CalendarModule({
         ).length
       : 0;
     const completed = events.filter((calendarEvent) => calendarEvent.status === "completed").length;
-    const linked = events.filter((calendarEvent) => calendarEvent.client_id || calendarEvent.task_id).length;
-    return { scheduled, today, completed, linked };
+    const conflictPairs = new Set<string>();
+    for (const calendarEvent of events) {
+      if (calendarEvent.status !== "scheduled") continue;
+      const conflicts = findCalendarConflicts(events, {
+        startAt: calendarEvent.start_at,
+        endAt: calendarEvent.end_at,
+        assignee: calendarEvent.assignee,
+        taskId: calendarEvent.task_id,
+        excludeEventId: calendarEvent.id,
+      });
+      for (const conflict of conflicts) {
+        conflictPairs.add([calendarEvent.id, conflict.event.id].sort().join(":"));
+      }
+    }
+    return { scheduled, today, completed, conflicts: conflictPairs.size };
   }, [events, timeZone, todayKey]);
 
   const openCreate = (dateKey?: string) => {
@@ -507,7 +580,7 @@ export default function CalendarModule({
         <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
         <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
         <Metric label="Finalizate" value={String(metrics.completed)} note="în săptămâna afișată" />
-        <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
+        <Metric label="Conflicte" value={String(metrics.conflicts)} note="suprapuneri de responsabil / lucrare" />
       </section>
 
       {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
@@ -546,7 +619,59 @@ export default function CalendarModule({
             <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
             <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
           </div>
-          <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Adaugă în calendar"}</button></div>
+
+          {(form.assignee.trim() || form.taskId) && (
+            <section className="mt-4 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/65 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">ORBYVEN · AVAILABILITY</p>
+                  <h3 className="mt-1 text-sm font-semibold">Verificare automată a programului</h3>
+                </div>
+                <span className={planningPreview.conflicts.length ? "rounded-full bg-rose-500/10 px-2.5 py-1 text-[10px] font-semibold text-rose-400" : "rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-400"}>
+                  {planningPreview.conflicts.length ? planningPreview.conflicts.length + " conflict(e)" : "Interval disponibil"}
+                </span>
+              </div>
+
+              {planningPreview.conflicts.length ? (
+                <div className="mt-3 grid gap-2">
+                  {planningPreview.conflicts.slice(0, 3).map((conflict) => (
+                    <div key={conflict.event.id} className="rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-3 py-2.5">
+                      <p className="text-xs font-semibold">{conflict.event.title}</p>
+                      <p className="mt-1 text-[10px] text-[var(--muted)]">
+                        {formatTime(conflict.event.start_at, locale, timeZone)}–{formatTime(conflict.event.end_at, locale, timeZone)} · {conflict.reason === "both" ? "același responsabil și aceeași lucrare" : conflict.reason === "assignee" ? "același responsabil" : "aceeași lucrare"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] text-[var(--muted)]">Nu există suprapuneri pentru intervalul ales.</p>
+              )}
+
+              {!form.allDay && planningPreview.slots.length ? (
+                <div className="mt-3 border-t border-[var(--border)] pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Intervale libere în aceeași zi</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {planningPreview.slots.map((slot) => (
+                      <button
+                        key={slot.startAt}
+                        type="button"
+                        onClick={() => setForm((current) => ({
+                          ...current,
+                          startTime: timeInputInTimeZone(slot.startAt, timeZone),
+                          endTime: timeInputInTimeZone(slot.endAt, timeZone),
+                        }))}
+                        className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold hover:border-[var(--accent)]"
+                      >
+                        {formatTime(slot.startAt, locale, timeZone)}–{formatTime(slot.endAt, locale, timeZone)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          )}
+
+          <div className="mt-5 flex justify-end"><button disabled={saving || planningPreview.conflicts.length > 0} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : planningPreview.conflicts.length ? "Rezolvă conflictul" : "Adaugă în calendar"}</button></div>
         </form>
       )}
 
@@ -585,6 +710,16 @@ export default function CalendarModule({
         <div className="mt-4 flex flex-wrap gap-2">
           {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
           {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+        </div>
+      )}
+      {selectedEvent && selectedConflicts.length > 0 && (
+        <div className="mt-3 rounded-[16px] border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3">
+          <p className="text-xs font-semibold text-rose-300">Conflict de program detectat</p>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
+            {selectedConflicts.length === 1
+              ? `Se suprapune cu „${selectedConflicts[0].event.title}”.`
+              : `Se suprapune cu ${selectedConflicts.length} programări.`} Modifică intervalul sau responsabilul înainte de execuție.
+          </p>
         </div>
       )}
       {selectedEvent && (

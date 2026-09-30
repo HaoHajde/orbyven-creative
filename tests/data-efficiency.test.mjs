@@ -10,6 +10,11 @@ const search = read("components/WorkspaceSearch.tsx");
 const workspace = read("components/ClientWorkspace.tsx");
 const tasksData = read("lib/modules/tasks.ts");
 const tasksUi = read("components/modules/TasksModule.tsx");
+const calendarData = read("lib/modules/calendar.ts");
+const calendarUi = read("components/modules/CalendarModule.tsx");
+const estimatesUi = read("components/modules/EstimatesModule.tsx");
+const ecosystemActions = read("lib/ecosystem/actions.ts");
+const estimatesData = read("lib/modules/estimates.ts");
 
 test("exact totals page through 1,000+ records, including the final partial page", async () => {
   const dataset = Array.from({ length: 1203 }, (_, id) => ({ id, amount_cents: id }));
@@ -77,6 +82,25 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksUi, /thermalSketch/);
   assert.match(tasksUi, /evaluateWorkReadiness/);
   assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
+});
+
+test("Wave 2 keeps calendar conflict checks bounded and commercial decisions connected", () => {
+  assert.match(calendarData, /export async function listCalendarConflicts/);
+  assert.match(calendarData, /\.lt\("start_at", input\.endAt\)/);
+  assert.match(calendarData, /\.gt\("end_at", input\.startAt\)/);
+  assert.match(calendarData, /assertCalendarAvailability/);
+  assert.match(calendarUi, /ORBYVEN · AVAILABILITY/);
+  assert.match(calendarUi, /buildAvailabilitySuggestions/);
+  assert.match(estimatesUi, /evaluateEstimateWorkflow/);
+  assert.match(estimatesUi, /ORBYVEN · NEXT ACTION/);
+  assert.match(estimatesUi, /Pipeline comercial/);
+  assert.match(ecosystemActions, /sincronizarea devizului/);
+  assert.match(ecosystemActions, /status:"accepted",accepted_at:now/);
+  assert.match(estimatesData, /draft: \["sent"\]/);
+  assert.match(estimatesData, /sent: \["accepted", "rejected", "expired"\]/);
+  assert.match(estimatesData, /sales_commercial_documents/);
+  assert.match(estimatesData, /requiredOfferStatus = status/);
+  assert.match(estimatesData, /\.eq\("status", estimate\.status\)/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {

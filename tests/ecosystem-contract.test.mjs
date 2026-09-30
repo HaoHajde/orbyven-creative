@@ -18,6 +18,8 @@ const graph = loadPureModule("lib/ecosystem/graph.ts");
 const projections = loadPureModule("lib/ecosystem/projections.ts");
 const revisions = loadPureModule("lib/ecosystem/revision.ts");
 const financial = loadPureModule("lib/ecosystem/profitability.ts");
+const calendarPlanning = loadPureModule("lib/modules/calendar-planning.ts");
+const estimateWorkflow = loadPureModule("lib/modules/estimate-workflow.ts");
 
 const estimate = {
   id: "estimate-1", organizationId: "tenant-A", clientId: "client-A",
@@ -137,4 +139,66 @@ test("Alpha 0.6 keeps negative gross margin rather than pretending profit is pos
     plannedLaborCents:20000,otherCostCents:10000,recordedExpensesCents:[],
   });
   assert.equal(data.plannedMargin,-60000);
+});
+
+
+test("Wave 2 calendar planning detects only relevant overlaps and proposes free slots", () => {
+  const events = [
+    {
+      id: "a", title: "Lucrare A", status: "scheduled",
+      start_at: "2026-09-30T07:00:00.000Z", end_at: "2026-09-30T09:00:00.000Z",
+      assignee: "Andrei", task_id: "work-a",
+    },
+    {
+      id: "b", title: "Alt coleg", status: "scheduled",
+      start_at: "2026-09-30T07:30:00.000Z", end_at: "2026-09-30T08:30:00.000Z",
+      assignee: "Mihai", task_id: "work-b",
+    },
+    {
+      id: "c", title: "Anulat", status: "cancelled",
+      start_at: "2026-09-30T07:00:00.000Z", end_at: "2026-09-30T10:00:00.000Z",
+      assignee: "Andrei", task_id: "work-c",
+    },
+  ];
+  const conflicts = calendarPlanning.findCalendarConflicts(events, {
+    startAt: "2026-09-30T08:00:00.000Z",
+    endAt: "2026-09-30T09:00:00.000Z",
+    assignee: "andrei",
+    taskId: "work-a",
+  });
+  assert.equal(conflicts.length, 1);
+  assert.equal(conflicts[0].reason, "both");
+  assert.equal(conflicts[0].event.id, "a");
+
+  const slots = calendarPlanning.buildAvailabilitySuggestions(events, {
+    dayStartAt: "2026-09-30T06:00:00.000Z",
+    dayEndAt: "2026-09-30T12:00:00.000Z",
+    durationMinutes: 60,
+    assignee: "Andrei",
+    stepMinutes: 30,
+    limit: 2,
+  });
+  assert.deepEqual(slots, [
+    { startAt: "2026-09-30T06:00:00.000Z", endAt: "2026-09-30T07:00:00.000Z" },
+    { startAt: "2026-09-30T09:00:00.000Z", endAt: "2026-09-30T10:00:00.000Z" },
+  ]);
+});
+
+test("Wave 2 estimate workflow surfaces the next business action without silently mutating status", () => {
+  const base = {
+    client_id: "client-a", task_id: "work-a", valid_until: "2026-10-05", sent_at: null,
+  };
+  assert.equal(estimateWorkflow.evaluateEstimateWorkflow({ ...base, status: "draft" }, "2026-09-30").nextAction, "send");
+  const waiting = estimateWorkflow.evaluateEstimateWorkflow({
+    ...base, status: "sent", sent_at: "2026-09-28T10:00:00Z",
+  }, "2026-09-30");
+  assert.equal(waiting.nextAction, "await_response");
+  assert.equal(waiting.daysSinceSent, 2);
+  const overdue = estimateWorkflow.evaluateEstimateWorkflow({
+    ...base, status: "sent", valid_until: "2026-09-29", sent_at: "2026-09-20T10:00:00Z",
+  }, "2026-09-30");
+  assert.equal(overdue.overdue, true);
+  assert.equal(overdue.nextAction, "review_expired");
+  assert.equal(estimateWorkflow.evaluateEstimateWorkflow({ ...base, status: "accepted" }, "2026-09-30").nextAction, "schedule_work");
+  assert.equal(estimateWorkflow.evaluateEstimateWorkflow({ ...base, status: "rejected" }, "2026-09-30").nextAction, "revise");
 });
