@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -16,7 +17,7 @@ import { WebView, type WebViewNavigation } from "react-native-webview";
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.2.0";
 
 type ConnectionState = "loading" | "online" | "offline";
 
@@ -96,6 +97,14 @@ export default function App() {
     return false;
   }, [openNativeLink]);
 
+  const shareCurrentUrl = useCallback(() => {
+    void Share.share({
+      title: "ORBYVEN",
+      message: currentUrl,
+      url: currentUrl,
+    });
+  }, [currentUrl]);
+
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
   const text = dark ? "#f4f7ff" : "#101827";
@@ -141,6 +150,10 @@ export default function App() {
           onHttpError={({ nativeEvent }) => {
             if (nativeEvent.statusCode >= 500) setConnection("offline");
           }}
+          onContentProcessDidTerminate={() => {
+            setConnection("loading");
+            webRef.current?.reload();
+          }}
           startInLoadingState
           renderLoading={() => (
             <View style={[styles.loader, { backgroundColor: background }]}>
@@ -166,9 +179,10 @@ export default function App() {
           thirdPartyCookiesEnabled
           domStorageEnabled
           javaScriptEnabled
-          userAgent={"ORBYVEN-iOS/" + APP_VERSION}
+          applicationNameForUserAgent={"ORBYVEN-iOS/" + APP_VERSION}
           setSupportMultipleWindows={false}
           allowsLinkPreview={false}
+          allowsInlineMediaPlayback
         />
       </View>
 
@@ -179,6 +193,7 @@ export default function App() {
           setReloadKey((value) => value + 1);
         }} text={text} muted={muted} />
         <ToolbarButton label="↻" hint="Refresh" onPress={() => webRef.current?.reload()} text={text} muted={muted} />
+        <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
         <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
       </View>
     </SafeAreaView>
