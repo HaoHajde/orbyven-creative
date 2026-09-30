@@ -12,6 +12,7 @@ import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, themeToCssVars } from "@/lib/workspace-visual-system";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { scheduleWorkspaceWarp } from "@/lib/workspace-warp";
 import {
   getCurrentWorkspace,
   setOrganizationModuleEnabled,
@@ -157,6 +158,22 @@ export default function ClientWorkspace() {
     setMobileModuleMenuOpen(false);
     setCreateMenuOpen(false);
   }, [enabledModules]);
+
+  useEffect(() => {
+    if (navigation.token === 0 || panel !== "workspace") return;
+
+    const selector = navigation.create
+      ? '[data-workspace-create-focus="true"]'
+      : navigation.recordId
+        ? '[data-workspace-record-focus="true"]'
+        : '[data-workspace-module-focus="true"]';
+
+    return scheduleWorkspaceWarp(selector, {
+      attempts: navigation.create || navigation.recordId ? 32 : 12,
+      delayMs: 45,
+      fallbackSelector: '[data-workspace-module-focus="true"]',
+    });
+  }, [navigation, panel]);
 
   const toggleModule = async (id: OrbyvenModuleId) => {
     if (id === "overview" || !workspace || !canManageModules || savingModule) return;
@@ -341,7 +358,10 @@ export default function ClientWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8">
+        <section
+          data-workspace-module-focus="true"
+          className="min-w-0 scroll-mt-24 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-28 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100vh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8"
+        >
           {panel === "modules" ? (
             <WorkspaceModuleStore
               enabledModules={enabledModules}
