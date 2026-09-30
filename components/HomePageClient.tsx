@@ -263,7 +263,7 @@ export default function HomePage() {
         color: "var(--text)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="orbyven-home-main relative min-h-screen overflow-x-clip antialiased"
+      className="orbyven-home-main relative min-h-screen overflow-x-clip antialiased [&_input]:text-[16px] [&_select]:text-[16px] [&_textarea]:text-[16px]"
     >
       <SiteHeader theme={theme} compact={false} activePage="home" onToggleTheme={toggleTheme} />
       <WarpMenu items={warpItems} activeSection={activeSection} />
