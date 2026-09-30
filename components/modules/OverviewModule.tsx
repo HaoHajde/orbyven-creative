@@ -2,6 +2,7 @@
 
 import { ModuleError } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
+import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
@@ -147,51 +148,79 @@ export default function OverviewModule({
       }
     }
 
-    for (const task of openTasks) {
-      if (task.due_at && new Date(task.due_at).getTime() < snapshotNow) {
-        attention.push({
-          key: `task-${task.id}`,
-          module: "tasks",
-          recordId: task.id,
-          title: task.title,
-          meta: "Lucrare sau task întârziat.",
-          level: "urgent",
-        });
-      } else if (task.status === "blocked") {
-        attention.push({
-          key: `blocked-${task.id}`,
-          module: "tasks",
-          recordId: task.id,
-          title: task.title,
-          meta: "Lucrare blocată · necesită o decizie.",
-          level: "urgent",
-        });
-      } else if (task.priority === "urgent") {
-        attention.push({
-          key: `urgent-${task.id}`,
-          module: "tasks",
-          recordId: task.id,
-          title: task.title,
-          meta: "Prioritate urgentă.",
-          level: "urgent",
-        });
-      }
+    const operations: AutomationOperation[] = openTasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      kind: task.kind,
+      status: task.status as AutomationOperation["status"],
+      priority: task.priority as AutomationOperation["priority"],
+      clientId: task.client_id,
+      scheduledAt: task.scheduled_at,
+      dueAt: task.due_at,
+      createdAt: task.created_at,
+    }));
+    const estimates: AutomationEstimate[] = snapshot.estimates.map((estimate) => ({
+      id: estimate.id,
+      reference: estimate.reference,
+      title: estimate.title,
+      status: estimate.status,
+      validUntil: estimate.valid_until,
+      clientId: estimate.client_id,
+      taskId: estimate.task_id,
+      updatedAt: estimate.updated_at,
+    }));
+    const events: AutomationEvent[] = snapshot.events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      status: event.status,
+      startAt: event.start_at,
+      endAt: event.end_at,
+      assignee: event.assignee,
+      clientId: event.client_id,
+      taskId: event.task_id,
+    }));
+    const sharedAttentionRules = new Set([
+      "operation_overdue",
+      "operation_blocked",
+      "estimate_follow_up",
+      "calendar_conflict",
+    ]);
+    const sharedSignals = buildBusinessAutomationSignals({
+      operations,
+      estimates,
+      events,
+      now: new Date(snapshotNow),
+      locale,
+      timeZone,
+    }).filter((signal) => sharedAttentionRules.has(signal.rule));
+
+    for (const signal of sharedSignals) {
+      if (!signal.open.recordId) continue;
+      attention.push({
+        key: signal.key,
+        module: signal.module,
+        recordId: signal.open.recordId,
+        title: signal.title,
+        meta: signal.meta,
+        level: signal.level === "urgent" ? "urgent" : "normal",
+      });
     }
 
-    for (const estimate of sentEstimates) {
-      const ageDays = Math.floor(
-        (snapshotNow - new Date(estimate.updated_at).getTime()) / 86400000
-      );
-      if (ageDays >= 3) {
-        attention.push({
-          key: `estimate-${estimate.id}`,
-          module: "estimates",
-          recordId: estimate.id,
-          title: `${estimate.reference} · ${estimate.title}`,
-          meta: `Trimisă de ${ageDays} zile fără răspuns.`,
-          level: "normal",
-        });
-      }
+    const signaledTaskIds = new Set(
+      sharedSignals
+        .filter((signal) => signal.module === "tasks" && signal.open.recordId)
+        .map((signal) => signal.open.recordId as string)
+    );
+    for (const task of openTasks) {
+      if (task.priority !== "urgent" || signaledTaskIds.has(task.id)) continue;
+      attention.push({
+        key: `urgent-${task.id}`,
+        module: "tasks",
+        recordId: task.id,
+        title: task.title,
+        meta: "Prioritate urgentă.",
+        level: "urgent",
+      });
     }
 
     const days = Array.from({ length: 7 }, (_, index) =>
