@@ -8,6 +8,7 @@ import {
   persistAssistantResponse,
 } from "@/lib/ai/conversation-server";
 import { resolveConversationFollowUp } from "@/lib/ai/context-resolver";
+import { resolveContextualEntityReferences } from "@/lib/ai/context-entity-resolver";
 import { maybePolishIntelligenceResponse } from "@/lib/ai/language-server";
 
 export const runtime = "nodejs";
@@ -39,21 +40,51 @@ export async function POST(request: Request) {
       ? await loadRecentConversationContext(actor, conversation.id)
       : [];
     const context = resolveConversationFollowUp(prompt, previousMessages);
+    const entityContext = await resolveContextualEntityReferences(
+      actor,
+      context.effectivePrompt,
+      previousMessages
+    );
 
     await appendUserConversationMessage(actor, conversation.id, prompt);
 
+    if (entityContext.clarification) {
+      const clarificationResult = {
+        specialist: "operations" as const,
+        answer: entityContext.clarification,
+        facts: [{ label: "Context", value: "Referință neconfirmată" }],
+        actions: [],
+        generatedBy: "orbyven_core" as const,
+      };
+      await persistAssistantResponse(actor, conversation.id, clarificationResult);
+      return NextResponse.json(
+        {
+          ...clarificationResult,
+          conversationId: conversation.id,
+          contextUsed: context.usedContext,
+        entityContextUsed: entityContext.usedContext,
+          entityContextUsed: false,
+        },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     const result = await answerIntelligenceForActor(
       actor,
-      context.effectivePrompt,
+      entityContext.effectivePrompt,
       conversation.id
     );
-    const contextualResult = context.usedContext
+
+    const contextFacts = [
+      ...(context.usedContext
+        ? [{ label: "Context", value: "Completare din mesajul anterior" }]
+        : []),
+      ...entityContext.facts,
+    ];
+    const contextualResult = contextFacts.length
       ? {
           ...result,
-          facts: [
-            { label: "Context", value: "Completare din mesajul anterior" },
-            ...result.facts,
-          ].slice(0, 12),
+          facts: [...contextFacts, ...result.facts].slice(0, 12),
         }
       : result;
 
