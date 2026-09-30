@@ -178,7 +178,7 @@ test("repository migration filenames match exact production versions for determi
 });
 
 
-const bootstrapOrganizationHardening = read("supabase/migrations/20260930181000_bootstrap_organization_atomicity.sql");
+const bootstrapOrganizationHardening = read("supabase/migrations/20260930181418_bootstrap_organization_atomicity.sql");
 
 test("organization bootstrap serializes concurrent first-tenant creation", () => {
   assert.match(bootstrapOrganizationHardening, /pg_advisory_xact_lock/);
