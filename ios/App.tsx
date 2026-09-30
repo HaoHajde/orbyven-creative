@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Network from "expo-network";
@@ -22,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.5.0";
+const APP_VERSION = "0.6.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -58,6 +59,23 @@ async function notificationsAllowed() {
     requested.granted ||
     requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
   );
+}
+
+async function registerForRemotePush() {
+  const allowed = await notificationsAllowed();
+  if (!allowed) throw new Error("notification-permission-denied");
+
+  const projectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    Constants.easConfig?.projectId;
+
+  if (!projectId || typeof projectId !== "string") {
+    throw new Error("push-project-not-linked");
+  }
+
+  const token = await Notifications.getExpoPushTokenAsync({ projectId });
+  if (!token.data) throw new Error("push-token-unavailable");
+  return token.data;
 }
 
 async function cancelCalendarReminder(eventId: string) {
