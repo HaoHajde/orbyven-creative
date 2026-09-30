@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import CookieConsent from "@/components/legal/CookieConsent";
 import PublicCommerceLinkRouter from "@/components/PublicCommerceLinkRouter";
+import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import StructuredData from "@/components/StructuredData";
 import { getSiteUrl, siteConfig } from "@/lib/site-config";
 
@@ -66,6 +67,12 @@ export const metadata: Metadata = {
 
   manifest: "/manifest.webmanifest",
 
+  appleWebApp: {
+    capable: true,
+    title: "ORBYVEN",
+    statusBarStyle: "black",
+  },
+
   twitter: {
     card: "summary_large_image",
     images: ["/opengraph-image"],
@@ -78,12 +85,20 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
     ],
     shortcut: "/branding/orbyven-favicon-96.png",
+    apple: [
+      {
+        url: "/branding/orbyven-app-icon.png",
+        type: "image/png",
+        sizes: "1024x1024",
+      },
+    ],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   colorScheme: "light dark",
   themeColor: [
     {
@@ -110,6 +125,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <StructuredData />
         <PublicCommerceLinkRouter />
+        <ServiceWorkerRegistration />
         {children}
         <CookieConsent />
       </body>
