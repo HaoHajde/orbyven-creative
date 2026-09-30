@@ -21,6 +21,9 @@ export type IntelligenceMutationType =
   | "create_estimate"
   | "create_document_draft";
 
+export type PlanRecoveryReason = "rejected" | "expired" | "failed";
+export type PlanRecoveryMode = "resume" | "needs_input";
+
 export type IntelligenceAction =
   | {
       kind: "open_module";
@@ -45,10 +48,24 @@ export type IntelligenceAction =
       targetModule: OrbyvenModuleId;
     }
   | {
+      kind: "repair_plan";
+      label: string;
+      blockedStep: number;
+      suggestedPrompt: string;
+      message: string;
+    }
+  | {
       kind: "review_plan";
       label: string;
       planId: string;
       expiresAt: string;
+      recovery?: {
+        blockedStep: number;
+        reason: PlanRecoveryReason;
+        mode: PlanRecoveryMode;
+        label: string;
+        message: string;
+      };
       steps: Array<{
         proposalId: string;
         index: number;
