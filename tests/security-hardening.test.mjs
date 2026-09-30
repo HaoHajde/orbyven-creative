@@ -176,3 +176,16 @@ test("repository migration filenames match exact production versions for determi
   assert.equal(existsSync(new URL("../supabase/migrations/20260927152501_alpha06_material_catalog_revisions.sql", import.meta.url)), true);
   assert.equal(existsSync(new URL("../supabase/migrations/20260925150000_alpha06_material_catalog_revisions.sql", import.meta.url)), false);
 });
+
+
+const bootstrapOrganizationHardening = read("supabase/migrations/20260930181000_bootstrap_organization_atomicity.sql");
+
+test("organization bootstrap serializes concurrent first-tenant creation", () => {
+  assert.match(bootstrapOrganizationHardening, /pg_advisory_xact_lock/);
+  assert.match(bootstrapOrganizationHardening, /hashtextextended\(current_user_id::text, 0\)/);
+  assert.match(bootstrapOrganizationHardening, /array_length\(p_module_ids, 1\)/);
+  assert.match(bootstrapOrganizationHardening, /> 32/);
+  assert.match(bootstrapOrganizationHardening, /auth\.uid\(\)/);
+  assert.match(bootstrapOrganizationHardening, /revoke all on function public\.bootstrap_organization\(text,text,text\[\]\)\s*from public, anon/);
+  assert.match(bootstrapOrganizationHardening, /grant execute on function public\.bootstrap_organization\(text,text,text\[\]\)\s*to authenticated/);
+});
