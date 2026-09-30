@@ -15,7 +15,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 type Props = {
   organizationId: string;
@@ -25,6 +25,16 @@ type Props = {
   initialRecordId?: string;
   initialTaskId?: string;
 };
+
+const DOCUMENT_ACCEPT = [".pdf",".jpg",".jpeg",".png",".webp",".heic",".heif",".txt",".csv",".doc",".docx",".xls",".xlsx",".ppt",".pptx"].join(",");
+
+type NativeBridgeWindow = Window & { ReactNativeWebView?: { postMessage: (message: string) => void } };
+
+function postNativeBridge(type: string, payload: Record<string, unknown> = {}) {
+  const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+  if (!bridge) return;
+  bridge.postMessage(JSON.stringify({ type, ...payload }));
+}
 
 const categoryLabels: Record<DocumentCategory, string> = {
   general: "General",
