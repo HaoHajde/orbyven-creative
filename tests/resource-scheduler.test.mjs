@@ -123,6 +123,18 @@ test("calendar surfaces work events that still need operational resources", () =
   assert.match(calendar, /event_type === "work"/);
 });
 
+test("Team can manage scheduler unavailability through the shared resource service", () => {
+  const team = read("components/modules/TeamModule.tsx");
+  const service = read("lib/modules/resources.ts");
+  assert.match(service, /export async function createResourceUnavailability/);
+  assert.match(service, /export async function deleteResourceUnavailability/);
+  assert.match(service, /\.from\("ops_resource_unavailability"\)/);
+  assert.match(service, /\.eq\("organization_id", organizationId\)/);
+  assert.match(team, /\+ Indisponibilitate/);
+  assert.match(team, /Blochează intervalul/);
+  assert.match(team, /canManageAvailability/);
+});
+
 test("production scheduler migration preserves RLS and conflict guards", () => {
   const migration = read("supabase/migrations/20260930080226_alpha091_scheduler_resources_core.sql");
   assert.match(migration, /create table if not exists public\.ops_resources/i);
