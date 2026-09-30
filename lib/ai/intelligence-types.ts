@@ -43,6 +43,20 @@ export type IntelligenceAction =
       actionType: IntelligenceMutationType;
       expiresAt: string;
       targetModule: OrbyvenModuleId;
+    }
+  | {
+      kind: "review_plan";
+      label: string;
+      planId: string;
+      expiresAt: string;
+      steps: Array<{
+        proposalId: string;
+        index: number;
+        summary: string;
+        actionType: IntelligenceMutationType;
+        targetModule: OrbyvenModuleId;
+        status: "ready" | "locked" | "executed" | "rejected" | "expired" | "failed";
+      }>;
     };
 
 export type IntelligenceResponse = {

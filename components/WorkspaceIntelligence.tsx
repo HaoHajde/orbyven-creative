@@ -18,6 +18,9 @@ type ConversationSummary = {
   updatedAt: string;
 };
 
+type PlanAction = Extract<IntelligenceResponse["actions"][number], { kind: "review_plan" }>;
+type ConfirmAction = Extract<IntelligenceResponse["actions"][number], { kind: "confirm_proposal" }>;
+
 type UiMessage = {
   key: string;
   role: "user" | "assistant";
@@ -35,6 +38,7 @@ const QUICK_PROMPTS = [
   "Programează o programare Revizie tehnică mâine la 10:30",
   "Creează deviz Renovare baie; poziție: Montaj, 1 x 1500 lei",
   "Creează document Raport intervenție; conținut: Verificare finalizată fără probleme.",
+  "Creează client Ana Popescu; apoi creează lucrare Revizie centrală pentru el; apoi programeaz-o mâine la 10:30",
   "Vreau să modific site-ul.",
 ];
 
@@ -96,6 +100,19 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     }
   };
 
+  const loadPlanForConversation = async (id: string, token: string) => {
+    const response = await fetch(
+      `/api/ai/plans?organizationId=${encodeURIComponent(organizationId)}&conversationId=${encodeURIComponent(id)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      }
+    );
+    const body = (await response.json()) as { plan?: PlanAction | null; error?: string };
+    if (!response.ok) throw new Error(body.error || "Planul nu a putut fi încărcat.");
+    return body.plan ?? null;
+  };
+
   useEffect(() => {
     if (!open) return;
     const timer = window.setTimeout(() => void loadConversations(), 0);
@@ -139,15 +156,25 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
       if (!response.ok || !body.conversation) {
         throw new Error(body.error || "Conversația nu a putut fi încărcată.");
       }
-      setConversationId(body.conversation.id);
-      setMessages((body.messages ?? []).map((item) => ({
+      const restored = (body.messages ?? []).map((item) => ({
         key: item.id,
         role: item.role,
         content: item.content,
         specialist: item.specialist,
         facts: item.facts ?? [],
-        actions: [],
-      })));
+        actions: [] as IntelligenceResponse["actions"],
+      }));
+      const plan = await loadPlanForConversation(body.conversation.id, token);
+      if (plan) {
+        for (let index = restored.length - 1; index >= 0; index -= 1) {
+          if (restored[index].role === "assistant") {
+            restored[index].actions = [plan];
+            break;
+          }
+        }
+      }
+      setConversationId(body.conversation.id);
+      setMessages(restored);
       setHistoryOpen(false);
       setPrompt("");
     } catch (reason) {
@@ -228,7 +255,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
   };
 
   const decideProposal = async (
-    action: Extract<IntelligenceResponse["actions"][number], { kind: "confirm_proposal" }>,
+    action: ConfirmAction,
     decision: "confirm" | "reject"
   ) => {
     if (proposalBusy) return;
@@ -253,10 +280,37 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
         message?: string;
         status?: "executed" | "rejected";
         result?: { type: string; id: string; moduleId: OrbyvenModuleId };
+        plan?: { id: string; step: number; total: number };
       };
       if (!result.ok) throw new Error(body.error || "Acțiunea nu a putut fi procesată.");
 
       clearProposalAction(action.proposalId);
+      if (body.plan && body.status) {
+        setMessages((current) => current.map((message) => ({
+          ...message,
+          actions: message.actions.map((candidate) => {
+            if (candidate.kind !== "review_plan" || candidate.planId !== body.plan?.id) return candidate;
+            return {
+              ...candidate,
+              steps: candidate.steps.map((step) => {
+                if (step.index === body.plan?.step) {
+                  return {
+                    ...step,
+                    status: body.status === "executed" ? "executed" as const : "rejected" as const,
+                  };
+                }
+                if (body.status === "executed" && step.index === (body.plan?.step ?? 0) + 1) {
+                  return { ...step, status: "ready" as const };
+                }
+                if ((body.plan?.step ?? 0) < step.index) {
+                  return { ...step, status: "locked" as const };
+                }
+                return step;
+              }),
+            };
+          }),
+        })));
+      }
       const created = body.result;
       setMessages((current) => [...current, {
         key: nextLocalKey("decision"),
@@ -285,11 +339,29 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
     }
   };
 
+  const decidePlanStep = (
+    plan: PlanAction,
+    step: PlanAction["steps"][number],
+    decision: "confirm" | "reject"
+  ) => {
+    if (step.status !== "ready") return;
+    const proposal: ConfirmAction = {
+      kind: "confirm_proposal",
+      label: "Confirmă pasul " + step.index,
+      proposalId: step.proposalId,
+      actionType: step.actionType,
+      expiresAt: plan.expiresAt,
+      targetModule: step.targetModule,
+    };
+    void decideProposal(proposal, decision);
+  };
+
   const runAction = (action: IntelligenceResponse["actions"][number]) => {
     if (action.kind === "confirm_proposal") {
       void decideProposal(action, "confirm");
       return;
     }
+    if (action.kind === "review_plan") return;
     setOpen(false);
     if (action.kind === "open_path") {
       router.push(action.href);
@@ -330,6 +402,64 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
               >
                 Renunță
               </button>
+            </div>
+          </div>
+        ) : action.kind === "review_plan" ? (
+          <div key={action.planId} className="rounded-[15px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN MODE</p>
+                <p className="mt-1 text-[10px] text-[var(--muted)]">
+                  Fiecare pas se confirmă separat. Nu există „Confirmă tot”.
+                </p>
+              </div>
+              <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[8px] font-semibold text-[var(--muted)]">
+                {action.steps.filter((step) => step.status === "executed").length}/{action.steps.length}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {action.steps.map((step) => {
+                const statusLabel =
+                  step.status === "executed" ? "Executat" :
+                  step.status === "ready" ? "Pregătit" :
+                  step.status === "rejected" ? "Oprit" :
+                  step.status === "expired" ? "Expirat" :
+                  step.status === "failed" ? "Eșuat" :
+                  "Blocat";
+                return (
+                  <div key={step.proposalId} className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/55 px-3 py-2.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] text-[8px] font-bold">
+                        {step.status === "executed" ? "✓" : step.index}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold leading-4">{step.summary}</p>
+                        <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{statusLabel}</p>
+                        {step.status === "ready" ? (
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              type="button"
+                              disabled={proposalBusy}
+                              onClick={() => decidePlanStep(action, step, "confirm")}
+                              className="rounded-full bg-[var(--button)] px-3 py-1.5 text-[9px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+                            >
+                              {proposalBusy ? "Se execută…" : "Confirmă pasul"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={proposalBusy}
+                              onClick={() => decidePlanStep(action, step, "reject")}
+                              className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-[9px] font-semibold disabled:opacity-40"
+                            >
+                              Oprește planul
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -378,7 +508,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
             <header className="border-b border-[var(--border)] px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.7</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.8</p>
                   <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
                     {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                   </h2>
@@ -512,7 +642,7 @@ export default function WorkspaceIntelligence({ organizationId, onOpenModule }: 
                   </button>
                 </div>
                 <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                  0.8.7 Context · referințele la clienți și lucrări sunt folosite doar când sunt recente, unice și verificate în workspace.
+                  0.8.8 Plan Mode · mai multe acțiuni devin pași expliciți, fiecare cu confirmare separată și dependențe verificate server-side.
                 </p>
               </form>
             ) : null}
