@@ -40,3 +40,16 @@ test("root metadata registers PWA and Apple Home Screen behavior", () => {
   assert.match(nextConfig, /source: "\/sw\.js"/);
   assert.match(nextConfig, /no-cache, no-store, must-revalidate/);
 });
+
+
+test("installed web app publishes standalone runtime mode without caching private data", () => {
+  const runtime = read("components/pwa/AppModeRuntime.tsx");
+  const layout = read("app/layout.tsx");
+  const css = read("app/globals.css");
+
+  assert.match(runtime, /display-mode: standalone/);
+  assert.match(runtime, /dataset\.appMode/);
+  assert.match(runtime, /orbyven:app-resume/);
+  assert.match(layout, /AppModeRuntime/);
+  assert.match(css, /data-app-mode="standalone"/);
+});
