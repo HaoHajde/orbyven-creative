@@ -64,6 +64,15 @@ export function evaluateEstimateWorkflow(
   }
 
   if (estimate.status === "sent") {
+    if (!estimate.client_id || !estimate.task_id) {
+      return {
+        overdue,
+        daysSinceSent,
+        nextAction: "complete_context",
+        label: "Context comercial incomplet",
+        detail: "Leagă oferta de client și lucrare înainte de următorul pas.",
+      };
+    }
     if (overdue) {
       return {
         overdue: true,
@@ -85,6 +94,15 @@ export function evaluateEstimateWorkflow(
   }
 
   if (estimate.status === "accepted") {
+    if (!estimate.client_id || !estimate.task_id) {
+      return {
+        overdue: false,
+        daysSinceSent,
+        nextAction: "complete_context",
+        label: "Context operațional incomplet",
+        detail: "Oferta este acceptată, dar trebuie legată de client și lucrare.",
+      };
+    }
     return {
       overdue: false,
       daysSinceSent,
