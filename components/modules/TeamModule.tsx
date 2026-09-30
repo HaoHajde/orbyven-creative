@@ -11,6 +11,13 @@ import {
   type WorkspaceAccessMember,
 } from "@/lib/modules/team";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import {
+  createOperationalResource,
+  listOperationalResources,
+  updateOperationalResource,
+  type OperationalResource,
+} from "@/lib/modules/resources";
+import { RESOURCE_TYPE_LABELS, type OperationalResourceType } from "@/lib/modules/resource-core";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -32,6 +39,24 @@ type FormState = {
 type EditDraft = {
   memberId: string;
   value: FormState;
+};
+
+type ResourceForm = {
+  name: string;
+  resourceType: Exclude<OperationalResourceType, "person">;
+  code: string;
+  capacity: string;
+  location: string;
+  notes: string;
+};
+
+const emptyResourceForm: ResourceForm = {
+  name: "",
+  resourceType: "vehicle",
+  code: "",
+  capacity: "1",
+  location: "",
+  notes: "",
 };
 
 const emptyForm: FormState = {
@@ -68,6 +93,9 @@ function formFromMember(member: TeamMember | null): FormState {
 export default function TeamModule({ organizationId, role }: Props) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [accessMembers, setAccessMembers] = useState<WorkspaceAccessMember[]>([]);
+  const [resources, setResources] = useState<OperationalResource[]>([]);
+  const [resourceCreateOpen, setResourceCreateOpen] = useState(false);
+  const [resourceForm, setResourceForm] = useState<ResourceForm>(emptyResourceForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -83,12 +111,14 @@ export default function TeamModule({ organizationId, role }: Props) {
     setLoading(true);
     setError("");
     try {
-      const [nextMembers, nextAccess] = await Promise.all([
+      const [nextMembers, nextAccess, nextResources] = await Promise.all([
         listTeamMembers(organizationId),
         listWorkspaceAccessMembers(organizationId),
+        listOperationalResources(organizationId, { activeOnly: false }),
       ]);
       setMembers(nextMembers);
       setAccessMembers(nextAccess);
+      setResources(nextResources);
       setSelectedId((current) =>
         current && nextMembers.some((item) => item.id === current)
           ? current
@@ -131,6 +161,49 @@ export default function TeamModule({ organizationId, role }: Props) {
   const linkedIds = useMemo(() => new Set(members.map((member) => member.linked_user_id).filter(Boolean)), [members]);
   const activeCount = members.filter((member) => member.status === "active").length;
   const linkedCount = members.filter((member) => member.linked_user_id).length;
+  const activeResourceCount = resources.filter((resource) => resource.active).length;
+
+  const handleCreateResource = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canWrite || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const created = await createOperationalResource(organizationId, {
+        name: resourceForm.name,
+        resourceType: resourceForm.resourceType,
+        code: resourceForm.code,
+        capacity: Number(resourceForm.capacity || 1),
+        location: resourceForm.location,
+        notes: resourceForm.notes,
+      });
+      setResources((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setResourceForm(emptyResourceForm);
+      setResourceCreateOpen(false);
+    } catch (resourceError) {
+      console.error(resourceError);
+      setError(resourceError instanceof Error ? resourceError.message : "Resursa nu a putut fi adăugată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleResource = async (resource: OperationalResource) => {
+    if (!canWrite || saving || resource.team_member_id) return;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await updateOperationalResource(organizationId, resource.id, {
+        active: !resource.active,
+      });
+      setResources((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (resourceError) {
+      console.error(resourceError);
+      setError("Statusul resursei nu a putut fi schimbat.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -210,7 +283,7 @@ export default function TeamModule({ organizationId, role }: Props) {
       <ModuleHeader
         eyebrow="People · Echipă"
         title="Echipă"
-        description="Oamenii care lucrează efectiv în business, inclusiv cei din teren. Conturile și rolurile de acces rămân controlate separat de ORBYVEN Core."
+        description="Oameni și resurse operaționale programabile: echipe, vehicule, utilaje și spații. Conturile și rolurile de acces rămân separate."
         action={canWrite ? (
           <button type="button" onClick={() => setCreateOpen((current) => !current)} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">
             {createOpen ? "Închide" : "+ Membru"}
@@ -224,7 +297,7 @@ export default function TeamModule({ organizationId, role }: Props) {
         <ModuleMetric label="Echipă activă" value={String(activeCount)} note="oameni operaționali" />
         <ModuleMetric label="Total" value={String(members.length)} note="activi + inactivi" />
         <ModuleMetric label="Conturi legate" value={String(linkedCount)} note="au acces în workspace" />
-        <ModuleMetric label="Acces platformă" value={String(accessMembers.length)} note="gestionat de Core" />
+        <ModuleMetric label="Resurse active" value={String(activeResourceCount)} note="oameni + operaționale" />
       </section>
 
       {createOpen && canWrite ? (
@@ -297,6 +370,57 @@ export default function TeamModule({ organizationId, role }: Props) {
               <p className="mt-5 border-t border-[var(--border)] pt-4 text-xs leading-5 text-[var(--muted)]">Rolul de acces Owner/Admin/Manager/Member/Viewer și suspendarea contului nu se schimbă aici; acestea rămân în Platform Core.</p>
             </form>
           ) : <ModuleEmpty title="Selectează un membru" description="Profilul operațional și legătura cu un cont ORBYVEN apar aici." />}
+        </div>
+      </section>
+
+      <section className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Resource Engine</p>
+            <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.04em]">Resurse operaționale</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Oamenii sunt sincronizați automat. Adaugă aici vehicule, echipe, utilaje sau spații care trebuie programate în Calendar.</p>
+          </div>
+          {canWrite ? (
+            <button type="button" onClick={() => setResourceCreateOpen((current) => !current)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">
+              {resourceCreateOpen ? "Închide" : "+ Resursă"}
+            </button>
+          ) : null}
+        </div>
+
+        {resourceCreateOpen && canWrite ? (
+          <form onSubmit={handleCreateResource} className="mt-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="Nume *"><input value={resourceForm.name} onChange={(event) => setResourceForm((current) => ({ ...current, name: event.target.value }))} className={moduleInputClass} placeholder="Ex. BMW X5 / Echipa 2" /></Field>
+              <Field label="Tip"><select value={resourceForm.resourceType} onChange={(event) => setResourceForm((current) => ({ ...current, resourceType: event.target.value as ResourceForm["resourceType"] }))} className={moduleInputClass}><option value="crew">Echipă</option><option value="vehicle">Vehicul</option><option value="equipment">Utilaj / echipament</option><option value="space">Spațiu / post</option></select></Field>
+              <Field label="Cod / număr"><input value={resourceForm.code} onChange={(event) => setResourceForm((current) => ({ ...current, code: event.target.value }))} className={moduleInputClass} placeholder="B-00-ORB / UTIL-02" /></Field>
+              <Field label="Capacitate"><input type="number" min="1" max="100" value={resourceForm.capacity} onChange={(event) => setResourceForm((current) => ({ ...current, capacity: event.target.value }))} className={moduleInputClass} /></Field>
+              <Field label="Locație"><input value={resourceForm.location} onChange={(event) => setResourceForm((current) => ({ ...current, location: event.target.value }))} className={moduleInputClass} placeholder="Sediu / depozit / punct lucru" /></Field>
+              <Field label="Note"><input value={resourceForm.notes} onChange={(event) => setResourceForm((current) => ({ ...current, notes: event.target.value }))} className={moduleInputClass} placeholder="Detalii utile" /></Field>
+            </div>
+            <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Adaugă resursa"}</button></div>
+          </form>
+        ) : null}
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {resources.length ? resources.map((resource) => (
+            <div key={resource.id} className="rounded-[18px] border border-[var(--border)] bg-[var(--bg)] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{resource.name}</p>
+                  <p className="mt-1 text-[10px] text-[var(--muted)]">{RESOURCE_TYPE_LABELS[resource.resource_type]}{resource.code ? " · " + resource.code : ""}{resource.capacity > 1 ? " · cap. " + resource.capacity : ""}</p>
+                </div>
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${resource.active ? "bg-emerald-500" : "bg-[var(--muted-2)]"}`} />
+              </div>
+              <p className="mt-2 min-h-4 truncate text-[10px] text-[var(--muted-2)]">{resource.location || resource.notes || (resource.team_member_id ? "Sincronizat din Echipă" : "Fără detalii")}</p>
+              {canWrite && !resource.team_member_id ? (
+                <button type="button" disabled={saving} onClick={() => void toggleResource(resource)} className="mt-3 text-[10px] font-semibold text-[var(--accent)] disabled:opacity-40">
+                  {resource.active ? "Dezactivează" : "Reactivează"}
+                </button>
+              ) : null}
+            </div>
+          )) : (
+            <ModuleEmpty title="Nu există resurse" description="Oamenii activi vor apărea automat aici, iar resursele fizice pot fi adăugate manual." />
+          )}
         </div>
       </section>
     </div>
