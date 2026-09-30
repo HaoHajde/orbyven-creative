@@ -1,4 +1,9 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import {
+  findCalendarConflicts,
+  type CalendarConflict,
+  type CalendarConflictInput,
+} from "@/lib/modules/calendar-planning";
 
 export type CalendarEventType = "appointment" | "work" | "follow_up" | "internal";
 export type CalendarEventStatus = "scheduled" | "completed" | "cancelled";
@@ -141,6 +146,51 @@ export async function listCalendarTasks(
   return (data ?? []) as CalendarTask[];
 }
 
+export async function listCalendarConflicts(
+  organizationId: string,
+  input: CalendarConflictInput
+): Promise<CalendarConflict[]> {
+  requireOrganizationId(organizationId);
+  if (!input.assignee?.trim() && !input.taskId?.trim()) return [];
+
+  let query = orbyvenSupabase
+    .from("calendar_events")
+    .select(EVENT_FIELDS)
+    .eq("organization_id", organizationId)
+    .eq("status", "scheduled")
+    .lt("start_at", input.endAt)
+    .gt("end_at", input.startAt)
+    .order("start_at", { ascending: true });
+
+  if (input.excludeEventId) {
+    query = query.neq("id", input.excludeEventId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return findCalendarConflicts((data ?? []) as CalendarEvent[], input);
+}
+
+function conflictMessage(conflicts: CalendarConflict[]) {
+  const first = conflicts[0];
+  if (!first) return "";
+  const reason = first.reason === "both"
+    ? "responsabilul și lucrarea"
+    : first.reason === "assignee"
+      ? "responsabilul"
+      : "lucrarea";
+  const suffix = conflicts.length > 1 ? ` Mai sunt ${conflicts.length - 1} suprapuneri.` : "";
+  return `Conflict de program: ${reason} are deja „${first.event.title}” în acest interval.${suffix}`;
+}
+
+async function assertCalendarAvailability(
+  organizationId: string,
+  input: CalendarConflictInput
+) {
+  const conflicts = await listCalendarConflicts(organizationId, input);
+  if (conflicts.length) throw new Error(conflictMessage(conflicts));
+}
+
 export async function createCalendarEvent(
   organizationId: string,
   input: CreateCalendarEventInput
@@ -181,6 +231,14 @@ export async function createCalendarEvent(
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
 
+  const assignee = cleanOptional(input.assignee);
+  await assertCalendarAvailability(organizationId, {
+    startAt: startAt.toISOString(),
+    endAt: endAt.toISOString(),
+    assignee,
+    taskId: input.taskId || null,
+  });
+
   const { data: authData } = await orbyvenSupabase.auth.getUser();
   const { data, error } = await orbyvenSupabase
     .from("calendar_events")
@@ -193,7 +251,7 @@ export async function createCalendarEvent(
       all_day: input.allDay ?? false,
       client_id: linkedClientId,
       task_id: input.taskId || null,
-      assignee: cleanOptional(input.assignee),
+      assignee,
       location: cleanOptional(input.location),
       notes: cleanOptional(input.notes),
       reminder_minutes: normalizeReminder(input.reminderMinutes),
@@ -238,6 +296,31 @@ export async function updateCalendarEvent(
   if (endAt && !Number.isFinite(endAt.getTime())) throw new Error("Invalid end time.");
   if (startAt) nextPatch.start_at = startAt.toISOString();
   if (endAt) nextPatch.end_at = endAt.toISOString();
+
+  const affectsAvailability = [
+    "start_at", "end_at", "assignee", "task_id", "status",
+  ].some((key) => key in nextPatch);
+
+  if (affectsAvailability) {
+    const { data: current, error: currentError } = await orbyvenSupabase
+      .from("calendar_events")
+      .select(EVENT_FIELDS)
+      .eq("organization_id", organizationId)
+      .eq("id", eventId)
+      .single();
+    if (currentError || !current) throw new Error("Programarea nu mai este disponibilă.");
+
+    const projectedStatus = nextPatch.status ?? current.status;
+    if (projectedStatus === "scheduled") {
+      await assertCalendarAvailability(organizationId, {
+        startAt: nextPatch.start_at ?? current.start_at,
+        endAt: nextPatch.end_at ?? current.end_at,
+        assignee: nextPatch.assignee === undefined ? current.assignee : nextPatch.assignee,
+        taskId: nextPatch.task_id === undefined ? current.task_id : nextPatch.task_id,
+        excludeEventId: eventId,
+      });
+    }
+  }
 
   const { data, error } = await orbyvenSupabase
     .from("calendar_events")
