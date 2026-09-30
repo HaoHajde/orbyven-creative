@@ -65,6 +65,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
   const [proposalBusy, setProposalBusy] = useState(false);
   const [error, setError] = useState("");
   const messageSequence = useRef(0);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const nextLocalKey = (prefix: string) => {
     messageSequence.current += 1;
@@ -113,6 +114,21 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     const body = (await response.json()) as { plan?: PlanAction | null; error?: string };
     if (!response.ok) throw new Error(body.error || "Planul nu a putut fi încărcat.");
     return body.plan ?? null;
+  };
+
+  const putPlanInMessages = (plan: PlanAction) => {
+    setMessages((current) => current.map((message) => ({
+      ...message,
+      actions: message.actions.map((action) =>
+        action.kind === "review_plan" ? plan : action
+      ),
+    })));
+  };
+
+  const preparePromptRepair = (value: string) => {
+    setPrompt(value.slice(0, 1200));
+    setHistoryOpen(false);
+    window.requestAnimationFrame(() => composerRef.current?.focus());
   };
 
   useEffect(() => {
@@ -372,12 +388,81 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     void decideProposal(proposal, decision);
   };
 
+  const recoverPlanAction = async (plan: PlanAction) => {
+    if (!plan.recovery || proposalBusy) return;
+    if (plan.recovery.mode === "needs_input") {
+      preparePromptRepair(plan.recovery.suggestedPrompt || "");
+      return;
+    }
+
+    setProposalBusy(true);
+    setError("");
+    try {
+      const token = await accessToken();
+      const response = await fetch("/api/ai/plans/recover", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ organizationId, planId: plan.planId }),
+      });
+      const body = (await response.json()) as {
+        mode?: "recovered" | "needs_input";
+        message?: string;
+        blockedStep?: number;
+        suggestedPrompt?: string;
+        plan?: PlanAction;
+        error?: string;
+      };
+      if (!response.ok || !body.mode || !body.plan) {
+        throw new Error(body.error || "Planul nu a putut fi refăcut.");
+      }
+
+      if (body.mode === "needs_input") {
+        putPlanInMessages(body.plan);
+        preparePromptRepair(body.suggestedPrompt || "");
+        setMessages((current) => [...current, {
+          key: nextLocalKey("recovery-input"),
+          role: "assistant",
+          specialist: "operations",
+          content: body.message || "Planul are nevoie de o corecție înainte de refacere.",
+          facts: [{ label: "Pas blocat", value: String(body.blockedStep || plan.recovery?.blockedStep || "") }],
+          actions: [],
+        }]);
+        return;
+      }
+
+      setMessages((current) => [...current, {
+        key: nextLocalKey("recovery"),
+        role: "assistant",
+        specialist: "operations",
+        content: body.message || "Planul a fost reconstruit.",
+        facts: [
+          { label: "Recovery", value: "Controlat" },
+          { label: "Confirmare", value: "Pas cu pas" },
+        ],
+        actions: [body.plan],
+      }]);
+      void loadConversations();
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Planul nu a putut fi refăcut.");
+    } finally {
+      setProposalBusy(false);
+    }
+  };
+
   const runAction = (action: IntelligenceResponse["actions"][number]) => {
     if (action.kind === "confirm_proposal") {
       void decideProposal(action, "confirm");
       return;
     }
     if (action.kind === "review_plan") return;
+    if (action.kind === "repair_plan") {
+      preparePromptRepair(action.suggestedPrompt);
+      return;
+    }
     setOpen(false);
     if (action.kind === "open_path") {
       router.push(action.href);
@@ -546,7 +631,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.9</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.10</p>
                       <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -672,6 +757,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                   <form onSubmit={submit} className="border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
                     <div className="flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
                       <textarea
+                        ref={composerRef}
                         value={prompt}
                         onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
                         rows={1}
@@ -687,7 +773,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                      0.8.9 Plan Mode · Universal Operations rămâne nucleul; cererile multi-acțiune devin pași expliciți, confirmați separat și verificați server-side.
+                      0.8.10 Plan Recovery · planurile blocate pot fi refăcute controlat; fiecare acțiune rămâne confirmată separat.
                     </p>
                   </form>
                 ) : null}
