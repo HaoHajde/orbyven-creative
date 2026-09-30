@@ -57,15 +57,15 @@ export const ORBYVEN_MODULES: OrbyvenModuleDefinition[] = [
   },
   {
     id: "tasks",
-    name: "Lucrări & taskuri",
+    name: "Lucrări, comenzi & taskuri",
     shortName: "Lucrări",
-    description: "Ce trebuie făcut, de cine și până când.",
+    description: "Lucrări, comenzi și activități urmărite de la cerere până la finalizare.",
     category: "operations",
     badge: "Popular",
     defaultEnabled: true,
     color: "#0f7b6c",
     accent: "#e8f6f3",
-    features: ["Taskuri", "Priorități", "Checklist"],
+    features: ["Lucrări & comenzi", "Priorități", "Checklist"],
   },
   {
     id: "calendar",
