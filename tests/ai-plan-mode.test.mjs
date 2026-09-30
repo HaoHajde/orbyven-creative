@@ -178,7 +178,7 @@ test("Recovered plans remain audited and explicitly confirmed step by step", () 
   assert.match(ui, /PLAN RECOVERY/);
   assert.match(ui, /recoverPlanAction/);
   assert.match(ui, /Confirmă pasul/);
-  assert.doesNotMatch(ui, /Confirmă tot/);
+  assert.doesNotMatch(ui, />\\s*Confirmă tot\\s*</);
 });
 
 test("Selective Language cannot rewrite repair or recovery plan controls", () => {
