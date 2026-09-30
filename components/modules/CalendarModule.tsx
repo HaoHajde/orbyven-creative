@@ -386,8 +386,14 @@ export default function CalendarModule({
       : 0;
     const completed = events.filter((calendarEvent) => calendarEvent.status === "completed").length;
     const linked = events.filter((calendarEvent) => calendarEvent.client_id || calendarEvent.task_id).length;
-    return { scheduled, today, completed, linked };
-  }, [events, timeZone, todayKey]);
+    const needsResources = events.filter(
+      (calendarEvent) =>
+        calendarEvent.status === "scheduled" &&
+        calendarEvent.event_type === "work" &&
+        (resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
+    ).length;
+    return { scheduled, today, completed, linked, needsResources };
+  }, [events, timeZone, todayKey, resourceIdsByEvent]);
 
   const openCreate = (dateKey?: string) => {
     setForm({
@@ -566,7 +572,7 @@ export default function CalendarModule({
       <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
         <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
-        <Metric label="Finalizate" value={String(metrics.completed)} note="în săptămâna afișată" />
+        <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
         <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
       </section>
 
@@ -649,7 +655,7 @@ export default function CalendarModule({
                   <div><p className="text-xs font-semibold">{formatDayKey(dayKey, locale)}</p>{isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}</div>
                   {canWrite && <button type="button" onClick={() => openCreate(dayKey)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
                 </div>
-                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
+                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
               </article>
             );
           })}
@@ -733,8 +739,9 @@ export default function CalendarModule({
   );
 }
 
-function EventCard({ event, locale, timeZone, active, onSelect }: { event: CalendarEvent; locale: string; timeZone: string; active: boolean; onSelect: () => void }) {
-  return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
+function EventCard({ event, locale, timeZone, resourceCount, active, onSelect }: { event: CalendarEvent; locale: string; timeZone: string; resourceCount: number; active: boolean; onSelect: () => void }) {
+  const missingResources = event.status === "scheduled" && event.event_type === "work" && resourceCount === 0;
+  return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{missingResources ? <p className="mt-2 text-[10px] font-semibold text-amber-400">Necesită alocare resurse</p> : resourceCount > 0 ? <p className="mt-2 text-[10px] text-emerald-400">{resourceCount} {resourceCount === 1 ? "resursă alocată" : "resurse alocate"}</p> : null}{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
 }
 
 function EventDetail({ event, client, task, locale, timeZone, canWrite, canDelete, saving, onStatus, onDelete }: { event: CalendarEvent; client?: CalendarClient; task?: CalendarTask; locale: string; timeZone: string; canWrite: boolean; canDelete: boolean; saving: boolean; onStatus: (status: CalendarEventStatus) => void; onDelete: () => void }) {
