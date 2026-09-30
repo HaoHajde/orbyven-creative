@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import CookieConsent from "@/components/legal/CookieConsent";
 import PublicCommerceLinkRouter from "@/components/PublicCommerceLinkRouter";
+import AppModeRuntime from "@/components/pwa/AppModeRuntime";
 import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import StructuredData from "@/components/StructuredData";
 import { getSiteUrl, siteConfig } from "@/lib/site-config";
@@ -126,6 +127,7 @@ export default function RootLayout({
         <StructuredData />
         <PublicCommerceLinkRouter />
         <ServiceWorkerRegistration />
+        <AppModeRuntime />
         {children}
         <CookieConsent />
       </body>

@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.1 / TestFlight foundation
+# ORBYVEN iOS — Alpha 0.2
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,11 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native:
+Native Alpha 0.2:
+- share sheet nativ pentru pagina curentă;
+- recovery automat când iOS termină procesul WebView din memorie;
+- user-agent iOS standard păstrat, cu identificator ORBYVEN adăugat;
+- media inline în WebView;
 - bundle iOS propriu: `ro.orbyven.app`;
 - deep-link `orbyven://`;
 - back/forward gestures;
@@ -120,3 +124,8 @@ Bundle identifier: `ro.orbyven.app`.
 Prima configurare Apple se face interactiv o singură dată cu EAS Credentials / App Store Connect. Nu se comit parole Apple, certificate, provisioning profiles, App Store Connect API private keys sau alte secrete.
 
 După prima asociere, release-urile următoare pot fi lansate din workflow fără Mac, folosind EAS Build + EAS Submit.
+
+
+## Alpha 0.2
+
+Versiunea 0.2.0 întărește utilizarea zilnică pe iPhone: păstrează user-agent-ul real de iOS, recuperează WebView-ul după memory pressure, adaugă Share nativ și sincronizează modul standalone al PWA-ului cu evenimentele de resume/visibility.
