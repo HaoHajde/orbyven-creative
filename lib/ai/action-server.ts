@@ -270,7 +270,7 @@ async function executeTask(actor: BillingActor, payload: Record<string, unknown>
   const client = createBillingServiceClient();
   const input = payload as TaskActionPayload;
   const title = requireText(input.title, "title", 180);
-  const kind = input.kind === "work" ? "work" : "task";
+  const kind = input.kind === "work" || input.kind === "order" ? input.kind : "task";
   const priority = ["low", "normal", "high", "urgent"].includes(input.priority)
     ? input.priority
     : "normal";
