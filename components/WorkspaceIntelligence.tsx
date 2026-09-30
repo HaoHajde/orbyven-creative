@@ -52,7 +52,7 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
   general: "ORBYVEN Core",
 };
 
-export default function WorkspaceIntelligence({ organizationId, onOpenModule }: Props) {
+export default function WorkspaceIntelligence({ organizationId, themeVars, onOpenModule }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
