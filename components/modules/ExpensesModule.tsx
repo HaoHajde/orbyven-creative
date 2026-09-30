@@ -179,6 +179,7 @@ export default function ExpensesModule({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [evidenceOnly, setEvidenceOnly] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -221,6 +222,11 @@ export default function ExpensesModule({
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
   const docById = useMemo(() => new Map(documents.map((item) => [item.id, item.name])), [documents]);
 
+  const visibleExpenses = useMemo(
+    () => evidenceOnly ? scopedExpenses.filter((item) => !item.document_id) : scopedExpenses,
+    [evidenceOnly, scopedExpenses]
+  );
+
   const scopedExpenses = useMemo(
     () => scopeTaskId ? expenses.filter((item) => item.task_id === scopeTaskId) : expenses,
     [expenses, scopeTaskId]
@@ -248,12 +254,14 @@ export default function ExpensesModule({
     const overdue = scopedInvoices.filter(
       (item) => item.status === "issued" && item.outstanding_cents > 0 && item.due_on && item.due_on < todayInput()
     ).length;
+    const missingEvidence = scopedExpenses.filter((item) => !item.document_id).length;
     return {
       monthExpenses,
       monthIncome,
       cashFlow: monthIncome - monthExpenses,
       outstanding,
       overdue,
+      missingEvidence,
     };
   }, [scopedExpenses, scopedIncome, scopedInvoices]);
 
@@ -596,10 +604,15 @@ export default function ExpensesModule({
 
       {tab === "expenses" ? (
         <section className="mt-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h2 className="text-[15px] font-semibold">Cheltuieli</h2>
-          {scopedExpenses.length ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="text-[15px] font-semibold">Cheltuieli</h2><p className="mt-1 text-[10px] text-[var(--muted)]">{metrics.missingEvidence} fără document justificativ</p></div>
+            <button type="button" onClick={() => setEvidenceOnly((value) => !value)} className={`h-9 rounded-full border px-3 text-[10px] font-semibold ${evidenceOnly ? "border-amber-400/30 bg-amber-400/[0.08] text-amber-300" : "border-[var(--border-strong)]"}`}>
+              {evidenceOnly ? "Arată toate" : "Doar fără document"}
+            </button>
+          </div>
+          {visibleExpenses.length ? (
             <div className="mt-3 grid gap-2">
-              {scopedExpenses.map((expense) => (
+              {visibleExpenses.map((expense) => (
                 <article key={expense.id} className="grid gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-3 sm:grid-cols-[110px_1fr_auto] sm:items-center">
                   <div><p className="text-[11px] font-semibold">{dateLabel(expense.occurred_on, locale)}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{expense.category}</p></div>
                   <div className="min-w-0"><p className="truncate text-[11px] font-semibold">{expense.description}</p><p className="mt-1 truncate text-[10px] text-[var(--muted)]">{expense.vendor || "Fără furnizor"}{expense.client_id ? ` · ${clientById.get(expense.client_id) || "Client"}` : ""}{expense.task_id ? ` · ${taskById.get(expense.task_id) || "Lucrare"}` : ""}{expense.document_id ? ` · ${docById.get(expense.document_id) || "Document"}` : ""}</p></div>
@@ -607,7 +620,7 @@ export default function ExpensesModule({
                 </article>
               ))}
             </div>
-          ) : <div className="mt-3"><ModuleEmpty title="Nicio cheltuială" description="Adaugă doar costurile utile operațional." /></div>}
+          ) : <div className="mt-3"><ModuleEmpty title={evidenceOnly ? "Toate au document" : "Nicio cheltuială"} description={evidenceOnly ? "Nu există cheltuieli fără document justificativ în contextul curent." : "Adaugă doar costurile utile operațional."} /></div>}
         </section>
       ) : null}
 
