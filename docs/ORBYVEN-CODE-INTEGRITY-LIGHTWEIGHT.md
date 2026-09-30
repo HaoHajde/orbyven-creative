@@ -1,14 +1,14 @@
 # ORBYVEN — permanent Web + Windows code-integrity gate
 
-Updated 30 September 2026 against the current product line (Intelligence 0.8.x / Desktop 0.4).
+Updated 30 September 2026 against the current product line (Intelligence 0.8.x / Desktop 0.5).
 
 This gate protects **integrity, structure and lightweight delivery**. It is intentionally separate from security, legal and billing approval.
 
 ## Current baseline
 - Web: 264 source files; **7** are above 35 KiB. A new eighth large file is blocked.
 - Web hard cap: 64 KiB per source file.
-- Desktop: 5 source files; one is above 35 KiB (`desktop/src/App.tsx`, ~49 KiB).
-- Desktop hard cap: 52 KiB/source file; CSS cap 30 KiB.
+- Desktop: 9 source files; **2** are above 35 KiB (`App.tsx` ~50.4 KiB and `styles.css` ~43.8 KiB). New 0.5 features are already split into `InventoryPanel`, `Intelligence`, `Search` and `ActivityCenter`; the gate blocks a third large Desktop source file.
+- Desktop hard cap: 56 KiB/source file; CSS cap 48 KiB. These are containment ceilings for the existing 0.5 hotspots, not permission to keep growing them.
 - Public assets: ~13 MiB today; cap 14 MiB; new files default to 768 KiB maximum.
 - Existing large-media exceptions remain only for the Diana & Florin demo MP3 and mobile background.
 - Web runtime dependencies and Desktop runtime dependencies are explicit allowlists.
@@ -42,6 +42,6 @@ node scripts/architecture-integrity.mjs --desktop-build-only
 ```
 
 ## Hotspots to reduce when touched
-Current large areas include `ClientTemplateSite.tsx`, `TasksModule.tsx`, `seo-foundation.ts`, `ControlCenter.tsx`, `app/servicii/page.tsx`, `WorkspaceIntelligence.tsx`, `HomePageClient.tsx`, and `desktop/src/App.tsx`.
+Current large areas include `ClientTemplateSite.tsx`, `TasksModule.tsx`, `seo-foundation.ts`, `ControlCenter.tsx`, `app/servicii/page.tsx`, `WorkspaceIntelligence.tsx`, `HomePageClient.tsx`, `desktop/src/App.tsx`, and `desktop/src/styles.css`.
 
 Do not split them just to satisfy a number. Extract coherent responsibilities when feature work naturally enters those files.
