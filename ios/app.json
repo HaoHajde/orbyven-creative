@@ -12,13 +12,17 @@
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "icon": "./assets/icon.png"
     },
     "splash": {
-      "backgroundColor": "#08111f"
+      "backgroundColor": "#08111f",
+      "image": "./assets/icon.png",
+      "resizeMode": "contain"
     },
     "extra": {
       "orbyvenBaseUrl": "https://orbyven.ro"
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
