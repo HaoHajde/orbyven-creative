@@ -143,7 +143,7 @@ export default function TeamModule({ organizationId, role }: Props) {
     setError("");
     try {
       const now = new Date();
-      const rangeStart = new Date(now.getTime() - 7 * 86400000).toISOString();
+      const rangeStart = now.toISOString();
       const rangeEnd = new Date(now.getTime() + 120 * 86400000).toISOString();
       const [nextMembers, nextAccess, nextResources, nextUnavailability] = await Promise.all([
         listTeamMembers(organizationId),
@@ -198,7 +198,7 @@ export default function TeamModule({ organizationId, role }: Props) {
   const activeCount = members.filter((member) => member.status === "active").length;
   const linkedCount = members.filter((member) => member.linked_user_id).length;
   const activeResourceCount = resources.filter((resource) => resource.active).length;
-  const upcomingUnavailability = unavailability.filter((item) => new Date(item.end_at).getTime() > Date.now());
+  const upcomingUnavailability = unavailability;
   const resourceById = useMemo(() => new Map(resources.map((item) => [item.id, item])), [resources]);
 
   const handleCreateResource = async (event: FormEvent<HTMLFormElement>) => {
