@@ -37,12 +37,6 @@ function date(value: string | null) {
   }).format(new Date(value));
 }
 
-function isActionable(estimate: CustomerPortalEstimate) {
-  if (estimate.status !== "sent") return false;
-  if (!estimate.validUntil) return true;
-  return estimate.validUntil >= new Date().toISOString().slice(0, 10);
-}
-
 export default function CustomerPortalView({
   token,
   snapshot,
@@ -213,7 +207,7 @@ export default function CustomerPortalView({
                   ))}
                 </div>
 
-                {isActionable(estimate) ? (
+                {estimate.actionable ? (
                   <div className="mt-5 rounded-[20px] bg-[#f5f5f7] p-4">
                     <p className="text-xs font-semibold">Răspuns ofertă</p>
                     <input
