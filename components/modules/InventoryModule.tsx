@@ -192,7 +192,11 @@ export default function InventoryModule({
     const active = taskPlan.filter((item) => item.outstanding_quantity > 0);
     return {
       lines: taskPlan.length,
-      ready: active.filter((item) => item.reserved_quantity >= item.outstanding_quantity).length,
+      ready: taskPlan.filter(
+        (item) =>
+          item.outstanding_quantity <= 0 ||
+          item.reserved_quantity >= item.outstanding_quantity
+      ).length,
       needsReservation: active.filter((item) => item.available_to_reserve > 0).length,
       shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
     };
