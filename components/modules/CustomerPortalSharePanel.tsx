@@ -44,7 +44,7 @@ export default function CustomerPortalSharePanel({
   }, [load]);
 
   const activeCount = useMemo(
-    () => links.filter((link) => !link.revokedAt && new Date(link.expiresAt).getTime() > Date.now()).length,
+    () => links.filter((link) => link.active).length,
     [links]
   );
 
@@ -125,7 +125,7 @@ export default function CustomerPortalSharePanel({
       {links.length ? (
         <div className="mt-4 space-y-2 border-t border-[var(--border)] pt-3">
           {links.slice(0, 8).map((link) => {
-            const active = !link.revokedAt && new Date(link.expiresAt).getTime() > Date.now();
+            const active = link.active;
             return (
               <div key={link.id} className="flex items-center justify-between gap-3 text-xs">
                 <span className="min-w-0 truncate text-[var(--muted)]">
