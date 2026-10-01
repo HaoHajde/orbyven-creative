@@ -35,6 +35,15 @@ create index if not exists ops_inventory_reservations_created_by_idx
   on public.ops_inventory_reservations(created_by)
   where created_by is not null;
 
+create index if not exists ops_inventory_movements_task_material_consumption_idx
+  on public.ops_inventory_movements(organization_id, task_id, material_id)
+  where task_id is not null
+    and movement_type = 'consumption';
+
+create index if not exists sales_material_requirements_estimate_material_idx
+  on public.sales_material_requirements(organization_id, estimate_id, material_id)
+  where material_id is not null;
+
 drop trigger if exists ops_inventory_reservations_updated_at
   on public.ops_inventory_reservations;
 create trigger ops_inventory_reservations_updated_at
