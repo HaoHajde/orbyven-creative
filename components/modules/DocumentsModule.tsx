@@ -106,7 +106,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
       setPurchaseOrders(contexts.purchaseOrders);
       if (initialPurchaseOrderId) {
         const order = contexts.purchaseOrders.find((item) => item.id === initialPurchaseOrderId);
-        if (order?.task_id) setTaskId(order.task_id);
+        if (order?.task_id) {
+          setTaskId(order.task_id);
+          const task = contexts.tasks.find((item) => item.id === order.task_id);
+          if (task?.client_id) setClientId(task.client_id);
+        }
+        setCategory((current) => current === "general" ? "invoice" : current);
       }
     } catch (loadError) {
       console.error(loadError);
@@ -340,7 +345,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
               </select>
             </Field>
             <Field label="Lucrare">
-              <select value={taskId} disabled={Boolean(estimateContextById.get(estimateId)?.task_id)} onChange={(event) => selectTaskContext(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
+              <select value={taskId} disabled={Boolean(estimateContextById.get(estimateId)?.task_id || purchaseOrderById.get(purchaseOrderId)?.task_id)} onChange={(event) => selectTaskContext(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
                 <option value="">Fără lucrare</option>
                 {tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
@@ -348,7 +353,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
             <Field label="Ofertă / deviz">
               <select value={estimateId} onChange={(event) => selectEstimateContext(event.target.value)} className={moduleInputClass}>
                 <option value="">Fără ofertă</option>
-                {estimates.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
+                {estimates.filter((item) => !purchaseOrderId || !purchaseOrderById.get(purchaseOrderId)?.task_id || !item.task_id || item.task_id === purchaseOrderById.get(purchaseOrderId)?.task_id).map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
               </select>
             </Field>
             <Field label="Comandă furnizor">
