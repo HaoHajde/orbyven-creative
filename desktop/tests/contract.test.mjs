@@ -86,8 +86,8 @@ test("Vite adapts only Next-specific rendering primitives", () => {
   const vite = content("../vite.config.ts");
   const dynamicAdapter = content("../src/next-dynamic.tsx");
   const brandAdapter = content("../src/BrandLogo.tsx");
-  assert.match(vite, /@\/components\/BrandLogo/);
-  assert.match(vite, /next\/dynamic/);
+  assert.ok(vite.includes("components\\/BrandLogo"), "BrandLogo alias must target the canonical import");
+  assert.ok(vite.includes("next\\/dynamic"), "next/dynamic must be adapted for Vite");
   assert.match(vite, /desktopBrandLogo/);
   assert.match(vite, /desktopDynamic/);
   assert.match(dynamicAdapter, /Suspense/);
