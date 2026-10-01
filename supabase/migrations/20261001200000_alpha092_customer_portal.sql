@@ -212,6 +212,20 @@ begin
   where organization_id = portal_link.organization_id
     and id = target_estimate.id;
 
+  insert into public.crm_lead_activities(
+    organization_id, lead_id, kind, body, occurred_at, created_by
+  )
+  values(
+    portal_link.organization_id,
+    portal_link.client_id,
+    'status',
+    'Portal client: oferta ' || target_estimate.reference || ' a fost ' ||
+      case when p_decision='accepted' then 'acceptată' else 'refuzată' end ||
+      ' de ' || pg_catalog.trim(p_actor_name) || '.',
+    pg_catalog.now(),
+    null
+  );
+
   return evidence_id;
 end
 $fn$;
