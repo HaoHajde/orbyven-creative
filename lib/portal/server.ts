@@ -192,6 +192,8 @@ export async function loadCustomerPortalSnapshot(
     itemsByEstimate.set(item.estimate_id, list);
   }
 
+  const today = new Date().toISOString().slice(0, 10);
+
   return {
     organization: {
       name: orgResult.data.name,
@@ -206,7 +208,7 @@ export async function loadCustomerPortalSnapshot(
       id: row.id,
       kind: row.kind as "work" | "order",
       title: row.title,
-      status: row.status,
+      status: row.status as "planned" | "in_progress" | "blocked" | "done" | "cancelled",
       progress: Number(row.progress ?? 0),
       scheduledAt: row.scheduled_at ?? null,
       dueAt: row.due_at ?? null,
@@ -216,7 +218,7 @@ export async function loadCustomerPortalSnapshot(
       id: row.id,
       reference: row.reference,
       title: row.title,
-      status: row.status,
+      status: row.status as "sent" | "accepted" | "rejected" | "expired",
       currency: row.currency,
       subtotalCents: Number(row.subtotal_cents),
       discountCents: Number(row.discount_cents),
@@ -225,6 +227,7 @@ export async function loadCustomerPortalSnapshot(
       validUntil: row.valid_until ?? null,
       sentAt: row.sent_at ?? null,
       acceptedAt: row.accepted_at ?? null,
+      actionable: row.status === "sent" && (!row.valid_until || row.valid_until >= today),
       items: itemsByEstimate.get(row.id) ?? [],
     })),
     documents: (documentsResult.data ?? []).map((row) => ({
