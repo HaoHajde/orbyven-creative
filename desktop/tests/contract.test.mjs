@@ -235,3 +235,10 @@ test("canonical Intelligence shell accepts platform request and navigation adapt
   assert.match(app, /\/api\/desktop\/ai\//);
   assert.match(web, /onOpenPath=\{\(href\) => router\.push\(href\)\}/);
 });
+
+test("plan recovery bridge follows the canonical AI route", () => {
+  const bridge = content("../../app/api/desktop/ai/plans/recover/route.ts");
+  assert.match(bridge, /recoverPost/);
+  assert.match(bridge, /@\/app\/api\/ai\/plans\/recover\/route/);
+  assert.match(bridge, /withDesktopCors/);
+});
