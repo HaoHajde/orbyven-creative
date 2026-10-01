@@ -133,7 +133,7 @@ test("Desktop 0.7 renders the actual web workspace modules and shell surfaces", 
   const vite = content("../vite.config.ts");
   const tailwind = content("../src/tailwind.css");
   const activity = content("../../components/WorkspaceActivityCenter.tsx");
-  const intelligence = content("../src/Intelligence.tsx");
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
   assert.match(app, /DesktopWorkspaceModules/);
   for (const component of [
     "OverviewModule", "LeadsModule", "TasksModule", "CalendarModule",
@@ -144,7 +144,8 @@ test("Desktop 0.7 renders the actual web workspace modules and shell surfaces", 
   assert.match(vite, /@tailwindcss\/vite/);
   assert.match(tailwind, /@source "\.\.\/\.\.\/components"/);
   assert.match(activity, /loadWorkspaceActivity/);
-  assert.match(intelligence, /\/api\/desktop\/ai\/intelligence/);
+  assert.match(intelligence, /requestApi/);
+  assert.match(app, /desktopIntelligenceRequest/);
 });
 
 test("Desktop AI bridge keeps canonical server authorization and adds only CORS", () => {
@@ -187,7 +188,7 @@ test("record search matches the live workspace searchable surfaces", () => {
 test("full navigation context survives search, activity and Intelligence", () => {
   const app = content("../src/App.tsx");
   const activity = content("../../components/WorkspaceActivityCenter.tsx");
-  const intelligence = content("../src/Intelligence.tsx");
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
   const search = content("../../components/WorkspaceSearch.tsx");
   const modules = content("../src/WorkspaceModules.tsx");
   assert.match(app, /WorkspaceOpenOptions/);
@@ -212,10 +213,25 @@ test("live manifest publishes module metadata used by Desktop", () => {
   assert.match(app, /runtimeModules/);
 });
 
-test("desktop no longer duplicates canonical search and activity UI", () => {
+test("desktop no longer duplicates canonical search activity and Intelligence UI", () => {
   const app = content("../src/App.tsx");
   assert.match(app, /@\/components\/WorkspaceSearch/);
   assert.match(app, /@\/components\/WorkspaceActivityCenter/);
+  assert.match(app, /@\/components\/WorkspaceIntelligence/);
   assert.doesNotMatch(app, /\.\/Search/);
   assert.doesNotMatch(app, /\.\/ActivityCenter/);
+  assert.doesNotMatch(app, /\.\/Intelligence/);
+});
+
+test("canonical Intelligence shell accepts platform request and navigation adapters", () => {
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
+  const app = content("../src/App.tsx");
+  const web = content("../../components/ClientWorkspace.tsx");
+  assert.doesNotMatch(intelligence, /next\/navigation/);
+  assert.match(intelligence, /request\?: IntelligenceRequest/);
+  assert.match(intelligence, /onOpenPath: \(href: string\) => void/);
+  assert.match(intelligence, /requestApi/);
+  assert.match(app, /desktopIntelligenceRequest/);
+  assert.match(app, /\/api\/desktop\/ai\//);
+  assert.match(web, /onOpenPath=\{\(href\) => router\.push\(href\)\}/);
 });
