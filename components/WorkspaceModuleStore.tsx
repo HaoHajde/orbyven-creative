@@ -1,6 +1,6 @@
 "use client";
 
-import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
+import { ORBYVEN_MODULES, type OrbyvenModuleDefinition, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 type Props = {
   enabledModules: OrbyvenModuleId[];
@@ -10,6 +10,7 @@ type Props = {
   canManage: boolean;
   savingModule: OrbyvenModuleId | null;
   error: string;
+  definitions?: OrbyvenModuleDefinition[];
 };
 
 export default function WorkspaceModuleStore({
@@ -20,6 +21,7 @@ export default function WorkspaceModuleStore({
   canManage,
   savingModule,
   error,
+  definitions = ORBYVEN_MODULES,
 }: Props) {
   return (
     <div className="pb-24 md:pb-0">
@@ -39,7 +41,7 @@ export default function WorkspaceModuleStore({
       {error && <div className="mt-6 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {ORBYVEN_MODULES.map((definition) => {
+        {definitions.map((definition) => {
           const enabled = enabledModules.includes(definition.id);
           const locked = definition.id === "overview";
           const entitled = entitledModules.includes(definition.id);
