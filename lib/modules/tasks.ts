@@ -44,7 +44,7 @@ export type WorkTaskClient = {
   name: string;
   company: string | null;
   kind: "lead" | "client";
-  next_follow_up_at: string | null;
+  next_follow_up_at?: string | null;
 };
 
 export type WorkTaskContext = {
