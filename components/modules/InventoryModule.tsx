@@ -360,9 +360,9 @@ export default function InventoryModule({
     if (ok) await loadTaskPlan();
   };
 
-  const prepareGapPurchase = (gap: InventoryGap) => {
+  const prepareGapPurchase = (gap: InventoryGap, taskId = initialTaskId ?? "") => {
     setPurchaseSupplierId(gap.preferredSupplierId ?? "");
-    setPurchaseTaskId(initialTaskId ?? "");
+    setPurchaseTaskId(taskId);
     setPurchaseExpectedOn("");
     setPurchaseNote("Necesar generat din stoc și cererea confirmată.");
     setPurchaseLines([
@@ -674,7 +674,7 @@ export default function InventoryModule({
                           {!item.stock_tracked && canProcure ? <button type="button" disabled={busy} onClick={() => void activateStock(item.material_id)} className={button}>Activează stoc</button> : null}
                           {item.stock_tracked && item.available_to_reserve > 0 ? <button type="button" disabled={busy} onClick={() => void reserveTaskStock(item.material_id)} className={primary}>Rezervă {quantity(item.available_to_reserve)}</button> : null}
                           {item.reserved_quantity > 0 ? <button type="button" disabled={busy} onClick={() => void releaseTaskStock(item.material_id)} className={button}>Eliberează rezervarea</button> : null}
-                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareGapPurchase(gap)} className={button}>Pregătește cumpărarea →</button> : null}
+                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareGapPurchase(gap, planTaskId)} className={button}>Pregătește cumpărarea →</button> : null}
                         </div>
                       ) : null}
                     </article>
@@ -705,6 +705,35 @@ export default function InventoryModule({
           </div>
           <button type="button" onClick={() => void load()} disabled={loading || busy} className={button}>↻ Actualizează</button>
         </div>
+
+        {shoppingGroups.length || unassignedShoppingCount ? (
+          <div className="mt-4 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Listă de cumpărături</p>
+                <p className="mt-1 text-[10px] text-[var(--muted)]">Lipsurile sunt grupate automat pe furnizorul preferat.</p>
+              </div>
+              {unassignedShoppingCount ? <span className="rounded-full border border-amber-400/25 px-2.5 py-1 text-[9px] font-semibold text-amber-300">{unassignedShoppingCount} fără furnizor</span> : null}
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {shoppingGroups.map((group) => {
+                const supplier = supplierById.get(group.supplierId);
+                return (
+                  <div key={group.supplierId} className="rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold">{supplier?.name ?? "Furnizor"}</p>
+                        <p className="mt-1 text-[9px] text-[var(--muted)]">{group.gaps.length} poziții · aprox. {money(group.estimatedCents, locale)}</p>
+                      </div>
+                      {canProcure ? <button type="button" disabled={busy} onClick={() => prepareSupplierPurchase(group.supplierId, group.gaps)} className="text-[9px] font-semibold text-[var(--accent)]">Pregătește PO →</button> : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {stock.filter((item) => item.suggestedOrder > 0).map((gap) => (
             <article key={gap.materialId} className="rounded-[16px] border border-amber-400/20 bg-amber-400/[0.045] p-4">
@@ -859,6 +888,15 @@ export default function InventoryModule({
           Stocul ORBYVEN este un registru operațional. Recepțiile actualizează costul curent al materialului pentru calculele viitoare, dar nu modifică retroactiv devizele existente și nu înlocuiesc contabilitatea.
         </p>
       </section>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
