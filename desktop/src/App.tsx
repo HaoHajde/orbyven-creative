@@ -45,10 +45,6 @@ const ACCESS_MESSAGES: Record<string, string> = {
   organization_archived: "Compania a fost arhivată.",
 };
 
-const TITLES: Record<OrbyvenModuleId, string> = Object.fromEntries(
-  ORBYVEN_MODULES.map((module) => [module.id, module.shortName]),
-) as Record<OrbyvenModuleId, string>;
-
 const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
   revision: WORKSPACE_UI_REVISION,
   desktopVersion: CURRENT_DESKTOP_VERSION,
@@ -60,6 +56,7 @@ const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
     ids: [...group.ids],
   })),
   createModules: [...WORKSPACE_CREATE_MODULES],
+  modules: ORBYVEN_MODULES,
 };
 
 function createLabel(id: OrbyvenModuleId) {
@@ -186,14 +183,33 @@ export default function App() {
     workspace && ["owner", "admin"].includes(workspace.membership.role),
   );
 
+  const runtimeModules = useMemo(
+    () =>
+      ORBYVEN_MODULES.map((bundled) => {
+        const live = uiManifest.modules.find((candidate) => candidate.id === bundled.id);
+        if (!live) return bundled;
+        return {
+          ...bundled,
+          name: live.name,
+          shortName: live.shortName,
+          description: live.description,
+          badge: live.badge,
+          color: live.color,
+          accent: live.accent,
+          features: Array.isArray(live.features) ? live.features : bundled.features,
+        };
+      }),
+    [uiManifest.modules],
+  );
+
   const modules = useMemo(
     () =>
-      ORBYVEN_MODULES.filter(
+      runtimeModules.filter(
         (module) =>
           workspace?.enabledModules.includes(module.id) &&
           (module.id !== "expenses" || canFinance),
       ),
-    [workspace, canFinance],
+    [runtimeModules, workspace, canFinance],
   );
 
   const createModules = modules.filter(
@@ -652,7 +668,7 @@ export default function App() {
                     </section>
 
                     <section className="module-store">
-                      {ORBYVEN_MODULES.map((definition) => {
+                      {runtimeModules.map((definition) => {
                         const enabled = workspace.enabledModules.includes(definition.id);
                         const locked = definition.id === "overview";
                         const entitled = workspace.entitledModules.includes(definition.id);
