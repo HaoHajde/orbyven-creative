@@ -241,7 +241,7 @@ export default function InventoryModule({
   const activateStock = async (materialId: string) => {
     const material = materialById.get(materialId);
     if (!material) return;
-    await run(
+    const ok = await run(
       () =>
         updateInventoryMaterialSettings(organizationId, materialId, {
           stockTracked: true,
@@ -251,6 +251,7 @@ export default function InventoryModule({
         }),
       "Materialul este urmărit acum în stoc."
     );
+    if (ok && planTaskId) await loadTaskPlan();
   };
 
   const changeMaterialSettings = async (
@@ -452,6 +453,9 @@ export default function InventoryModule({
         : "Ajustarea de stoc a fost înregistrată."
     );
     if (ok) {
+      if (movementMode === "consumption" && planTaskId === movementTaskId) {
+        await loadTaskPlan();
+      }
       setMovementQuantity("1");
       setMovementNote("");
       setMovementOpen(false);
@@ -601,6 +605,96 @@ export default function InventoryModule({
           <p className="mt-2 text-[10px] text-[var(--muted-2)]">Ieșirile sunt refuzate la nivel de bază de date dacă ar duce stocul sub zero.</p>
         </form>
       ) : null}
+
+      <section className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Work Material Readiness</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Materiale rezervate pe lucrare</h2>
+            <p className="mt-1 max-w-2xl text-[11px] leading-5 text-[var(--muted)]">Necesarul vine din ultima ofertă acceptată. Rezervarea blochează disponibilul operațional pentru lucrare fără să modifice stocul fizic.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select value={planTaskId} onChange={(event) => setPlanTaskId(event.target.value)} className={field + " min-w-[220px]"} aria-label="Lucrare pentru rezervarea materialelor">
+              <option value="">Alege lucrarea / comanda</option>
+              {tasks.map((task) => <option key={task.id} value={task.id}>{task.kind === "order" ? "Comandă" : "Lucrare"} · {task.title}</option>)}
+            </select>
+            {canWrite && planTaskId && taskPlanSummary.needsReservation > 0 ? (
+              <button type="button" disabled={busy || planLoading} onClick={() => void reserveTaskStock()} className={primary}>Rezervă tot disponibilul</button>
+            ) : null}
+          </div>
+        </div>
+
+        {planTaskId ? (
+          planLoading ? (
+            <p className="mt-4 text-xs text-[var(--muted)]">Se calculează necesarul și disponibilul…</p>
+          ) : taskPlan.length ? (
+            <>
+              <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
+                <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
+                <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
+                <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+              </div>
+              <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                {taskPlan.map((item) => {
+                  const gap = stock.find((row) => row.materialId === item.material_id);
+                  const fullyConsumed = item.outstanding_quantity <= 0;
+                  const fullyReserved = item.outstanding_quantity > 0 && item.reserved_quantity >= item.outstanding_quantity;
+                  return (
+                    <article key={item.material_id} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{item.name}</p>
+                          <p className="mt-1 text-[10px] text-[var(--muted)]">
+                            Necesar {quantity(item.required_quantity)} {item.unit} · consumat {quantity(item.consumed_quantity)} · rezervat {quantity(item.reserved_quantity)}
+                          </p>
+                        </div>
+                        <span className={"rounded-full border px-2.5 py-1 text-[9px] font-semibold " + (
+                          fullyConsumed ? "border-emerald-400/25 text-emerald-300" :
+                          fullyReserved ? "border-emerald-400/25 text-emerald-300" :
+                          !item.stock_tracked ? "border-[var(--border)] text-[var(--muted)]" :
+                          item.shortage_after_reservation > 0 ? "border-rose-400/25 text-rose-300" :
+                          "border-amber-400/25 text-amber-300"
+                        )}>
+                          {fullyConsumed ? "Consum complet" :
+                           fullyReserved ? "Rezervat" :
+                           !item.stock_tracked ? "Stoc inactiv" :
+                           item.shortage_after_reservation > 0 ? "Lipsă " + quantity(item.shortage_after_reservation) + " " + item.unit :
+                           "Disponibil"}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-[var(--muted)] sm:grid-cols-4">
+                        <span>Stoc <strong className="block text-[var(--text)]">{quantity(item.on_hand)}</strong></span>
+                        <span>Liber <strong className="block text-[var(--text)]">{quantity(item.available_unreserved)}</strong></span>
+                        <span>Rezervat altora <strong className="block text-[var(--text)]">{quantity(item.reserved_elsewhere)}</strong></span>
+                        <span>Pe drum <strong className="block text-[var(--text)]">{quantity(item.on_order)}</strong></span>
+                      </div>
+                      {canWrite ? (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+                          {!item.stock_tracked && canProcure ? <button type="button" disabled={busy} onClick={() => void activateStock(item.material_id)} className={button}>Activează stoc</button> : null}
+                          {item.stock_tracked && item.available_to_reserve > 0 ? <button type="button" disabled={busy} onClick={() => void reserveTaskStock(item.material_id)} className={primary}>Rezervă {quantity(item.available_to_reserve)}</button> : null}
+                          {item.reserved_quantity > 0 ? <button type="button" disabled={busy} onClick={() => void releaseTaskStock(item.material_id)} className={button}>Eliberează rezervarea</button> : null}
+                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareGapPurchase(gap)} className={button}>Pregătește cumpărarea →</button> : null}
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
+              <p className="text-sm font-semibold">Nu există necesar confirmat pentru această lucrare.</p>
+              <p className="mt-1 text-[10px] text-[var(--muted)]">Materialele apar aici după ce o ofertă cu poziții materiale este acceptată și legată de lucrare.</p>
+            </div>
+          )
+        ) : (
+          <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
+            <p className="text-sm font-semibold">Alege o lucrare pentru a vedea material readiness.</p>
+            <p className="mt-1 text-[10px] text-[var(--muted)]">ORBYVEN compară necesarul acceptat cu consumul, rezervările și stocul liber.</p>
+          </div>
+        )}
+      </section>
 
       <section className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
