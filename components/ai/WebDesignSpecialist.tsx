@@ -24,6 +24,7 @@ import WebDesignPreview, {
 } from "@/components/ai/WebDesignPreview";
 
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
+const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -89,8 +90,16 @@ export default function WebDesignSpecialist() {
 
         let localDraft: EditableSite | null = null;
         try {
-          const saved = window.localStorage.getItem(STORAGE_KEY);
-          if (saved) localDraft = readSiteDraft(JSON.parse(saved));
+          const saved =
+            window.localStorage.getItem(STORAGE_KEY) ??
+            window.localStorage.getItem(LEGACY_STORAGE_KEY);
+          if (saved) {
+            localDraft = readSiteDraft(JSON.parse(saved));
+            if (localDraft) {
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localDraft));
+              window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+            }
+          }
         } catch (error) {
           console.warn("ORBYVEN Web Design local draft could not be restored", error);
         }
