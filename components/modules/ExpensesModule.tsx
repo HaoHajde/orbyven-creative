@@ -143,6 +143,15 @@ function monthKey(value: string) {
   return value.slice(0, 7);
 }
 
+function ProcurementMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[11px] border border-[var(--border)] bg-[var(--bg)] px-2.5 py-2">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-2)]">{label}</p>
+      <p className="mt-1 truncate text-[10px] font-semibold">{value}</p>
+    </div>
+  );
+}
+
 function dateLabel(value: string | null, locale: string) {
   if (!value) return "—";
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" })
@@ -268,6 +277,11 @@ export default function ExpensesModule({
   const scopedInvoices = useMemo(
     () => scopeTaskId ? invoices.filter((item) => item.task_id === scopeTaskId) : invoices,
     [invoices, scopeTaskId]
+  );
+
+  const scopedPurchaseOrders = useMemo(
+    () => scopeTaskId ? purchaseOrders.filter((item) => item.task_id === scopeTaskId) : purchaseOrders,
+    [purchaseOrders, scopeTaskId]
   );
 
   const visibleExpenses = useMemo(
@@ -705,12 +719,73 @@ export default function ExpensesModule({
               {visibleExpenses.map((expense) => (
                 <article key={expense.id} className="grid gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-3 sm:grid-cols-[110px_1fr_auto] sm:items-center">
                   <div><p className="text-[11px] font-semibold">{dateLabel(expense.occurred_on, locale)}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{expense.category}</p></div>
-                  <div className="min-w-0"><p className="truncate text-[11px] font-semibold">{expense.description}</p><p className="mt-1 truncate text-[10px] text-[var(--muted)]">{expense.vendor || "Fără furnizor"}{expense.client_id ? ` · ${clientById.get(expense.client_id) || "Client"}` : ""}{expense.task_id ? ` · ${taskById.get(expense.task_id) || "Lucrare"}` : ""}{expense.document_id ? ` · ${docById.get(expense.document_id) || "Document"}` : ""}</p></div>
+                  <div className="min-w-0"><p className="truncate text-[11px] font-semibold">{expense.description}</p><p className="mt-1 truncate text-[10px] text-[var(--muted)]">{expense.vendor || "Fără furnizor"}{expense.purchase_order_id ? ` · PO ${purchaseOrderById.get(expense.purchase_order_id)?.reference || "achiziție"}` : ""}{expense.client_id ? ` · ${clientById.get(expense.client_id) || "Client"}` : ""}{expense.task_id ? ` · ${taskById.get(expense.task_id) || "Lucrare"}` : ""}{expense.document_id ? ` · ${docById.get(expense.document_id) || "Document"}` : ""}</p></div>
                   <div className="flex items-center gap-3"><strong className="text-[11px]">{formatMoney(expense.amount_cents, expense.currency, locale)}</strong>{canWrite ? <button type="button" disabled={saving} onClick={() => void removeExpense(expense)} className="text-[10px] font-semibold text-rose-400">Șterge</button> : null}</div>
                 </article>
               ))}
             </div>
           ) : <div className="mt-3"><ModuleEmpty title={evidenceOnly ? "Toate au document" : "Nicio cheltuială"} description={evidenceOnly ? "Nu există cheltuieli fără document justificativ în contextul curent." : "Adaugă doar costurile utile operațional."} /></div>}
+        </section>
+      ) : null}
+
+      {tab === "procurement" ? (
+        <section className="mt-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">PROCUREMENT ↔ FINANCE</p>
+              <h2 className="mt-1 text-[15px] font-semibold">Costuri furnizor pe comandă</h2>
+              <p className="mt-1 max-w-2xl text-[10px] leading-4 text-[var(--muted)]">Valoarea PO și recepția vin din Stoc & achiziții. Sumele înregistrate aici intră în cashflow, dar nu dublează costul material al lucrării: acel cost apare la consumul efectiv din stoc.</p>
+            </div>
+            {enabledModules.includes("documents") ? (
+              <button type="button" onClick={() => onOpenModule("documents", { create: true })} className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-[10px] font-semibold">+ Document furnizor</button>
+            ) : null}
+          </div>
+
+          {scopedPurchaseOrders.length ? (
+            <div className="mt-4 grid gap-2 lg:grid-cols-2">
+              {scopedPurchaseOrders.map((order) => {
+                const financeReady = ["ordered", "partially_received", "received"].includes(order.status);
+                const remainingToOrder = Math.max(0, order.ordered_cents - order.recorded_expense_cents);
+                const variance = order.recorded_expense_cents - order.ordered_cents;
+                return (
+                  <article key={order.purchase_order_id} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-semibold">{order.reference} · {order.supplier_name}</p>
+                        <p className="mt-1 text-[10px] text-[var(--muted)]">{order.status}{order.task_id ? " · " + (taskById.get(order.task_id) || "Lucrare") : " · achiziție generală"}</p>
+                      </div>
+                      <span className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[9px] font-semibold">{order.document_count} doc. · {order.expense_count} înregistrări</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <ProcurementMetric label="PO" value={formatMoney(order.ordered_cents, order.currency, locale)} />
+                      <ProcurementMetric label="Recepționat" value={formatMoney(order.received_cents, order.currency, locale)} />
+                      <ProcurementMetric label="Înregistrat" value={formatMoney(order.recorded_expense_cents, order.currency, locale)} />
+                      <ProcurementMetric label="Dif. vs PO" value={(variance > 0 ? "+" : "") + formatMoney(variance, order.currency, locale)} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
+                      <p className="text-[9px] text-[var(--muted)]">
+                        {order.received_without_recorded_expense_cents > 0
+                          ? formatMoney(order.received_without_recorded_expense_cents, order.currency, locale) + " recepționat fără cost înregistrat"
+                          : remainingToOrder > 0
+                            ? formatMoney(remainingToOrder, order.currency, locale) + " diferență până la valoarea PO"
+                            : "Valoarea PO este acoperită de înregistrările financiare."}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {enabledModules.includes("documents") ? (
+                          <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.purchase_order_id })} className="h-8 rounded-full border border-[var(--border-strong)] px-3 text-[9px] font-semibold">+ Dovadă</button>
+                        ) : null}
+                        {financeReady ? (
+                          <button type="button" onClick={() => choosePurchaseOrder(order.purchase_order_id, true)} className="h-8 rounded-full bg-[var(--button)] px-3 text-[9px] font-semibold text-[var(--button-text)]">+ Cost furnizor</button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4"><ModuleEmpty title="Nicio comandă furnizor" description="Comenzile create în Stoc & achiziții apar aici pentru dovadă și cashflow." /></div>
+          )}
         </section>
       ) : null}
 
