@@ -5,6 +5,7 @@ import {
   deleteDocument,
   listDocumentContexts,
   listDocuments,
+  setDocumentPortalVisible,
   uploadDocument,
   type BusinessDocument,
   type DocumentCategory,
@@ -221,6 +222,25 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     }
   };
 
+  const togglePortalVisibility = async (document: BusinessDocument) => {
+    if (!canWrite || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await setDocumentPortalVisible(
+        organizationId,
+        document.id,
+        !document.portal_visible
+      );
+      setDocuments((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (portalError) {
+      console.error(portalError);
+      setError(portalError instanceof Error ? portalError.message : "Vizibilitatea în portal nu a putut fi schimbată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const removeDocument = async (document: BusinessDocument) => {
     if (!canDelete || saving || !window.confirm(`Ștergi ${document.name}?`)) return;
     setSaving(true);
@@ -355,7 +375,9 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
                     <p className="truncate text-sm font-semibold">{document.name}</p>
                     <p className="mt-1 text-[11px] text-[var(--muted)]">{categoryLabels[document.category]} · {formatSize(document.size_bytes)} · {formatDate(document.created_at, locale)}</p>
                   </div>
-                  <span className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold">Privat</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${document.portal_visible ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--surface)]"}`}>
+                    {document.portal_visible ? "Portal" : "Privat"}
+                  </span>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-[var(--muted)]">
@@ -367,6 +389,11 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
 
                 <div className="mt-5 flex gap-2">
                   <button type="button" onClick={() => void openDocument(document)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide</button>
+                  {canWrite && document.client_id ? (
+                    <button type="button" disabled={saving} onClick={() => void togglePortalVisibility(document)} className="h-10 rounded-full border border-[var(--border)] px-4 text-xs font-semibold disabled:opacity-40">
+                      {document.portal_visible ? "Retrage din portal" : "Publică în portal"}
+                    </button>
+                  ) : null}
                   {canDelete ? <button type="button" disabled={saving} onClick={() => void removeDocument(document)} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-40">Șterge</button> : null}
                 </div>
               </article>
