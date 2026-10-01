@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { IntelligenceResponse, IntelligenceSpecialist } from "@/lib/ai/intelligence-types";
 
+type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Response>;
+
 type Props = {
   organizationId: string;
   themeVars: CSSProperties;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  onOpenPath: (href: string) => void;
+  request?: IntelligenceRequest;
 };
 
 type ConversationSummary = {
@@ -52,8 +55,13 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
   general: "ORBYVEN Core",
 };
 
-export default function WorkspaceIntelligence({ organizationId, themeVars, onOpenModule }: Props) {
-  const router = useRouter();
+export default function WorkspaceIntelligence({
+  organizationId,
+  themeVars,
+  onOpenModule,
+  onOpenPath,
+  request,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<UiMessage[]>([]);
@@ -74,6 +82,8 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
 
   const canSend = useMemo(() => prompt.trim().length >= 2 && !loading, [prompt, loading]);
 
+  const requestApi: IntelligenceRequest = request ?? ((path, init) => fetch(path, init));
+
   const accessToken = async () => {
     const { data, error: sessionError } = await orbyvenSupabase.auth.getSession();
     if (sessionError || !data.session?.access_token) {
@@ -86,7 +96,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     setHistoryLoading(true);
     try {
       const token = await accessToken();
-      const response = await fetch(
+      const response = await requestApi(
         `/api/ai/conversations?organizationId=${encodeURIComponent(organizationId)}`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -104,7 +114,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
   };
 
   const loadPlanForConversation = async (id: string, token: string) => {
-    const response = await fetch(
+    const response = await requestApi(
       `/api/ai/plans?organizationId=${encodeURIComponent(organizationId)}&conversationId=${encodeURIComponent(id)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -167,7 +177,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     setError("");
     try {
       const token = await accessToken();
-      const response = await fetch(
+      const response = await requestApi(
         `/api/ai/conversations?organizationId=${encodeURIComponent(organizationId)}&conversationId=${encodeURIComponent(id)}`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -236,7 +246,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
 
     try {
       const token = await accessToken();
-      const result = await fetch("/api/ai/intelligence", {
+      const result = await requestApi("/api/ai/intelligence", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -295,7 +305,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     setError("");
     try {
       const token = await accessToken();
-      const result = await fetch("/api/ai/actions/confirm", {
+      const result = await requestApi("/api/ai/actions/confirm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -416,7 +426,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     setError("");
     try {
       const token = await accessToken();
-      const response = await fetch("/api/ai/plans/recover", {
+      const response = await requestApi("/api/ai/plans/recover", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -483,7 +493,7 @@ export default function WorkspaceIntelligence({ organizationId, themeVars, onOpe
     }
     setOpen(false);
     if (action.kind === "open_path") {
-      router.push(action.href);
+      onOpenPath(action.href);
       return;
     }
     onOpenModule(action.moduleId, {

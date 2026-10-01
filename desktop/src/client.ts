@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { OrbyvenModuleDefinition, OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 export let orbyvenSupabase: SupabaseClient;
 
@@ -25,6 +25,7 @@ export type DesktopUiManifest = {
   };
   navGroups: Array<{ label: string; ids: OrbyvenModuleId[] }>;
   createModules: OrbyvenModuleId[];
+  modules: OrbyvenModuleDefinition[];
 };
 
 const ORBYVEN_ORIGIN = "https://orbyven.ro";

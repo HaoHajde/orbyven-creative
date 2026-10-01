@@ -52,7 +52,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.6.0");
+  assert.equal(config.version, "0.7.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -126,14 +126,14 @@ test("Windows shell allows the responsive layout to reach tablet-size widths", (
   assert.match(css, /\.desktop-workspace \.sidebar nav\{display:flex;gap:6px;overflow:auto\}/);
 });
 
-test("Desktop 0.6 renders the actual web workspace modules", () => {
+test("Desktop 0.7 renders the actual web workspace modules and shell surfaces", () => {
   const app = content("../src/App.tsx");
   const modules = content("../src/WorkspaceModules.tsx");
   const thermal = content("../src/ThermalModule.tsx");
   const vite = content("../vite.config.ts");
   const tailwind = content("../src/tailwind.css");
-  const activity = content("../src/ActivityCenter.tsx");
-  const intelligence = content("../src/Intelligence.tsx");
+  const activity = content("../../components/WorkspaceActivityCenter.tsx");
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
   assert.match(app, /DesktopWorkspaceModules/);
   for (const component of [
     "OverviewModule", "LeadsModule", "TasksModule", "CalendarModule",
@@ -144,7 +144,8 @@ test("Desktop 0.6 renders the actual web workspace modules", () => {
   assert.match(vite, /@tailwindcss\/vite/);
   assert.match(tailwind, /@source "\.\.\/\.\.\/components"/);
   assert.match(activity, /loadWorkspaceActivity/);
-  assert.match(intelligence, /\/api\/desktop\/ai\/intelligence/);
+  assert.match(intelligence, /requestApi/);
+  assert.match(app, /desktopIntelligenceRequest/);
 });
 
 test("Desktop AI bridge keeps canonical server authorization and adds only CORS", () => {
@@ -163,16 +164,15 @@ test("Desktop AI bridge keeps canonical server authorization and adds only CORS"
 
 test("live manifest advertises the exact bundled desktop release", () => {
   const visual = content("../../lib/workspace-visual-system.ts");
-  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.6\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.5"/);
+  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.7\.0"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.1"/);
 });
 
 test("record search matches the live workspace searchable surfaces", () => {
-  const search = content("../src/Search.tsx");
-  const webSearch = content("../../components/WorkspaceSearch.tsx");
+  const search = content("../../components/WorkspaceSearch.tsx");
   const app = content("../src/App.tsx");
   for (const moduleId of ["leads", "tasks", "estimates", "inventory"]) {
-    assert.ok(search.includes(moduleId) && webSearch.includes(moduleId), "Search module: " + moduleId);
+    assert.ok(search.includes(moduleId), "Search module: " + moduleId);
   }
   assert.match(search, /crm_leads/);
   assert.match(search, /ops_tasks/);
@@ -180,14 +180,16 @@ test("record search matches the live workspace searchable surfaces", () => {
   assert.match(search, /ops_material_catalog/);
   assert.match(app, /WorkspaceNavigationIntent/);
   assert.match(app, /setNavigation/);
-  assert.match(app, /DesktopSearch/);
+  assert.match(app, /WorkspaceSearch/);
+  assert.match(app, /WorkspaceActivityCenter/);
+  assert.match(search, /onOpenCommands/);
 });
 
 test("full navigation context survives search, activity and Intelligence", () => {
   const app = content("../src/App.tsx");
-  const activity = content("../src/ActivityCenter.tsx");
-  const intelligence = content("../src/Intelligence.tsx");
-  const search = content("../src/Search.tsx");
+  const activity = content("../../components/WorkspaceActivityCenter.tsx");
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
+  const search = content("../../components/WorkspaceSearch.tsx");
   const modules = content("../src/WorkspaceModules.tsx");
   assert.match(app, /WorkspaceOpenOptions/);
   assert.match(app, /token: current\.token \+ 1/);
@@ -199,4 +201,44 @@ test("full navigation context survives search, activity and Intelligence", () =>
   assert.match(modules, /initialClientId/);
   assert.match(modules, /initialTaskId/);
   assert.match(modules, /initialEstimateId/);
+});
+
+test("live manifest publishes module metadata used by Desktop", () => {
+  const app = content("../src/App.tsx");
+  const client = content("../src/client.ts");
+  const route = content("../../app/api/desktop/ui/route.ts");
+  assert.match(route, /modules: ORBYVEN_MODULES/);
+  assert.match(client, /modules: OrbyvenModuleDefinition\[\]/);
+  assert.match(app, /uiManifest\.modules\.find/);
+  assert.match(app, /runtimeModules/);
+});
+
+test("desktop no longer duplicates canonical search activity and Intelligence UI", () => {
+  const app = content("../src/App.tsx");
+  assert.match(app, /@\/components\/WorkspaceSearch/);
+  assert.match(app, /@\/components\/WorkspaceActivityCenter/);
+  assert.match(app, /@\/components\/WorkspaceIntelligence/);
+  assert.doesNotMatch(app, /\.\/Search/);
+  assert.doesNotMatch(app, /\.\/ActivityCenter/);
+  assert.doesNotMatch(app, /\.\/Intelligence/);
+});
+
+test("canonical Intelligence shell accepts platform request and navigation adapters", () => {
+  const intelligence = content("../../components/WorkspaceIntelligence.tsx");
+  const app = content("../src/App.tsx");
+  const web = content("../../components/ClientWorkspace.tsx");
+  assert.doesNotMatch(intelligence, /next\/navigation/);
+  assert.match(intelligence, /request\?: IntelligenceRequest/);
+  assert.match(intelligence, /onOpenPath: \(href: string\) => void/);
+  assert.match(intelligence, /requestApi/);
+  assert.match(app, /desktopIntelligenceRequest/);
+  assert.match(app, /\/api\/desktop\/ai\//);
+  assert.match(web, /onOpenPath=\{\(href\) => router\.push\(href\)\}/);
+});
+
+test("plan recovery bridge follows the canonical AI route", () => {
+  const bridge = content("../../app/api/desktop/ai/plans/recover/route.ts");
+  assert.match(bridge, /recoverPost/);
+  assert.match(bridge, /@\/app\/api\/ai\/plans\/recover\/route/);
+  assert.match(bridge, /withDesktopCors/);
 });

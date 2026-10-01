@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ORBYVEN_MODULES } from "@/lib/orbyven-modules";
 import {
   CURRENT_DESKTOP_VERSION,
   WORKSPACE_CREATE_MODULES,
@@ -31,5 +32,6 @@ export function GET() {
     layout: WORKSPACE_LAYOUT,
     navGroups: WORKSPACE_NAV_GROUPS,
     createModules: WORKSPACE_CREATE_MODULES,
+    modules: ORBYVEN_MODULES,
   }, { headers });
 }

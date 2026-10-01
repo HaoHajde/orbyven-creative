@@ -1,10 +1,13 @@
-# ORBYVEN Desktop v0.6.0 — independent Windows application
+# ORBYVEN Desktop v0.7.0 — independent Windows application
 
-This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.6.0 follows the actual online ORBYVEN workspace design, without rendering its remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
+This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.7.0 reduces shell drift further by rendering the canonical web Search, Activity Center and ORBYVEN Intelligence components directly, without rendering the remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
 ## Architecture
 
-- Parity 0.6: Windows renders the canonical web React modules directly for Overview, Leads, Tasks, Calendar, Estimates, Documents, Inventory, Finance and Team. The thermal module uses the same ThermalSketchPanel through a desktop adapter that removes only Next.js dynamic loading.
+- Canonical shell parity 0.7: Windows now renders the same `WorkspaceSearch`, `WorkspaceActivityCenter` and `WorkspaceIntelligence` React components as the web workspace. The Windows layer only injects platform adapters for AI HTTP routes and safe ORBYVEN path opening.
+- Live module metadata: the public desktop UI manifest now includes the canonical module registry. Names, descriptions, badges, colors and feature labels can therefore follow the live workspace without duplicating copy inside Desktop.
+
+- Parity 0.7: canonical WorkspaceSearch and WorkspaceActivityCenter are now rendered directly by Windows too; module metadata (labels, descriptions, badges and visual accents) is also supplied by the live UI manifest.\n- Parity 0.6: Windows renders the canonical web React modules directly for Overview, Leads, Tasks, Calendar, Estimates, Documents, Inventory, Finance and Team. The thermal module uses the same ThermalSketchPanel through a desktop adapter that removes only Next.js dynamic loading.
 - Desktop AI bridge: `/api/desktop/ai/*` wraps the canonical ORBYVEN Intelligence routes with CORS required by the Tauri local origin; authorization still uses the user's Supabase bearer session and server-side organization checks.
 
 - Live UI manifest: desktop reads `https://orbyven.ro/api/desktop/ui` at startup and whenever the window regains focus. Theme tokens, navigation groups and quick-create module IDs therefore follow the live website without reinstalling the app.

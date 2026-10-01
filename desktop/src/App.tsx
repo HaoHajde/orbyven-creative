@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import {
+  desktopApiFetch,
   fetchDesktopUiManifest,
   initializeDesktopClient,
   orbyvenSupabase,
@@ -22,9 +23,9 @@ import {
 } from "@/lib/workspace-visual-system";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
-import DesktopActivityCenter from "./ActivityCenter";
-import DesktopIntelligence from "./Intelligence";
-import DesktopSearch from "./Search";
+import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
+import WorkspaceSearch from "@/components/WorkspaceSearch";
+import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
 import DesktopWorkspaceModules from "./WorkspaceModules";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
@@ -45,10 +46,6 @@ const ACCESS_MESSAGES: Record<string, string> = {
   organization_archived: "Compania a fost arhivată.",
 };
 
-const TITLES: Record<OrbyvenModuleId, string> = Object.fromEntries(
-  ORBYVEN_MODULES.map((module) => [module.id, module.shortName]),
-) as Record<OrbyvenModuleId, string>;
-
 const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
   revision: WORKSPACE_UI_REVISION,
   desktopVersion: CURRENT_DESKTOP_VERSION,
@@ -60,7 +57,23 @@ const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
     ids: [...group.ids],
   })),
   createModules: [...WORKSPACE_CREATE_MODULES],
+  modules: ORBYVEN_MODULES,
 };
+
+function desktopIntelligenceRequest(path: string, init?: RequestInit) {
+  const desktopPath = path.replace(/^\/api\/ai\//, "/api/desktop/ai/");
+  return desktopApiFetch(desktopPath, init);
+}
+
+function openDesktopOrbyvenPath(href: string) {
+  try {
+    const url = new URL(href, "https://orbyven.ro");
+    if (url.protocol !== "https:" || url.hostname !== "orbyven.ro") return;
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+  } catch {
+    // Ignore malformed paths emitted by external data.
+  }
+}
 
 function createLabel(id: OrbyvenModuleId) {
   if (id === "leads") return "Cerere nouă";
@@ -186,14 +199,33 @@ export default function App() {
     workspace && ["owner", "admin"].includes(workspace.membership.role),
   );
 
+  const runtimeModules = useMemo(
+    () =>
+      ORBYVEN_MODULES.map((bundled) => {
+        const live = uiManifest.modules.find((candidate) => candidate.id === bundled.id);
+        if (!live) return bundled;
+        return {
+          ...bundled,
+          name: live.name,
+          shortName: live.shortName,
+          description: live.description,
+          badge: live.badge,
+          color: live.color,
+          accent: live.accent,
+          features: Array.isArray(live.features) ? live.features : bundled.features,
+        };
+      }),
+    [uiManifest.modules],
+  );
+
   const modules = useMemo(
     () =>
-      ORBYVEN_MODULES.filter(
+      runtimeModules.filter(
         (module) =>
           workspace?.enabledModules.includes(module.id) &&
           (module.id !== "expenses" || canFinance),
       ),
-    [workspace, canFinance],
+    [runtimeModules, workspace, canFinance],
   );
 
   const createModules = modules.filter(
@@ -483,7 +515,7 @@ export default function App() {
               <small>Business workspace</small>
             </div>
 
-            <DesktopSearch
+            <WorkspaceSearch
               organizationId={workspace.organization.id}
               enabledModules={workspace.enabledModules}
               onOpenModule={chooseModule}
@@ -527,11 +559,14 @@ export default function App() {
                 {panel === "modules" ? "Înapoi" : "Module"}
               </button>
 
-              <DesktopIntelligence
+              <WorkspaceIntelligence
                 organizationId={workspace.organization.id}
+                themeVars={themeVars}
                 onOpenModule={chooseModule}
+                onOpenPath={openDesktopOrbyvenPath}
+                request={desktopIntelligenceRequest}
               />
-              <DesktopActivityCenter
+              <WorkspaceActivityCenter
                 organizationId={workspace.organization.id}
                 locale={locale}
                 timeZone={timeZone}
@@ -652,7 +687,7 @@ export default function App() {
                     </section>
 
                     <section className="module-store">
-                      {ORBYVEN_MODULES.map((definition) => {
+                      {runtimeModules.map((definition) => {
                         const enabled = workspace.enabledModules.includes(definition.id);
                         const locked = definition.id === "overview";
                         const entitled = workspace.entitledModules.includes(definition.id);
