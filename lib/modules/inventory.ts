@@ -70,6 +70,28 @@ export type InventoryPurchaseItem = {
   position: number;
 };
 
+export type InventoryTaskMaterialPlan = {
+  organization_id: string;
+  task_id: string;
+  estimate_id: string;
+  material_id: string;
+  name: string;
+  unit: string;
+  unit_cost_cents: number;
+  stock_tracked: boolean;
+  preferred_supplier_id: string | null;
+  required_quantity: number;
+  consumed_quantity: number;
+  outstanding_quantity: number;
+  reserved_quantity: number;
+  reserved_elsewhere: number;
+  on_hand: number;
+  on_order: number;
+  available_unreserved: number;
+  available_to_reserve: number;
+  shortage_after_reservation: number;
+};
+
 export type InventoryMovement = {
   id: string;
   organization_id: string;
@@ -257,6 +279,72 @@ export async function loadInventorySnapshot(
       })
     ),
   };
+}
+
+export async function loadInventoryTaskMaterialPlan(
+  organizationId: string,
+  taskId: string
+): Promise<InventoryTaskMaterialPlan[]> {
+  requireOrganizationId(organizationId);
+  if (!taskId.trim()) throw new Error("task_id is required.");
+
+  const rows = await readAllPages<InventoryTaskMaterialPlan>((from, to) =>
+    orbyvenSupabase
+      .from("ops_inventory_task_material_plan")
+      .select("organization_id,task_id,estimate_id,material_id,name,unit,unit_cost_cents,stock_tracked,preferred_supplier_id,required_quantity,consumed_quantity,outstanding_quantity,reserved_quantity,reserved_elsewhere,on_hand,on_order,available_unreserved,available_to_reserve,shortage_after_reservation")
+      .eq("organization_id", organizationId)
+      .eq("task_id", taskId)
+      .order("name", { ascending: true })
+      .range(from, to)
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    required_quantity: Number(row.required_quantity || 0),
+    consumed_quantity: Number(row.consumed_quantity || 0),
+    outstanding_quantity: Number(row.outstanding_quantity || 0),
+    reserved_quantity: Number(row.reserved_quantity || 0),
+    reserved_elsewhere: Number(row.reserved_elsewhere || 0),
+    on_hand: Number(row.on_hand || 0),
+    on_order: Number(row.on_order || 0),
+    available_unreserved: Number(row.available_unreserved || 0),
+    available_to_reserve: Number(row.available_to_reserve || 0),
+    shortage_after_reservation: Number(row.shortage_after_reservation || 0),
+  }));
+}
+
+export async function reserveAvailableInventoryForTask(
+  organizationId: string,
+  taskId: string,
+  materialId?: string | null
+) {
+  requireOrganizationId(organizationId);
+  if (!taskId.trim()) throw new Error("Alege lucrarea/comanda.");
+  const { data, error } = await orbyvenSupabase.rpc("inventory_reserve_task_stock", {
+    p_organization_id: organizationId,
+    p_task_id: taskId,
+    p_material_id: materialId || null,
+  });
+  if (error) throw error;
+  return Number(data || 0);
+}
+
+export async function releaseInventoryReservation(
+  organizationId: string,
+  taskId: string,
+  materialId: string
+) {
+  requireOrganizationId(organizationId);
+  if (!taskId.trim() || !materialId.trim()) {
+    throw new Error("Lucrarea/comanda și materialul sunt obligatorii.");
+  }
+  const { error } = await orbyvenSupabase
+    .from("ops_inventory_reservations")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("task_id", taskId)
+    .eq("material_id", materialId);
+  if (error) throw error;
 }
 
 export async function createInventorySupplier(
