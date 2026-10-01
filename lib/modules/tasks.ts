@@ -44,6 +44,7 @@ export type WorkTaskClient = {
   name: string;
   company: string | null;
   kind: "lead" | "client";
+  next_follow_up_at: string | null;
 };
 
 export type WorkTaskContext = {
@@ -141,7 +142,7 @@ export async function listWorkTaskClients(
 
   const { data, error } = await orbyvenSupabase
     .from("crm_leads")
-    .select("id,name,company,kind")
+    .select("id,name,company,kind,next_follow_up_at")
     .eq("organization_id", organizationId)
     .order("kind", { ascending: true })
     .order("name", { ascending: true });
