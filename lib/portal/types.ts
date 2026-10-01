@@ -30,6 +30,7 @@ export type CustomerPortalEstimate = {
   validUntil: string | null;
   sentAt: string | null;
   acceptedAt: string | null;
+  actionable: boolean;
   items: CustomerPortalEstimateItem[];
 };
 
