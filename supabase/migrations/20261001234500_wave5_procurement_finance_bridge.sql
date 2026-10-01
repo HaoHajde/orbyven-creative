@@ -59,6 +59,10 @@ begin
     return new;
   end if;
 
+  if not private.is_billing_module_allowed(new.organization_id, 'inventory') then
+    raise exception 'inventory access denied' using errcode = '42501';
+  end if;
+
   select po.task_id
     into po_task_id
   from public.ops_purchase_orders po
@@ -135,6 +139,10 @@ begin
     return new;
   end if;
 
+  if not private.is_billing_module_allowed(new.organization_id, 'inventory') then
+    raise exception 'inventory access denied' using errcode = '42501';
+  end if;
+
   select po.task_id, po.supplier_id
     into po_task_id, po_supplier_id
   from public.ops_purchase_orders po
@@ -173,7 +181,7 @@ begin
     new.client_id := pg_catalog.coalesce(task_client_id, new.client_id);
   end if;
 
-  if pg_catalog.coalesce(pg_catalog.nullif(pg_catalog.trim(new.vendor), ''), '') = ''
+  if coalesce(nullif(pg_catalog.btrim(new.vendor), ''), '') = ''
      and po_supplier_name is not null then
     new.vendor := po_supplier_name;
   end if;
