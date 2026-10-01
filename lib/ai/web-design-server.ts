@@ -355,7 +355,8 @@ function parseModelResult(
   });
   if (!candidate || !generatedCopyPreservesFacts(candidate, prompt, current)) return null;
 
-  const { preset: _preset, ...draft } = candidate;
+  const draft = { ...candidate } as EditableSite & { preset?: EditableSite["preset"] };
+  delete draft.preset;
   return { summary, draft, suggestions };
 }
 
