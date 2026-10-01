@@ -41,7 +41,7 @@ test("Completed work exposes ORBYVEN Aftercare with practical retention windows"
   assert.match(source, /AFTERCARE_WINDOWS = \[7, 30, 90, 180\]/);
   assert.match(source, /ORBYVEN · AFTERCARE/);
   assert.match(source, /selectedTask\.status === "done"/);
-  assert.match(source, /Revenire în \{days\} zile/);
+  assert.match(source, /În \{days\} zile/);
 });
 
 test("Overview includes overdue client retention follow-ups in Next Best Action", () => {
