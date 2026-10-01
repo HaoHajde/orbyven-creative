@@ -164,8 +164,8 @@ test("Desktop AI bridge keeps canonical server authorization and adds only CORS"
 
 test("live manifest advertises the exact bundled desktop release", () => {
   const visual = content("../../lib/workspace-visual-system.ts");
-  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.6\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.09\.30\.5"/);
+  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.7\.0"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.1"/);
 });
 
 test("record search matches the live workspace searchable surfaces", () => {
