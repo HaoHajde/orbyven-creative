@@ -58,6 +58,9 @@ export type WorkTaskContext = {
   expensesCents: number | null;
   inventoryMovementsCount: number | null;
   inventoryConsumedCents: number | null;
+  inventoryRequiredLines: number | null;
+  inventoryUnreadyLines: number | null;
+  inventoryShortageLines: number | null;
   realOperationalCostCents: number | null;
   thermalSketch: boolean | null;
 };
@@ -247,6 +250,9 @@ export async function loadWorkTaskContext(
     expensesCents,
     inventoryMovementsCount: inventoryResult?.count ?? null,
     inventoryConsumedCents,
+    inventoryRequiredLines: inventoryResult?.requiredLines ?? null,
+    inventoryUnreadyLines: inventoryResult?.unreadyLines ?? null,
+    inventoryShortageLines: inventoryResult?.shortageLines ?? null,
     realOperationalCostCents,
     thermalSketch: options.includeThermal ? (thermalResult.count ?? 0) > 0 : null,
   };
