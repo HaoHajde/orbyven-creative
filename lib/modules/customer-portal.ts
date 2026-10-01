@@ -6,6 +6,7 @@ export type CustomerPortalLinkSummary = {
   id: string;
   expiresAt: string;
   revokedAt: string | null;
+  active: boolean;
   createdAt: string;
   label: string | null;
 };
