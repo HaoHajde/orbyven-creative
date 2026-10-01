@@ -885,6 +885,7 @@ export default function TasksModule({
           <AftercarePanel
             client={clientById.get(selectedTask.client_id)!}
             locale={locale}
+            nowIso={snapshotIso}
             saving={saving}
             canWrite={canWrite}
             onSchedule={(days) => void scheduleAftercare(days)}
@@ -953,6 +954,7 @@ export default function TasksModule({
 function AftercarePanel({
   client,
   locale,
+  nowIso,
   saving,
   canWrite,
   onSchedule,
@@ -961,6 +963,7 @@ function AftercarePanel({
 }: {
   client: WorkTaskClient;
   locale: string;
+  nowIso: string;
   saving: boolean;
   canWrite: boolean;
   onSchedule: (days: number) => void;
@@ -969,7 +972,7 @@ function AftercarePanel({
 }) {
   const followUp = client.next_follow_up_at;
   const followUpIsFuture = followUp
-    ? new Date(followUp).getTime() > Date.now()
+    ? new Date(followUp).getTime() > new Date(nowIso || "1970-01-01T00:00:00.000Z").getTime()
     : false;
 
   return (
