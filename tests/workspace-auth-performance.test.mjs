@@ -43,7 +43,7 @@ test("normal authenticated workspace load does not verify the same session twice
   const recheck = page.indexOf("await orbyvenSupabase.auth.getUser()");
   assert.ok(firstLookup > 0 && recheck > firstLookup, "getUser must only disambiguate a missing workspace");
   assert.match(page, /if \(!nextWorkspace\) \{[\s\S]*?auth\.getUser\(\)/);
-  assert.match(page, /if \(!authData\.user\) \{\s*router\.replace\("\/workspace\/login"\)/);
+  assert.match(page, /if \(!authData\.user\) \{\s*await onUnauthenticated\(\)/);
 });
 
 test("performance audits include login, signup, recovery and both admin entry pages", () => {
