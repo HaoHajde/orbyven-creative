@@ -10,7 +10,7 @@ const modules = [
 ];
 const workspace = read("components/WorkspaceContent.tsx");
 const preview = read("components/FeaturedTemplatePreview.tsx");
-const client = read("components/ClientWorkspace.tsx");
+const client = read("components/WorkspaceShell.tsx");
 const registry = read("lib/orbyven-modules.ts");
 
 test("only the active workspace module is imported at runtime", () => {
