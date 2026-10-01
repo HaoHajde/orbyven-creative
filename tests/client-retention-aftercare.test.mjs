@@ -1,0 +1,60 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
+
+test("CRM exposes a guarded follow-up scheduler with history rollback", () => {
+  const source = read("lib/modules/leads.ts");
+  assert.match(source, /export async function scheduleCrmFollowUp/);
+  assert.match(source, /select\("next_follow_up_at"\)/);
+  assert.match(source, /next_follow_up_at: when\.toISOString\(\)/);
+  assert.match(source, /createCrmLeadActivity/);
+  assert.match(source, /previous\.next_follow_up_at/);
+});
+
+test("Operations client context carries retention follow-up state", () => {
+  const source = read("lib/modules/tasks.ts");
+  assert.ok(source.includes("next_follow_up_at?: string | null"));
+  assert.match(source, /id,name,company,kind,next_follow_up_at/);
+});
+
+test("Recurring work clones completed operational context without copying assignee", () => {
+  const service = read("lib/modules/tasks.ts");
+  const ui = read("components/modules/TasksModule.tsx");
+  assert.match(service, /export async function createRecurringWorkFromTask/);
+  assert.match(service, /sourceTask\.status !== "done"/);
+  assert.match(service, /priority: "normal"/);
+  assert.match(service, /ops_task_checklist_items/);
+  assert.match(service, /done: false/);
+  const recurringHelper = service.match(/createRecurringWorkFromTask[\s\S]*?return created;/)?.[0] ?? "";
+  assert.doesNotMatch(recurringHelper, /assignee:/);
+  assert.match(ui, /RECURRING_WORK_WINDOWS = \[30, 90, 180, 365\]/);
+  assert.match(ui, /Lucrare recurentă/);
+  assert.match(ui, /createRecurringWorkFromTask/);
+});
+
+test("Completed work exposes ORBYVEN Aftercare with practical retention windows", () => {
+  const source = read("components/modules/TasksModule.tsx");
+  assert.match(source, /scheduleCrmFollowUp/);
+  assert.match(source, /AFTERCARE_WINDOWS = \[7, 30, 90, 180\]/);
+  assert.match(source, /ORBYVEN · AFTERCARE/);
+  assert.match(source, /selectedTask\.status === "done"/);
+  assert.match(source, /În \{days\} zile/);
+});
+
+test("Overview includes overdue client retention follow-ups in Next Best Action", () => {
+  const data = read("lib/modules/overview.ts");
+  const ui = read("components/modules/OverviewModule.tsx");
+  assert.match(data, /not\("next_follow_up_at", "is", null\)/);
+  assert.ok(data.includes('.or("kind.eq.client,stage.not.in.(won,lost)")'));
+  assert.match(ui, /client_retention_follow_up/);
+  assert.match(ui, /Revenirea post-vânzare este scadentă/);
+  assert.match(ui, /lead\.kind === "client"/);
+});
+
+test("CRM metrics count both active lead and existing-client follow-ups", () => {
+  const source = read("components/modules/LeadsModule.tsx");
+  assert.match(source, /lead\.kind === "client" \|\| !\["won", "lost"\]\.includes\(lead\.stage\)/);
+});

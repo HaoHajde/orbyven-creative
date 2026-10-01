@@ -142,22 +142,30 @@ export default function OverviewModule({
     const monthCashFlow = monthIncome - monthExpenses;
 
     const attention: Attention[] = [];
-    for (const lead of activeLeads) {
-      if (
-        lead.next_follow_up_at &&
-        new Date(lead.next_follow_up_at).getTime() < snapshotNow
-      ) {
-        attention.push({
-          key: `lead-${lead.id}`,
-          module: "leads",
-          recordId: lead.id,
-          title: `${lead.name} așteaptă follow-up`,
-          meta: "Termenul de revenire a trecut.",
-          level: "urgent",
-          sortAt: lead.next_follow_up_at,
-          rule: "lead_follow_up",
-        });
-      }
+    const followUpContacts = snapshot.leads.filter((lead) => {
+      if (!lead.next_follow_up_at) return false;
+      if (new Date(lead.next_follow_up_at).getTime() >= snapshotNow) return false;
+      if (lead.kind === "client") return true;
+      return !["won", "lost"].includes(lead.stage);
+    });
+
+    for (const contact of followUpContacts) {
+      const retention = contact.kind === "client";
+      attention.push({
+        key: `${retention ? "client-retention" : "lead"}-${contact.id}`,
+        module: "leads",
+        recordId: contact.id,
+        title: retention
+          ? `${contact.name} așteaptă revenire`
+          : `${contact.name} așteaptă follow-up`,
+        meta: retention
+          ? "Revenirea post-vânzare este scadentă."
+          : "Termenul de revenire a trecut.",
+        level: "urgent",
+        sortAt: contact.next_follow_up_at as string,
+        rule: retention ? "client_retention_follow_up" : "lead_follow_up",
+        clientId: contact.id,
+      });
     }
 
     const operations: AutomationOperation[] = openTasks.map((task) => ({
