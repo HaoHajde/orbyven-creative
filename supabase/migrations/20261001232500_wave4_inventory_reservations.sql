@@ -6,6 +6,7 @@ create table if not exists public.ops_inventory_reservations (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
   task_id uuid not null,
+  estimate_id uuid not null,
   material_id uuid not null,
   reserved_quantity numeric not null check (reserved_quantity > 0),
   note text,
@@ -17,6 +18,10 @@ create table if not exists public.ops_inventory_reservations (
   constraint ops_inventory_reservations_task_fk
     foreign key (organization_id, task_id)
     references public.ops_tasks(organization_id, id)
+    on delete cascade,
+  constraint ops_inventory_reservations_estimate_fk
+    foreign key (organization_id, estimate_id)
+    references public.sales_estimates(organization_id, id)
     on delete cascade,
   constraint ops_inventory_reservations_material_fk
     foreign key (organization_id, material_id)
@@ -155,6 +160,7 @@ effective_reservations as (
   left join public.ops_inventory_reservations r
     on r.organization_id = b.organization_id
    and r.task_id = b.task_id
+   and r.estimate_id = b.estimate_id
    and r.material_id = b.material_id
 ),
 reservation_totals as (
@@ -347,6 +353,7 @@ begin
     );
 
     select
+      p.estimate_id,
       p.required_quantity,
       p.consumed_quantity,
       p.available_to_reserve
@@ -365,6 +372,7 @@ begin
     from public.ops_inventory_reservations r
     where r.organization_id = p_organization_id
       and r.task_id = p_task_id
+      and r.estimate_id = plan_row.estimate_id
       and r.material_id = candidate.material_id
     for update;
 
@@ -381,6 +389,7 @@ begin
     insert into public.ops_inventory_reservations(
       organization_id,
       task_id,
+      estimate_id,
       material_id,
       reserved_quantity,
       created_by
@@ -388,12 +397,14 @@ begin
     values (
       p_organization_id,
       p_task_id,
+      plan_row.estimate_id,
       candidate.material_id,
       target_raw,
       (select auth.uid())
     )
     on conflict (organization_id, task_id, material_id)
     do update set
+      estimate_id = excluded.estimate_id,
       reserved_quantity = excluded.reserved_quantity,
       updated_at = pg_catalog.now();
 
@@ -417,6 +428,6 @@ grant execute on function public.inventory_reserve_task_stock(uuid,uuid,uuid)
   to authenticated;
 
 comment on table public.ops_inventory_reservations is
-  'Operational stock allocations by task/material. Reservations never mutate physical stock.';
+  'Operational stock allocations by accepted estimate + task + material. A new accepted revision must reserve again; reservations never mutate physical stock.';
 comment on view public.ops_inventory_task_material_plan is
   'Accepted-estimate material requirements with consumption, effective reservations, available stock and task shortage.';
