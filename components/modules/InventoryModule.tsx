@@ -5,12 +5,16 @@ import {
   createInventorySupplier,
   createPurchaseOrder,
   loadInventorySnapshot,
+  loadInventoryTaskMaterialPlan,
   receivePurchaseOrderItem,
   recordInventoryAdjustment,
+  releaseInventoryReservation,
+  reserveAvailableInventoryForTask,
   setPurchaseOrderStatus,
   updateInventoryMaterialSettings,
   type InventoryPurchaseItem,
   type InventorySnapshot,
+  type InventoryTaskMaterialPlan,
 } from "@/lib/modules/inventory";
 import {
   inventorySummary,
@@ -88,6 +92,9 @@ export default function InventoryModule({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [planTaskId, setPlanTaskId] = useState(initialTaskId ?? "");
+  const [taskPlan, setTaskPlan] = useState<InventoryTaskMaterialPlan[]>([]);
+  const [planLoading, setPlanLoading] = useState(false);
 
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [supplierName, setSupplierName] = useState("");
@@ -133,6 +140,28 @@ export default function InventoryModule({
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  const loadTaskPlan = useCallback(async () => {
+    if (!planTaskId) {
+      setTaskPlan([]);
+      return;
+    }
+    setPlanLoading(true);
+    try {
+      setTaskPlan(await loadInventoryTaskMaterialPlan(organizationId, planTaskId));
+    } catch (reason) {
+      console.error(reason);
+      setError("Necesarul de materiale al lucrării nu a putut fi încărcat.");
+      setTaskPlan([]);
+    } finally {
+      setPlanLoading(false);
+    }
+  }, [organizationId, planTaskId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadTaskPlan(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadTaskPlan]);
+
   const materials = useMemo(() => snapshot?.materials ?? [], [snapshot]);
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
@@ -159,6 +188,47 @@ export default function InventoryModule({
     [stock, purchaseOrders.length]
   );
 
+  const taskPlanSummary = useMemo(() => {
+    const active = taskPlan.filter((item) => item.outstanding_quantity > 0);
+    return {
+      lines: taskPlan.length,
+      ready: taskPlan.filter(
+        (item) =>
+          item.outstanding_quantity <= 0 ||
+          item.reserved_quantity >= item.outstanding_quantity
+      ).length,
+      needsReservation: active.filter((item) => item.available_to_reserve > 0).length,
+      shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
+    };
+  }, [taskPlan]);
+
+  const shoppingGroups = useMemo(() => {
+    const grouped = new Map<string, InventoryGap[]>();
+    for (const gap of stock) {
+      const supplierId = gap.preferredSupplierId;
+      if (
+        gap.suggestedOrder <= 0 ||
+        !supplierId ||
+        !supplierById.get(supplierId)?.active
+      ) continue;
+      const rows = grouped.get(supplierId) ?? [];
+      rows.push(gap);
+      grouped.set(supplierId, rows);
+    }
+    return [...grouped.entries()].map(([supplierId, gaps]) => ({
+      supplierId,
+      gaps,
+      estimatedCents: gaps.reduce(
+        (sum, gap) => sum + Math.round(gap.suggestedOrder * gap.unitCostCents),
+        0
+      ),
+    }));
+  }, [stock, supplierById]);
+  const unassignedShoppingCount = stock.filter((gap) => {
+    if (gap.suggestedOrder <= 0) return false;
+    return !gap.preferredSupplierId || !supplierById.get(gap.preferredSupplierId)?.active;
+  }).length;
+
   const run = async (operation: () => Promise<unknown>, success: string) => {
     if (busy) return false;
     setBusy(true);
@@ -181,7 +251,7 @@ export default function InventoryModule({
   const activateStock = async (materialId: string) => {
     const material = materialById.get(materialId);
     if (!material) return;
-    await run(
+    const ok = await run(
       () =>
         updateInventoryMaterialSettings(organizationId, materialId, {
           stockTracked: true,
@@ -191,6 +261,7 @@ export default function InventoryModule({
         }),
       "Materialul este urmărit acum în stoc."
     );
+    if (ok && planTaskId) await loadTaskPlan();
   };
 
   const changeMaterialSettings = async (
@@ -259,9 +330,85 @@ export default function InventoryModule({
     setLineKey((value) => value + 1);
   };
 
-  const prepareGapPurchase = (gap: InventoryGap) => {
-    setPurchaseSupplierId(gap.preferredSupplierId ?? "");
-    setPurchaseTaskId(initialTaskId ?? "");
+  const prepareSupplierPurchase = (supplierId: string, gaps: InventoryGap[]) => {
+    setPurchaseSupplierId(supplierId);
+    setPurchaseTaskId("");
+    setPurchaseExpectedOn("");
+    setPurchaseNote("Listă de cumpărături generată din necesarul consolidat ORBYVEN.");
+    setPurchaseLines(
+      gaps.map((gap, index) => ({
+        key: lineKey + index,
+        materialId: gap.materialId,
+        quantity: String(gap.suggestedOrder),
+        costLei: String(gap.unitCostCents / 100),
+      }))
+    );
+    setLineKey((value) => value + gaps.length);
+    setPurchaseOpen(true);
+    window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-purchase-form="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  };
+
+  const reserveTaskStock = async (materialId?: string) => {
+    if (!planTaskId) return;
+    const ok = await run(
+      () => reserveAvailableInventoryForTask(organizationId, planTaskId, materialId || null),
+      materialId ? "Stocul disponibil a fost rezervat pentru material." : "Stocul disponibil a fost rezervat pentru lucrare."
+    );
+    if (ok) await loadTaskPlan();
+  };
+
+  const releaseTaskStock = async (materialId: string) => {
+    if (!planTaskId) return;
+    const ok = await run(
+      () => releaseInventoryReservation(organizationId, planTaskId, materialId),
+      "Rezervarea a fost eliberată."
+    );
+    if (ok) await loadTaskPlan();
+  };
+
+  const prepareTaskShortagePurchase = (
+    item: InventoryTaskMaterialPlan,
+    gap: InventoryGap
+  ) => {
+    const taskQuantity = Math.min(
+      item.shortage_after_reservation,
+      gap.suggestedOrder
+    );
+    if (taskQuantity <= 0) return;
+    const supplierId =
+      gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
+        ? gap.preferredSupplierId
+        : "";
+    setPurchaseSupplierId(supplierId);
+    setPurchaseTaskId(planTaskId);
+    setPurchaseExpectedOn("");
+    setPurchaseNote("Necesar de cumpărat pentru " + (taskById.get(planTaskId)?.title || "lucrare") + ".");
+    setPurchaseLines([{
+      key: lineKey,
+      materialId: item.material_id,
+      quantity: String(taskQuantity),
+      costLei: String(item.unit_cost_cents / 100),
+    }]);
+    setLineKey((value) => value + 1);
+    setPurchaseOpen(true);
+    window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-purchase-form="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  };
+
+  const prepareGapPurchase = (gap: InventoryGap, taskId = "") => {
+    const supplierId =
+      gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
+        ? gap.preferredSupplierId
+        : "";
+    setPurchaseSupplierId(supplierId);
+    setPurchaseTaskId(taskId);
     setPurchaseExpectedOn("");
     setPurchaseNote("Necesar generat din stoc și cererea confirmată.");
     setPurchaseLines([
@@ -352,6 +499,9 @@ export default function InventoryModule({
         : "Ajustarea de stoc a fost înregistrată."
     );
     if (ok) {
+      if (movementMode === "consumption" && planTaskId === movementTaskId) {
+        await loadTaskPlan();
+      }
       setMovementQuantity("1");
       setMovementNote("");
       setMovementOpen(false);
@@ -505,12 +655,131 @@ export default function InventoryModule({
       <section className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Work Material Readiness</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Materiale rezervate pe lucrare</h2>
+            <p className="mt-1 max-w-2xl text-[11px] leading-5 text-[var(--muted)]">Necesarul vine din ultima ofertă acceptată. Rezervarea blochează disponibilul operațional pentru lucrare fără să modifice stocul fizic.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select value={planTaskId} onChange={(event) => setPlanTaskId(event.target.value)} className={field + " min-w-[220px]"} aria-label="Lucrare pentru rezervarea materialelor">
+              <option value="">Alege lucrarea / comanda</option>
+              {tasks.map((task) => <option key={task.id} value={task.id}>{task.kind === "order" ? "Comandă" : "Lucrare"} · {task.title}</option>)}
+            </select>
+            {canWrite && planTaskId && taskPlanSummary.needsReservation > 0 ? (
+              <button type="button" disabled={busy || planLoading} onClick={() => void reserveTaskStock()} className={primary}>Rezervă tot disponibilul</button>
+            ) : null}
+          </div>
+        </div>
+
+        {planTaskId ? (
+          planLoading ? (
+            <p className="mt-4 text-xs text-[var(--muted)]">Se calculează necesarul și disponibilul…</p>
+          ) : taskPlan.length ? (
+            <>
+              <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
+                <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
+                <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
+                <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+              </div>
+              <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                {taskPlan.map((item) => {
+                  const gap = stock.find((row) => row.materialId === item.material_id);
+                  const fullyConsumed = item.outstanding_quantity <= 0;
+                  const fullyReserved = item.outstanding_quantity > 0 && item.reserved_quantity >= item.outstanding_quantity;
+                  return (
+                    <article key={item.material_id} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{item.name}</p>
+                          <p className="mt-1 text-[10px] text-[var(--muted)]">
+                            Necesar {quantity(item.required_quantity)} {item.unit} · consumat {quantity(item.consumed_quantity)} · rezervat {quantity(item.reserved_quantity)}
+                          </p>
+                        </div>
+                        <span className={"rounded-full border px-2.5 py-1 text-[9px] font-semibold " + (
+                          fullyConsumed ? "border-emerald-400/25 text-emerald-300" :
+                          fullyReserved ? "border-emerald-400/25 text-emerald-300" :
+                          !item.stock_tracked ? "border-[var(--border)] text-[var(--muted)]" :
+                          item.shortage_after_reservation > 0 ? "border-rose-400/25 text-rose-300" :
+                          "border-amber-400/25 text-amber-300"
+                        )}>
+                          {fullyConsumed ? "Consum complet" :
+                           fullyReserved ? "Rezervat" :
+                           !item.stock_tracked ? "Stoc inactiv" :
+                           item.shortage_after_reservation > 0 ? "Lipsă " + quantity(item.shortage_after_reservation) + " " + item.unit :
+                           "Disponibil"}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-[var(--muted)] sm:grid-cols-4">
+                        <span>Stoc <strong className="block text-[var(--text)]">{quantity(item.on_hand)}</strong></span>
+                        <span>Liber <strong className="block text-[var(--text)]">{quantity(item.available_unreserved)}</strong></span>
+                        <span>Rezervat altora <strong className="block text-[var(--text)]">{quantity(item.reserved_elsewhere)}</strong></span>
+                        <span>Pe drum <strong className="block text-[var(--text)]">{quantity(item.on_order)}</strong></span>
+                      </div>
+                      {canWrite ? (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+                          {!item.stock_tracked && canProcure ? <button type="button" disabled={busy} onClick={() => void activateStock(item.material_id)} className={button}>Activează stoc</button> : null}
+                          {item.stock_tracked && item.available_to_reserve > 0 ? <button type="button" disabled={busy} onClick={() => void reserveTaskStock(item.material_id)} className={primary}>Rezervă {quantity(item.available_to_reserve)}</button> : null}
+                          {item.reserved_quantity > 0 ? <button type="button" disabled={busy} onClick={() => void releaseTaskStock(item.material_id)} className={button}>Eliberează rezervarea</button> : null}
+                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(item, gap)} className={button}>Pregătește cumpărarea →</button> : null}
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
+              <p className="text-sm font-semibold">Nu există necesar confirmat pentru această lucrare.</p>
+              <p className="mt-1 text-[10px] text-[var(--muted)]">Materialele apar aici după ce o ofertă cu poziții materiale este acceptată și legată de lucrare.</p>
+            </div>
+          )
+        ) : (
+          <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
+            <p className="text-sm font-semibold">Alege o lucrare pentru a vedea material readiness.</p>
+            <p className="mt-1 text-[10px] text-[var(--muted)]">ORBYVEN compară necesarul acceptat cu consumul, rezervările și stocul liber.</p>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Procurement Signals</p>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Ce trebuie cumpărat</h2>
             <p className="mt-1 text-[11px] text-[var(--muted)]">Doar necesarul din devize acceptate, minus consumul, stocul și cantitatea deja comandată.</p>
           </div>
           <button type="button" onClick={() => void load()} disabled={loading || busy} className={button}>↻ Actualizează</button>
         </div>
+
+        {shoppingGroups.length || unassignedShoppingCount ? (
+          <div className="mt-4 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Listă de cumpărături</p>
+                <p className="mt-1 text-[10px] text-[var(--muted)]">Lipsurile sunt grupate automat pe furnizorul preferat.</p>
+              </div>
+              {unassignedShoppingCount ? <span className="rounded-full border border-amber-400/25 px-2.5 py-1 text-[9px] font-semibold text-amber-300">{unassignedShoppingCount} fără furnizor</span> : null}
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {shoppingGroups.map((group) => {
+                const supplier = supplierById.get(group.supplierId);
+                return (
+                  <div key={group.supplierId} className="rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold">{supplier?.name ?? "Furnizor"}</p>
+                        <p className="mt-1 text-[9px] text-[var(--muted)]">{group.gaps.length} poziții · aprox. {money(group.estimatedCents, locale)}</p>
+                      </div>
+                      {canProcure ? <button type="button" disabled={busy} onClick={() => prepareSupplierPurchase(group.supplierId, group.gaps)} className="text-[9px] font-semibold text-[var(--accent)]">Pregătește PO →</button> : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {stock.filter((item) => item.suggestedOrder > 0).map((gap) => (
             <article key={gap.materialId} className="rounded-[16px] border border-amber-400/20 bg-amber-400/[0.045] p-4">
@@ -665,6 +934,15 @@ export default function InventoryModule({
           Stocul ORBYVEN este un registru operațional. Recepțiile actualizează costul curent al materialului pentru calculele viitoare, dar nu modifică retroactiv devizele existente și nu înlocuiesc contabilitatea.
         </p>
       </section>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

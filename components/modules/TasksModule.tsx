@@ -967,8 +967,14 @@ function WorkFileSummary({
           value: context?.inventoryConsumedCents !== null && context?.inventoryConsumedCents !== undefined
             ? money(context.inventoryConsumedCents)
             : "—",
-          note: context?.inventoryMovementsCount !== null && context?.inventoryMovementsCount !== undefined
-            ? context.inventoryMovementsCount + " mișcări"
+          note: context
+            ? (context.inventoryShortageLines ?? 0) > 0
+              ? context.inventoryShortageLines + " poziții cu lipsă"
+              : (context.inventoryUnreadyLines ?? 0) > 0
+                ? context.inventoryUnreadyLines + " poziții de rezervat"
+                : (context.inventoryRequiredLines ?? 0) > 0
+                  ? "necesar acoperit"
+                  : (context.inventoryMovementsCount ?? 0) + " mișcări"
             : "se încarcă",
           options: { taskId: task.id },
         }
@@ -977,11 +983,11 @@ function WorkFileSummary({
       ? {
           id: "expenses" as const,
           label: "Cost real",
-          value: context?.expensesCents !== null && context?.expensesCents !== undefined
-            ? money(context.expensesCents)
+          value: context?.realOperationalCostCents !== null && context?.realOperationalCostCents !== undefined
+            ? money(context.realOperationalCostCents)
             : "—",
-          note: context?.expensesCount !== null && context?.expensesCount !== undefined
-            ? context.expensesCount + " cheltuieli"
+          note: context
+            ? (context.expensesCount ?? 0) + " cheltuieli + " + (context.inventoryMovementsCount ?? 0) + " consumuri stoc"
             : "se încarcă",
           options: { taskId: task.id },
         }

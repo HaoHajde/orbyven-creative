@@ -20,10 +20,13 @@ export type WorkReadinessContext = {
   expensesCents: number | null;
   inventoryMovementsCount: number | null;
   inventoryConsumedCents: number | null;
+  inventoryRequiredLines: number | null;
+  inventoryUnreadyLines: number | null;
+  inventoryShortageLines: number | null;
 };
 
 export type WorkReadinessCheck = {
-  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "costs";
+  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "costs";
   label: string;
   state: WorkReadinessCheckState;
   message: string;
@@ -229,6 +232,51 @@ export function evaluateWorkReadiness(input: {
       label: "Documente",
       state: "unavailable",
       message: enabled.documents ? "Documentele se încarcă." : "Modulul Documente nu este activ.",
+    });
+  }
+
+  if (enabled.inventory && operationalKind && context) {
+    const requiredLines = context.inventoryRequiredLines ?? 0;
+    const unreadyLines = context.inventoryUnreadyLines ?? 0;
+    const shortageLines = context.inventoryShortageLines ?? 0;
+
+    if (shortageLines > 0) {
+      checks.push({
+        key: "materials",
+        label: "Materiale",
+        state: "attention",
+        message: shortageLines + " poziții materiale au lipsă după rezervarea stocului disponibil.",
+      });
+    } else if (unreadyLines > 0) {
+      checks.push({
+        key: "materials",
+        label: "Materiale",
+        state: "attention",
+        message: unreadyLines + " poziții materiale nu sunt încă rezervate complet pentru lucrare.",
+      });
+    } else if (requiredLines > 0) {
+      checks.push({
+        key: "materials",
+        label: "Materiale",
+        state: "good",
+        message: "Necesarul material este consumat sau rezervat integral.",
+      });
+    } else {
+      checks.push({
+        key: "materials",
+        label: "Materiale",
+        state: "info",
+        message: "Nu există necesar material confirmat în oferta acceptată.",
+      });
+    }
+  } else {
+    checks.push({
+      key: "materials",
+      label: "Materiale",
+      state: "unavailable",
+      message: enabled.inventory
+        ? "Material readiness este disponibil pentru lucrări și comenzi."
+        : "Modulul Stoc & achiziții nu este activ.",
     });
   }
 

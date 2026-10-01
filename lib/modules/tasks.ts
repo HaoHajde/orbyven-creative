@@ -58,6 +58,10 @@ export type WorkTaskContext = {
   expensesCents: number | null;
   inventoryMovementsCount: number | null;
   inventoryConsumedCents: number | null;
+  inventoryRequiredLines: number | null;
+  inventoryUnreadyLines: number | null;
+  inventoryShortageLines: number | null;
+  realOperationalCostCents: number | null;
   thermalSketch: boolean | null;
 };
 
@@ -226,6 +230,14 @@ export async function loadWorkTaskContext(
   const estimates = estimatesResult.data ?? [];
   const events = eventsResult.data ?? [];
 
+  const expensesCents = expenseRows
+    ? expenseRows.reduce((sum, item) => sum + Number(item.amount_cents), 0)
+    : null;
+  const inventoryConsumedCents = inventoryResult?.costCents ?? null;
+  const realOperationalCostCents = options.canAccessFinances
+    ? (expensesCents ?? 0) + (inventoryConsumedCents ?? 0)
+    : null;
+
   return {
     estimatesCount: estimates.length,
     sentEstimatesCount: estimates.filter((item) => item.status === "sent").length,
@@ -235,11 +247,13 @@ export async function loadWorkTaskContext(
     eventsCount: events.length,
     upcomingEventsCount: events.filter((item) => item.start_at >= nowIso).length,
     expensesCount: expenseRows ? expenseRows.length : null,
-    expensesCents: expenseRows
-      ? expenseRows.reduce((sum, item) => sum + Number(item.amount_cents), 0)
-      : null,
+    expensesCents,
     inventoryMovementsCount: inventoryResult?.count ?? null,
-    inventoryConsumedCents: inventoryResult?.costCents ?? null,
+    inventoryConsumedCents,
+    inventoryRequiredLines: inventoryResult?.requiredLines ?? null,
+    inventoryUnreadyLines: inventoryResult?.unreadyLines ?? null,
+    inventoryShortageLines: inventoryResult?.shortageLines ?? null,
+    realOperationalCostCents,
     thermalSketch: options.includeThermal ? (thermalResult.count ?? 0) > 0 : null,
   };
 }
