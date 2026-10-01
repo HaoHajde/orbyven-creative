@@ -129,7 +129,7 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "inventory") {
-    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
+    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "expenses") {
