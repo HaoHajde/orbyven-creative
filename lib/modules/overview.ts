@@ -151,7 +151,8 @@ export async function loadOverviewSnapshot(
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
     orbyvenSupabase.from("crm_leads")
       .select("id,name,kind,stage,next_follow_up_at,created_at")
-      .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)
+      .eq("organization_id", organizationId)
+      .not("next_follow_up_at", "is", null)
       .lt("next_follow_up_at", nowIso).order("next_follow_up_at").limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
