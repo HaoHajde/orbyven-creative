@@ -20,6 +20,21 @@ test("Operations client context carries retention follow-up state", () => {
   assert.match(source, /id,name,company,kind,next_follow_up_at/);
 });
 
+test("Recurring work clones completed operational context without copying assignee", () => {
+  const service = read("lib/modules/tasks.ts");
+  const ui = read("components/modules/TasksModule.tsx");
+  assert.match(service, /export async function createRecurringWorkFromTask/);
+  assert.match(service, /sourceTask\.status !== "done"/);
+  assert.match(service, /priority: "normal"/);
+  assert.match(service, /ops_task_checklist_items/);
+  assert.match(service, /done: false/);
+  const recurringHelper = service.match(/createRecurringWorkFromTask[\s\S]*?return created;/)?.[0] ?? "";
+  assert.doesNotMatch(recurringHelper, /assignee:/);
+  assert.match(ui, /RECURRING_WORK_WINDOWS = \[30, 90, 180, 365\]/);
+  assert.match(ui, /Lucrare recurentă/);
+  assert.match(ui, /createRecurringWorkFromTask/);
+});
+
 test("Completed work exposes ORBYVEN Aftercare with practical retention windows", () => {
   const source = read("components/modules/TasksModule.tsx");
   assert.match(source, /scheduleCrmFollowUp/);
