@@ -52,7 +52,7 @@ test("signed Windows installer has not been claimed; NSIS with OC icon is config
   assert.ok(config.bundle.icon.includes("icons/icon.ico"));
   assert.equal(config.bundle.windows.webviewInstallMode.type, "downloadBootstrapper");
   assert.equal(config.app.windows[0].resizable, true);
-  assert.equal(config.version, "0.7.0");
+  assert.equal(config.version, "0.8.0");
 });
 
 test("desktop matches the real web workspace without loading remote HTML", () => {
@@ -164,8 +164,8 @@ test("Desktop AI bridge keeps canonical server authorization and adds only CORS"
 
 test("live manifest advertises the exact bundled desktop release", () => {
   const visual = content("../../lib/workspace-visual-system.ts");
-  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.7\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.1"/);
+  assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.8\.0"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.2"/);
 });
 
 test("record search matches the live workspace searchable surfaces", () => {
@@ -241,4 +241,20 @@ test("plan recovery bridge follows the canonical AI route", () => {
   assert.match(bridge, /recoverPost/);
   assert.match(bridge, /@\/app\/api\/ai\/plans\/recover\/route/);
   assert.match(bridge, /withDesktopCors/);
+});
+
+test("desktop uses canonical Module Store and glyph registry", () => {
+  const app = content("../src/App.tsx");
+  const web = content("../../components/ClientWorkspace.tsx");
+  const store = content("../../components/WorkspaceModuleStore.tsx");
+  const glyph = content("../../components/WorkspaceModuleGlyph.tsx");
+  const desktopBrand = content("../src/Brand.tsx");
+  assert.match(app, /@\/components\/WorkspaceModuleStore/);
+  assert.match(app, /definitions=\{runtimeModules\}/);
+  assert.match(app, /@\/components\/WorkspaceModuleGlyph/);
+  assert.match(web, /WorkspaceModuleGlyph/);
+  assert.match(store, /definitions = ORBYVEN_MODULES/);
+  assert.match(store, /OrbyvenModuleDefinition/);
+  assert.match(glyph, /Record<OrbyvenModuleId, string>/);
+  assert.doesNotMatch(desktopBrand, /modulePaths/);
 });
