@@ -201,10 +201,15 @@ export default function InventoryModule({
   const shoppingGroups = useMemo(() => {
     const grouped = new Map<string, InventoryGap[]>();
     for (const gap of stock) {
-      if (gap.suggestedOrder <= 0 || !gap.preferredSupplierId) continue;
-      const rows = grouped.get(gap.preferredSupplierId) ?? [];
+      const supplierId = gap.preferredSupplierId;
+      if (
+        gap.suggestedOrder <= 0 ||
+        !supplierId ||
+        !supplierById.get(supplierId)?.active
+      ) continue;
+      const rows = grouped.get(supplierId) ?? [];
       rows.push(gap);
-      grouped.set(gap.preferredSupplierId, rows);
+      grouped.set(supplierId, rows);
     }
     return [...grouped.entries()].map(([supplierId, gaps]) => ({
       supplierId,
@@ -214,10 +219,11 @@ export default function InventoryModule({
         0
       ),
     }));
-  }, [stock]);
-  const unassignedShoppingCount = stock.filter(
-    (gap) => gap.suggestedOrder > 0 && !gap.preferredSupplierId
-  ).length;
+  }, [stock, supplierById]);
+  const unassignedShoppingCount = stock.filter((gap) => {
+    if (gap.suggestedOrder <= 0) return false;
+    return !gap.preferredSupplierId || !supplierById.get(gap.preferredSupplierId)?.active;
+  }).length;
 
   const run = async (operation: () => Promise<unknown>, success: string) => {
     if (busy) return false;
@@ -361,7 +367,11 @@ export default function InventoryModule({
   };
 
   const prepareGapPurchase = (gap: InventoryGap, taskId = initialTaskId ?? "") => {
-    setPurchaseSupplierId(gap.preferredSupplierId ?? "");
+    const supplierId =
+      gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
+        ? gap.preferredSupplierId
+        : "";
+    setPurchaseSupplierId(supplierId);
     setPurchaseTaskId(taskId);
     setPurchaseExpectedOn("");
     setPurchaseNote("Necesar generat din stoc și cererea confirmată.");
