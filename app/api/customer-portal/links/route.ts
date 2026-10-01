@@ -38,6 +38,7 @@ export async function GET(request: Request) {
         label: row.label ?? null,
         expiresAt: row.expires_at,
         revokedAt: row.revoked_at ?? null,
+        active: !row.revoked_at && new Date(row.expires_at).getTime() > Date.now(),
         createdAt: row.created_at,
       })),
     }, { headers: { "Cache-Control": "no-store" } });
