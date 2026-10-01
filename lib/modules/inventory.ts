@@ -615,20 +615,23 @@ export async function loadTaskInventoryConsumption(
   requireOrganizationId(organizationId);
   if (!taskId.trim()) throw new Error("task_id is required.");
 
-  const rows = await readAllPages<{
-    quantity_delta: number;
-    unit_cost_cents: number;
-  }>((from, to) =>
-    orbyvenSupabase
-      .from("ops_inventory_movements")
-      .select("quantity_delta,unit_cost_cents")
-      .eq("organization_id", organizationId)
-      .eq("task_id", taskId)
-      .eq("movement_type", "consumption")
-      .order("occurred_at", { ascending: true })
-      .order("id", { ascending: true })
-      .range(from, to)
-  );
+  const [rows, plan] = await Promise.all([
+    readAllPages<{
+      quantity_delta: number;
+      unit_cost_cents: number;
+    }>((from, to) =>
+      orbyvenSupabase
+        .from("ops_inventory_movements")
+        .select("quantity_delta,unit_cost_cents")
+        .eq("organization_id", organizationId)
+        .eq("task_id", taskId)
+        .eq("movement_type", "consumption")
+        .order("occurred_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
+    loadInventoryTaskMaterialPlan(organizationId, taskId),
+  ]);
 
   return {
     count: rows.length,
@@ -638,5 +641,16 @@ export async function loadTaskInventoryConsumption(
         Math.round(Math.max(0, -Number(row.quantity_delta || 0)) * Number(row.unit_cost_cents || 0)),
       0
     ),
+    requiredLines: plan.length,
+    unreadyLines: plan.filter(
+      (item) =>
+        item.outstanding_quantity > 0 &&
+        item.reserved_quantity < item.outstanding_quantity
+    ).length,
+    shortageLines: plan.filter(
+      (item) =>
+        item.outstanding_quantity > 0 &&
+        item.shortage_after_reservation > 0
+    ).length,
   };
 }
