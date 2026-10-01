@@ -16,6 +16,7 @@ import {
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import CustomerPortalSharePanel from "@/components/modules/CustomerPortalSharePanel";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
@@ -100,6 +101,7 @@ export default function LeadsModule({
   const [kindFilter, setKindFilter] = useState<CrmLeadKind | "all">("all");
   const [showCreate, setShowCreate] = useState(initialCreate && role !== "viewer");
   const canWrite = role !== "viewer";
+  const canManagePortal = role === "owner" || role === "admin" || role === "manager";
   useWorkspaceCreateFocus(showCreate);
   const [draft, setDraft] = useState<LeadDraft>(() => emptyDraft(locale));
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
@@ -560,6 +562,13 @@ export default function LeadsModule({
                   <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>
                 )}
               </div>}
+
+              {selectedLead.kind === "client" && canManagePortal ? (
+                <CustomerPortalSharePanel
+                  organizationId={organizationId}
+                  clientId={selectedLead.id}
+                />
+              ) : null}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <Detail label="Telefon" value={selectedLead.phone || "—"} />
