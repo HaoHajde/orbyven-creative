@@ -367,6 +367,7 @@ export default function ClientWorkspace() {
               organizationId={workspace.organization.id}
               themeVars={vars}
               onOpenModule={openModule}
+              onOpenPath={(href) => router.push(href)}
             />
             <WorkspaceActivityCenter
               organizationId={workspace.organization.id}
