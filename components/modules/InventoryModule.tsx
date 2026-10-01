@@ -398,7 +398,7 @@ export default function InventoryModule({
     }, 0);
   };
 
-  const prepareGapPurchase = (gap: InventoryGap, taskId = initialTaskId ?? "") => {
+  const prepareGapPurchase = (gap: InventoryGap, taskId = "") => {
     const supplierId =
       gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
         ? gap.preferredSupplierId
