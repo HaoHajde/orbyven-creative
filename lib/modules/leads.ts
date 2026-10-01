@@ -197,6 +197,51 @@ export async function listCrmLeadActivities(
   return (data ?? []) as CrmLeadActivity[];
 }
 
+
+export async function scheduleCrmFollowUp(
+  organizationId: string,
+  leadId: string,
+  whenIso: string,
+  activityBody?: string
+): Promise<CrmLead> {
+  requireOrganizationId(organizationId);
+  if (!leadId.trim()) throw new Error("lead_id is required.");
+
+  const when = new Date(whenIso);
+  if (!Number.isFinite(when.getTime())) throw new Error("Invalid follow-up date.");
+
+  const { data: previous, error: previousError } = await orbyvenSupabase
+    .from("crm_leads")
+    .select("next_follow_up_at")
+    .eq("organization_id", organizationId)
+    .eq("id", leadId)
+    .single();
+
+  if (previousError) throw previousError;
+
+  const updated = await updateCrmLead(organizationId, leadId, {
+    next_follow_up_at: when.toISOString(),
+  });
+
+  try {
+    await createCrmLeadActivity(
+      organizationId,
+      leadId,
+      "status",
+      activityBody?.trim() || "Follow-up programat din fluxul de retenție."
+    );
+  } catch (activityError) {
+    await orbyvenSupabase
+      .from("crm_leads")
+      .update({ next_follow_up_at: previous.next_follow_up_at })
+      .eq("organization_id", organizationId)
+      .eq("id", leadId);
+    throw activityError;
+  }
+
+  return updated;
+}
+
 export async function createCrmLeadActivity(
   organizationId: string,
   leadId: string,
