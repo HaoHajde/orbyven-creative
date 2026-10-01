@@ -1,6 +1,6 @@
 import iconUrl from "../../app/icon.svg?url";
 
-// The exact OC artwork and module line icons used by the public ORBYVEN brand/workspace.
+// Desktop brand adapter: the OC artwork stays local while shared workspace glyphs come from components/WorkspaceModuleGlyph.
 export function OrbyvenBrand({ subtitle = "CREATIVE", compact = false }: { subtitle?: string; compact?: boolean }) {
   return (
     <div className={"orbyven-brand" + (compact ? " orbyven-brand--compact" : "")}>
