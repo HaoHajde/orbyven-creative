@@ -1,8 +1,10 @@
-# ORBYVEN Desktop v0.7.0 — independent Windows application
+# ORBYVEN Desktop v0.8.0 — independent Windows application
 
-This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.7.0 reduces shell drift further by rendering the canonical web Search, Activity Center and ORBYVEN Intelligence components directly, without rendering the remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
+This Windows build ships a **locally bundled React application** served from Tauri's own application origin. Version 0.8.0 reduces shell drift further by rendering the canonical web Search, Activity Center and ORBYVEN Intelligence components directly, without rendering the remote webpage. It runs as a standalone Windows program and is not a shortcut or remotely rendered website.
 
 ## Architecture
+
+- Canonical shell parity 0.8: Windows now renders the same WorkspaceModuleStore as web, using live module definitions. Module glyph paths also live in one shared component consumed by both shells.
 
 - Canonical shell parity 0.7: Windows now renders the same `WorkspaceSearch`, `WorkspaceActivityCenter` and `WorkspaceIntelligence` React components as the web workspace. The Windows layer only injects platform adapters for AI HTTP routes and safe ORBYVEN path opening.
 - Live module metadata: the public desktop UI manifest now includes the canonical module registry. Names, descriptions, badges, colors and feature labels can therefore follow the live workspace without duplicating copy inside Desktop.

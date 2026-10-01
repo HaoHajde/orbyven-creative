@@ -7,6 +7,7 @@ import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
 import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
+import WorkspaceModuleGlyph from "@/components/WorkspaceModuleGlyph";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, themeToCssVars } from "@/lib/workspace-visual-system";
@@ -409,7 +410,7 @@ export default function ClientWorkspace() {
                           ? "flex w-full items-center gap-3 rounded-[9px] border border-[#7797ff]/20 bg-[linear-gradient(95deg,rgba(76,104,237,0.33),rgba(75,99,204,0.16))] px-3 py-2.5 text-left text-[12px] font-semibold text-[var(--text)]"
                           : "flex w-full items-center gap-3 rounded-[9px] border border-transparent px-3 py-2.5 text-left text-[12px] text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)]"}
                       >
-                        <ModuleGlyph id={definition.id} />
+                        <WorkspaceModuleGlyph id={definition.id} />
                         <span className="truncate">{definition.shortName}</span>
                       </button>
                     );
@@ -553,19 +554,3 @@ export default function ClientWorkspace() {
   );
 }
 
-const modulePaths: Record<OrbyvenModuleId, string> = {
-  overview: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
-  leads: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2z M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
-  tasks: "M8 3h8v3H8z M8 5H5v16h14V5h-3 M9 12l2 2 4-4 M9 18h6",
-  calendar: "M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6 M8 15h3 M8 18h3",
-  estimates: "M5 2h10l4 4v16H5z M15 2v5h4 M8 12h8 M8 16h8 M8 19h5",
-  documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
-  inventory: "M4 6h16v14H4z M7 6V3h10v3 M8 10h8 M8 14h3 M14 14h2 M8 18h8",
-  expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
-  thermal: "M3 20h18 M5 20V9l7-6 7 6v11 M8 20v-5h8v5 M7 11h10 M12 8v5",
-  team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
-};
-
-function ModuleGlyph({ id }: { id: OrbyvenModuleId }) {
-  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-[16px] w-[16px] shrink-0"><path d={modulePaths[id]} /></svg>;
-}

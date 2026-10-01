@@ -22,7 +22,9 @@ import {
   WORKSPACE_UI_REVISION,
 } from "@/lib/workspace-visual-system";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { ModuleGlyph, OrbyvenBrand } from "./Brand";
+import { OrbyvenBrand } from "./Brand";
+import WorkspaceModuleGlyph from "@/components/WorkspaceModuleGlyph";
+import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
@@ -638,7 +640,7 @@ export default function App() {
                           }
                           onClick={() => chooseModule(item.id)}
                         >
-                          <ModuleGlyph id={item.id} />
+                          <WorkspaceModuleGlyph id={item.id} />
                           <span>{item.shortName}</span>
                         </button>
                       ))}
@@ -675,74 +677,16 @@ export default function App() {
                 )}
 
                 {panel === "modules" ? (
-                  <>
-                    <section className="page-heading module-store-heading">
-                      <div>
-                        <p className="eyebrow">PERSONALIZARE</p>
-                        <h1>Modulele tale.</h1>
-                        <p className="subheading">
-                          Alege doar instrumentele de care ai nevoie.
-                        </p>
-                      </div>
-                    </section>
-
-                    <section className="module-store">
-                      {runtimeModules.map((definition) => {
-                        const enabled = workspace.enabledModules.includes(definition.id);
-                        const locked = definition.id === "overview";
-                        const entitled = workspace.entitledModules.includes(definition.id);
-                        const blocked =
-                          !canManageModules ||
-                          Boolean(savingModule) ||
-                          locked ||
-                          (!enabled && !entitled);
-
-                        return (
-                          <article key={definition.id} className="module-store-card">
-                            <div className="module-store-head">
-                              <span className="module-store-icon">
-                                <ModuleGlyph id={definition.id} />
-                              </span>
-                              {definition.badge && (
-                                <span className="module-store-badge">
-                                  {definition.badge}
-                                </span>
-                              )}
-                            </div>
-                            <h2>{definition.name}</h2>
-                            <p>{definition.description}</p>
-                            <div className="module-store-bottom">
-                              <span>
-                                {savingModule === definition.id
-                                  ? "Se salvează..."
-                                  : enabled
-                                    ? "Activ"
-                                    : "Neactivat"}
-                              </span>
-                              <button
-                                type="button"
-                                className={enabled ? "primary" : "secondary"}
-                                disabled={blocked}
-                                onClick={() => void toggleModule(definition.id)}
-                              >
-                                {locked
-                                  ? "Inclus"
-                                  : !canManageModules
-                                    ? "Blocat"
-                                    : !enabled && !entitled
-                                      ? "Necesită acces"
-                                      : savingModule === definition.id
-                                        ? "Salvare"
-                                        : enabled
-                                          ? "Elimină"
-                                          : "Adaugă"}
-                              </button>
-                            </div>
-                          </article>
-                        );
-                      })}
-                    </section>
-                  </>
+                  <WorkspaceModuleStore
+                    enabledModules={workspace.enabledModules}
+                    entitledModules={workspace.entitledModules}
+                    onToggle={(id) => void toggleModule(id)}
+                    onClose={() => setPanel("workspace")}
+                    canManage={canManageModules}
+                    savingModule={savingModule}
+                    error={error}
+                    definitions={runtimeModules}
+                  />
                 ) : (
                   <DesktopWorkspaceModules
                     activeModule={activeModule}
@@ -807,7 +751,7 @@ export default function App() {
                       onClick={() => chooseModule(module.id)}
                     >
                       <span className="module-store-icon">
-                        <ModuleGlyph id={module.id} />
+                        <WorkspaceModuleGlyph id={module.id} />
                       </span>
                       <span>
                         <strong>{module.shortName}</strong>
@@ -861,7 +805,7 @@ export default function App() {
                       onClick={() => chooseModule(module.id, { create: true })}
                     >
                       <span className="module-store-icon">
-                        <ModuleGlyph id={module.id} />
+                        <WorkspaceModuleGlyph id={module.id} />
                       </span>
                       <strong>{createLabel(module.id)}</strong>
                       <span className="command-arrow">→</span>
