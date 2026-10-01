@@ -38,7 +38,7 @@ test("access state screen never reveals organization data when identity check fa
 });
 
 test("normal authenticated workspace load does not verify the same session twice", () => {
-  const page = read("components/ClientWorkspace.tsx");
+  const page = read("components/WorkspaceShell.tsx");
   const firstLookup = page.indexOf("const nextWorkspace = await getCurrentWorkspace()");
   const recheck = page.indexOf("await orbyvenSupabase.auth.getUser()");
   assert.ok(firstLookup > 0 && recheck > firstLookup, "getUser must only disambiguate a missing workspace");
