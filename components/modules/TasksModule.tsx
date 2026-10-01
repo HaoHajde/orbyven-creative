@@ -977,11 +977,11 @@ function WorkFileSummary({
       ? {
           id: "expenses" as const,
           label: "Cost real",
-          value: context?.expensesCents !== null && context?.expensesCents !== undefined
-            ? money(context.expensesCents)
+          value: context?.realOperationalCostCents !== null && context?.realOperationalCostCents !== undefined
+            ? money(context.realOperationalCostCents)
             : "—",
-          note: context?.expensesCount !== null && context?.expensesCount !== undefined
-            ? context.expensesCount + " cheltuieli"
+          note: context
+            ? (context.expensesCount ?? 0) + " cheltuieli + " + (context.inventoryMovementsCount ?? 0) + " consumuri stoc"
             : "se încarcă",
           options: { taskId: task.id },
         }
