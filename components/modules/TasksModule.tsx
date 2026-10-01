@@ -24,6 +24,7 @@ import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { attachAcceptedEstimateToTask } from "@/lib/modules/estimates";
+import { scheduleCrmFollowUp } from "@/lib/modules/leads";
 import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
 import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
@@ -108,6 +109,8 @@ const boardStatuses: WorkTaskStatus[] = [
   "blocked",
   "done",
 ];
+
+const AFTERCARE_WINDOWS = [7, 30, 90, 180] as const;
 
 function toIso(value: string) {
   return value ? new Date(value).toISOString() : null;
@@ -384,6 +387,42 @@ export default function TasksModule({
     } catch (progressError) {
       console.error(progressError);
       setError("Progresul nu a putut fi actualizat.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const scheduleAftercare = async (days: number) => {
+    if (
+      !selectedTask?.client_id ||
+      selectedTask.status !== "done" ||
+      selectedTask.kind === "task" ||
+      saving
+    ) return;
+
+    const client = clientById.get(selectedTask.client_id);
+    if (!client) return;
+
+    const when = new Date(Date.now() + days * 86400000).toISOString();
+    setSaving(true);
+    setError("");
+    try {
+      const updatedClient = await scheduleCrmFollowUp(
+        organizationId,
+        client.id,
+        when,
+        `Aftercare programat la ${days} zile după finalizarea: ${selectedTask.title}.`
+      );
+      setClients((current) =>
+        current.map((entry) =>
+          entry.id === updatedClient.id
+            ? { ...entry, next_follow_up_at: updatedClient.next_follow_up_at }
+            : entry
+        )
+      );
+    } catch (aftercareError) {
+      console.error(aftercareError);
+      setError("Revenirea către client nu a putut fi programată.");
     } finally {
       setSaving(false);
     }
@@ -807,6 +846,21 @@ export default function TasksModule({
           )}
         </div>
       )}
+      {selectedTask &&
+        selectedTask.status === "done" &&
+        selectedTask.kind !== "task" &&
+        selectedTask.client_id &&
+        enabledModules.includes("leads") &&
+        clientById.get(selectedTask.client_id) && (
+          <AftercarePanel
+            client={clientById.get(selectedTask.client_id)!}
+            locale={locale}
+            saving={saving}
+            canWrite={canWrite}
+            onSchedule={(days) => void scheduleAftercare(days)}
+            onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
+          />
+        )}
       {selectedTask && (
         <WorkFileSummary
           task={selectedTask}
@@ -862,6 +916,69 @@ export default function TasksModule({
         }
       `}</style>
     </div>
+  );
+}
+
+function AftercarePanel({
+  client,
+  locale,
+  saving,
+  canWrite,
+  onSchedule,
+  onOpenClient,
+}: {
+  client: WorkTaskClient;
+  locale: string;
+  saving: boolean;
+  canWrite: boolean;
+  onSchedule: (days: number) => void;
+  onOpenClient: () => void;
+}) {
+  const followUp = client.next_follow_up_at;
+  const followUpIsFuture = followUp
+    ? new Date(followUp).getTime() > Date.now()
+    : false;
+
+  return (
+    <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
+            ORBYVEN · AFTERCARE
+          </p>
+          <h2 className="mt-1 text-[15px] font-semibold">
+            Nu lăsa relația cu clientul să se închidă odată cu lucrarea.
+          </h2>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
+            {followUp
+              ? `Revenire ${followUpIsFuture ? "programată" : "restantă"}: ${formatDateTime(followUp, locale)}`
+              : "Programează următorul contact pentru mentenanță, feedback sau o comandă repetată."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenClient}
+          className="h-9 self-start rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold"
+        >
+          Fișa clientului ↗
+        </button>
+      </div>
+      {canWrite && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {AFTERCARE_WINDOWS.map((days) => (
+            <button
+              key={days}
+              type="button"
+              disabled={saving}
+              onClick={() => onSchedule(days)}
+              className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50"
+            >
+              Revenire în {days} zile
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
