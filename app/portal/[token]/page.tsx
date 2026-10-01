@@ -9,6 +9,7 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Portal client | ORBYVEN",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 export default async function CustomerPortalPage({
