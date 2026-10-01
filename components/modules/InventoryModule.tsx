@@ -366,6 +366,38 @@ export default function InventoryModule({
     if (ok) await loadTaskPlan();
   };
 
+  const prepareTaskShortagePurchase = (
+    item: InventoryTaskMaterialPlan,
+    gap: InventoryGap
+  ) => {
+    const taskQuantity = Math.min(
+      item.shortage_after_reservation,
+      gap.suggestedOrder
+    );
+    if (taskQuantity <= 0) return;
+    const supplierId =
+      gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
+        ? gap.preferredSupplierId
+        : "";
+    setPurchaseSupplierId(supplierId);
+    setPurchaseTaskId(planTaskId);
+    setPurchaseExpectedOn("");
+    setPurchaseNote("Necesar de cumpărat pentru " + (taskById.get(planTaskId)?.title || "lucrare") + ".");
+    setPurchaseLines([{
+      key: lineKey,
+      materialId: item.material_id,
+      quantity: String(taskQuantity),
+      costLei: String(item.unit_cost_cents / 100),
+    }]);
+    setLineKey((value) => value + 1);
+    setPurchaseOpen(true);
+    window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-purchase-form="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  };
+
   const prepareGapPurchase = (gap: InventoryGap, taskId = initialTaskId ?? "") => {
     const supplierId =
       gap.preferredSupplierId && supplierById.get(gap.preferredSupplierId)?.active
@@ -684,7 +716,7 @@ export default function InventoryModule({
                           {!item.stock_tracked && canProcure ? <button type="button" disabled={busy} onClick={() => void activateStock(item.material_id)} className={button}>Activează stoc</button> : null}
                           {item.stock_tracked && item.available_to_reserve > 0 ? <button type="button" disabled={busy} onClick={() => void reserveTaskStock(item.material_id)} className={primary}>Rezervă {quantity(item.available_to_reserve)}</button> : null}
                           {item.reserved_quantity > 0 ? <button type="button" disabled={busy} onClick={() => void releaseTaskStock(item.material_id)} className={button}>Eliberează rezervarea</button> : null}
-                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareGapPurchase(gap, planTaskId)} className={button}>Pregătește cumpărarea →</button> : null}
+                          {canProcure && item.shortage_after_reservation > 0 && gap?.suggestedOrder ? <button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(item, gap)} className={button}>Pregătește cumpărarea →</button> : null}
                         </div>
                       ) : null}
                     </article>
