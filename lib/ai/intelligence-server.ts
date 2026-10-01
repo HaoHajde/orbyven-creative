@@ -405,12 +405,13 @@ async function documentsResponse(actor: BillingActor, available: Set<OrbyvenModu
 function webDesignResponse(): IntelligenceResponse {
   return {
     specialist: "web_design",
-    answer: "Am identificat o cerere de web design. O trimit către Web Design Specialist, motorul ORBYVEN separat pentru structură, layout, culori și copy controlat.",
+    answer: "Cererea ține de Web Design. ORBYVEN Web Design Intelligence combină motorul local instant cu generare structurată pentru compoziție, copy și variante complete, apoi validează totul înainte de preview.",
     facts: [
-      { label: "Specialist", value: "Web Design" },
-      { label: "Mod", value: "Preview controlat" },
+      { label: "Specialist", value: "Web Design Intelligence" },
+      { label: "Motor", value: "Deterministic + generativ validat" },
+      { label: "Output", value: "Schemă ORBYVEN, fără cod arbitrar" },
     ],
-    actions: [{ kind: "open_path", label: "Deschide Web Design Specialist", href: "/workspace/site-editor" }],
+    actions: [{ kind: "open_path", label: "Deschide Web Design Intelligence", href: "/workspace/site-editor" }],
     generatedBy: "orbyven_core",
   };
 }
