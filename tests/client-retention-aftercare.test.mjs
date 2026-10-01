@@ -16,7 +16,7 @@ test("CRM exposes a guarded follow-up scheduler with history rollback", () => {
 
 test("Operations client context carries retention follow-up state", () => {
   const source = read("lib/modules/tasks.ts");
-  assert.match(source, /next_follow_up_at\\?: string \\| null/);
+  assert.ok(source.includes("next_follow_up_at?: string | null"));
   assert.match(source, /id,name,company,kind,next_follow_up_at/);
 });
 
@@ -33,7 +33,7 @@ test("Overview includes overdue client retention follow-ups in Next Best Action"
   const data = read("lib/modules/overview.ts");
   const ui = read("components/modules/OverviewModule.tsx");
   assert.match(data, /not\("next_follow_up_at", "is", null\)/);
-  assert.match(data, /or\\("kind\\.eq\\.client,stage\\.not\\.in\\.\\(won,lost\\)"/);
+  assert.ok(data.includes('.or("kind.eq.client,stage.not.in.(won,lost)")'));
   assert.match(ui, /client_retention_follow_up/);
   assert.match(ui, /Revenirea post-vânzare este scadentă/);
   assert.match(ui, /lead\.kind === "client"/);
