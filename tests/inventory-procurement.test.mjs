@@ -104,6 +104,50 @@ test("operational dossier and activity center consume inventory context", () => 
 });
 
 
+test("task material reservations are derived from accepted estimates without mutating physical stock", () => {
+  const service = read("lib/modules/inventory.ts");
+  const ui = read("components/modules/InventoryModule.tsx");
+  const migration = read("supabase/migrations/20261001232500_wave4_inventory_reservations.sql");
+
+  assert.match(service, /loadInventoryTaskMaterialPlan/);
+  assert.match(service, /reserveAvailableInventoryForTask/);
+  assert.match(service, /releaseInventoryReservation/);
+  assert.match(service, /ops_inventory_task_material_plan/);
+  assert.match(ui, /Materiale rezervate pe lucrare/);
+  assert.match(ui, /Rezervă tot disponibilul/);
+  assert.match(ui, /Eliberează rezervarea/);
+  assert.match(migration, /create table if not exists public\.ops_inventory_reservations/i);
+  assert.match(migration, /accepted_task_estimates/i);
+  assert.match(migration, /available_to_reserve/i);
+  assert.match(migration, /shortage_after_reservation/i);
+  assert.match(migration, /security_invoker = true/i);
+  assert.match(migration, /inventory_reserve_task_stock/i);
+  assert.match(migration, /pg_advisory_xact_lock/i);
+});
+
+test("reserved stock is protected from unrelated task consumption", () => {
+  const guard = read("supabase/migrations/20261001232600_wave4_inventory_reservation_guard.sql");
+  assert.match(guard, /inventory_reservation_outflow_guard/i);
+  assert.match(guard, /ops_inventory_task_material_plan/i);
+  assert.match(guard, /p\.task_id <> new\.task_id/i);
+  assert.match(guard, /current_stock \+ new\.quantity_delta < protected_for_other_tasks/i);
+  assert.match(guard, /inventory_reserved_for_other_work/i);
+  assert.match(guard, /pg_advisory_xact_lock/i);
+});
+
+test("procurement consolidates shopping by supplier and real work cost includes stock consumption", () => {
+  const inventoryUi = read("components/modules/InventoryModule.tsx");
+  const tasksData = read("lib/modules/tasks.ts");
+  const tasksUi = read("components/modules/TasksModule.tsx");
+
+  assert.match(inventoryUi, /Listă de cumpărături/);
+  assert.match(inventoryUi, /prepareSupplierPurchase/);
+  assert.match(inventoryUi, /estimatedCents/);
+  assert.match(tasksData, /realOperationalCostCents/);
+  assert.match(tasksData, /\(expensesCents \?\? 0\) \+ \(inventoryConsumedCents \?\? 0\)/);
+  assert.match(tasksUi, /cheltuieli \+ .* consumuri stoc/);
+});
+
 test("production inventory migrations are exact and keep stock writes guarded", () => {
   const corePath = "supabase/migrations/20260930071344_alpha09_inventory_procurement_core.sql";
   const signalPath = "supabase/migrations/20260930071500_alpha09_inventory_automation_signal.sql";
