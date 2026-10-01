@@ -46,7 +46,6 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [company, setCompany] = useState("");
-  const [liveUiRevision, setLiveUiRevision] = useState("");
   const [latestDesktopVersion, setLatestDesktopVersion] = useState(CURRENT_DESKTOP_VERSION);
 
   const initializeWorkspace = useCallback(async () => {
@@ -79,7 +78,6 @@ export default function App() {
   const syncLiveUi = useCallback(async () => {
     try {
       const manifest = await fetchDesktopUiManifest();
-      setLiveUiRevision(manifest.revision);
       setLatestDesktopVersion(manifest.desktopVersion);
     } catch (cause) {
       console.warn("ORBYVEN live UI manifest unavailable; bundled workspace remains active.", cause);
@@ -184,34 +182,25 @@ export default function App() {
   };
 
   if (screen === "workspace" && workspace) {
-    const structuralUpdateAvailable = latestDesktopVersion !== CURRENT_DESKTOP_VERSION;
+    document.title =
+      latestDesktopVersion !== CURRENT_DESKTOP_VERSION
+        ? "ORBYVEN — update " + latestDesktopVersion + " disponibil"
+        : "ORBYVEN — Desktop Workspace";
+
     return (
-      <div className="desktop-shell-host">
-        <WorkspaceShell
-          initialWorkspace={workspace}
-          onUnauthenticated={() => {
-            setWorkspace(null);
-            setScreen("login");
-          }}
-          onSignedOut={() => {
-            setWorkspace(null);
-            setScreen("login");
-          }}
-          onOpenPath={openDesktopOrbyvenPath}
-          intelligenceRequest={desktopIntelligenceRequest}
-        />
-        <div
-          className={"desktop-sync-state " + (structuralUpdateAvailable ? "update" : "synced")}
-          title={
-            structuralUpdateAvailable
-              ? "Site-ul ORBYVEN anunță o versiune Desktop mai nouă: " + latestDesktopVersion
-              : "Workspace comun cu ORBYVEN web · UI " + (liveUiRevision || "local")
-          }
-        >
-          <span className="online-dot" />
-          {structuralUpdateAvailable ? "Update " + latestDesktopVersion : "Web parity"}
-        </div>
-      </div>
+      <WorkspaceShell
+        initialWorkspace={workspace}
+        onUnauthenticated={() => {
+          setWorkspace(null);
+          setScreen("login");
+        }}
+        onSignedOut={() => {
+          setWorkspace(null);
+          setScreen("login");
+        }}
+        onOpenPath={openDesktopOrbyvenPath}
+        intelligenceRequest={desktopIntelligenceRequest}
+      />
     );
   }
 
