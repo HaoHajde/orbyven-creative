@@ -22,9 +22,9 @@ import {
 } from "@/lib/workspace-visual-system";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
-import DesktopActivityCenter from "./ActivityCenter";
+import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
+import WorkspaceSearch from "@/components/WorkspaceSearch";
 import DesktopIntelligence from "./Intelligence";
-import DesktopSearch from "./Search";
 import DesktopWorkspaceModules from "./WorkspaceModules";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
@@ -483,7 +483,7 @@ export default function App() {
               <small>Business workspace</small>
             </div>
 
-            <DesktopSearch
+            <WorkspaceSearch
               organizationId={workspace.organization.id}
               enabledModules={workspace.enabledModules}
               onOpenModule={chooseModule}
@@ -531,7 +531,7 @@ export default function App() {
                 organizationId={workspace.organization.id}
                 onOpenModule={chooseModule}
               />
-              <DesktopActivityCenter
+              <WorkspaceActivityCenter
                 organizationId={workspace.organization.id}
                 locale={locale}
                 timeZone={timeZone}
