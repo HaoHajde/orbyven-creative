@@ -121,13 +121,6 @@ export default function WorkspaceShell({
     };
   }, [initialWorkspace, loadWorkspace]);
 
-  useEffect(() => {
-    if (!initialWorkspace) return;
-    setWorkspace(initialWorkspace);
-    setLoading(false);
-    setLoadError("");
-  }, [initialWorkspace]);
-
 
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
