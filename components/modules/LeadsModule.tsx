@@ -197,7 +197,10 @@ export default function LeadsModule({
         (sum, lead) => sum + (lead.estimated_value ?? 0),
         0
       ),
-      followUps: activeLeads.filter((lead) => Boolean(lead.next_follow_up_at)).length,
+      followUps: leads.filter((lead) =>
+        Boolean(lead.next_follow_up_at) &&
+        (lead.kind === "client" || !["won", "lost"].includes(lead.stage))
+      ).length,
     };
   }, [leads]);
 

@@ -79,7 +79,8 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksData, /\.from\("calendar_events"\)/);
   assert.match(tasksData, /options\.includeThermal/);
   assert.match(tasksUi, /DOSAR OPERAȚIONAL/);
-  assert.match(tasksUi, /expensesCents/);
+  assert.match(tasksUi, /realOperationalCostCents/);
+  assert.match(tasksData, /inventoryConsumedCents/);
   assert.match(tasksUi, /thermalSketch/);
   assert.match(tasksUi, /evaluateWorkReadiness/);
   assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
