@@ -967,8 +967,14 @@ function WorkFileSummary({
           value: context?.inventoryConsumedCents !== null && context?.inventoryConsumedCents !== undefined
             ? money(context.inventoryConsumedCents)
             : "—",
-          note: context?.inventoryMovementsCount !== null && context?.inventoryMovementsCount !== undefined
-            ? context.inventoryMovementsCount + " mișcări"
+          note: context
+            ? (context.inventoryShortageLines ?? 0) > 0
+              ? context.inventoryShortageLines + " poziții cu lipsă"
+              : (context.inventoryUnreadyLines ?? 0) > 0
+                ? context.inventoryUnreadyLines + " poziții de rezervat"
+                : (context.inventoryRequiredLines ?? 0) > 0
+                  ? "necesar acoperit"
+                  : (context.inventoryMovementsCount ?? 0) + " mișcări"
             : "se încarcă",
           options: { taskId: task.id },
         }
