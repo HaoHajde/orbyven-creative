@@ -5,12 +5,16 @@ import {
   createInventorySupplier,
   createPurchaseOrder,
   loadInventorySnapshot,
+  loadInventoryTaskMaterialPlan,
   receivePurchaseOrderItem,
   recordInventoryAdjustment,
+  releaseInventoryReservation,
+  reserveAvailableInventoryForTask,
   setPurchaseOrderStatus,
   updateInventoryMaterialSettings,
   type InventoryPurchaseItem,
   type InventorySnapshot,
+  type InventoryTaskMaterialPlan,
 } from "@/lib/modules/inventory";
 import {
   inventorySummary,
@@ -88,6 +92,9 @@ export default function InventoryModule({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [planTaskId, setPlanTaskId] = useState(initialTaskId ?? "");
+  const [taskPlan, setTaskPlan] = useState<InventoryTaskMaterialPlan[]>([]);
+  const [planLoading, setPlanLoading] = useState(false);
 
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [supplierName, setSupplierName] = useState("");
@@ -133,6 +140,28 @@ export default function InventoryModule({
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  const loadTaskPlan = useCallback(async () => {
+    if (!planTaskId) {
+      setTaskPlan([]);
+      return;
+    }
+    setPlanLoading(true);
+    try {
+      setTaskPlan(await loadInventoryTaskMaterialPlan(organizationId, planTaskId));
+    } catch (reason) {
+      console.error(reason);
+      setError("Necesarul de materiale al lucrării nu a putut fi încărcat.");
+      setTaskPlan([]);
+    } finally {
+      setPlanLoading(false);
+    }
+  }, [organizationId, planTaskId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadTaskPlan(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadTaskPlan]);
+
   const materials = useMemo(() => snapshot?.materials ?? [], [snapshot]);
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
@@ -158,6 +187,37 @@ export default function InventoryModule({
     () => inventorySummary(stock, purchaseOrders.length),
     [stock, purchaseOrders.length]
   );
+
+  const taskPlanSummary = useMemo(() => {
+    const active = taskPlan.filter((item) => item.outstanding_quantity > 0);
+    return {
+      lines: taskPlan.length,
+      ready: active.filter((item) => item.reserved_quantity >= item.outstanding_quantity).length,
+      needsReservation: active.filter((item) => item.available_to_reserve > 0).length,
+      shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
+    };
+  }, [taskPlan]);
+
+  const shoppingGroups = useMemo(() => {
+    const grouped = new Map<string, InventoryGap[]>();
+    for (const gap of stock) {
+      if (gap.suggestedOrder <= 0 || !gap.preferredSupplierId) continue;
+      const rows = grouped.get(gap.preferredSupplierId) ?? [];
+      rows.push(gap);
+      grouped.set(gap.preferredSupplierId, rows);
+    }
+    return [...grouped.entries()].map(([supplierId, gaps]) => ({
+      supplierId,
+      gaps,
+      estimatedCents: gaps.reduce(
+        (sum, gap) => sum + Math.round(gap.suggestedOrder * gap.unitCostCents),
+        0
+      ),
+    }));
+  }, [stock]);
+  const unassignedShoppingCount = stock.filter(
+    (gap) => gap.suggestedOrder > 0 && !gap.preferredSupplierId
+  ).length;
 
   const run = async (operation: () => Promise<unknown>, success: string) => {
     if (busy) return false;
@@ -257,6 +317,46 @@ export default function InventoryModule({
       { key: lineKey, materialId: "", quantity: "1", costLei: "" },
     ]);
     setLineKey((value) => value + 1);
+  };
+
+  const prepareSupplierPurchase = (supplierId: string, gaps: InventoryGap[]) => {
+    setPurchaseSupplierId(supplierId);
+    setPurchaseTaskId("");
+    setPurchaseExpectedOn("");
+    setPurchaseNote("Listă de cumpărături generată din necesarul consolidat ORBYVEN.");
+    setPurchaseLines(
+      gaps.map((gap, index) => ({
+        key: lineKey + index,
+        materialId: gap.materialId,
+        quantity: String(gap.suggestedOrder),
+        costLei: String(gap.unitCostCents / 100),
+      }))
+    );
+    setLineKey((value) => value + gaps.length);
+    setPurchaseOpen(true);
+    window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-purchase-form="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  };
+
+  const reserveTaskStock = async (materialId?: string) => {
+    if (!planTaskId) return;
+    const ok = await run(
+      () => reserveAvailableInventoryForTask(organizationId, planTaskId, materialId || null),
+      materialId ? "Stocul disponibil a fost rezervat pentru material." : "Stocul disponibil a fost rezervat pentru lucrare."
+    );
+    if (ok) await loadTaskPlan();
+  };
+
+  const releaseTaskStock = async (materialId: string) => {
+    if (!planTaskId) return;
+    const ok = await run(
+      () => releaseInventoryReservation(organizationId, planTaskId, materialId),
+      "Rezervarea a fost eliberată."
+    );
+    if (ok) await loadTaskPlan();
   };
 
   const prepareGapPurchase = (gap: InventoryGap) => {
