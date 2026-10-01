@@ -310,6 +310,7 @@ export async function createExpense(
   let linkedEstimateId = input.estimateId || null;
   let linkedPurchaseOrderId = input.purchaseOrderId || null;
   let linkedVendor = cleanOptional(input.vendor);
+  let linkedCurrency = (input.currency?.trim() || "RON").toUpperCase();
   if (linkedTaskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
@@ -399,6 +400,7 @@ export async function createExpense(
       .single();
     if (supplierError || !supplier) throw new Error("Furnizorul comenzii nu este disponibil.");
     linkedVendor = linkedVendor || supplier.name;
+    linkedCurrency = order.currency || linkedCurrency;
 
     if (linkedTaskId) {
       const { data: task, error: taskError } = await orbyvenSupabase
@@ -425,7 +427,7 @@ export async function createExpense(
       vendor: linkedVendor,
       description,
       amount_cents: amountCents,
-      currency: (input.currency?.trim() || "RON").toUpperCase(),
+      currency: linkedCurrency,
       payment_method: input.paymentMethod || null,
       client_id: linkedClientId,
       task_id: linkedTaskId,
