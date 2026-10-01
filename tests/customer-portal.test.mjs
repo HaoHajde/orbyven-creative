@@ -22,6 +22,7 @@ test("estimate decisions are immutable, atomic and hashed", () => {
   assert.match(migration, /offer_snapshot/i);
   assert.match(migration, /digest\(snapshot::text,'sha256'\)/i);
   assert.match(migration, /update public\.sales_estimates/i);
+  assert.match(migration, /insert into public\.crm_lead_activities/i);
 });
 
 test("portal snapshot exposes only explicitly published documents", () => {
