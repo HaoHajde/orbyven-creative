@@ -22,7 +22,8 @@ import {
   WORKSPACE_UI_REVISION,
 } from "@/lib/workspace-visual-system";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { ModuleGlyph, OrbyvenBrand } from "./Brand";
+import { OrbyvenBrand } from "./Brand";
+import WorkspaceModuleGlyph from "@/components/WorkspaceModuleGlyph";
 import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
@@ -638,7 +639,7 @@ export default function App() {
                           }
                           onClick={() => chooseModule(item.id)}
                         >
-                          <ModuleGlyph id={item.id} />
+                          <WorkspaceModuleGlyph id={item.id} />
                           <span>{item.shortName}</span>
                         </button>
                       ))}
