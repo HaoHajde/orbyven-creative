@@ -14,11 +14,14 @@ import {
   type ExpenseClientLink,
   type ExpenseDocumentLink,
   type ExpensePaymentMethod,
+  type ExpensePurchaseOrderLink,
   type ExpenseTaskLink,
   type FinanceIncomeEntry,
   type FinanceInvoiceWithBalance,
 } from "@/lib/modules/expenses";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   Field,
   ModuleEmpty,
@@ -34,13 +37,16 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialClientId?: string;
   initialTaskId?: string;
   initialEstimateId?: string;
+  initialPurchaseOrderId?: string;
 };
 
-type Tab = "overview" | "expenses" | "income" | "invoices";
+type Tab = "overview" | "expenses" | "income" | "invoices" | "procurement";
 
 type ExpenseForm = {
   occurredOn: string;
@@ -52,6 +58,7 @@ type ExpenseForm = {
   clientId: string;
   taskId: string;
   documentId: string;
+  purchaseOrderId: string;
 };
 
 type IncomeForm = {
@@ -90,6 +97,7 @@ function emptyExpenseForm(): ExpenseForm {
     clientId: "",
     taskId: "",
     documentId: "",
+    purchaseOrderId: "",
   };
 }
 
@@ -145,10 +153,13 @@ export default function ExpensesModule({
   organizationId,
   locale,
   role,
+  enabledModules,
+  onOpenModule,
   initialCreate = false,
   initialClientId,
   initialTaskId,
   initialEstimateId,
+  initialPurchaseOrderId,
 }: Props) {
   const canWrite = ["owner", "admin", "manager"].includes(role);
   const [tab, setTab] = useState<Tab>(initialCreate ? "expenses" : "overview");
@@ -158,10 +169,12 @@ export default function ExpensesModule({
   const [clients, setClients] = useState<ExpenseClientLink[]>([]);
   const [tasks, setTasks] = useState<ExpenseTaskLink[]>([]);
   const [documents, setDocuments] = useState<ExpenseDocumentLink[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<ExpensePurchaseOrderLink[]>([]);
   const [expenseForm, setExpenseForm] = useState<ExpenseForm>(() => ({
     ...emptyExpenseForm(),
     clientId: initialClientId ?? "",
     taskId: initialTaskId ?? "",
+    purchaseOrderId: initialPurchaseOrderId ?? "",
   }));
   const [incomeForm, setIncomeForm] = useState<IncomeForm>(() => ({
     ...emptyIncomeForm(),
@@ -197,6 +210,7 @@ export default function ExpensesModule({
       setClients(contexts.clients);
       setTasks(contexts.tasks);
       setDocuments(contexts.documents);
+      setPurchaseOrders(contexts.purchaseOrders);
 
       if (initialTaskId) {
         const task = contexts.tasks.find((item) => item.id === initialTaskId);
@@ -205,13 +219,30 @@ export default function ExpensesModule({
           setIncomeForm((current) => ({ ...current, clientId: task.client_id! }));
         }
       }
+
+      if (initialPurchaseOrderId) {
+        const order = contexts.purchaseOrders.find((item) => item.purchase_order_id === initialPurchaseOrderId);
+        if (order) {
+          const remaining = Math.max(0, order.ordered_cents - order.recorded_expense_cents);
+          setExpenseForm((current) => ({
+            ...current,
+            purchaseOrderId: order.purchase_order_id,
+            category: "Achiziții stoc",
+            vendor: order.supplier_name,
+            description: current.description || ("Achiziție " + order.reference + " · " + order.supplier_name),
+            amount: current.amount || (remaining > 0 ? (remaining / 100).toFixed(2) : ""),
+            taskId: order.task_id || current.taskId,
+            clientId: order.client_id || current.clientId,
+          }));
+        }
+      }
     } catch (reason) {
       console.error(reason);
       setError("Finanțele nu au putut fi încărcate.");
     } finally {
       setLoading(false);
     }
-  }, [organizationId, initialTaskId]);
+  }, [organizationId, initialPurchaseOrderId, initialTaskId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -221,6 +252,10 @@ export default function ExpensesModule({
   const clientById = useMemo(() => new Map(clients.map((item) => [item.id, item.name])), [clients]);
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.title])), [tasks]);
   const docById = useMemo(() => new Map(documents.map((item) => [item.id, item.name])), [documents]);
+  const purchaseOrderById = useMemo(
+    () => new Map(purchaseOrders.map((item) => [item.purchase_order_id, item])),
+    [purchaseOrders]
+  );
 
   const scopedExpenses = useMemo(
     () => scopeTaskId ? expenses.filter((item) => item.task_id === scopeTaskId) : expenses,
@@ -274,6 +309,51 @@ export default function ExpensesModule({
     }));
   };
 
+  const choosePurchaseOrder = (purchaseOrderId: string, open = false) => {
+    const order = purchaseOrderById.get(purchaseOrderId);
+    setExpenseForm((current) => {
+      if (!order) {
+        return { ...current, purchaseOrderId: "" };
+      }
+      const remaining = Math.max(0, order.ordered_cents - order.recorded_expense_cents);
+      return {
+        ...current,
+        purchaseOrderId,
+        category: "Achiziții stoc",
+        vendor: order.supplier_name,
+        description: "Achiziție " + order.reference + " · " + order.supplier_name,
+        amount: remaining > 0 ? (remaining / 100).toFixed(2) : current.amount,
+        taskId: order.task_id || "",
+        clientId: order.client_id || "",
+      };
+    });
+    if (open) {
+      setTab("expenses");
+      setExpenseOpen(true);
+    }
+  };
+
+  const chooseExpenseDocument = (documentId: string) => {
+    const document = documents.find((item) => item.id === documentId);
+    setExpenseForm((current) => ({
+      ...current,
+      documentId,
+      purchaseOrderId: document?.purchase_order_id || current.purchaseOrderId,
+    }));
+    if (document?.purchase_order_id) {
+      const order = purchaseOrderById.get(document.purchase_order_id);
+      if (order) {
+        setExpenseForm((current) => ({
+          ...current,
+          purchaseOrderId: order.purchase_order_id,
+          vendor: order.supplier_name,
+          taskId: order.task_id || current.taskId,
+          clientId: order.client_id || current.clientId,
+        }));
+      }
+    }
+  };
+
   const chooseIncomeTask = (taskId: string) => {
     const task = tasks.find((item) => item.id === taskId);
     setIncomeForm((current) => ({
@@ -313,6 +393,7 @@ export default function ExpensesModule({
         taskId: expenseForm.taskId || null,
         documentId: expenseForm.documentId || null,
         estimateId: initialEstimateId || null,
+        purchaseOrderId: expenseForm.purchaseOrderId || null,
       });
       setExpenseForm(emptyExpenseForm());
       setExpenseOpen(false);
@@ -419,6 +500,7 @@ export default function ExpensesModule({
     { id: "expenses", label: "Cheltuieli" },
     { id: "income", label: "Încasări" },
     { id: "invoices", label: "Facturi & scadențe" },
+    ...(enabledModules.includes("inventory") ? [{ id: "procurement" as const, label: "Achiziții furnizor" }] : []),
   ];
 
   return (
@@ -492,7 +574,7 @@ export default function ExpensesModule({
       {expenseOpen && canWrite ? (
         <form data-workspace-create-focus={expenseOpen ? "true" : undefined} onSubmit={handleExpense} className="mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <div><h2 className="text-sm font-semibold">Cheltuială nouă</h2><p className="mt-1 text-[10px] text-[var(--muted)]">Leag-o de lucrare pentru profitabilitate reală.</p></div>
+            <div><h2 className="text-sm font-semibold">Cheltuială nouă</h2><p className="mt-1 text-[10px] text-[var(--muted)]">{expenseForm.purchaseOrderId ? "Costul de achiziție intră în cashflow; materialul intră în costul lucrării doar când este consumat din stoc." : "Leag-o de lucrare pentru costurile operaționale care nu vin din stoc."}</p></div>
             <button type="button" onClick={() => setExpenseOpen(false)} className="text-lg text-[var(--muted)]">×</button>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -500,7 +582,7 @@ export default function ExpensesModule({
             <Field label="Categorie *"><input value={expenseForm.category} onChange={(e) => setExpenseForm((c) => ({ ...c, category: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Sumă (lei) *"><input type="number" min="0.01" step="0.01" value={expenseForm.amount} onChange={(e) => setExpenseForm((c) => ({ ...c, amount: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Descriere *"><input value={expenseForm.description} onChange={(e) => setExpenseForm((c) => ({ ...c, description: e.target.value }))} className={moduleInputClass} /></Field>
-            <Field label="Furnizor"><input value={expenseForm.vendor} onChange={(e) => setExpenseForm((c) => ({ ...c, vendor: e.target.value }))} className={moduleInputClass} /></Field>
+            <Field label="Furnizor"><input disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.vendor} onChange={(e) => setExpenseForm((c) => ({ ...c, vendor: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`} /></Field>
             <Field label="Plată">
               <select value={expenseForm.paymentMethod} onChange={(e) => setExpenseForm((c) => ({ ...c, paymentMethod: e.target.value as ExpenseForm["paymentMethod"] }))} className={moduleInputClass}>
                 <option value="">Nespecificat</option>
@@ -508,20 +590,28 @@ export default function ExpensesModule({
               </select>
             </Field>
             <Field label="Client">
-              <select value={expenseForm.clientId} disabled={Boolean(tasks.find((item) => item.id === expenseForm.taskId)?.client_id)} onChange={(e) => setExpenseForm((c) => ({ ...c, clientId: e.target.value }))} className={moduleInputClass}>
+              <select value={expenseForm.clientId} disabled={Boolean(expenseForm.purchaseOrderId || tasks.find((item) => item.id === expenseForm.taskId)?.client_id)} onChange={(e) => setExpenseForm((c) => ({ ...c, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}>
                 <option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </Field>
             <Field label="Lucrare">
-              <select value={expenseForm.taskId} onChange={(e) => chooseExpenseTask(e.target.value)} className={moduleInputClass}>
+              <select disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.taskId} onChange={(e) => chooseExpenseTask(e.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
                 <option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
             </Field>
             <Field label="Document justificativ">
-              <select value={expenseForm.documentId} onChange={(e) => setExpenseForm((c) => ({ ...c, documentId: e.target.value }))} className={moduleInputClass}>
-                <option value="">Fără document</option>{documents.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              <select value={expenseForm.documentId} onChange={(e) => chooseExpenseDocument(e.target.value)} className={moduleInputClass}>
+                <option value="">Fără document</option>{documents.filter((item) => !expenseForm.purchaseOrderId || !item.purchase_order_id || item.purchase_order_id === expenseForm.purchaseOrderId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </Field>
+            {enabledModules.includes("inventory") ? (
+              <Field label="Comandă furnizor">
+                <select value={expenseForm.purchaseOrderId} onChange={(e) => choosePurchaseOrder(e.target.value)} className={moduleInputClass}>
+                  <option value="">Fără comandă furnizor</option>
+                  {purchaseOrders.filter((item) => ["ordered","partially_received","received"].includes(item.status)).map((item) => <option key={item.purchase_order_id} value={item.purchase_order_id}>{item.reference} · {item.supplier_name}</option>)}
+                </select>
+              </Field>
+            ) : null}
           </div>
           {initialEstimateId ? <p className="mt-3 text-[10px] text-[var(--muted)]">Va fi asociată și devizului din care ai deschis Finanțe.</p> : null}
           <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Salvează cheltuiala"}</button></div>
