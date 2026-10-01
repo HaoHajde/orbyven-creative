@@ -355,6 +355,14 @@ function parseModelResult(
   });
   if (!candidate || !generatedCopyPreservesFacts(candidate, prompt, current)) return null;
 
+  const normalizedPrompt = prompt
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (!/\b(brand|rebrand|rebranding|nume firma|numele firmei|denumire)\b/.test(normalizedPrompt)) {
+    candidate.brand = current.brand;
+  }
+
   const draft = { ...candidate } as EditableSite & { preset?: EditableSite["preset"] };
   delete draft.preset;
   return { summary, draft, suggestions };
