@@ -157,6 +157,25 @@ function cents(value: number) {
   return Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
+function inventoryMutationError(error: unknown, fallback: string) {
+  const raw =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message?: unknown }).message || "")
+      : error instanceof Error
+        ? error.message
+        : "";
+  if (raw.includes("inventory_reserved_for_other_work")) {
+    return new Error("Cantitatea nu poate fi folosită: o parte din stoc este rezervată pentru alte lucrări.");
+  }
+  if (raw.includes("insufficient inventory")) {
+    return new Error("Stocul disponibil nu acoperă această ieșire.");
+  }
+  if (raw.includes("receipt exceeds ordered quantity")) {
+    return new Error("Recepția depășește cantitatea comandată.");
+  }
+  return new Error(raw || fallback);
+}
+
 export async function loadInventorySnapshot(
   organizationId: string
 ): Promise<InventorySnapshot> {
@@ -325,7 +344,7 @@ export async function reserveAvailableInventoryForTask(
     p_task_id: taskId,
     p_material_id: materialId || null,
   });
-  if (error) throw error;
+  if (error) throw inventoryMutationError(error, "Stocul nu a putut fi rezervat.");
   return Number(data || 0);
 }
 
@@ -344,7 +363,7 @@ export async function releaseInventoryReservation(
     .eq("organization_id", organizationId)
     .eq("task_id", taskId)
     .eq("material_id", materialId);
-  if (error) throw error;
+  if (error) throw inventoryMutationError(error, "Rezervarea nu a putut fi eliberată.");
 }
 
 export async function createInventorySupplier(
@@ -525,7 +544,7 @@ export async function receivePurchaseOrderItem(
       created_by: authData.user?.id ?? null,
     });
 
-  if (error) throw error;
+  if (error) throw inventoryMutationError(error, "Recepția nu a putut fi înregistrată.");
 }
 
 export async function recordInventoryAdjustment(
@@ -565,7 +584,7 @@ export async function recordInventoryAdjustment(
       note: cleanOptional(input.note),
       created_by: authData.user?.id ?? null,
     });
-  if (error) throw error;
+  if (error) throw inventoryMutationError(error, "Ajustarea de stoc nu a putut fi înregistrată.");
 }
 
 export async function consumeInventoryForTask(
@@ -605,7 +624,7 @@ export async function consumeInventoryForTask(
       note: cleanOptional(input.note),
       created_by: authData.user?.id ?? null,
     });
-  if (error) throw error;
+  if (error) throw inventoryMutationError(error, "Consumul de stoc nu a putut fi înregistrat.");
 }
 
 export async function loadTaskInventoryConsumption(
