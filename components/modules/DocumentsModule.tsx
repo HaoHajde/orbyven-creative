@@ -10,6 +10,7 @@ import {
   type DocumentCategory,
   type DocumentEstimateLink,
   type DocumentLink,
+  type DocumentPurchaseOrderLink,
   type DocumentTaskLink,
 } from "@/lib/modules/documents";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
@@ -24,6 +25,7 @@ type Props = {
   initialCreate?: boolean;
   initialRecordId?: string;
   initialTaskId?: string;
+  initialPurchaseOrderId?: string;
 };
 
 const DOCUMENT_ACCEPT = [".pdf",".jpg",".jpeg",".png",".webp",".heic",".heif",".txt",".csv",".doc",".docx",".xls",".xlsx",".ppt",".pptx"].join(",");
@@ -57,16 +59,18 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, initialCreate = false, initialRecordId, initialTaskId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
   const [estimates, setEstimates] = useState<DocumentEstimateLink[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<DocumentPurchaseOrderLink[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState<DocumentCategory>("general");
   const [clientId, setClientId] = useState("");
   const [taskId, setTaskId] = useState(initialTaskId ?? "");
   const [estimateId, setEstimateId] = useState("");
+  const [purchaseOrderId, setPurchaseOrderId] = useState(initialPurchaseOrderId ?? "");
   const [note, setNote] = useState("");
   const [uploadOpen, setUploadOpen] = useState(Boolean(initialCreate && role !== "viewer"));
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -99,13 +103,18 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
       setClients(contexts.clients);
       setTasks(contexts.tasks);
       setEstimates(contexts.estimates);
+      setPurchaseOrders(contexts.purchaseOrders);
+      if (initialPurchaseOrderId) {
+        const order = contexts.purchaseOrders.find((item) => item.id === initialPurchaseOrderId);
+        if (order?.task_id) setTaskId(order.task_id);
+      }
     } catch (loadError) {
       console.error(loadError);
       setError("Documentele nu au putut fi încărcate.");
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, initialPurchaseOrderId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -117,6 +126,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
   const taskContextById = useMemo(() => new Map(tasks.map((item) => [item.id, item])), [tasks]);
   const estimateById = useMemo(() => new Map(estimates.map((item) => [item.id, `${item.reference} · ${item.title}`])), [estimates]);
   const estimateContextById = useMemo(() => new Map(estimates.map((item) => [item.id, item])), [estimates]);
+  const purchaseOrderById = useMemo(() => new Map(purchaseOrders.map((item) => [item.id, item])), [purchaseOrders]);
 
   const scopedDocuments = useMemo(
     () => (scopeTaskId ? documents.filter((document) => document.task_id === scopeTaskId) : documents),
@@ -134,19 +144,20 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         document.client_id ? clientById.get(document.client_id) : "",
         document.task_id ? taskById.get(document.task_id) : "",
         document.estimate_id ? estimateById.get(document.estimate_id) : "",
+        document.purchase_order_id ? purchaseOrderById.get(document.purchase_order_id)?.reference : "",
       ]
         .filter(Boolean)
         .join(" ")
         .toLocaleLowerCase(locale);
       return haystack.includes(normalized);
     });
-  }, [clientById, scopedDocuments, estimateById, locale, query, taskById]);
+  }, [clientById, scopedDocuments, estimateById, locale, purchaseOrderById, query, taskById]);
 
   const metrics = useMemo(() => ({
     total: scopedDocuments.length,
     photos: scopedDocuments.filter((item) => item.category === "photo").length,
     receipts: scopedDocuments.filter((item) => item.category === "receipt").length,
-    unlinked: scopedDocuments.filter((item) => !item.client_id && !item.task_id && !item.estimate_id).length,
+    unlinked: scopedDocuments.filter((item) => !item.client_id && !item.task_id && !item.estimate_id && !item.purchase_order_id).length,
   }), [scopedDocuments]);
 
   const selectTaskContext = (nextTaskId: string) => {
@@ -157,6 +168,10 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
       const estimate = estimateContextById.get(estimateId);
       if (estimate?.task_id && estimate.task_id !== nextTaskId) setEstimateId("");
     }
+    if (purchaseOrderId) {
+      const order = purchaseOrderById.get(purchaseOrderId);
+      if (order?.task_id && order.task_id !== nextTaskId) setPurchaseOrderId("");
+    }
   };
 
   const selectEstimateContext = (nextEstimateId: string) => {
@@ -165,6 +180,22 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     if (!estimate) return;
     if (estimate.task_id) setTaskId(estimate.task_id);
     if (estimate.client_id) setClientId(estimate.client_id);
+  };
+
+  const selectPurchaseOrderContext = (nextPurchaseOrderId: string) => {
+    const order = nextPurchaseOrderId ? purchaseOrderById.get(nextPurchaseOrderId) : null;
+    setPurchaseOrderId(nextPurchaseOrderId);
+    if (!order) return;
+    if (order.task_id) {
+      const task = taskContextById.get(order.task_id);
+      setTaskId(order.task_id);
+      if (task?.client_id) setClientId(task.client_id);
+      if (estimateId) {
+        const estimate = estimateContextById.get(estimateId);
+        if (estimate?.task_id && estimate.task_id !== order.task_id) setEstimateId("");
+      }
+    }
+    if (category === "general") setCategory("invoice");
   };
 
   const selectFile = (nextFile: File | null, source: "files" | "camera") => {
@@ -179,6 +210,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     setClientId("");
     setTaskId(scopeTaskId || "");
     setEstimateId("");
+    setPurchaseOrderId("");
     setNote("");
     setFileInputKey((current) => current + 1);
   };
@@ -195,6 +227,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
         clientId: clientId || null,
         taskId: taskId || null,
         estimateId: estimateId || null,
+        purchaseOrderId: purchaseOrderId || null,
         note,
       });
       setDocuments((current) => [created, ...current]);
@@ -318,12 +351,18 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
                 {estimates.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
               </select>
             </Field>
+            <Field label="Comandă furnizor">
+              <select value={purchaseOrderId} onChange={(event) => selectPurchaseOrderContext(event.target.value)} className={moduleInputClass}>
+                <option value="">Fără comandă furnizor</option>
+                {purchaseOrders.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.status}</option>)}
+              </select>
+            </Field>
             <Field label="Notă">
               <input value={note} onChange={(event) => setNote(event.target.value)} className={moduleInputClass} placeholder="Ex. poze înainte de intervenție" />
             </Field>
           </div>
           <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <p className="text-xs text-[var(--muted)]">{taskId || estimateId ? "Contextul este sincronizat automat între client, lucrare și deviz." : "Maxim 20 MB. Descărcarea se face prin link temporar securizat."}</p>
+            <p className="text-xs text-[var(--muted)]">{taskId || estimateId || purchaseOrderId ? "Contextul este sincronizat automat între client, lucrare, deviz și achiziție." : "Maxim 20 MB. Descărcarea se face prin link temporar securizat."}</p>
             <button disabled={!file || saving} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se încarcă…" : "Salvează documentul"}</button>
           </div>
         </form>
@@ -362,6 +401,7 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
                   {document.client_id ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">Client: {clientById.get(document.client_id) || "—"}</span> : null}
                   {document.task_id ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">Lucrare: {taskById.get(document.task_id) || "—"}</span> : null}
                   {document.estimate_id ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">{estimateById.get(document.estimate_id) || "Ofertă"}</span> : null}
+                  {document.purchase_order_id ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">PO: {purchaseOrderById.get(document.purchase_order_id)?.reference || "Achiziție"}</span> : null}
                 </div>
                 {document.note ? <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{document.note}</p> : null}
 
