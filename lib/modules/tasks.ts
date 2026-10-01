@@ -278,6 +278,86 @@ export async function createWorkTask(
   return data as WorkTask;
 }
 
+export async function createRecurringWorkFromTask(
+  organizationId: string,
+  sourceTaskId: string,
+  scheduledAt: string
+): Promise<WorkTask> {
+  requireOrganizationId(organizationId);
+  requireTaskId(sourceTaskId);
+
+  const nextDate = new Date(scheduledAt);
+  if (!Number.isFinite(nextDate.getTime())) {
+    throw new Error("Invalid recurring work date.");
+  }
+
+  const { data: source, error: sourceError } = await orbyvenSupabase
+    .from("ops_tasks")
+    .select(TASK_FIELDS)
+    .eq("organization_id", organizationId)
+    .eq("id", sourceTaskId)
+    .single();
+
+  if (sourceError) throw sourceError;
+  const sourceTask = source as WorkTask;
+  if (sourceTask.status !== "done") {
+    throw new Error("Only completed work can be repeated.");
+  }
+  if (sourceTask.kind === "task") {
+    throw new Error("Generic tasks are not recurring work.");
+  }
+
+  const created = await createWorkTask(organizationId, {
+    title: sourceTask.title,
+    kind: sourceTask.kind,
+    priority: "normal",
+    description: sourceTask.description ?? "",
+    clientId: sourceTask.client_id,
+    location: sourceTask.location ?? "",
+    scheduledAt: nextDate.toISOString(),
+    estimatedMinutes: sourceTask.estimated_minutes,
+  });
+
+  try {
+    const { data: checklistRows, error: checklistError } = await orbyvenSupabase
+      .from("ops_task_checklist_items")
+      .select("title,position")
+      .eq("organization_id", organizationId)
+      .eq("task_id", sourceTaskId)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (checklistError) throw checklistError;
+
+    if (checklistRows?.length) {
+      const { data: authData } = await orbyvenSupabase.auth.getUser();
+      const { error: copyError } = await orbyvenSupabase
+        .from("ops_task_checklist_items")
+        .insert(
+          checklistRows.map((item) => ({
+            organization_id: organizationId,
+            task_id: created.id,
+            title: item.title,
+            done: false,
+            position: item.position,
+            created_by: authData.user?.id ?? null,
+          }))
+        );
+
+      if (copyError) throw copyError;
+    }
+  } catch (copyError) {
+    await orbyvenSupabase
+      .from("ops_tasks")
+      .delete()
+      .eq("organization_id", organizationId)
+      .eq("id", created.id);
+    throw copyError;
+  }
+
+  return created;
+}
+
 export async function updateWorkTask(
   organizationId: string,
   taskId: string,
