@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import {
+  desktopApiFetch,
   fetchDesktopUiManifest,
   initializeDesktopClient,
   orbyvenSupabase,
@@ -24,7 +25,7 @@ import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/work
 import { ModuleGlyph, OrbyvenBrand } from "./Brand";
 import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
-import DesktopIntelligence from "./Intelligence";
+import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
 import DesktopWorkspaceModules from "./WorkspaceModules";
 
 type Screen = "loading" | "login" | "onboarding" | "access" | "workspace" | "error";
@@ -58,6 +59,21 @@ const BUNDLED_UI_MANIFEST: DesktopUiManifest = {
   createModules: [...WORKSPACE_CREATE_MODULES],
   modules: ORBYVEN_MODULES,
 };
+
+function desktopIntelligenceRequest(path: string, init?: RequestInit) {
+  const desktopPath = path.replace(/^\/api\/ai\//, "/api/desktop/ai/");
+  return desktopApiFetch(desktopPath, init);
+}
+
+function openDesktopOrbyvenPath(href: string) {
+  try {
+    const url = new URL(href, "https://orbyven.ro");
+    if (url.protocol !== "https:" || url.hostname !== "orbyven.ro") return;
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+  } catch {
+    // Ignore malformed paths emitted by external data.
+  }
+}
 
 function createLabel(id: OrbyvenModuleId) {
   if (id === "leads") return "Cerere nouă";
@@ -543,9 +559,12 @@ export default function App() {
                 {panel === "modules" ? "Înapoi" : "Module"}
               </button>
 
-              <DesktopIntelligence
+              <WorkspaceIntelligence
                 organizationId={workspace.organization.id}
+                themeVars={themeVars}
                 onOpenModule={chooseModule}
+                onOpenPath={openDesktopOrbyvenPath}
+                request={desktopIntelligenceRequest}
               />
               <WorkspaceActivityCenter
                 organizationId={workspace.organization.id}
