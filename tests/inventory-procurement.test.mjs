@@ -118,6 +118,8 @@ test("task material reservations are derived from accepted estimates without mut
   assert.match(ui, /Eliberează rezervarea/);
   assert.match(migration, /create table if not exists public\.ops_inventory_reservations/i);
   assert.match(migration, /accepted_task_estimates/i);
+  assert.match(migration, /estimate_id uuid not null/i);
+  assert.match(migration, /r\.estimate_id = b\.estimate_id/i);
   assert.match(migration, /available_to_reserve/i);
   assert.match(migration, /shortage_after_reservation/i);
   assert.match(migration, /security_invoker = true/i);
@@ -132,7 +134,19 @@ test("reserved stock is protected from unrelated task consumption", () => {
   assert.match(guard, /p\.task_id <> new\.task_id/i);
   assert.match(guard, /current_stock \+ new\.quantity_delta < protected_for_other_tasks/i);
   assert.match(guard, /inventory_reserved_for_other_work/i);
+  assert.match(read("lib/modules/inventory.ts"), /o parte din stoc este rezervată pentru alte lucrări/);
   assert.match(guard, /pg_advisory_xact_lock/i);
+});
+
+test("work readiness treats unreserved or missing materials as operational attention", () => {
+  const readiness = read("lib/automation/work-readiness.ts");
+  const tasksUi = read("components/modules/TasksModule.tsx");
+  assert.match(readiness, /key: "materials"/);
+  assert.match(readiness, /inventoryShortageLines/);
+  assert.match(readiness, /inventoryUnreadyLines/);
+  assert.match(readiness, /lipsă după rezervarea stocului disponibil/);
+  assert.match(tasksUi, /poziții cu lipsă/);
+  assert.match(tasksUi, /poziții de rezervat/);
 });
 
 test("procurement consolidates shopping by supplier and real work cost includes stock consumption", () => {
