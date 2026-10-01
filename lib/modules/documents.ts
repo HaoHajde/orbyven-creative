@@ -21,6 +21,7 @@ export type BusinessDocument = {
   client_id: string | null;
   task_id: string | null;
   estimate_id: string | null;
+  purchase_order_id: string | null;
   note: string | null;
   created_by: string | null;
   created_at: string;
@@ -30,6 +31,7 @@ export type BusinessDocument = {
 export type DocumentLink = { id: string; name: string };
 export type DocumentTaskLink = { id: string; title: string; client_id: string | null };
 export type DocumentEstimateLink = { id: string; reference: string; title: string; client_id: string | null; task_id: string | null };
+export type DocumentPurchaseOrderLink = { id: string; reference: string; task_id: string | null; status: string };
 
 export type UploadDocumentInput = {
   file: File;
@@ -37,6 +39,7 @@ export type UploadDocumentInput = {
   clientId?: string | null;
   taskId?: string | null;
   estimateId?: string | null;
+  purchaseOrderId?: string | null;
   note?: string;
 };
 
@@ -76,7 +79,7 @@ async function validateDocumentFile(file: File) {
   }
 }
 const FIELDS =
-  "id,organization_id,name,category,storage_path,mime_type,size_bytes,client_id,task_id,estimate_id,note,created_by,created_at,updated_at";
+  "id,organization_id,name,category,storage_path,mime_type,size_bytes,client_id,task_id,estimate_id,purchase_order_id,note,created_by,created_at,updated_at";
 
 function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
@@ -104,7 +107,7 @@ export async function listDocuments(organizationId: string): Promise<BusinessDoc
 
 export async function listDocumentContexts(organizationId: string) {
   requireOrganizationId(organizationId);
-  const [clientsResult, tasksResult, estimatesResult] = await Promise.all([
+  const [clientsResult, tasksResult, estimatesResult, purchaseOrdersResult] = await Promise.all([
     orbyvenSupabase
       .from("crm_leads")
       .select("id,name")
@@ -120,16 +123,25 @@ export async function listDocumentContexts(organizationId: string) {
       .select("id,reference,title,client_id,task_id")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
+    orbyvenSupabase
+      .from("ops_purchase_orders")
+      .select("id,reference,task_id,status")
+      .eq("organization_id", organizationId)
+      .neq("status", "cancelled")
+      .order("updated_at", { ascending: false })
+      .limit(200),
   ]);
 
   if (clientsResult.error) throw clientsResult.error;
   if (tasksResult.error) throw tasksResult.error;
   if (estimatesResult.error) throw estimatesResult.error;
+  if (purchaseOrdersResult.error) throw purchaseOrdersResult.error;
 
   return {
     clients: (clientsResult.data ?? []) as DocumentLink[],
     tasks: (tasksResult.data ?? []) as DocumentTaskLink[],
     estimates: (estimatesResult.data ?? []) as DocumentEstimateLink[],
+    purchaseOrders: (purchaseOrdersResult.data ?? []) as DocumentPurchaseOrderLink[],
   };
 }
 
@@ -142,6 +154,22 @@ export async function uploadDocument(
 
   let linkedClientId = input.clientId || null;
   let linkedTaskId = input.taskId || null;
+  const linkedPurchaseOrderId = input.purchaseOrderId || null;
+
+  if (linkedPurchaseOrderId) {
+    const { data: order, error: orderError } = await orbyvenSupabase
+      .from("ops_purchase_orders")
+      .select("id,task_id,status")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedPurchaseOrderId)
+      .neq("status", "cancelled")
+      .single();
+    if (orderError || !order) throw new Error("Comanda furnizor nu există în această firmă.");
+    if (linkedTaskId && order.task_id && linkedTaskId !== order.task_id) {
+      throw new Error("Lucrarea aleasă nu corespunde comenzii furnizor.");
+    }
+    linkedTaskId = order.task_id || linkedTaskId;
+  }
 
   if (input.estimateId) {
     const { data: estimate, error: estimateError } = await orbyvenSupabase
@@ -210,6 +238,7 @@ export async function uploadDocument(
       client_id: linkedClientId,
       task_id: linkedTaskId,
       estimate_id: input.estimateId || null,
+      purchase_order_id: linkedPurchaseOrderId,
       note: input.note?.trim() || null,
       created_by: authData.user?.id ?? null,
     })
