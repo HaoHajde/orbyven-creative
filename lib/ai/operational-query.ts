@@ -138,7 +138,10 @@ function unavailable(label: string): IntelligenceResponse {
 
 async function taskQuery(
   actor: BillingActor,
-  kind: Extract<OperationalQueryKind, "overdue_tasks" | "blocked_tasks" | "unassigned_tasks">
+  kind: Extract<
+    OperationalQueryKind,
+    "overdue_tasks" | "blocked_tasks" | "unassigned_tasks" | "urgent_tasks" | "unscheduled_tasks"
+  >
 ): Promise<IntelligenceResponse> {
   const client = createBillingServiceClient(actor);
   const now = Date.now();
@@ -167,6 +170,27 @@ async function taskQuery(
     answer = rows.length
       ? `Am găsit ${rows.length} lucrări fără responsabil. Acestea sunt cele care riscă cel mai ușor să rămână fără ownership.`
       : "Toate lucrările deschise au un responsabil asociat.";
+  } else if (kind === "urgent_tasks") {
+    rows = open
+      .filter((row) => row.priority === "urgent" || row.priority === "high")
+      .sort((a, b) => {
+        const priorityA = a.priority === "urgent" ? 0 : 1;
+        const priorityB = b.priority === "urgent" ? 0 : 1;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return new Date(a.due_at || "9999-12-31").getTime() - new Date(b.due_at || "9999-12-31").getTime();
+      });
+    label = "Urgente / ridicate";
+    answer = rows.length
+      ? `Ai ${rows.length} lucrări cu prioritate urgentă sau ridicată. Prima este „${rows[0].title}”.`
+      : "Nu există lucrări deschise cu prioritate urgentă sau ridicată.";
+  } else if (kind === "unscheduled_tasks") {
+    rows = open
+      .filter((row) => !row.scheduled_at)
+      .sort((a, b) => new Date(a.due_at || "9999-12-31").getTime() - new Date(b.due_at || "9999-12-31").getTime());
+    label = "Neprogramate";
+    answer = rows.length
+      ? `Ai ${rows.length} lucrări deschise fără programare. Prima de rezolvat este „${rows[0].title}”.`
+      : "Toate lucrările deschise au o programare.";
   } else {
     rows = open
       .filter((row) => row.due_at && new Date(row.due_at).getTime() < now)
@@ -194,12 +218,18 @@ async function taskQuery(
   };
 }
 
-async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
+async function agendaQuery(
+  actor: BillingActor,
+  available: Set<OrbyvenModuleId>,
+  kind: Extract<OperationalQueryKind, "today" | "tomorrow" | "week">
+): Promise<IntelligenceResponse> {
   const client = createBillingServiceClient(actor);
   const today = localDateKey(new Date(), TIME_ZONE);
-  const tomorrow = nextDateKey(today);
-  const startIso = localMidnightIso(today, TIME_ZONE);
-  const endIso = localMidnightIso(tomorrow, TIME_ZONE);
+  const startKey = kind === "tomorrow" ? nextDateKey(today) : today;
+  const days = kind === "week" ? 7 : 1;
+  const endKey = nextDateKey(startKey, days);
+  const startIso = localMidnightIso(startKey, TIME_ZONE);
+  const endIso = localMidnightIso(endKey, TIME_ZONE);
 
   const [taskResult, calendarResult] = await Promise.all([
     available.has("tasks")
@@ -210,7 +240,7 @@ async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>):
           .gte("scheduled_at", startIso)
           .lt("scheduled_at", endIso)
           .order("scheduled_at")
-          .limit(40)
+          .limit(kind === "week" ? 80 : 40)
       : Promise.resolve({ data: [], error: null }),
     available.has("calendar")
       ? client
@@ -221,7 +251,7 @@ async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>):
           .gte("start_at", startIso)
           .lt("start_at", endIso)
           .order("start_at")
-          .limit(40)
+          .limit(kind === "week" ? 80 : 40)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (taskResult.error) throw taskResult.error;
@@ -231,12 +261,14 @@ async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>):
   const events = (calendarResult.data ?? []) as CalendarRow[];
   const firstTask = tasks[0];
   const firstEvent = events[0];
+  const periodLabel = kind === "today" ? "astăzi" : kind === "tomorrow" ? "mâine" : "în următoarele 7 zile";
+  const factSuffix = kind === "today" ? "azi" : kind === "tomorrow" ? "mâine" : "7 zile";
 
   const actions = [
     ...taskActions(tasks).slice(0, 2),
     ...events.slice(0, Math.max(0, 3 - Math.min(tasks.length, 2))).map((row) => ({
       kind: "open_module" as const,
-      label: `${formatTime(row.start_at)} · ${row.title}`,
+      label: `${kind === "week" ? formatShortDate(row.start_at) : formatTime(row.start_at)} · ${row.title}`,
       moduleId: "calendar" as const,
       recordId: row.id,
       clientId: row.client_id ?? undefined,
@@ -246,20 +278,20 @@ async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>):
 
   const nextItem =
     firstEvent && (!firstTask || firstEvent.start_at <= (firstTask.scheduled_at || ""))
-      ? `Următorul eveniment este „${firstEvent.title}” la ${formatTime(firstEvent.start_at)}.`
+      ? `Primul eveniment este „${firstEvent.title}” ${kind === "week" ? formatShortDate(firstEvent.start_at) : "la " + formatTime(firstEvent.start_at)}.`
       : firstTask
-        ? `Prima lucrare programată este „${firstTask.title}” la ${formatTime(firstTask.scheduled_at || startIso)}.`
+        ? `Prima lucrare programată este „${firstTask.title}” ${kind === "week" ? formatShortDate(firstTask.scheduled_at) : "la " + formatTime(firstTask.scheduled_at || startIso)}.`
         : "";
 
   return {
     specialist: "operations",
     answer:
       tasks.length || events.length
-        ? `Astăzi ai ${tasks.length} lucrări programate și ${events.length} evenimente în calendar. ${nextItem}`.trim()
-        : "Nu ai lucrări programate sau evenimente în calendar pentru astăzi.",
+        ? `Ai ${tasks.length} lucrări programate și ${events.length} evenimente ${periodLabel}. ${nextItem}`.trim()
+        : `Nu ai lucrări programate sau evenimente în calendar ${periodLabel}.`,
     facts: [
-      { label: "Lucrări azi", value: String(tasks.length) },
-      { label: "Calendar azi", value: String(events.length) },
+      { label: `Lucrări ${factSuffix}`, value: String(tasks.length) },
+      { label: `Calendar ${factSuffix}`, value: String(events.length) },
     ],
     actions,
     generatedBy: "orbyven_core",
@@ -364,11 +396,11 @@ export async function answerOperationalQuery(
     if (!available.has("estimates")) return unavailable("Devize");
     return estimateFollowupQuery(actor);
   }
-  if (kind === "today") {
+  if (kind === "today" || kind === "tomorrow" || kind === "week") {
     if (!available.has("tasks") && !available.has("calendar")) {
       return unavailable("Lucrări / Calendar");
     }
-    return todayQuery(actor, available);
+    return agendaQuery(actor, available, kind);
   }
 
   if (!available.has("tasks")) return unavailable("Lucrări");
