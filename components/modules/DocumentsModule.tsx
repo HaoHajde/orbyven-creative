@@ -16,6 +16,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 type Props = {
@@ -83,6 +84,12 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
   const cameraPickerRef = useRef<HTMLInputElement>(null);
 
   const canWrite = role !== "viewer";
+  useWorkspaceLiveContext({
+    clientId: clientId || undefined,
+    taskId: taskId || scopeTaskId || undefined,
+    estimateId: estimateId || undefined,
+    purchaseOrderId: purchaseOrderId || undefined,
+  });
   const focusedDocumentId =
     initialRecordId && documents.some((document) => document.id === initialRecordId)
       ? initialRecordId
