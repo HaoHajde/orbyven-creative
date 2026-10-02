@@ -75,11 +75,16 @@ export default function WorkspaceActivityCenter({
     const timer = window.setTimeout(() => void load(), 0);
     const refresh = window.setInterval(() => void load(), 5 * 60 * 1000);
     const onFocus = () => void load();
+    const onNativeRefresh = () => void load();
     window.addEventListener("focus", onFocus);
+    window.addEventListener("orbyven:app-resume", onNativeRefresh);
+    window.addEventListener("orbyven:native-network-restored", onNativeRefresh);
     return () => {
       window.clearTimeout(timer);
       window.clearInterval(refresh);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("orbyven:app-resume", onNativeRefresh);
+      window.removeEventListener("orbyven:native-network-restored", onNativeRefresh);
     };
   }, [load]);
 
