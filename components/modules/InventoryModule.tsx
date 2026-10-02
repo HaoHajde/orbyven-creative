@@ -36,6 +36,7 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialRecordId?: string;
   initialTaskId?: string;
@@ -83,6 +84,7 @@ export default function InventoryModule({
   organizationId,
   locale,
   role,
+  enabledModules,
   onOpenModule,
   initialRecordId,
   initialTaskId,
@@ -917,12 +919,14 @@ export default function InventoryModule({
                   </div>;
                 })}
               </div>
-              {canProcure ? <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-3">
-                {order.status === "draft" ? <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată</button> : null}
-                {["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
+              <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-3">
+                {enabledModules.includes("documents") ? <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>+ Dovadă</button> : null}
+                {canProcure && enabledModules.includes("expenses") && ["ordered","partially_received","received"].includes(order.status) ? <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>Finanțe ↗</button> : null}
+                {canProcure && order.status === "draft" ? <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată</button> : null}
+                {canProcure && ["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
                   if (window.confirm("Anulezi această comandă furnizor?")) void run(() => setPurchaseOrderStatus(organizationId, order.id, "cancelled"), "Comanda a fost anulată.");
                 }} className={button}>Anulează</button> : null}
-              </div> : null}
+              </div>
             </article>;
           })}
           {!purchaseOrders.length ? <div className="lg:col-span-2 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-8 text-center"><p className="text-sm font-semibold">Nu există comenzi furnizor deschise.</p><p className="mt-1 text-[10px] text-[var(--muted)]">Creează una manual sau pornește dintr-un semnal de lipsă.</p></div> : null}

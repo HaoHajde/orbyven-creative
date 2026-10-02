@@ -125,18 +125,18 @@ export default function WorkspaceContent({
   }
 
   if (activeModule === "documents") {
-    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
+    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
   }
 
   if (activeModule === "inventory") {
-    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
+    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   }
 
   if (activeModule === "expenses") {
     if (!["owner", "admin", "manager"].includes(role)) {
       return <div role="status" className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--muted)]">Finanțele firmei sunt disponibile doar administratorilor și managerilor.</div>;
     }
-    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} />;
+    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
   }
 
   if (activeModule === "thermal") {

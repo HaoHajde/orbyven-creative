@@ -107,6 +107,28 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
+
+    if (code === "SUPABASE_SERVICE_ROLE_KEY is missing.") {
+      console.warn("ORBYVEN Intelligence privileged action mode unavailable: service role missing");
+      return NextResponse.json(
+        {
+          specialist: "operations",
+          answer:
+            "ORBYVEN Intelligence este activ pentru analiză și consultare, dar modul de acțiuni confirmabile este momentan indisponibil. Nu am modificat nimic în workspace.",
+          facts: [
+            { label: "Mod", value: "Analiză disponibilă" },
+            { label: "Acțiuni", value: "Temporar indisponibile" },
+            { label: "Siguranță", value: "Nicio modificare executată" },
+          ],
+          actions: [],
+          generatedBy: "orbyven_core",
+          degradedMode: true,
+          code: "PRIVILEGED_ACTION_MODE_UNAVAILABLE",
+        },
+        { status: 200, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     const status =
       code === "AUTH_REQUIRED" ? 401 :
       code === "ORG_ACCESS_REQUIRED" ? 403 :

@@ -16,6 +16,7 @@ export type BusinessExpense = {
   task_id: string | null;
   document_id: string | null;
   estimate_id: string | null;
+  purchase_order_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -68,7 +69,27 @@ export type FinanceInvoiceWithBalance = FinanceInvoice & {
 
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string; client_id: string | null };
-export type ExpenseDocumentLink = { id: string; name: string };
+export type ExpenseDocumentLink = { id: string; name: string; purchase_order_id: string | null };
+export type ExpensePurchaseOrderLink = {
+  organization_id: string;
+  purchase_order_id: string;
+  reference: string;
+  supplier_id: string;
+  supplier_name: string;
+  task_id: string | null;
+  client_id: string | null;
+  status: "draft" | "ordered" | "partially_received" | "received" | "cancelled";
+  currency: string;
+  ordered_on: string | null;
+  expected_on: string | null;
+  ordered_cents: number;
+  received_cents: number;
+  recorded_expense_cents: number;
+  expense_count: number;
+  document_count: number;
+  variance_to_order_cents: number;
+  received_without_recorded_expense_cents: number;
+};
 
 export type CreateExpenseInput = {
   occurredOn: string;
@@ -82,6 +103,7 @@ export type CreateExpenseInput = {
   taskId?: string | null;
   documentId?: string | null;
   estimateId?: string | null;
+  purchaseOrderId?: string | null;
 };
 
 export type CreateIncomeInput = {
@@ -99,7 +121,7 @@ export type CreateIncomeInput = {
 };
 
 const EXPENSE_FIELDS =
-  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,estimate_id,created_by,created_at,updated_at";
+  "id,organization_id,occurred_on,category,vendor,description,amount_cents,currency,payment_method,client_id,task_id,document_id,estimate_id,purchase_order_id,created_by,created_at,updated_at";
 const INCOME_FIELDS =
   "id,organization_id,occurred_on,source_type,commercial_document_id,client_id,task_id,estimate_id,description,amount_cents,currency,payment_method,reference,note,created_by,created_at,updated_at";
 const INVOICE_FIELDS =
@@ -227,7 +249,7 @@ export async function listFinanceInvoices(
 
 export async function listExpenseContexts(organizationId: string) {
   requireOrganizationId(organizationId);
-  const [clientsResult, tasksResult, documentsResult] = await Promise.all([
+  const [clientsResult, tasksResult, documentsResult, purchaseOrdersResult] = await Promise.all([
     orbyvenSupabase
       .from("crm_leads")
       .select("id,name")
@@ -240,17 +262,35 @@ export async function listExpenseContexts(organizationId: string) {
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
       .from("ops_documents")
-      .select("id,name")
+      .select("id,name,purchase_order_id")
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false }),
+    orbyvenSupabase
+      .from("ops_purchase_order_finance_status")
+      .select("organization_id,purchase_order_id,reference,supplier_id,supplier_name,task_id,client_id,status,currency,ordered_on,expected_on,ordered_cents,received_cents,recorded_expense_cents,expense_count,document_count,variance_to_order_cents,received_without_recorded_expense_cents")
+      .eq("organization_id", organizationId)
+      .neq("status", "cancelled")
+      .order("ordered_on", { ascending: false, nullsFirst: false })
+      .limit(200),
   ]);
   if (clientsResult.error) throw clientsResult.error;
   if (tasksResult.error) throw tasksResult.error;
   if (documentsResult.error) throw documentsResult.error;
+  if (purchaseOrdersResult.error) throw purchaseOrdersResult.error;
   return {
     clients: (clientsResult.data ?? []) as ExpenseClientLink[],
     tasks: (tasksResult.data ?? []) as ExpenseTaskLink[],
     documents: (documentsResult.data ?? []) as ExpenseDocumentLink[],
+    purchaseOrders: ((purchaseOrdersResult.data ?? []) as ExpensePurchaseOrderLink[]).map((row) => ({
+      ...row,
+      ordered_cents: Number(row.ordered_cents || 0),
+      received_cents: Number(row.received_cents || 0),
+      recorded_expense_cents: Number(row.recorded_expense_cents || 0),
+      expense_count: Number(row.expense_count || 0),
+      document_count: Number(row.document_count || 0),
+      variance_to_order_cents: Number(row.variance_to_order_cents || 0),
+      received_without_recorded_expense_cents: Number(row.received_without_recorded_expense_cents || 0),
+    })),
   };
 }
 
@@ -268,6 +308,9 @@ export async function createExpense(
   let linkedClientId = input.clientId || null;
   let linkedTaskId = input.taskId || null;
   let linkedEstimateId = input.estimateId || null;
+  let linkedPurchaseOrderId = input.purchaseOrderId || null;
+  let linkedVendor = cleanOptional(input.vendor);
+  let linkedCurrency = (input.currency?.trim() || "RON").toUpperCase();
   if (linkedTaskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
@@ -310,7 +353,7 @@ export async function createExpense(
   if (input.documentId) {
     const { data: document, error: documentError } = await orbyvenSupabase
       .from("ops_documents")
-      .select("id,client_id,task_id,estimate_id")
+      .select("id,client_id,task_id,estimate_id,purchase_order_id")
       .eq("organization_id", organizationId)
       .eq("id", input.documentId)
       .single();
@@ -324,9 +367,55 @@ export async function createExpense(
     if (linkedEstimateId && document.estimate_id && linkedEstimateId !== document.estimate_id) {
       throw new Error("Devizul cheltuielii nu corespunde documentului justificativ.");
     }
+    if (linkedPurchaseOrderId && document.purchase_order_id && linkedPurchaseOrderId !== document.purchase_order_id) {
+      throw new Error("Comanda furnizor a cheltuielii nu corespunde documentului justificativ.");
+    }
     linkedClientId = document.client_id || linkedClientId;
     linkedTaskId = document.task_id || linkedTaskId;
     linkedEstimateId = document.estimate_id || linkedEstimateId;
+    linkedPurchaseOrderId = document.purchase_order_id || linkedPurchaseOrderId;
+  }
+
+  if (linkedPurchaseOrderId) {
+    const { data: order, error: orderError } = await orbyvenSupabase
+      .from("ops_purchase_orders")
+      .select("id,reference,supplier_id,task_id,status,currency")
+      .eq("organization_id", organizationId)
+      .eq("id", linkedPurchaseOrderId)
+      .in("status", ["ordered", "partially_received", "received"])
+      .single();
+    if (orderError || !order) {
+      throw new Error("Comanda furnizor trebuie să fie comandată sau recepționată înainte de înregistrarea costului.");
+    }
+    if (linkedTaskId && order.task_id && linkedTaskId !== order.task_id) {
+      throw new Error("Lucrarea cheltuielii nu corespunde comenzii furnizor.");
+    }
+    linkedTaskId = order.task_id || linkedTaskId;
+    linkedCurrency = (order.currency || linkedCurrency).toUpperCase();
+
+    const { data: supplier, error: supplierError } = await orbyvenSupabase
+      .from("ops_suppliers")
+      .select("name")
+      .eq("organization_id", organizationId)
+      .eq("id", order.supplier_id)
+      .single();
+    if (supplierError || !supplier) throw new Error("Furnizorul comenzii nu este disponibil.");
+    linkedVendor = supplier.name;
+    linkedCurrency = order.currency || linkedCurrency;
+
+    if (linkedTaskId) {
+      const { data: task, error: taskError } = await orbyvenSupabase
+        .from("ops_tasks")
+        .select("client_id")
+        .eq("organization_id", organizationId)
+        .eq("id", linkedTaskId)
+        .single();
+      if (taskError || !task) throw new Error("Lucrarea comenzii furnizor nu este disponibilă.");
+      if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
+        throw new Error("Clientul cheltuielii nu corespunde comenzii furnizor.");
+      }
+      linkedClientId = task.client_id || linkedClientId;
+    }
   }
 
   const { data: authData } = await orbyvenSupabase.auth.getUser();
@@ -336,15 +425,16 @@ export async function createExpense(
       organization_id: organizationId,
       occurred_on: input.occurredOn || new Date().toISOString().slice(0, 10),
       category,
-      vendor: cleanOptional(input.vendor),
+      vendor: linkedVendor,
       description,
       amount_cents: amountCents,
-      currency: (input.currency?.trim() || "RON").toUpperCase(),
+      currency: linkedCurrency,
       payment_method: input.paymentMethod || null,
       client_id: linkedClientId,
       task_id: linkedTaskId,
       estimate_id: linkedEstimateId,
       document_id: input.documentId || null,
+      purchase_order_id: linkedPurchaseOrderId,
       created_by: authData.user?.id ?? null,
     })
     .select(EXPENSE_FIELDS)

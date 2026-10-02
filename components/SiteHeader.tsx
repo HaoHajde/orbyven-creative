@@ -17,7 +17,7 @@ const navItems: {
   { key: "home", href: "/", label: "Acasă" },
   { key: "templates", href: "/templates", label: "Templates" },
   { key: "services", href: "/servicii", label: "Servicii" },
-  { key: "contact", href: "/contact", label: "Contact" },
+  { key: "contact", href: "/contact", label: "Pornește" },
 ];
 
 export default function SiteHeader({

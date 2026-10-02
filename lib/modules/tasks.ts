@@ -205,6 +205,7 @@ export async function loadWorkTaskContext(
               .select("amount_cents")
               .eq("organization_id", organizationId)
               .eq("task_id", taskId)
+              .is("purchase_order_id", null)
               .order("occurred_on", { ascending: true })
               .order("id", { ascending: true })
               .range(from, to)

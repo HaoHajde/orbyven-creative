@@ -11,6 +11,12 @@ import {
 import type { IntelligenceMutationType, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { appendAssistantConversationMessage } from "@/lib/ai/conversation-server";
+import {
+  claimAiActionProposal,
+  finishAiActionProposal,
+  insertAiActionProposals,
+  rejectAiActionProposal,
+} from "@/lib/ai/proposal-server";
 
 const MUTATION_ROLES = new Set(["owner", "admin", "manager", "member"]);
 
@@ -65,32 +71,6 @@ function planMeta(payload: Record<string, unknown>) {
   return { id, step, total, dependsOnProposalId };
 }
 
-async function assertPlanDependency(
-  actor: BillingActor,
-  proposal: { payload: Record<string, unknown> }
-) {
-  const meta = planMeta(proposal.payload);
-  if (!meta?.dependsOnProposalId) return meta;
-
-  const client = createBillingServiceClient();
-  const { data, error } = await client
-    .from("ai_action_proposals")
-    .select("id,status,payload")
-    .eq("id", meta.dependsOnProposalId)
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data || data.status !== "executed") throw new Error("PLAN_DEPENDENCY_REQUIRED");
-
-  const dependencyMeta = planMeta((data.payload ?? {}) as Record<string, unknown>);
-  if (!dependencyMeta || dependencyMeta.id !== meta.id || dependencyMeta.step !== meta.step - 1) {
-    throw new Error("PLAN_DEPENDENCY_INVALID");
-  }
-  return meta;
-}
-
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase("ro-RO").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
@@ -116,12 +96,12 @@ function actionModule(actionType: IntelligenceMutationType): OrbyvenModuleId {
   return "calendar";
 }
 
-async function organizationTimeZone(organizationId: string) {
-  const client = createBillingServiceClient();
+async function organizationTimeZone(actor: BillingActor) {
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("organization_profiles")
     .select("timezone")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
   if (error) throw error;
   return data?.timezone || "Europe/Bucharest";
@@ -136,7 +116,7 @@ export async function createMutationIntelligenceResponse(
   const normalizedPrompt = normalize(prompt);
   if (!/\b(creeaza|adauga|inregistreaza|deschide|programeaza)\b/.test(normalizedPrompt)) return null;
 
-  const timeZone = await organizationTimeZone(actor.organizationId);
+  const timeZone = await organizationTimeZone(actor);
   const parsed = parseMutationPrompt(prompt, { timeZone });
 
   if (parsed.kind === "none") return null;
@@ -175,20 +155,13 @@ export async function createMutationIntelligenceResponse(
     };
   }
 
-  const client = createBillingServiceClient();
-  const { data, error } = await client
-    .from("ai_action_proposals")
-    .insert({
-      organization_id: actor.organizationId,
-      actor_id: actor.userId,
-      action_type: parsed.proposal.actionType,
-      payload: parsed.proposal.payload,
-      summary: parsed.proposal.summary,
-      conversation_id: conversationId,
-    })
-    .select("id,expires_at")
-    .single();
-  if (error || !data) throw error || new Error("PROPOSAL_CREATE_FAILED");
+  const [storedProposal] = await insertAiActionProposals(actor, [{
+    action_type: parsed.proposal.actionType,
+    payload: parsed.proposal.payload,
+    summary: parsed.proposal.summary,
+    conversation_id: conversationId,
+  }]);
+  if (!storedProposal) throw new Error("PROPOSAL_CREATE_FAILED");
 
   return {
     specialist: "operations",
@@ -197,9 +170,9 @@ export async function createMutationIntelligenceResponse(
     actions: [{
       kind: "confirm_proposal",
       label: "Confirmă acțiunea",
-      proposalId: data.id,
+      proposalId: storedProposal.id,
       actionType: parsed.proposal.actionType,
-      expiresAt: data.expires_at,
+      expiresAt: storedProposal.expires_at,
       targetModule: parsed.proposal.targetModule,
     }],
     generatedBy: "orbyven_core",
@@ -207,22 +180,22 @@ export async function createMutationIntelligenceResponse(
 }
 
 async function resolveClientId(
-  organizationId: string,
+  actor: BillingActor,
   clientName: string | null | undefined
 ): Promise<string | null> {
   if (!clientName?.trim()) return null;
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const name = clientName.trim();
 
   const [nameResult, companyResult] = await Promise.all([
     client.from("crm_leads")
       .select("id,name,company")
-      .eq("organization_id", organizationId)
+      .eq("organization_id", actor.organizationId)
       .ilike("name", name)
       .limit(5),
     client.from("crm_leads")
       .select("id,name,company")
-      .eq("organization_id", organizationId)
+      .eq("organization_id", actor.organizationId)
       .ilike("company", name)
       .limit(5),
   ]);
@@ -242,18 +215,18 @@ async function resolveClientId(
 }
 
 async function resolveWorkContext(
-  organizationId: string,
+  actor: BillingActor,
   taskTitle: string | null | undefined,
   explicitClientId: string | null
 ): Promise<{ taskId: string | null; clientId: string | null }> {
   if (!taskTitle?.trim()) return { taskId: null, clientId: explicitClientId };
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const title = taskTitle.trim();
   const { data, error } = await client
     .from("ops_tasks")
     .select("id,title,client_id,kind")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .in("kind", ["work", "order"])
     .ilike("title", title)
     .limit(5);
@@ -288,7 +261,7 @@ async function executeLead(
   actionType: "create_lead" | "create_client",
   payload: Record<string, unknown>
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as LeadActionPayload;
   const name = requireText(input.name, "name", 120);
   const isClient = actionType === "create_client";
@@ -317,14 +290,14 @@ async function executeLead(
 }
 
 async function executeTask(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as TaskActionPayload;
   const title = requireText(input.title, "title", 180);
   const kind = input.kind === "work" || input.kind === "order" ? input.kind : "task";
   const priority = ["low", "normal", "high", "urgent"].includes(input.priority)
     ? input.priority
     : "normal";
-  const clientId = await resolveClientId(actor.organizationId, input.clientName);
+  const clientId = await resolveClientId(actor, input.clientName);
 
   const { data, error } = await client
     .from("ops_tasks")
@@ -345,7 +318,7 @@ async function executeTask(actor: BillingActor, payload: Record<string, unknown>
 }
 
 async function executeCalendar(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as CalendarActionPayload;
   const title = requireText(input.title, "title", 180);
   const startAt = new Date(requireText(input.startAt, "start_at", 80));
@@ -353,8 +326,8 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
   if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime()) || endAt <= startAt) {
     throw new Error("INVALID_EVENT_TIME");
   }
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const operation = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const operation = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
   const reminder = typeof input.reminderMinutes === "number" && Number.isFinite(input.reminderMinutes)
     ? Math.max(0, Math.min(1440, Math.round(input.reminderMinutes)))
     : 30;
@@ -383,7 +356,7 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
 }
 
 async function executeEstimate(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as EstimateActionPayload;
   const title = requireText(input.title, "estimate_title", 180);
   if (input.currency !== "RON") throw new Error("INVALID_ESTIMATE_CURRENCY");
@@ -405,8 +378,8 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
     };
   });
 
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const work = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
 
   const taxRate = input.taxRate === null
     ? null
@@ -420,7 +393,7 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
       : (() => { throw new Error("INVALID_ESTIMATE_VALID_UNTIL"); })()
     : null;
 
-  const { data, error } = await client.rpc("ai_create_estimate_draft", {
+  const { data, error } = await client.rpc("ai_create_estimate_draft_actor", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
     p_title: title,
@@ -452,7 +425,7 @@ function safeGeneratedFileName(title: string) {
 }
 
 async function executeDocumentDraft(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as DocumentDraftActionPayload;
   const title = requireText(input.title, "document_title", 160);
   const content = requireText(input.content, "document_content", 900);
@@ -460,8 +433,8 @@ async function executeDocumentDraft(actor: BillingActor, payload: Record<string,
     ? input.category
     : "general";
 
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const work = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
 
   const fileText = [
     "ORBYVEN — DRAFT INTERN",
@@ -543,16 +516,15 @@ async function writeAudit(
   proposal: ProposalRow,
   result: { id: string; type: string; moduleId: OrbyvenModuleId }
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const auditPlan = planMeta(proposal.payload);
-  const { error } = await client.from("platform_audit_log").insert({
-    actor_user_id: actor.userId,
-    actor_role: actor.role,
-    organization_id: actor.organizationId,
-    action: "ai_action.executed",
-    target_type: result.type,
-    target_id: result.id,
-    metadata: {
+  const { error } = await client.rpc("ai_action_audit_write", {
+    p_organization_id: actor.organizationId,
+    p_actor_id: actor.userId,
+    p_action: "ai_action.executed",
+    p_target_type: result.type,
+    p_target_id: result.id,
+    p_metadata: {
       proposal_id: proposal.id,
       action_type: proposal.action_type,
       module_id: result.moduleId,
@@ -574,21 +546,16 @@ export async function decideMutationProposal(
   const actor = await authenticateBillingActor(request, organizationId, false);
   if (!MUTATION_ROLES.has(actor.role)) throw new Error("MUTATION_ROLE_REQUIRED");
 
-  const client = createBillingServiceClient();
-  const now = new Date().toISOString();
+  const client = createBillingServiceClient(actor);
 
   if (decision === "reject") {
-    const { data, error } = await client
-      .from("ai_action_proposals")
-      .update({ status: "rejected", updated_at: now })
-      .eq("id", proposalId)
-      .eq("organization_id", actor.organizationId)
-      .eq("actor_id", actor.userId)
-      .eq("status", "pending")
-      .select("id,conversation_id,payload")
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) throw new Error("PROPOSAL_NOT_PENDING");
+    const rejected = await rejectAiActionProposal(actor, proposalId);
+    if (rejected.state === "expired") throw new Error("PROPOSAL_EXPIRED");
+    if (rejected.state === "executed") throw new Error("PROPOSAL_ALREADY_EXECUTED");
+    if (rejected.state !== "rejected" || !rejected.proposal) {
+      throw new Error("PROPOSAL_NOT_PENDING");
+    }
+    const data = rejected.proposal;
     const message = "Acțiunea a fost anulată. Nu s-a modificat nimic.";
     if (data.conversation_id) {
       try {
@@ -612,57 +579,16 @@ export async function decideMutationProposal(
     };
   }
 
-  await client
-    .from("ai_action_proposals")
-    .update({ status: "expired", updated_at: now })
-    .eq("id", proposalId)
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .eq("status", "pending")
-    .lte("expires_at", now);
-
-  const { data: pendingForPlan, error: pendingPlanError } = await client
-    .from("ai_action_proposals")
-    .select("payload")
-    .eq("id", proposalId)
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .eq("status", "pending")
-    .gt("expires_at", now)
-    .maybeSingle();
-  if (pendingPlanError) throw pendingPlanError;
-  if (pendingForPlan) {
-    await assertPlanDependency(actor, {
-      payload: (pendingForPlan.payload ?? {}) as Record<string, unknown>,
-    });
-  }
-
-  const { data: claimed, error: claimError } = await client
-    .from("ai_action_proposals")
-    .update({ status: "executing", updated_at: now })
-    .eq("id", proposalId)
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .eq("status", "pending")
-    .gt("expires_at", now)
-    .select("id,organization_id,actor_id,action_type,payload,summary,status,expires_at,executed_at,result_type,result_id,failure_code,conversation_id")
-    .maybeSingle();
-  if (claimError) throw claimError;
-
-  if (!claimed) {
-    const { data: existing } = await client
-      .from("ai_action_proposals")
-      .select("status")
-      .eq("id", proposalId)
-      .eq("organization_id", actor.organizationId)
-      .eq("actor_id", actor.userId)
-      .maybeSingle();
-    if (existing?.status === "expired") throw new Error("PROPOSAL_EXPIRED");
-    if (existing?.status === "executed") throw new Error("PROPOSAL_ALREADY_EXECUTED");
+  const claimed = await claimAiActionProposal(actor, proposalId);
+  if (claimed.state === "expired") throw new Error("PROPOSAL_EXPIRED");
+  if (claimed.state === "executed") throw new Error("PROPOSAL_ALREADY_EXECUTED");
+  if (claimed.state === "dependency_required") throw new Error("PLAN_DEPENDENCY_REQUIRED");
+  if (claimed.state === "dependency_invalid") throw new Error("PLAN_DEPENDENCY_INVALID");
+  if (claimed.state !== "claimed" || !claimed.proposal) {
     throw new Error("PROPOSAL_NOT_PENDING");
   }
 
-  const proposal = claimed as ProposalRow;
+  const proposal = claimed.proposal as ProposalRow;
 
   try {
     const activePlan = planMeta(proposal.payload);
@@ -695,19 +621,11 @@ export async function decideMutationProposal(
     if (!entitled) throw new Error("MODULE_NOT_AVAILABLE");
 
     const result = await executeClaimedProposal(actor, proposal);
-    const executedAt = new Date().toISOString();
-    const { error: finishError } = await client.from("ai_action_proposals")
-      .update({
-        status: "executed",
-        executed_at: executedAt,
-        result_type: result.type,
-        result_id: result.id,
-        failure_code: null,
-        updated_at: executedAt,
-      })
-      .eq("id", proposal.id)
-      .eq("status", "executing");
-    if (finishError) throw finishError;
+    await finishAiActionProposal(actor, proposal.id, {
+      success: true,
+      resultType: result.type,
+      resultId: result.id,
+    });
 
     await writeAudit(actor, proposal, result);
     const message = "Acțiunea a fost confirmată și executată.";
@@ -736,10 +654,14 @@ export async function decideMutationProposal(
     };
   } catch (error) {
     const failureCode = error instanceof Error ? error.message.slice(0, 120) : "ACTION_EXECUTION_FAILED";
-    await client.from("ai_action_proposals")
-      .update({ status: "failed", failure_code: failureCode, updated_at: new Date().toISOString() })
-      .eq("id", proposal.id)
-      .eq("status", "executing");
+    try {
+      await finishAiActionProposal(actor, proposal.id, {
+        success: false,
+        failureCode,
+      });
+    } catch (finishError) {
+      console.error("ORBYVEN AI proposal failure persistence failed", finishError);
+    }
     throw error;
   }
 }
