@@ -42,7 +42,7 @@ export function readWebDesignInterviewFacts(
 ): WebDesignInterviewFact[] {
   if (!Array.isArray(value)) return [];
 
-  return value
+  const valid = value
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const record = item as Record<string, unknown>;
@@ -66,8 +66,20 @@ export function readWebDesignInterviewFacts(
         answer: answer.slice(0, 1200),
       } satisfies WebDesignInterviewFact;
     })
-    .filter((item): item is WebDesignInterviewFact => item !== null)
-    .slice(-8);
+    .filter((item): item is WebDesignInterviewFact => item !== null);
+
+  const seen = new Set<WebDesignBriefGapId>();
+  const latest = valid
+    .slice()
+    .reverse()
+    .filter((fact) => {
+      if (seen.has(fact.id)) return false;
+      seen.add(fact.id);
+      return true;
+    })
+    .reverse();
+
+  return latest.slice(-8);
 }
 
 export function interviewFactsToEvidence(
