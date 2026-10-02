@@ -26,6 +26,10 @@ import {
 import { RESOURCE_TYPE_LABELS, schedulerErrorMessage } from "@/lib/modules/resource-core";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import {
+  syncTaskAfterWorkEventCompleted,
+  syncTaskAfterWorkScheduled,
+} from "@/lib/automation/status-sync";
 import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
@@ -241,6 +245,7 @@ export default function CalendarModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
@@ -468,6 +473,13 @@ export default function CalendarModule({
       setEvents((current) =>
         [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
       );
+      try {
+        await syncTaskAfterWorkScheduled(organizationId, created);
+        setSyncWarning("");
+      } catch (syncError) {
+        console.error(syncError);
+        setSyncWarning("Programarea a fost creată, dar data planificată a lucrării nu a putut fi sincronizată automat.");
+      }
       const createdAssignments = await listCalendarResourceAssignments(
         organizationId,
         [created.id]
@@ -507,6 +519,19 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
+      if (status === "completed") {
+        try {
+          const sync = await syncTaskAfterWorkEventCompleted(organizationId, updated);
+          setSyncWarning(
+            sync.taskUpdated
+              ? "Programarea a fost finalizată, iar lucrarea a trecut automat din «De făcut» în «În lucru»."
+              : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Programarea a fost finalizată, dar statusul lucrării nu a putut fi sincronizat automat.");
+        }
+      }
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
@@ -588,6 +613,7 @@ export default function CalendarModule({
       />
 
       {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
+      {syncWarning ? <div className="mt-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-[11px] leading-5 text-amber-300">{syncWarning}</div> : null}
 
       <section className="mt-4 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)] p-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
