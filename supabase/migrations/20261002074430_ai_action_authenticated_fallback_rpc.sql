@@ -473,7 +473,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if not private.ai_actor_can_mutate(p_organization_id, p_actor_id) then
     raise exception 'AI_ACTION_FORBIDDEN' using errcode = '42501';
@@ -529,7 +529,7 @@ begin
     p_items
   );
 end;
-$;
+$$;
 
 create or replace function public.ai_action_audit_write(
   p_organization_id uuid,
@@ -543,7 +543,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_role text;
 begin
@@ -592,7 +592,7 @@ begin
 
   return true;
 end;
-$;
+$$;
 
 revoke all on function public.ai_create_estimate_draft_actor(uuid, uuid, text, uuid, uuid, text, bigint, numeric, date, text, bigint, bigint, jsonb) from public, anon;
 revoke all on function public.ai_action_audit_write(uuid, uuid, text, text, uuid, jsonb) from public, anon;
