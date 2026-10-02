@@ -96,6 +96,11 @@ export default function InventoryModule({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [procurementHandoff, setProcurementHandoff] = useState<{
+    purchaseOrderId: string;
+    taskId: string | null;
+    reference: string;
+  } | null>(null);
   const [planTaskId, setPlanTaskId] = useState(initialTaskId ?? "");
   const [taskPlan, setTaskPlan] = useState<InventoryTaskMaterialPlan[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
@@ -253,6 +258,7 @@ export default function InventoryModule({
     setBusy(true);
     setError("");
     setNotice("");
+    setProcurementHandoff(null);
     try {
       await operation();
       setNotice(success);
@@ -485,10 +491,36 @@ export default function InventoryModule({
       item.received_quantity
     );
     if (remaining <= 0) return;
-    await run(
-      () => receivePurchaseOrderItem(organizationId, item, remaining),
-      "Recepția a fost înregistrată în stoc."
+
+    const order = purchaseOrders.find((entry) => entry.id === item.purchase_order_id);
+    const orderItems = purchaseItems.filter(
+      (entry) => entry.purchase_order_id === item.purchase_order_id
     );
+    const completesOrder =
+      orderItems.length > 0 &&
+      orderItems.every(
+        (entry) =>
+          entry.id === item.id ||
+          remainingPurchaseQuantity(entry.ordered_quantity, entry.received_quantity) <= 0
+      );
+
+    const ok = await run(
+      () => receivePurchaseOrderItem(organizationId, item, remaining),
+      completesOrder
+        ? "Recepția este completă. Comanda furnizor a fost închisă automat de sistem."
+        : "Recepția a fost înregistrată în stoc."
+    );
+
+    if (ok && completesOrder && order) {
+      setProcurementHandoff({
+        purchaseOrderId: order.id,
+        taskId: order.task_id,
+        reference: order.reference,
+      });
+      if (order.task_id && planTaskId === order.task_id) {
+        await loadTaskPlan();
+      }
+    }
   };
 
   const submitMovement = async (event: FormEvent<HTMLFormElement>) => {
@@ -595,6 +627,42 @@ export default function InventoryModule({
         <p role="status" className="mt-4 rounded-[15px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-3 text-xs text-emerald-300">
           {notice}
         </p>
+      ) : null}
+      {procurementHandoff ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Recepție completă"
+            title={procurementHandoff.reference + " este gata pentru documentare"}
+            description={enabledModules.includes("documents")
+              ? "Atașează bonul, factura furnizorului sau altă dovadă. Contextul PO și al lucrării este transferat automat."
+              : "Continuă în Finanțe cu PO-ul și lucrarea deja asociate."}
+            action={enabledModules.includes("documents") ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule("documents", {
+                  create: true,
+                  taskId: procurementHandoff.taskId ?? undefined,
+                  purchaseOrderId: procurementHandoff.purchaseOrderId,
+                })}
+                className={primary}
+              >
+                + Dovadă furnizor →
+              </button>
+            ) : enabledModules.includes("expenses") && canProcure ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule("expenses", {
+                  create: true,
+                  taskId: procurementHandoff.taskId ?? undefined,
+                  purchaseOrderId: procurementHandoff.purchaseOrderId,
+                })}
+                className={primary}
+              >
+                Înregistrează costul →
+              </button>
+            ) : undefined}
+          />
+        </div>
       ) : null}
 
       {supplierOpen && canProcure ? (
