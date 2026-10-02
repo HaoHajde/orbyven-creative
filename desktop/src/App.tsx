@@ -88,7 +88,7 @@ export default function App() {
     if (!current) throw new Error(en ? "No active workspace exists for your account." : "Nu există un workspace activ pentru contul tău.");
     setWorkspace(current);
     setScreen("workspace");
-  }, []);
+  }, [en]);
 
   const syncLiveUi = useCallback(async () => {
     try {
@@ -199,7 +199,7 @@ export default function App() {
   if (screen === "workspace" && workspace) {
     document.title =
       latestDesktopVersion !== CURRENT_DESKTOP_VERSION
-        ? "ORBYVEN — update " + latestDesktopVersion + " disponibil"
+        ? (en ? "ORBYVEN — update " + latestDesktopVersion + " available" : "ORBYVEN — update " + latestDesktopVersion + " disponibil")
         : "ORBYVEN — Desktop Workspace";
 
     return (
@@ -252,7 +252,7 @@ export default function App() {
             <h1>{en ? "Connection unavailable." : "Conexiune indisponibilă."}</h1>
             <p>{error}</p>
             <button className="primary" onClick={() => window.location.reload()}>
-              Reîncearcă
+              {en ? "Try again" : "Reîncearcă"}
             </button>
           </section>
         )}
@@ -260,7 +260,16 @@ export default function App() {
         {screen === "access" && (
           <section className="auth-card">
             <h1>{en ? "Access unavailable." : "Acces indisponibil."}</h1>
-            <p>{ACCESS_MESSAGES[accessState] || "Contul nu poate accesa workspace-ul."}</p>
+            <p>{
+              en
+                ? ({
+                    member_suspended: "Account access is suspended. Contact your administrator.",
+                    organization_provisioning: "The company workspace is being configured.",
+                    organization_suspended: "Company access is suspended.",
+                    organization_archived: "The company has been archived.",
+                  }[accessState] || "This account cannot access the workspace.")
+                : (ACCESS_MESSAGES[accessState] || "Contul nu poate accesa workspace-ul.")
+            }</p>
             <button className="secondary" onClick={() => void signOutToLogin()}>
               {en ? "Switch account" : "Schimbă contul"}
             </button>
@@ -326,7 +335,7 @@ export default function App() {
               </button>
             </form>
             <button className="text-button" onClick={() => void signOutToLogin()}>
-              Alt cont
+              {en ? "Another account" : "Alt cont"}
             </button>
           </section>
         )}
