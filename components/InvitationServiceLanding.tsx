@@ -100,7 +100,7 @@ export default function InvitationServiceLanding({
             <Link href="/templates" className="hover:text-white">{copy.models}</Link>
             <Link href="/contact" className="hover:text-white">{copy.contact}</Link>
           </nav>
-          <LanguageSwitch />
+          <LanguageSwitch initialLocale={locale} />
         </div>
       </header>
 
