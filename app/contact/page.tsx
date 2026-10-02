@@ -11,19 +11,19 @@ type Theme = "light" | "dark";
 
 function getThemeVars(theme: Theme) {
   return {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#101014" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171c" : "#f1f1f5",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#777781" : "#878790",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--bg": theme === "dark" ? "#09090d" : "#e7e8f3",
+    "--surface": theme === "dark" ? "#101014" : "#f5f4fb",
+    "--surface-2": theme === "dark" ? "#17171c" : "#ebe9f6",
+    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
+    "--muted": theme === "dark" ? "#aaaab2" : "#62647a",
+    "--muted-2": theme === "dark" ? "#777781" : "#797b91",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(96,76,168,.16)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(91,72,172,.28)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
     "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
     "--accent": "#4b46ee",
     "--home-violet": "#a58bff",
-    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
+    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(116,88,215,.13)",
   } as CSSProperties;
 }
 
@@ -37,7 +37,7 @@ export default function ContactPage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#e7e8f3";
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -47,7 +47,7 @@ export default function ContactPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#e7e8f3";
       return next;
     });
   };
@@ -56,15 +56,16 @@ export default function ContactPage() {
 
   return (
     <main
+      data-orbyven-public-theme={theme}
       style={{
         ...vars,
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
             ? "linear-gradient(180deg,#0b0912 0%,#0a0910 42%,#09090d 100%)"
-            : "linear-gradient(180deg,#fbfaff 0%,#f8f8fb 46%,#f6f6fa 100%)",
+            : "linear-gradient(180deg,#eeeaf7 0%,#e7e8f3 46%,#ece9f6 100%)",
       }}
-      className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
+      className="orbyven-public-shell relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-24rem] h-[60rem] w-[78rem] max-w-[92vw] -translate-x-1/2 rounded-full bg-[rgba(126,93,255,.12)] blur-[175px]" />

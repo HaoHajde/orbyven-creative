@@ -238,6 +238,156 @@ iframe {
 }
 
 /* =========================================================
+   ORBYVEN INTELLIGENCE LIGHT THEME
+   Intelligence follows the active Dashboard theme instead of staying dark.
+   ========================================================= */
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-backdrop {
+  background: rgba(35, 30, 58, 0.30) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-panel {
+  border-color: rgba(104, 89, 214, 0.24) !important;
+  background:
+    radial-gradient(circle at 84% 5%, rgba(116, 88, 215, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(247, 246, 252, 0.985), rgba(232, 230, 244, 0.995)) !important;
+  box-shadow:
+    0 35px 110px rgba(46, 38, 82, 0.24),
+    0 0 0 1px rgba(116, 88, 215, 0.045) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-header {
+  border-color: rgba(104, 89, 214, 0.16) !important;
+  background:
+    linear-gradient(180deg, rgba(116, 88, 215, 0.10), rgba(116, 88, 215, 0.025) 62%, transparent) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-body {
+  background:
+    linear-gradient(180deg, rgba(116, 88, 215, 0.018), transparent 34%);
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-composer {
+  border-color: rgba(104, 89, 214, 0.16) !important;
+  background: rgba(235, 232, 247, 0.94) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-composer-field {
+  border-color: rgba(104, 89, 214, 0.23) !important;
+  background: rgba(248, 247, 252, 0.92) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 0 0 1px rgba(116, 88, 215, 0.025) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-launcher {
+  color: #ffffff !important;
+  border-color: rgba(104, 89, 214, 0.34) !important;
+  background:
+    linear-gradient(145deg, rgba(126, 105, 224, 0.98), rgba(86, 68, 190, 0.99)) !important;
+  box-shadow:
+    0 18px 48px rgba(77, 59, 170, 0.30),
+    0 0 22px rgba(116, 88, 215, 0.16) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] .orbyven-intelligence-status-dot {
+  border-color: #eeeaf8 !important;
+  background: #725bd6 !important;
+  box-shadow: 0 0 14px rgba(104, 89, 214, 0.55) !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-[#91a8ff]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-[#aab9ff]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-[#b9c5ff]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-[#c7d0ff]"] {
+  color: #6550c8 !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-rose-300"] {
+  color: #b4234f !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="text-amber-300"] {
+  color: #8f6500 !important;
+}
+
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="bg-[#7897ff]/[0.08]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="bg-[#7897ff]/[0.06]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="bg-[#7897ff]/[0.055]"],
+.orbyven-intelligence-shell[data-orbyven-theme="light"] [class~="bg-[#7897ff]/10"] {
+  background-color: rgba(104, 89, 214, 0.09) !important;
+}
+
+/* =========================================================
+   ORBYVEN PUBLIC LIGHT THEME
+   Shared violet/lavender direction for Home and primary second-level pages.
+   ========================================================= */
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] {
+  --public-violet: #7458d7;
+  --public-violet-soft: rgba(116, 88, 215, 0.10);
+  --public-violet-line: rgba(116, 88, 215, 0.22);
+  scrollbar-color: rgba(104, 89, 214, 0.42) rgba(116, 88, 215, 0.055);
+  caret-color: var(--public-violet);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] .orbyven-public-header-surface {
+  background-color: rgba(238, 236, 247, 0.90) !important;
+  border-color: var(--public-violet-line) !important;
+  box-shadow:
+    0 8px 28px rgba(61, 51, 106, 0.10),
+    inset 0 1px 0 rgba(116, 88, 215, 0.08) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] .orbyven-public-mobile-menu {
+  background-color: rgba(238, 236, 247, 0.97) !important;
+  border-color: var(--public-violet-line) !important;
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] :where(input, textarea, select) {
+  border-color: rgba(104, 89, 214, 0.20);
+  background-color: rgba(247, 246, 252, 0.86);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] :where(input, textarea, select):focus {
+  border-color: rgba(104, 89, 214, 0.46);
+  box-shadow: 0 0 0 3px rgba(104, 89, 214, 0.08);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] ::selection {
+  background: rgba(116, 88, 215, 0.20);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] .orbyven-home-kicker-line {
+  background: linear-gradient(90deg, rgba(104, 89, 214, 0.78), rgba(116, 88, 215, 0.08), transparent);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] .orbyven-home-kicker-icon {
+  border-color: rgba(104, 89, 214, 0.25);
+  background: rgba(116, 88, 215, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"] [class~="text-[#a58bff]"],
+.orbyven-public-shell[data-orbyven-public-theme="light"] [class~="text-[#9f8dff]"] {
+  color: #684fc8 !important;
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"]
+  :where(a, button)[class*="border-[var(--border"] {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"]
+  :where(a, button)[class*="border-[var(--border"]:hover {
+  border-color: rgba(104, 89, 214, 0.34);
+}
+
+/* =========================================================
    ORBYVEN DASHBOARD TEXT SCALE
    Persistent 90–130% accessibility/density control.
    Scoped to the authenticated workspace and its AI portal only.

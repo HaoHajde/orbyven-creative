@@ -398,7 +398,7 @@ export default function ServicesPage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#e7e8f3";
     };
     const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
@@ -409,37 +409,38 @@ export default function ServicesPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#e7e8f3";
       return next;
     });
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#0f0f13" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171d" : "#f0f0f5",
-    "--panel": theme === "dark" ? "rgba(14,14,19,.90)" : "rgba(255,255,255,.88)",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#73737d" : "#878790",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--bg": theme === "dark" ? "#09090d" : "#e7e8f3",
+    "--surface": theme === "dark" ? "#0f0f13" : "#f5f4fb",
+    "--surface-2": theme === "dark" ? "#17171d" : "#ebe9f6",
+    "--panel": theme === "dark" ? "rgba(14,14,19,.90)" : "rgba(245,244,251,.90)",
+    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
+    "--muted": theme === "dark" ? "#aaaab2" : "#62647a",
+    "--muted-2": theme === "dark" ? "#73737d" : "#797b91",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(96,76,168,.16)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(91,72,172,.28)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
     "--button-text": theme === "dark" ? "#08080b" : "#ffffff",
     "--accent": "#4b46ee",
-    "--home-violet": "#a58bff",
-    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
-    "--grid-line": theme === "dark" ? "rgba(255,255,255,.045)" : "rgba(20,20,30,.045)",
+    "--home-violet": theme === "dark" ? "#a58bff" : "#7458d7",
+    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(116,88,215,.13)",
+    "--grid-line": theme === "dark" ? "rgba(255,255,255,.045)" : "rgba(116,88,215,.055)",
   } as CSSProperties;
 
   const pageBackdrop = theme === "dark"
     ? "radial-gradient(circle at 78% 14%,rgba(99,73,220,.15),transparent 18%),radial-gradient(circle at 14% 34%,rgba(67,98,190,.08),transparent 18%),radial-gradient(circle at 84% 57%,rgba(143,70,213,.09),transparent 20%),radial-gradient(circle at 20% 78%,rgba(76,60,166,.10),transparent 20%),linear-gradient(180deg,#09090d,#0b0b10 42%,#09090d 100%)"
-    : "radial-gradient(circle at 78% 14%,rgba(99,73,220,.10),transparent 18%),radial-gradient(circle at 14% 34%,rgba(67,98,190,.06),transparent 18%),radial-gradient(circle at 84% 57%,rgba(143,70,213,.055),transparent 20%),radial-gradient(circle at 20% 78%,rgba(76,60,166,.06),transparent 20%),linear-gradient(180deg,#f8f8fb,#f6f6fa 42%,#f8f8fb 100%)";
+    : "radial-gradient(circle at 78% 14%,rgba(99,73,220,.10),transparent 18%),radial-gradient(circle at 14% 34%,rgba(67,98,190,.06),transparent 18%),radial-gradient(circle at 84% 57%,rgba(143,70,213,.055),transparent 20%),radial-gradient(circle at 20% 78%,rgba(76,60,166,.06),transparent 20%),linear-gradient(180deg,#eceaf5,#e7e8f3 42%,#efedf7 100%)";
 
   return (
     <main
+      data-orbyven-public-theme={theme}
       style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
+      className="orbyven-public-shell relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0" style={{ backgroundImage: pageBackdrop }} />
