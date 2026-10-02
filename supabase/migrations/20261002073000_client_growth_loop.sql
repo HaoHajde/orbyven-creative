@@ -36,7 +36,7 @@ create table if not exists public.crm_client_growth (
   constraint crm_client_growth_feedback_task_fk
     foreign key (organization_id, feedback_task_id)
     references public.ops_tasks(organization_id, id)
-    on delete set null
+    on delete set null (feedback_task_id)
 );
 
 create index if not exists crm_client_growth_org_feedback_idx
