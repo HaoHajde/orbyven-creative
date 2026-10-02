@@ -486,8 +486,12 @@ export default function ExpensesModule({
   const compatibleEvidenceDocuments = (expense: BusinessExpense) =>
     documents.filter(
       (document) =>
+        !expenses.some(
+          (item) => item.id !== expense.id && item.document_id === document.id
+        ) &&
         (!expense.client_id || !document.client_id || expense.client_id === document.client_id) &&
         (!expense.task_id || !document.task_id || expense.task_id === document.task_id) &&
+        (!expense.estimate_id || !document.estimate_id || expense.estimate_id === document.estimate_id) &&
         (!expense.purchase_order_id ||
           !document.purchase_order_id ||
           expense.purchase_order_id === document.purchase_order_id)
