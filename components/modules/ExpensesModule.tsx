@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  attachExpenseDocument,
   createExpense,
   createIncome,
   deleteExpense,
@@ -209,6 +210,8 @@ export default function ExpensesModule({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [evidenceExpenseId, setEvidenceExpenseId] = useState("");
+  const [evidenceDocumentId, setEvidenceDocumentId] = useState("");
   useWorkspaceLiveContext({
     clientId: expenseForm.clientId || incomeForm.clientId || initialClientId,
     taskId: scopeTaskId || expenseForm.taskId || incomeForm.taskId || undefined,
@@ -454,6 +457,41 @@ export default function ExpensesModule({
       setSaving(false);
     }
   };
+
+  const attachEvidence = async (expense: BusinessExpense) => {
+    if (!canWrite || saving || !evidenceDocumentId) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const updated = await attachExpenseDocument(
+        organizationId,
+        expense.id,
+        evidenceDocumentId
+      );
+      setExpenses((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item))
+      );
+      setEvidenceExpenseId("");
+      setEvidenceDocumentId("");
+      setMessage("Dovada a fost atașată cheltuielii.");
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Dovada nu a putut fi atașată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const compatibleEvidenceDocuments = (expense: BusinessExpense) =>
+    documents.filter(
+      (document) =>
+        (!expense.client_id || !document.client_id || expense.client_id === document.client_id) &&
+        (!expense.task_id || !document.task_id || expense.task_id === document.task_id) &&
+        (!expense.purchase_order_id ||
+          !document.purchase_order_id ||
+          expense.purchase_order_id === document.purchase_order_id)
+    );
 
   const handleIncome = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -778,13 +816,72 @@ export default function ExpensesModule({
           </div>
           {visibleExpenses.length ? (
             <div className="mt-3 grid gap-2">
-              {visibleExpenses.map((expense) => (
-                <article key={expense.id} className="grid gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-3 sm:grid-cols-[110px_1fr_auto] sm:items-center">
-                  <div><p className="text-[11px] font-semibold">{dateLabel(expense.occurred_on, locale)}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{expense.category}</p></div>
-                  <div className="min-w-0"><p className="truncate text-[11px] font-semibold">{expense.description}</p><p className="mt-1 truncate text-[10px] text-[var(--muted)]">{expense.vendor || "Fără furnizor"}{expense.purchase_order_id ? ` · PO ${purchaseOrderById.get(expense.purchase_order_id)?.reference || "achiziție"}` : ""}{expense.client_id ? ` · ${clientById.get(expense.client_id) || "Client"}` : ""}{expense.task_id ? ` · ${taskById.get(expense.task_id) || "Lucrare"}` : ""}{expense.document_id ? ` · ${docById.get(expense.document_id) || "Document"}` : ""}</p></div>
-                  <div className="flex items-center gap-3"><strong className="text-[11px]">{formatMoney(expense.amount_cents, expense.currency, locale)}</strong>{canWrite ? <button type="button" disabled={saving} onClick={() => void removeExpense(expense)} className="text-[10px] font-semibold text-rose-400">Șterge</button> : null}</div>
-                </article>
-              ))}
+              {visibleExpenses.map((expense) => {
+                const evidenceDocuments = compatibleEvidenceDocuments(expense);
+                const evidenceOpen = evidenceExpenseId === expense.id;
+                return (
+                  <article key={expense.id} className="grid gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/50 p-3 sm:grid-cols-[110px_1fr_auto] sm:items-center">
+                    <div><p className="text-[11px] font-semibold">{dateLabel(expense.occurred_on, locale)}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{expense.category}</p></div>
+                    <div className="min-w-0"><p className="truncate text-[11px] font-semibold">{expense.description}</p><p className="mt-1 truncate text-[10px] text-[var(--muted)]">{expense.vendor || "Fără furnizor"}{expense.purchase_order_id ? ` · PO ${purchaseOrderById.get(expense.purchase_order_id)?.reference || "achiziție"}` : ""}{expense.client_id ? ` · ${clientById.get(expense.client_id) || "Client"}` : ""}{expense.task_id ? ` · ${taskById.get(expense.task_id) || "Lucrare"}` : ""}{expense.document_id ? ` · ${docById.get(expense.document_id) || "Document"}` : " · fără dovadă"}</p></div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <strong className="text-[11px]">{formatMoney(expense.amount_cents, expense.currency, locale)}</strong>
+                      {canWrite && !expense.document_id ? (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => {
+                            setEvidenceExpenseId((current) => current === expense.id ? "" : expense.id);
+                            setEvidenceDocumentId(evidenceDocuments.length === 1 ? evidenceDocuments[0].id : "");
+                          }}
+                          className="text-[10px] font-semibold text-[var(--accent)] disabled:opacity-40"
+                        >
+                          {evidenceOpen ? "Închide" : "Atașează dovadă"}
+                        </button>
+                      ) : null}
+                      {canWrite ? <button type="button" disabled={saving} onClick={() => void removeExpense(expense)} className="text-[10px] font-semibold text-rose-400 disabled:opacity-40">Șterge</button> : null}
+                    </div>
+                    {evidenceOpen && !expense.document_id ? (
+                      <div className="sm:col-span-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-3">
+                        {evidenceDocuments.length ? (
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <select
+                              value={evidenceDocumentId}
+                              onChange={(event) => setEvidenceDocumentId(event.target.value)}
+                              className={moduleInputClass + " min-w-0 flex-1"}
+                            >
+                              <option value="">Alege documentul justificativ</option>
+                              {evidenceDocuments.map((document) => (
+                                <option key={document.id} value={document.id}>{document.name}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              disabled={saving || !evidenceDocumentId}
+                              onClick={() => void attachEvidence(expense)}
+                              className="h-11 rounded-[10px] bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+                            >
+                              Atașează
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-[10px] text-[var(--muted)]">Nu există încă un document compatibil pentru această cheltuială.</p>
+                            {enabledModules.includes("documents") ? (
+                              <button
+                                type="button"
+                                onClick={() => onOpenModule("documents", { create: true, taskId: expense.task_id ?? undefined, purchaseOrderId: expense.purchase_order_id ?? undefined })}
+                                className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-[10px] font-semibold"
+                              >
+                                + Încarcă dovadă
+                              </button>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
             </div>
           ) : <div className="mt-3"><ModuleEmpty title={evidenceOnly ? "Toate au document" : "Nicio cheltuială"} description={evidenceOnly ? "Nu există cheltuieli fără document justificativ în contextul curent." : "Adaugă doar costurile utile operațional."} /></div>}
         </section>
