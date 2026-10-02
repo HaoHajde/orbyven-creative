@@ -3,6 +3,7 @@ import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { detectOperationalQuery, type OperationalQueryKind } from "@/lib/ai/operational-query-core";
 import { answerBusinessBriefing } from "@/lib/ai/business-briefing";
+import { answerDecisionSupport } from "@/lib/ai/business-decision-support";
 
 type TaskRow = {
   id: string;
@@ -388,6 +389,13 @@ export async function answerOperationalQuery(
 ): Promise<IntelligenceResponse | null> {
   const kind = detectOperationalQuery(prompt);
   if (!kind) return null;
+
+  if (kind === "decision_support") {
+    if (![...available].some((moduleId) => ["tasks", "leads", "estimates", "calendar"].includes(moduleId))) {
+      return unavailable("Lucrări / Lead-uri / Devize / Calendar");
+    }
+    return answerDecisionSupport(actor, available);
+  }
 
   if (kind === "briefing") {
     if (![...available].some((moduleId) => ["tasks", "leads", "estimates", "calendar"].includes(moduleId))) {
