@@ -34,7 +34,7 @@ function WorkspaceOnboardingPageContent() {
     : "";
   const checkoutDestination = checkoutProduct
     ? `/porneste/web-design${checkoutQuery}`
-    : checkoutDestination;
+    : `/contact${checkoutQuery}`;
   const [companyName, setCompanyName] = useState("");
   const [selectedModules, setSelectedModules] = useState<OrbyvenModuleId[]>(() =>
     checkoutPlan ? [...BILLING_PLANS[checkoutPlan].entitlements] : ["overview", "leads", "tasks"]
@@ -72,7 +72,7 @@ function WorkspaceOnboardingPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [checkoutPlan, checkoutQuery, router]);
+  }, [checkoutDestination, checkoutPlan, checkoutQuery, router]);
 
   const toggleModule = (id: OrbyvenModuleId) => {
     if (id === "overview") return;
