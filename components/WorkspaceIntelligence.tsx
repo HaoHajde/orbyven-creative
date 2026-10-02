@@ -36,6 +36,7 @@ type UiMessage = {
   actions: IntelligenceResponse["actions"];
   focus?: IntelligenceResponse["focus"];
   decision?: IntelligenceResponse["decision"];
+  outcome?: IntelligenceResponse["outcome"];
 };
 
 const QUICK_PROMPTS = [
@@ -72,6 +73,33 @@ function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
           why,
           consequence,
           nextStep,
+          confidence: "high" as const,
+        }
+      : undefined,
+  };
+}
+
+function splitStoredOutcome(facts: Array<{ label: string; value: string }>) {
+  const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  const planId = value("Outcome · Plan");
+  const rawStatus = value("Outcome · Status");
+  const status =
+    rawStatus === "resolved" || rawStatus === "shifted" || rawStatus === "still_priority"
+      ? rawStatus
+      : undefined;
+  const summary = value("Outcome · Summary");
+  const previousFocus = value("Outcome · Previous");
+  const currentFocus = value("Outcome · Current");
+
+  return {
+    facts: facts.filter((fact) => !fact.label.startsWith("Outcome · ")),
+    outcome: planId && status && summary
+      ? {
+          planId,
+          status,
+          previousFocus,
+          currentFocus,
+          summary,
           confidence: "high" as const,
         }
       : undefined,
@@ -248,15 +276,17 @@ export default function WorkspaceIntelligence({
       const restored = (body.messages ?? []).map((item) => {
         const storedFocus = splitStoredFocus(item.facts ?? []);
         const storedDecision = splitStoredDecision(storedFocus.facts);
+        const storedOutcome = splitStoredOutcome(storedDecision.facts);
         return {
           key: item.id,
           role: item.role,
           content: item.content,
           specialist: item.specialist,
-          facts: storedDecision.facts,
+          facts: storedOutcome.facts,
           actions: [] as IntelligenceResponse["actions"],
           focus: storedFocus.focus,
           decision: storedDecision.decision,
+          outcome: storedOutcome.outcome,
         };
       });
       const plan = await loadPlanForConversation(body.conversation.id, token);
@@ -327,6 +357,7 @@ export default function WorkspaceIntelligence({
         actions: body.actions,
         focus: body.focus,
         decision: body.decision,
+        outcome: body.outcome,
       }]);
       void loadConversations();
     } catch (reason) {
@@ -340,6 +371,46 @@ export default function WorkspaceIntelligence({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void ask();
+  };
+
+  const recheckOutcome = async (planId: string, token: string) => {
+    if (!conversationId) return;
+    const response = await requestApi("/api/ai/outcomes/recheck", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        organizationId,
+        conversationId,
+        planId,
+      }),
+    });
+    const body = (await response.json()) as IntelligenceResponse & {
+      conversationId?: string;
+      error?: string;
+    };
+    if (!response.ok || !body.outcome) {
+      throw new Error(body.error || "Outcome Loop nu a putut recalcula rezultatul.");
+    }
+
+    setMessages((current) => {
+      if (current.some((message) => message.outcome?.planId === body.outcome?.planId)) {
+        return current;
+      }
+      return [...current, {
+        key: nextLocalKey("outcome"),
+        role: "assistant",
+        content: body.answer,
+        specialist: body.specialist,
+        facts: body.facts,
+        actions: body.actions,
+        focus: body.focus,
+        decision: body.decision,
+        outcome: body.outcome,
+      }];
+    });
   };
 
   const clearProposalAction = (proposalId: string) => {
@@ -430,7 +501,20 @@ export default function WorkspaceIntelligence({
       if (body.plan && conversationId) {
         try {
           const latestPlan = await loadPlanForConversation(conversationId, token);
-          if (latestPlan) putPlanInMessages(latestPlan);
+          if (latestPlan) {
+            putPlanInMessages(latestPlan);
+            if (
+              body.status === "executed" &&
+              latestPlan.steps.length > 0 &&
+              latestPlan.steps.every((step) => step.status === "executed")
+            ) {
+              try {
+                await recheckOutcome(latestPlan.planId, token);
+              } catch (outcomeError) {
+                console.error("ORBYVEN outcome recheck failed", outcomeError);
+              }
+            }
+          }
         } catch (planRefreshError) {
           console.error("ORBYVEN plan refresh failed", planRefreshError);
         }
@@ -824,7 +908,7 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.23</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.24</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -930,7 +1014,32 @@ export default function WorkspaceIntelligence({
                                 <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN</span>
                               </div>
                               <p className="mt-2.5 text-[13px] leading-5 text-[var(--text)]">{displayContent}</p>
-                              {message.focus && !message.decision ? (
+                              {message.outcome ? (
+                                <div
+                                  data-orbyven-outcome="true"
+                                  className="mt-3 overflow-hidden rounded-[13px] border border-emerald-300/15 bg-emerald-300/[0.045]"
+                                >
+                                  <div className="flex items-center justify-between gap-2 border-b border-emerald-300/10 px-3 py-2">
+                                    <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-200/85">OUTCOME</span>
+                                    <span className="text-[9px] font-semibold text-[var(--muted-2)]">
+                                      {message.outcome.status === "resolved"
+                                        ? "rezolvat"
+                                        : message.outcome.status === "shifted"
+                                          ? "focus mutat"
+                                          : "încă prioritar"}
+                                    </span>
+                                  </div>
+                                  <div className="px-3 py-2.5">
+                                    <p className="text-[11px] leading-4 text-[var(--text)]">{message.outcome.summary}</p>
+                                    {message.outcome.currentFocus ? (
+                                      <p className="mt-1.5 text-[10px] leading-4 text-[var(--muted)]">
+                                        Focus curent: {message.outcome.currentFocus}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ) : null}
+                              {message.focus && !message.decision && !message.outcome ? (
                                 <div
                                   data-orbyven-focus-explanation="true"
                                   className="mt-3 overflow-hidden rounded-[13px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055]"
@@ -1046,7 +1155,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.23 · Decision → Action · Confirmare înainte de execuție.
+                      0.8.24 · Outcome Loop · Re-check după plan · Confirmare înainte de execuție.
                     </p>
                   </form>
                 ) : null}
