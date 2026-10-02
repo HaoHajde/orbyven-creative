@@ -237,7 +237,7 @@ export default function TeamModule({ organizationId, role }: Props) {
       setResources((current) => current.map((item) => item.id === updated.id ? updated : item));
     } catch (resourceError) {
       console.error(resourceError);
-      setError("Statusul resursei nu a putut fi schimbat.");
+      setError(resourceError instanceof Error ? resourceError.message : "Statusul resursei nu a putut fi schimbat.");
     } finally {
       setSaving(false);
     }
