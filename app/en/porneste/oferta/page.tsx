@@ -35,7 +35,7 @@ const VISUAL_META: Record<PublicOfferId, VisualMeta> = {
     eyebrow: "WEB DESIGN",
     titleTop: "Your website +",
     titleAccent: "30 zile Dashboard",
-    priceSuffix: "lei acum",
+    priceSuffix: "RON now",
     priceDetail: "then 499 RON / month after 30 days",
     modules: ["Website", "Responsive", "SEO", "Dashboard", "Clients", "Tasks"],
   },
@@ -44,7 +44,7 @@ const VISUAL_META: Record<PublicOfferId, VisualMeta> = {
     titleTop: "Web Design + Dashboard +",
     titleAccent: "Module Personalizabile",
     priceSuffix: "RON / month",
-    modules: ["CRM", "Tasks", "Calendar", "Devize", "Stoc", "Automations", "Custom"],
+    modules: ["CRM", "Tasks", "Calendar", "Quotes", "Inventory", "Automations", "Custom"],
   },
 };
 
@@ -140,14 +140,14 @@ function Glyph({ kind }: { kind: string }) {
       </svg>
     );
   }
-  if (kind === "Devize") {
+  if (kind === "Quotes") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={common} aria-hidden="true">
         <path d="M7 3h7l4 4v14H7z" /><path d="M14 3v5h5M10 13h5M10 17h5" />
       </svg>
     );
   }
-  if (kind === "Stoc") {
+  if (kind === "Inventory") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={common} aria-hidden="true">
         <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" /><path d="m4.5 7.8 7.5 4.1 7.5-4.1M12 12v9" />
@@ -266,7 +266,7 @@ function FeatureScene({
             <div className="grid h-full place-items-center"><div className="flex items-center gap-5">{["CRM","AI","Tasks"].map((x,i)=><div key={x} className="flex items-center gap-5"><div className={`grid h-24 w-24 place-items-center rounded-[22px] border ${x==="AI"?"border-[#a98dff]/60 bg-[#8f6cff]/18 shadow-[0_0_40px_rgba(126,93,255,.22)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-2 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[#9f7cff]">→</span>:null}</div>)}</div></div>
           ) : (
             <div className="grid h-full grid-cols-[.22fr_.78fr] gap-3">
-              <div className="rounded-[16px] border border-white/8 bg-white/[.025] p-3">{["Dashboard","CRM","Tasks","Calendar","Devize","Stoc","AI"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</div>
+              <div className="rounded-[16px] border border-white/8 bg-white/[.025] p-3">{["Dashboard","CRM","Tasks","Calendar","Quotes","Inventory","AI"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</div>
               <div className="grid grid-cols-2 gap-3">{[["124","Clients"],["18","Projects"],["12","Tasks"],["75%","Progress"]].map(([n,l])=><div key={l} className="rounded-[16px] border border-white/8 bg-white/[.035] p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></div>)}</div>
             </div>
           )
@@ -459,8 +459,8 @@ function AdvancedVisual({
                     ["CRM","CRM"],
                     ["Tasks","Tasks"],
                     ["Calendar","Calendar"],
-                    ["Devize","Devize"],
-                    ["Stoc","Stoc"],
+                    ["Quotes","Quotes"],
+                    ["Inventory","Inventory"],
                     ["Automations","Automations"],
                     ["Module","Custom"],
                   ].map(([label,feature],i)=>(
@@ -480,7 +480,7 @@ function AdvancedVisual({
                 <div className="mt-4 grid grid-cols-4 gap-2">
                   {[
                     ["124","Clients","CRM"],
-                    ["18","Devize","Devize"],
+                    ["18","Quotes","Quotes"],
                     ["7","Projects","Dashboard"],
                     ["12","Tasks","Tasks"],
                   ].map(([n,l,feature])=>(
@@ -656,7 +656,7 @@ function CheckoutPanel({
     <div className="grid gap-3 rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3 text-white shadow-[0_28px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.07)] ring-1 ring-white/[.02] lg:grid-cols-[1.08fr_.92fr]">
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none]">
         {[
-          ["1", "Alegi", "Devize"],
+          ["1", "Choose", "Quotes"],
           ["2", "Confirmi", "Tasks"],
           ["3", "Stripe Checkout", "Website"],
         ].map(([step, label, icon], index) => (
