@@ -7,6 +7,12 @@ import type {
 
 export type WebDesignInterviewQuestion = WebDesignBriefGap;
 
+export type WebDesignInterviewFact = {
+  id: WebDesignBriefGapId;
+  question: string;
+  answer: string;
+};
+
 const GAP_IDS = new Set<WebDesignBriefGapId>([
   "brand_name",
   "hero_offer",
@@ -30,6 +36,60 @@ const SECTION_IDS = new Set<WebDesignBriefGap["sections"][number]>([
   "faq",
   "contact",
 ]);
+
+export function readWebDesignInterviewFacts(
+  value: unknown
+): WebDesignInterviewFact[] {
+  if (!Array.isArray(value)) return [];
+
+  const valid = value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const id = typeof record.id === "string" ? record.id : "";
+      const question =
+        typeof record.question === "string" ? record.question.trim() : "";
+      const answer =
+        typeof record.answer === "string" ? record.answer.trim() : "";
+
+      if (
+        !GAP_IDS.has(id as WebDesignBriefGapId) ||
+        question.length < 2 ||
+        answer.length < 2
+      ) {
+        return null;
+      }
+
+      return {
+        id: id as WebDesignBriefGapId,
+        question: question.slice(0, 220),
+        answer: answer.slice(0, 1200),
+      } satisfies WebDesignInterviewFact;
+    })
+    .filter((item): item is WebDesignInterviewFact => item !== null);
+
+  const seen = new Set<WebDesignBriefGapId>();
+  const latest = valid
+    .slice()
+    .reverse()
+    .filter((fact) => {
+      if (seen.has(fact.id)) return false;
+      seen.add(fact.id);
+      return true;
+    })
+    .reverse();
+
+  return latest.slice(-8);
+}
+
+export function interviewFactsToEvidence(
+  facts: WebDesignInterviewFact[]
+) {
+  return facts
+    .slice(-8)
+    .map((fact) => `[${fact.id}] ${fact.question}\nRăspuns real: ${fact.answer}`)
+    .join("\n\n");
+}
 
 export function readWebDesignInterviewQuestions(
   value: unknown
