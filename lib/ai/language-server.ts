@@ -95,6 +95,7 @@ async function claimLanguageQuota(
 }
 
 async function finishLanguageQuota(
+  actor: BillingActor,
   requestId: string,
   success: boolean,
   usage: { input: number; output: number },
@@ -163,7 +164,7 @@ export async function maybePolishIntelligenceResponse(
     });
 
     if (!upstream.ok) {
-      await finishLanguageQuota(requestId, false, { input: 0, output: 0 }, `HTTP_${upstream.status}`);
+      await finishLanguageQuota(actor, requestId, false, { input: 0, output: 0 }, `HTTP_${upstream.status}`);
       return response;
     }
 
@@ -175,11 +176,11 @@ export async function maybePolishIntelligenceResponse(
       !languageOutputPreservesNumbers(polished, canonicalPayload) ||
       !languageOutputPreservesExecutionClaims(polished, canonicalPayload)
     ) {
-      await finishLanguageQuota(requestId, false, usage, "OUTPUT_GUARD");
+      await finishLanguageQuota(actor, requestId, false, usage, "OUTPUT_GUARD");
       return response;
     }
 
-    await finishLanguageQuota(requestId, true, usage);
+    await finishLanguageQuota(actor, requestId, true, usage);
     return {
       ...response,
       answer: polished,
@@ -189,7 +190,7 @@ export async function maybePolishIntelligenceResponse(
     const code = error instanceof Error && error.name === "AbortError"
       ? "TIMEOUT"
       : "UPSTREAM_ERROR";
-    await finishLanguageQuota(requestId, false, { input: 0, output: 0 }, code);
+    await finishLanguageQuota(actor, requestId, false, { input: 0, output: 0 }, code);
     return response;
   } finally {
     clearTimeout(timeout);
