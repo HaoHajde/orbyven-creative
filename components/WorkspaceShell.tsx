@@ -380,20 +380,21 @@ export default function WorkspaceShell({
 
   return (
     <main
+      data-orbyven-theme={theme}
       data-orbyven-text-scale={textScale}
       style={{
         ...vars,
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="orbyven-workspace-text-scale orbyven-workspace-shell relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="orbyven-theme-shell orbyven-workspace-text-scale orbyven-workspace-shell relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
       {theme === "dark" ? (
         <WorkspaceOrbitBackground fixed />
       ) : (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
           <div className="absolute inset-0" style={{
-            background: "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
+            background: "radial-gradient(ellipse 58% 44% at 30% 0%,rgba(103,87,223,.18),transparent 76%),radial-gradient(ellipse 45% 34% at 92% 26%,rgba(151,102,235,.10),transparent 72%),linear-gradient(118deg,transparent 0 62%,rgba(91,77,222,.035) 62.15%,transparent 62.3%)",
           }} />
         </div>
       )}
@@ -432,6 +433,7 @@ export default function WorkspaceShell({
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
+              theme={theme}
               themeVars={vars}
               textScale={textScale}
               onOpenModule={openModule}
