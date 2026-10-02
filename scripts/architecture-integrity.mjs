@@ -79,8 +79,40 @@ function checkSourceBudgets() {
     }
   }
 
+  for (const [relativePath, maxBytes] of Object.entries(budgets.source.hotspotMaxBytes ?? {})) {
+    const file = join(repoRoot, relativePath);
+    if (!existsSync(file)) {
+      errors.push(`Tracked hotspot disappeared without updating architecture budget: ${relativePath}.`);
+      continue;
+    }
+    const bytes = sourceBytes(file);
+    if (bytes > maxBytes) {
+      errors.push(`Hotspot grew beyond its frozen ceiling: ${relativePath} (${kib(bytes)} > ${kib(maxBytes)}). Extract a coherent responsibility instead of raising the limit.`);
+    }
+  }
+
   notes.push(`web source: ${webFiles.length} files; ${largeWeb.length} above ${kib(budgets.source.webLargeFileThresholdBytes)}`);
   notes.push(`desktop source: ${desktopFiles.length} files; ${largeDesktop.length} above ${kib(budgets.source.desktopLargeFileThresholdBytes)}`);
+}
+
+function checkWorkspaceChunking() {
+  const file = join(repoRoot, "components/WorkspaceContent.tsx");
+  if (!existsSync(file)) {
+    errors.push("WorkspaceContent.tsx missing; cannot verify dashboard module chunking.");
+    return;
+  }
+  const content = readFileSync(file, "utf8");
+  for (const moduleName of budgets.structure?.workspaceDynamicModules ?? []) {
+    const dynamicPattern = new RegExp(`const\\s+${moduleName}\\s*=\\s*dynamic\\(\\(\\)\\s*=>\\s*import\\(`);
+    if (!dynamicPattern.test(content)) {
+      errors.push(`Workspace module is no longer lazy-loaded: ${moduleName}. Keep heavy modules out of the initial dashboard bundle.`);
+    }
+    const staticPattern = new RegExp(`import\\s+${moduleName}\\s+from\\s+["'][^"']*modules/${moduleName}["']`);
+    if (staticPattern.test(content)) {
+      errors.push(`Static workspace module import detected: ${moduleName}. Use next/dynamic at module scope.`);
+    }
+  }
+  notes.push(`workspace dynamic modules: ${(budgets.structure?.workspaceDynamicModules ?? []).length} guarded`);
 }
 
 function checkDependencies() {
@@ -160,6 +192,7 @@ if (fullSourceChecks) {
   checkSourceBudgets();
   checkDependencies();
   checkPublicAssets();
+  checkWorkspaceChunking();
 }
 if (webBuildOnly) checkWebBuild();
 if (desktopBuildOnly) checkDesktopBuild();
