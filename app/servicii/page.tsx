@@ -34,8 +34,8 @@ const services: Service[] = [
     title: "Website",
     line: "A clear, fast presence built around your business.",
     href: "/creare-site",
-    linkLabel: "Creare site pentru firme",
-    tags: ["Responsive", "SEO", "Formulare"],
+    linkLabel: "Business website design",
+    tags: ["Responsive", "SEO", "Forms"],
     gradient: "radial-gradient(circle at 16% 18%, rgba(135,102,255,.34), transparent 31%), radial-gradient(circle at 82% 78%, rgba(67,46,130,.30), transparent 37%), linear-gradient(140deg,#0d0918,#17102a 58%,#08070d)",
   },
   {
@@ -44,7 +44,7 @@ const services: Service[] = [
     line: "One offer, one direction and a simple path to conversion.",
     href: "/site-prezentare",
     linkLabel: "Business websites and landing pages",
-    tags: ["Campanii", "Conversie", "Analytics"],
+    tags: ["Campaigns", "Conversion", "Analytics"],
     gradient: "radial-gradient(circle at 76% 18%, rgba(82,126,255,.31), transparent 31%), radial-gradient(circle at 16% 78%, rgba(89,61,176,.28), transparent 36%), linear-gradient(140deg,#090b18,#10162e 58%,#07080d)",
   },
   {
@@ -52,7 +52,7 @@ const services: Service[] = [
     title: "Redesign",
     line: "We keep what works and rebuild what slows you down.",
     href: "/redesign-site",
-    linkLabel: "Serviciu de redesign website",
+    linkLabel: "Website redesign service",
     tags: ["UI", "UX", "Performance"],
     gradient: "radial-gradient(circle at 22% 24%, rgba(190,88,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(92,49,147,.28), transparent 36%), linear-gradient(140deg,#110914,#201027 58%,#09070b)",
   },
