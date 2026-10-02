@@ -10,6 +10,7 @@ import {
   type VideoStyle,
 } from "@/lib/video-ai-director";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -54,6 +55,7 @@ function formatSeconds(value: number) {
 }
 
 export default function VideoAiStudio() {
+  const router = useRouter();
   const [theme, setTheme] = useState<Theme>("dark");
   const [brief, setBrief] = useState(defaultBrief);
   const [duration, setDuration] = useState<VideoDuration>(30);
@@ -149,7 +151,7 @@ export default function VideoAiStudio() {
 
   const startRender = async () => {
     if (!accessToken) {
-      window.location.href = "/workspace/login?next=video-ai";
+      router.push("/workspace/login?next=video-ai");
       return;
     }
 
