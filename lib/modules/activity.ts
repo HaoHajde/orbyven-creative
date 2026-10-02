@@ -1,6 +1,7 @@
 "use client";
 
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { requireOrbyvenSession } from "@/lib/orbyven-session";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import {
   buildBusinessAutomationSignals,
@@ -64,6 +65,7 @@ export async function loadWorkspaceActivity(
   timeZone: string
 ): Promise<WorkspaceActivityItem[]> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
+  await requireOrbyvenSession();
 
   const now = new Date();
   const nowIso = now.toISOString();
