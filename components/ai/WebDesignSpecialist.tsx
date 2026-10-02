@@ -17,7 +17,9 @@ import {
 import {
   applyWebDesignInterviewAnswerLocally,
   buildWebDesignInterviewPrompt,
+  readWebDesignInterviewFacts,
   readWebDesignInterviewQuestions,
+  type WebDesignInterviewFact,
   type WebDesignInterviewQuestion,
 } from "@/lib/ai/web-design-interview";
 import {
@@ -33,6 +35,7 @@ const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
 const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 const VISUAL_MEMORY_KEY = "orbyven-web-design-visual-memory-v01";
 const INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01";
+const INTERVIEW_FACTS_KEY = "orbyven-web-design-interview-facts-v01";
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -123,6 +126,7 @@ export default function WebDesignSpecialist() {
   const [qualityScore, setQualityScore] = useState<number | null>(null);
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [interviewQuestions, setInterviewQuestions] = useState<WebDesignInterviewQuestion[]>([]);
+  const [interviewFacts, setInterviewFacts] = useState<WebDesignInterviewFact[]>([]);
   const [interviewAnswer, setInterviewAnswer] = useState("");
 
   useEffect(() => {
@@ -164,6 +168,25 @@ export default function WebDesignSpecialist() {
           console.warn("ORBYVEN Web Design local draft could not be restored", error);
         }
         if (localDraft) setDraft(localDraft);
+
+        try {
+          const savedFacts = window.localStorage.getItem(INTERVIEW_FACTS_KEY);
+          if (savedFacts) {
+            const facts = readWebDesignInterviewFacts(JSON.parse(savedFacts));
+            setInterviewFacts(facts);
+            if (facts.length) {
+              window.localStorage.setItem(
+                INTERVIEW_FACTS_KEY,
+                JSON.stringify(facts)
+              );
+            } else {
+              window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design interview facts could not be restored", error);
+          window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
+        }
 
         try {
           const savedInterview = window.localStorage.getItem(INTERVIEW_QUEUE_KEY);
@@ -258,6 +281,18 @@ export default function WebDesignSpecialist() {
     }
   }, [interviewQuestions, hydrated, authorized]);
 
+  useEffect(() => {
+    if (!hydrated || !authorized) return;
+    if (interviewFacts.length) {
+      window.localStorage.setItem(
+        INTERVIEW_FACTS_KEY,
+        JSON.stringify(interviewFacts.slice(-8))
+      );
+    } else {
+      window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
+    }
+  }, [interviewFacts, hydrated, authorized]);
+
   const saveRemote = async (
     next: EditableSite,
     source: "local" | "preset",
@@ -304,7 +339,10 @@ export default function WebDesignSpecialist() {
     void saveRemote(next, source, lastPrompt);
   };
 
-  const generateWithAi = async (request: string) => {
+  const generateWithAi = async (
+    request: string,
+    factOverride?: WebDesignInterviewFact[]
+  ) => {
     if (!organizationId || !canEdit || aiBusy) return false;
     setAiBusy(true);
     setMessage("ORBYVEN construiește o variantă nouă din componente validate…");
@@ -322,6 +360,7 @@ export default function WebDesignSpecialist() {
           prompt: request,
           currentDraft: draft,
           recentDrafts: visualMemory.slice(-4),
+          interviewFacts: (factOverride ?? interviewFacts).slice(-8),
         }),
       });
 
@@ -458,6 +497,17 @@ export default function WebDesignSpecialist() {
     event.preventDefault();
     if (!activeInterviewQuestion || aiBusy || !canEdit) return;
 
+    const fact: WebDesignInterviewFact = {
+      id: activeInterviewQuestion.id,
+      question: activeInterviewQuestion.question,
+      answer: interviewAnswer.trim().slice(0, 1200),
+    };
+    const nextFacts = readWebDesignInterviewFacts([
+      ...interviewFacts,
+      fact,
+    ]);
+    setInterviewFacts(nextFacts);
+
     const localResult = applyWebDesignInterviewAnswerLocally(
       draft,
       activeInterviewQuestion,
@@ -485,7 +535,7 @@ export default function WebDesignSpecialist() {
       return;
     }
 
-    const generated = await generateWithAi(interviewPrompt);
+    const generated = await generateWithAi(interviewPrompt, nextFacts);
     if (generated) setInterviewAnswer("");
   };
 
@@ -498,9 +548,11 @@ export default function WebDesignSpecialist() {
     const next = SITE_PRESETS[preset];
     setVisualMemory([]);
     setInterviewQuestions([]);
+    setInterviewFacts([]);
     setInterviewAnswer("");
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
     window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+    window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
@@ -524,9 +576,11 @@ export default function WebDesignSpecialist() {
     const next = SITE_PRESETS[draft.preset];
     setVisualMemory([]);
     setInterviewQuestions([]);
+    setInterviewFacts([]);
     setInterviewAnswer("");
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
     window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+    window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
