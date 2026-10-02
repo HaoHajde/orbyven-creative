@@ -17,34 +17,34 @@ const DEMO_DRAFT: EditableSite = {
   ...SITE_PRESETS.studio,
   brand: "ORBYVEN AI",
   eyebrow: "WEB DESIGN INTELLIGENCE",
-  headline: "Descrii afacerea. ORBYVEN construiește direcția.",
+  headline: "Describe your business. ORBYVEN builds the direction.",
   description:
-    "Un preview viu construit din componente validate, cu structură, copy și identitate vizuală coerente.",
-  cta: "Pornește proiectul",
-  servicesTitle: "Un site construit în jurul obiectivului",
+    "A live preview built from validated components, with coherent structure, copy and visual identity.",
+  cta: "Start the project",
+  servicesTitle: "A website built around the goal",
   services: [
     {
-      title: "Structură",
-      description: "AI-ul alege și ordonează secțiunile potrivite pentru obiectivul paginii.",
+      title: "Structure",
+      description: "The AI chooses and orders the right sections for the page goal.",
     },
     {
-      title: "Identitate",
-      description: "Paleta, densitatea și ritmul vizual rămân coerente în aceeași direcție.",
+      title: "Identity",
+      description: "Palette, density and visual rhythm stay coherent in one direction.",
     },
     {
-      title: "Rafinare",
-      description: "Poți cere schimbări punctuale fără să reconstruiești inutil tot designul.",
+      title: "Refinement",
+      description: "Request precise changes without rebuilding the entire design.",
     },
   ],
-  benefitsTitle: "Control fără complexitate",
+  benefitsTitle: "Control without complexity",
   benefits: [
-    { title: "Preview live", description: "Vezi imediat direcția înainte de publicare." },
-    { title: "Design DNA", description: "Alternative suficient de diferite, nu doar texte schimbate." },
-    { title: "Safe by design", description: "Modelul livrează date validate, nu cod arbitrar." },
+    { title: "Preview live", description: "See the direction immediately before publishing." },
+    { title: "Design DNA", description: "Meaningfully different alternatives, not just rewritten text." },
+    { title: "Safe by design", description: "The model returns validated data, not arbitrary code." },
   ],
-  aboutTitle: "AI care lucrează în limite clare",
+  aboutTitle: "AI that works within clear boundaries",
   aboutDescription:
-    "ORBYVEN Web Design AI păstrează faptele reale, urmărește obiectivul business-ului și folosește doar componente controlate.",
+    "ORBYVEN Web Design AI preserves real facts, follows the business goal and uses only controlled components.",
   hiddenSections: ["gallery", "process", "faq"],
   accent: "#745cff",
   background: "#0b0b10",
@@ -133,7 +133,7 @@ export default function AiWebDesignEntry() {
           <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#9f8dff]">
             ORBYVEN · AI WEB DESIGN
           </p>
-          <p className="mt-3 text-[12px] text-[var(--muted)]">Se pregătește experiența…</p>
+          <p className="mt-3 text-[12px] text-[var(--muted)]">Preparing the experience…</p>
         </div>
       </main>
     );
@@ -167,11 +167,11 @@ export default function AiWebDesignEntry() {
               ORBYVEN · AI WEB DESIGN
             </p>
             <h1 className="mt-6 max-w-[760px] text-[clamp(54px,7vw,112px)] font-semibold leading-[.86] tracking-[-.074em]">
-              Website-ul începe cu o <span className="text-[#9f8dff]">conversație.</span>
+              Your website starts with a <span className="text-[#9f8dff]">conversation.</span>
             </h1>
             <p className="mt-7 max-w-xl text-[14px] leading-7 text-[var(--muted)] sm:text-[15px]">
-              Descrii business-ul, obiectivul și direcția dorită. ORBYVEN Web Design AI construiește,
-              rafinează și propune alternative într-un sistem vizual controlat.
+              Describe your business, goal and desired direction. ORBYVEN Web Design AI builds,
+              refines and proposes alternatives within a controlled visual system.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -179,13 +179,13 @@ export default function AiWebDesignEntry() {
                 href="/workspace/login?next=ai-web-design"
                 className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-[12px] font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5"
               >
-                Deschide AI Web Design →
+                Open AI Web Design →
               </Link>
               <Link
                 href="/templates"
                 className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-[12px] font-semibold"
               >
-                Vezi Templates
+                View Templates
               </Link>
             </div>
 
@@ -193,7 +193,7 @@ export default function AiWebDesignEntry() {
               {[
                 ["01", "Brief"],
                 ["02", "Preview"],
-                ["03", "Rafinare"],
+                ["03", "Refinement"],
               ].map(([number, label]) => (
                 <div
                   key={number}
@@ -212,7 +212,7 @@ export default function AiWebDesignEntry() {
                 <p className="text-[8px] font-bold uppercase tracking-[.18em] text-white/40">
                   LIVE DESIGN ENGINE
                 </p>
-                <p className="mt-1 text-[11px] font-semibold text-white/80">Preview controlat</p>
+                <p className="mt-1 text-[11px] font-semibold text-white/80">Controlled preview</p>
               </div>
               <span className="rounded-full border border-[#9f8dff]/25 bg-[#9f8dff]/10 px-3 py-2 text-[8px] font-bold text-[#c9beff]">
                 AI
@@ -227,21 +227,21 @@ export default function AiWebDesignEntry() {
 
       <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">
-          CUM LUCREAZĂ
+          HOW IT WORKS
         </p>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {[
             {
-              title: "Înțelege intenția",
-              copy: "Separă obiectivul paginii de preferințele vizuale și păstrează faptele reale.",
+              title: "Understands intent",
+              copy: "Separates the page goal from visual preferences and preserves real facts.",
             },
             {
-              title: "Construiește coerent",
-              copy: "Alege structură, componente, densitate, paletă și ierarhie în aceeași direcție.",
+              title: "Builds coherently",
+              copy: "Chooses structure, components, density, palette and hierarchy in one coherent direction.",
             },
             {
-              title: "Rafinează fără haos",
-              copy: "Schimbările punctuale păstrează elementele care nu trebuie reconstruite.",
+              title: "Refines without chaos",
+              copy: "Precise changes preserve the elements that do not need rebuilding.",
             },
           ].map((item, index) => (
             <article
@@ -264,14 +264,14 @@ export default function AiWebDesignEntry() {
                 ORBYVEN WEB DESIGN INTELLIGENCE
               </p>
               <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,64px)] font-semibold leading-[.94] tracking-[-.06em]">
-                Spune ce vrei să construiești.
+                Tell us what you want to build.
               </h2>
             </div>
             <Link
               href="/workspace/login?next=ai-web-design"
               className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]"
             >
-              Intră în AI Web Design →
+              Enter AI Web Design →
             </Link>
           </div>
         </div>

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
 
   title: {
-    default: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
+    default: "ORBYVEN — Web Design, AI & Business Workspace",
     template: "%s | ORBYVEN CREATIVE",
   },
 
@@ -37,16 +37,16 @@ export const metadata: Metadata = {
   keywords: [
     "ORBYVEN",
     "ORBYVEN CREATIVE",
-    "web design România",
-    "creare website",
-    "site prezentare",
+    "web design",
+    "website development",
+    "business website",
     "website business",
     "landing page",
     "redesign website",
-    "experiențe digitale",
-    "invitații nuntă digitale",
-    "invitații botez digitale",
-    "invitații online personalizate",
+    "digital experiences",
+    "digital wedding invitations",
+    "digital christening invitations",
+    "custom digital invitations",
   ],
 
   authors: [{ name: siteConfig.name }],
@@ -120,7 +120,7 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="ro"
+      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
