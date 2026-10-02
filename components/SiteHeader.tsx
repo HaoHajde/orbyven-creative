@@ -14,11 +14,11 @@ const navItems: {
   href: string;
   label: string;
 }[] = [
-  { key: "home", href: "/", label: "Acasă" },
+  { key: "home", href: "/", label: "Home" },
   { key: "templates", href: "/templates", label: "Templates" },
   { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
-  { key: "services", href: "/servicii", label: "Servicii" },
-  { key: "contact", href: "/contact", label: "Pornește" },
+  { key: "services", href: "/servicii", label: "Services" },
+  { key: "contact", href: "/contact", label: "Get started" },
 ];
 
 export default function SiteHeader({
@@ -111,7 +111,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={onToggleTheme}
-                aria-label={theme === "dark" ? "Activează tema luminoasă" : "Activează tema întunecată"}
+                aria-label={theme === "dark" ? "Enable light mode" : "Enable dark mode"}
                 title={theme === "dark" ? "Light mode" : "Dark mode"}
                 className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] md:transition-transform md:hover:scale-[1.04]"
               >
@@ -123,7 +123,7 @@ export default function SiteHeader({
               </Link>
 
               <Link href="/cerere" className="hidden h-10 touch-manipulation items-center justify-center rounded-full bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99] md:transition-transform md:hover:scale-[1.02] sm:inline-flex">
-                Începe un proiect
+                Start a project
               </Link>
 
               <button
@@ -133,7 +133,7 @@ export default function SiteHeader({
                   setMobileOpen((current) => !current);
                 }}
                 aria-expanded={mobileOpen}
-                aria-label={mobileOpen ? "Închide meniul" : "Deschide meniul"}
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] md:hidden"
               >
                 <span className="relative block h-4 w-4">
@@ -174,7 +174,7 @@ export default function SiteHeader({
                   <span className="text-[var(--muted-2)]">↗</span>
                 </Link>
                 <Link href="/cerere" onClick={closeMobile} className="flex h-12 touch-manipulation items-center justify-center rounded-[18px] bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99]">
-                  Începe un proiect
+                  Start a project
                 </Link>
               </div>
             </div>
