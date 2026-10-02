@@ -595,6 +595,19 @@ export default function CalendarModule({
       await deleteCalendarEvent(organizationId, calendarEvent.id);
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
+      if (calendarEvent.event_type === "work" && calendarEvent.task_id) {
+        try {
+          const sync = await syncTaskCalendarSchedule(organizationId, calendarEvent.task_id);
+          setSyncWarning(
+            sync.taskUpdated
+              ? "Programarea a fost ștearsă, iar următoarea dată activă a lucrării a fost recalculată."
+              : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Programarea a fost ștearsă, dar data lucrării nu a putut fi recalculată automat.");
+        }
+      }
     } catch (deleteError) {
       console.error(deleteError);
       setError("Evenimentul nu a putut fi șters.");
