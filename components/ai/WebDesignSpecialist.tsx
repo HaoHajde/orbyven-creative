@@ -208,6 +208,7 @@ export default function WebDesignSpecialist() {
             } else {
               window.localStorage.removeItem(interviewFactsStorageKey);
             }
+            window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design interview facts could not be restored", error);
@@ -232,6 +233,7 @@ export default function WebDesignSpecialist() {
             } else {
               window.localStorage.removeItem(interviewQueueStorageKey);
             }
+            window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design interview queue could not be restored", error);
@@ -256,6 +258,7 @@ export default function WebDesignSpecialist() {
                 JSON.stringify(validMemory)
               );
             }
+            window.localStorage.removeItem(VISUAL_MEMORY_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design visual memory could not be restored", error);
