@@ -23,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.8.0";
+const APP_VERSION = "0.9.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -43,6 +43,8 @@ const NATIVE_RUNTIME = {
     "network-recovery",
     "network-state-bridge",
     "state-preserving-reconnect",
+    "stateful-deep-links",
+    "workspace-continuity",
     "push-registration",
   ],
 } as const;
@@ -192,6 +194,7 @@ export default function App() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [webHasLoaded, setWebHasLoaded] = useState(false);
   const [privacyShielded, setPrivacyShielded] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
@@ -204,14 +207,31 @@ export default function App() {
   const pendingCalendarEventId = useRef<string | null>(null);
   const webFailedRef = useRef(false);
   const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentUrlRef = useRef(WORKSPACE_URL);
+
+  useEffect(() => {
+    currentUrlRef.current = currentUrl;
+  }, [currentUrl]);
+
+  const navigateTrustedUrl = useCallback((url: string) => {
+    if (!isTrustedOrbyvenUrl(url)) return;
+
+    if (currentUrlRef.current === url) {
+      webRef.current?.injectJavaScript(
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); true;",
+      );
+      return;
+    }
+
+    setCurrentUrl(url);
+  }, []);
 
   const openNativeLink = useCallback((url: string | null) => {
     if (!url) return;
     const webUrl = nativeUrlToWebUrl(url);
-    if (!webUrl || !isTrustedOrbyvenUrl(webUrl)) return;
-    setCurrentUrl(webUrl);
-    setReloadKey((value) => value + 1);
-  }, []);
+    if (!webUrl) return;
+    navigateTrustedUrl(webUrl);
+  }, [navigateTrustedUrl]);
 
   const authenticateToUnlock = useCallback(async () => {
     if (authenticationInProgress.current) return;
@@ -435,13 +455,12 @@ export default function App() {
     pendingCalendarEventId.current = eventId;
 
     if (!currentUrl.startsWith(WORKSPACE_URL)) {
-      setCurrentUrl(WORKSPACE_URL);
-      setReloadKey((value) => value + 1);
+      navigateTrustedUrl(WORKSPACE_URL);
       return;
     }
 
     setTimeout(flushPendingCalendarIntent, 0);
-  }, [currentUrl, flushPendingCalendarIntent]);
+  }, [currentUrl, flushPendingCalendarIntent, navigateTrustedUrl]);
 
   const openDocuments = useCallback(() => {
     void Haptics.selectionAsync().catch(() => undefined);
@@ -455,10 +474,9 @@ export default function App() {
       ? nativeUrlToWebUrl(url)
       : url;
 
-    if (!resolved || !isTrustedOrbyvenUrl(resolved)) return;
-    setCurrentUrl(resolved);
-    setReloadKey((value) => value + 1);
-  }, []);
+    if (!resolved) return;
+    navigateTrustedUrl(resolved);
+  }, [navigateTrustedUrl]);
 
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
@@ -704,6 +722,7 @@ export default function App() {
           onLoadStart={() => setConnection("loading")}
           onLoadEnd={() => {
             webFailedRef.current = false;
+            setWebHasLoaded(true);
             setConnection("online");
             emitNativeNetworkState(true);
             setTimeout(flushPendingCalendarIntent, 0);
@@ -719,10 +738,11 @@ export default function App() {
             }
           }}
           onContentProcessDidTerminate={() => {
+            setWebHasLoaded(false);
             setConnection("loading");
             webRef.current?.reload();
           }}
-          startInLoadingState
+          startInLoadingState={!webHasLoaded}
           renderLoading={() => (
             <View style={[styles.loader, { backgroundColor: background }]}>
               <ActivityIndicator size="large" />
@@ -740,6 +760,7 @@ export default function App() {
                 style={styles.retryButton}
                 onPress={() => {
                   void Haptics.selectionAsync().catch(() => undefined);
+                  setWebHasLoaded(false);
                   setReloadKey((value) => value + 1);
                 }}
               >
@@ -765,8 +786,7 @@ export default function App() {
       <View style={[styles.toolbar, { backgroundColor: surface, borderTopColor: border }]}>
         <ToolbarButton label="‹" hint="Înapoi" disabled={!canGoBack} onPress={() => webRef.current?.goBack()} text={text} muted={muted} />
         <ToolbarButton label="⌂" hint="Workspace" onPress={() => {
-          setCurrentUrl(WORKSPACE_URL);
-          setReloadKey((value) => value + 1);
+          navigateTrustedUrl(WORKSPACE_URL);
         }} text={text} muted={muted} />
         <ToolbarButton label="▣+" hint="Documente" onPress={openDocuments} text={text} muted={muted} />
         <ToolbarButton label="↻" hint="Refresh" onPress={() => webRef.current?.reload()} text={text} muted={muted} />
