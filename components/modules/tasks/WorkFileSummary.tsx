@@ -150,13 +150,15 @@ export default function WorkFileSummary({
             ? money(context.inventoryConsumedCents)
             : "—",
           note: context
-            ? (context.inventoryShortageLines ?? 0) > 0
-              ? context.inventoryShortageLines + " poziții cu lipsă"
-              : (context.inventoryUnreadyLines ?? 0) > 0
-                ? context.inventoryUnreadyLines + " poziții de rezervat"
-                : (context.inventoryRequiredLines ?? 0) > 0
-                  ? "necesar acoperit"
-                  : (context.inventoryMovementsCount ?? 0) + " mișcări"
+            ? (context.openPurchaseOrdersCount ?? 0) > 0
+              ? context.openPurchaseOrdersCount + " PO deschise"
+              : (context.inventoryShortageLines ?? 0) > 0
+                ? context.inventoryShortageLines + " poziții cu lipsă"
+                : (context.inventoryUnreadyLines ?? 0) > 0
+                  ? context.inventoryUnreadyLines + " poziții de rezervat"
+                  : (context.inventoryRequiredLines ?? 0) > 0
+                    ? "necesar acoperit"
+                    : (context.inventoryMovementsCount ?? 0) + " mișcări"
             : "se încarcă",
           options: { taskId: task.id },
         }
