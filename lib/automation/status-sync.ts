@@ -89,7 +89,11 @@ export async function syncTaskAfterWorkEventCompleted(
     event.status !== "completed" ||
     !event.task_id
   ) {
-    return { taskUpdated: false as const };
+    return {
+      taskUpdated: false as const,
+      scheduleUpdated: false as const,
+      nextScheduledAt: null,
+    };
   }
 
   const { data: task, error: taskError } = await orbyvenSupabase
