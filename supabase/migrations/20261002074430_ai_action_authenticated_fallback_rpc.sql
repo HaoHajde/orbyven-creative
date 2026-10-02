@@ -453,6 +453,153 @@ grant execute on function public.ai_action_proposal_claim(uuid, uuid, uuid) to a
 grant execute on function public.ai_action_proposal_finish(uuid, uuid, uuid, boolean, text, uuid, text) to authenticated, service_role;
 grant execute on function public.ai_action_proposals_supersede(uuid, uuid, uuid[]) to authenticated, service_role;
 
+
+create or replace function public.ai_create_estimate_draft_actor(
+  p_organization_id uuid,
+  p_actor_id uuid,
+  p_title text,
+  p_client_id uuid,
+  p_task_id uuid,
+  p_currency text,
+  p_discount_cents bigint,
+  p_tax_rate numeric,
+  p_valid_until date,
+  p_notes text,
+  p_planned_labor_cents bigint,
+  p_other_cost_cents bigint,
+  p_items jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if not private.ai_actor_can_mutate(p_organization_id, p_actor_id) then
+    raise exception 'AI_ACTION_FORBIDDEN' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organization_modules m
+    join public.organization_entitlements e
+      on e.organization_id = m.organization_id
+     and e.module_id = m.module_id
+    where m.organization_id = p_organization_id
+      and m.module_id = 'estimates'
+      and m.enabled = true
+      and e.enabled = true
+      and (e.starts_at is null or e.starts_at <= now())
+      and (e.ends_at is null or e.ends_at > now())
+  ) then
+    raise exception 'MODULE_NOT_AVAILABLE' using errcode = '42501';
+  end if;
+
+  if p_client_id is not null and not exists (
+    select 1
+    from public.crm_leads c
+    where c.id = p_client_id
+      and c.organization_id = p_organization_id
+  ) then
+    raise exception 'CLIENT_NOT_FOUND';
+  end if;
+
+  if p_task_id is not null and not exists (
+    select 1
+    from public.ops_tasks t
+    where t.id = p_task_id
+      and t.organization_id = p_organization_id
+  ) then
+    raise exception 'TASK_NOT_FOUND';
+  end if;
+
+  return public.ai_create_estimate_draft(
+    p_organization_id,
+    p_actor_id,
+    p_title,
+    p_client_id,
+    p_task_id,
+    p_currency,
+    p_discount_cents,
+    p_tax_rate,
+    p_valid_until,
+    p_notes,
+    p_planned_labor_cents,
+    p_other_cost_cents,
+    p_items
+  );
+end;
+$;
+
+create or replace function public.ai_action_audit_write(
+  p_organization_id uuid,
+  p_actor_id uuid,
+  p_action text,
+  p_target_type text,
+  p_target_id uuid,
+  p_metadata jsonb default '{}'::jsonb
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_role text;
+begin
+  if not private.ai_actor_can_mutate(p_organization_id, p_actor_id) then
+    raise exception 'AI_ACTION_FORBIDDEN' using errcode = '42501';
+  end if;
+
+  if p_action not in ('ai_action.executed', 'ai_plan.recovered') then
+    raise exception 'AI_AUDIT_ACTION_INVALID';
+  end if;
+
+  if p_target_type is null or char_length(trim(p_target_type)) < 1 or char_length(trim(p_target_type)) > 80 then
+    raise exception 'AI_AUDIT_TARGET_INVALID';
+  end if;
+
+  if jsonb_typeof(coalesce(p_metadata, '{}'::jsonb)) <> 'object' then
+    raise exception 'AI_AUDIT_METADATA_INVALID';
+  end if;
+
+  select m.role::text
+  into v_role
+  from public.organization_members m
+  where m.organization_id = p_organization_id
+    and m.user_id = p_actor_id
+    and m.access_status = 'active'
+  limit 1;
+
+  insert into public.platform_audit_log (
+    actor_user_id,
+    actor_role,
+    organization_id,
+    action,
+    target_type,
+    target_id,
+    metadata
+  )
+  values (
+    p_actor_id,
+    v_role,
+    p_organization_id,
+    p_action,
+    trim(p_target_type),
+    p_target_id,
+    coalesce(p_metadata, '{}'::jsonb)
+  );
+
+  return true;
+end;
+$;
+
+revoke all on function public.ai_create_estimate_draft_actor(uuid, uuid, text, uuid, uuid, text, bigint, numeric, date, text, bigint, bigint, jsonb) from public, anon;
+revoke all on function public.ai_action_audit_write(uuid, uuid, text, text, uuid, jsonb) from public, anon;
+
+grant execute on function public.ai_create_estimate_draft_actor(uuid, uuid, text, uuid, uuid, text, bigint, numeric, date, text, bigint, bigint, jsonb) to authenticated, service_role;
+grant execute on function public.ai_action_audit_write(uuid, uuid, text, text, uuid, jsonb) to authenticated, service_role;
+
 -- Preserve the table-level server-only boundary.
 revoke select, insert, update, delete on table public.ai_action_proposals from authenticated;
 drop policy if exists ai_action_proposals_select_own on public.ai_action_proposals;
