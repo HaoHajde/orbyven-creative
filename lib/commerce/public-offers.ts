@@ -49,3 +49,9 @@ export const PUBLIC_OFFERS = {
 export function isPublicOfferId(value: unknown): value is PublicOfferId {
   return value === "invitation" || value === "web" || value === "advanced";
 }
+
+
+export const PUBLIC_CHECKOUT_MODE =
+  process.env.NEXT_PUBLIC_ORBYVEN_CHECKOUT_MODE === "live" ? "live" : "demo";
+
+export const PUBLIC_CHECKOUT_IS_DEMO = PUBLIC_CHECKOUT_MODE !== "live";
