@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   DEFAULT_SITE,
+  SITE_PRESETS,
   readSiteDraft,
   SECTION_IDS,
 } from "../lib/ai/site-editor.ts";
@@ -243,4 +244,36 @@ test("Generative Web Design consumes the deterministic Site Strategy before rend
   assert.match(intent, /visibleSections/);
   assert.match(intent, /hiddenSections/);
   assert.doesNotMatch(intent, /Math\.random/);
+});
+
+
+test("Web Design follow-ups keep business and conversion context from the current draft", () => {
+  const installations = buildWebDesignStrategy(
+    "Fă-l mai premium și mai aerisit.",
+    SITE_PRESETS.instalatii
+  );
+  assert.equal(installations.mode, "refine");
+  assert.equal(installations.archetype, "local_service");
+  assert.equal(installations.primaryGoal, "lead_generation");
+  assert.equal(installations.primaryAction, "request_quote");
+
+  const florist = buildWebDesignStrategy(
+    "Schimbă hero-ul, vreau să fie mai elegant.",
+    SITE_PRESETS.florarie
+  );
+  assert.equal(florist.mode, "refine");
+  assert.equal(florist.archetype, "retail");
+  assert.equal(florist.primaryGoal, "direct_sale");
+  assert.equal(florist.primaryAction, "buy");
+});
+
+test("Explicit new business context overrides the previous draft context", () => {
+  const strategy = buildWebDesignStrategy(
+    "Transformă direcția pentru un fotograf cu portofoliu și proiecte vizuale.",
+    SITE_PRESETS.instalatii
+  );
+
+  assert.equal(strategy.archetype, "creative");
+  assert.equal(strategy.primaryGoal, "showcase");
+  assert.equal(strategy.primaryAction, "view_work");
 });
