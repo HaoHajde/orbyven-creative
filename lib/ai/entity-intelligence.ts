@@ -1,7 +1,7 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
-import { detectEntityIntelligenceQuery } from "@/lib/ai/entity-intelligence-core";
+import { detectEntityIntelligenceQuery, detectEntityQuestionScope, type EntityQuestionScope } from "@/lib/ai/entity-intelligence-core";
 
 type ClientRow = {
   id: string;
@@ -245,7 +245,8 @@ function missingResponse(kind: "client" | "work", value: string): IntelligenceRe
 async function clientOverview(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>,
-  entity: ClientRow
+  entity: ClientRow,
+  scope: EntityQuestionScope
 ): Promise<IntelligenceResponse> {
   const db = createBillingServiceClient(actor);
   const canFinance = FINANCE_ROLES.has(actor.role) && available.has("expenses");
@@ -450,7 +451,8 @@ async function clientOverview(
 async function workOverview(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>,
-  entity: WorkRow
+  entity: WorkRow,
+  scope: EntityQuestionScope
 ): Promise<IntelligenceResponse> {
   const db = createBillingServiceClient(actor);
   const canFinance = FINANCE_ROLES.has(actor.role) && available.has("expenses");
@@ -595,6 +597,7 @@ export async function answerEntityIntelligenceQuery(
 ): Promise<IntelligenceResponse | null> {
   const query = detectEntityIntelligenceQuery(prompt);
   if (!query) return null;
+  const scope = detectEntityQuestionScope(prompt);
 
   if (query.kind === "client") {
     if (!available.has("leads")) return unavailableEntityModule("client");
@@ -606,7 +609,7 @@ export async function answerEntityIntelligenceQuery(
         candidates.map((row) => ({ id: row.id, label: displayClient(row) }))
       );
     }
-    return clientOverview(actor, available, candidates[0]);
+    return clientOverview(actor, available, candidates[0], scope);
   }
 
   if (!available.has("tasks")) return unavailableEntityModule("work");
@@ -618,5 +621,5 @@ export async function answerEntityIntelligenceQuery(
       candidates.map((row) => ({ id: row.id, label: row.title }))
     );
   }
-  return workOverview(actor, available, candidates[0]);
+  return workOverview(actor, available, candidates[0], scope);
 }
