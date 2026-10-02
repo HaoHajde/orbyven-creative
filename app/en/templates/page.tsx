@@ -384,9 +384,9 @@ export default function TemplatesPage() {
 
           {group.id === "events-invitations" ? (
             <nav aria-label="ORBYVEN digital invitations" className="mb-7 flex flex-wrap gap-2">
-              <Link href="/invitatii-nunta" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Wedding invitations ↗</Link>
-              <Link href="/invitatii-botez" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Celebration invitations ↗</Link>
-              <Link href="/invitatii-majorat" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Birthday invitations ↗</Link>
+              <Link href="/contact?service=digital-invitation&type=wedding" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Wedding invitations ↗</Link>
+              <Link href="/contact?service=digital-invitation&type=celebration" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Celebration invitations ↗</Link>
+              <Link href="/contact?service=digital-invitation&type=birthday" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Birthday invitations ↗</Link>
             </nav>
           ) : null}
 
