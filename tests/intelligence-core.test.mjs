@@ -76,6 +76,10 @@ test("Operational Query Mode resolves concrete dashboard questions before generi
   assert.equal(detectOperationalQuery("Ce am de făcut azi?"), "today");
   assert.equal(detectOperationalQuery("Ce leaduri trebuie contactate azi?"), "lead_followups");
   assert.equal(detectOperationalQuery("Ce oferte expiră și trebuie urmărite?"), "estimate_followups");
+  assert.equal(detectOperationalQuery("Ce am de făcut mâine?"), "tomorrow");
+  assert.equal(detectOperationalQuery("Ce am programat în următoarele 7 zile?"), "week");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt urgente?"), "urgent_tasks");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt neprogramate?"), "unscheduled_tasks");
   assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
 
   const server = read("lib/ai/intelligence-server.ts");
@@ -137,4 +141,18 @@ test("Scoped Entity Questions classifies finance, estimates, calendar, documents
   assert.match(scopes, /scope === "calendar"/);
   assert.match(scopes, /scope === "documents"/);
   assert.doesNotMatch(scopes, /\.(insert|update|delete|upsert)\s*\(/);
+});
+
+
+test("Operational time and priority queries stay bounded and tenant-scoped", () => {
+  const query = read("lib/ai/operational-query.ts");
+  assert.match(query, /kind === "tomorrow"/);
+  assert.match(query, /kind === "week"/);
+  assert.match(query, /kind === "urgent_tasks"/);
+  assert.match(query, /kind === "unscheduled_tasks"/);
+  assert.match(query, /\.gte\("scheduled_at", startIso\)/);
+  assert.match(query, /\.lt\("scheduled_at", endIso\)/);
+  assert.match(query, /\.limit\(kind === "week" \? 80 : 40\)/);
+  assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
 });
