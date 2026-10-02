@@ -225,6 +225,14 @@ export default function WorkFileSummary({
               >
                 {nextAction.label} →
               </button>
+            ) : attention.key === "checklist" ? (
+              <button
+                type="button"
+                onClick={() => document.querySelector('[data-task-checklist="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                Deschide checklist →
+              </button>
             ) : undefined}
           />
         </div>
