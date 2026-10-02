@@ -200,7 +200,7 @@ test("Focus explainability is structured, compact and persisted without a schema
   assert.match(panel, />De ce</);
   assert.match(panel, />Risc</);
   assert.match(panel, />Următor</);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.21/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
 });
 
 
@@ -225,5 +225,32 @@ test("Decision Support compares options without choosing or mutating", () => {
   assert.match(panel, /data-orbyven-decision-support="true"/);
   assert.match(panel, /Compromis:/);
   assert.match(panel, /Potrivit când:/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.22/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
+});
+
+
+test("Decision Action handoff recalculates context and creates only confirmable proposals", () => {
+  const types = read("lib/ai/intelligence-types.ts");
+  const support = read("lib/ai/business-decision-support.ts");
+  const route = read("app/api/ai/decisions/handoff/route.ts");
+  const desktop = read("app/api/desktop/ai/decisions/handoff/route.ts");
+  const panel = read("components/WorkspaceIntelligence.tsx");
+
+  assert.match(types, /handoffPrompt\?: string/);
+  assert.match(support, /function handoffPlanPrompt/);
+  assert.match(support, /Creează task/);
+  assert.match(support, /apoi creează task/);
+  assert.match(support, /available\.has\("tasks"\)/);
+  assert.match(route, /Compară opțiunile pentru Focus #1/);
+  assert.match(route, /answerIntelligenceForActor\(\s*actor,\s*option\.handoffPrompt/);
+  assert.match(route, /review_plan/);
+  assert.match(route, /confirm_proposal/);
+  assert.match(route, /proposal_only_explicit_confirmation_required/);
+  assert.match(route, /appendUserConversationMessage/);
+  assert.match(route, /persistAssistantResponse/);
+  assert.match(desktop, /withDesktopCors/);
+  assert.match(desktop, /desktopOptionsResponse/);
+  assert.match(panel, /\/api\/ai\/decisions\/handoff/);
+  assert.match(panel, /Pregătește planul/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
 });
