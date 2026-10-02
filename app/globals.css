@@ -86,6 +86,112 @@ iframe {
 }
 
 /* =========================================================
+   ORBYVEN WORKSPACE LIGHT THEME
+   Cool lavender canvas + subtle violet depth to reduce glare.
+   Scoped to the authenticated workspace so public pages stay untouched.
+   ========================================================= */
+
+.orbyven-workspace-light-bg {
+  background:
+    radial-gradient(ellipse 58% 46% at 8% 7%, rgba(116, 88, 215, 0.14), transparent 72%),
+    radial-gradient(ellipse 52% 44% at 94% 56%, rgba(142, 118, 225, 0.11), transparent 74%),
+    radial-gradient(ellipse 40% 32% at 54% 104%, rgba(100, 84, 205, 0.08), transparent 76%),
+    linear-gradient(180deg, rgba(116, 88, 215, 0.025), transparent 38%),
+    var(--bg);
+}
+
+.orbyven-workspace-light-bg::before,
+.orbyven-workspace-light-bg::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.orbyven-workspace-light-bg::before {
+  right: -18vw;
+  top: 7vh;
+  width: min(72vw, 1080px);
+  aspect-ratio: 1.6;
+  border: 1px solid rgba(116, 88, 215, 0.16);
+  border-radius: 50%;
+  transform: rotate(9deg);
+  box-shadow:
+    0 0 0 42px rgba(116, 88, 215, 0.018),
+    0 0 0 86px rgba(116, 88, 215, 0.012);
+}
+
+.orbyven-workspace-light-bg::after {
+  left: -10vw;
+  bottom: 16vh;
+  width: min(58vw, 820px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(116, 88, 215, 0.24), rgba(116, 88, 215, 0.04), transparent);
+  transform: rotate(14deg);
+  transform-origin: center;
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] {
+  --workspace-light-shadow: 0 18px 55px rgba(57, 48, 99, 0.075);
+  --workspace-light-inset: inset 0 1px 0 rgba(116, 88, 215, 0.07);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] .orbyven-workspace-header {
+  background-color: rgba(236, 237, 246, 0.90);
+  border-color: var(--violet-line);
+  box-shadow:
+    0 1px 0 rgba(116, 88, 215, 0.07),
+    0 10px 34px rgba(57, 48, 99, 0.045);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] [data-workspace-surface] {
+  position: relative;
+  isolation: isolate;
+  border-color: var(--violet-line);
+  box-shadow: var(--workspace-light-shadow), var(--workspace-light-inset);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] [data-workspace-surface]::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(116, 88, 215, 0.42), rgba(116, 88, 215, 0.10), transparent);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"]
+  :where(article, section, div)[class*="rounded-"][class*="border"] {
+  background-image: linear-gradient(145deg, var(--panel-highlight), transparent 34%);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] :where(input, textarea, select) {
+  background-color: rgba(247, 247, 251, 0.82);
+  border-color: rgba(91, 72, 172, 0.18);
+}
+
+.orbyven-workspace-shell[data-orbyven-theme="light"] :where(input, textarea, select):focus {
+  border-color: rgba(104, 89, 214, 0.44);
+  box-shadow: 0 0 0 3px rgba(104, 89, 214, 0.08);
+}
+
+@media (max-width: 767px) {
+  .orbyven-workspace-light-bg::before {
+    right: -52vw;
+    top: 18vh;
+    width: 150vw;
+    opacity: 0.72;
+  }
+
+  .orbyven-workspace-light-bg::after {
+    left: -28vw;
+    width: 110vw;
+  }
+}
+
+/* =========================================================
    ORBYVEN DASHBOARD TEXT SCALE
    Persistent 90–130% accessibility/density control.
    Scoped to the authenticated workspace and its AI portal only.

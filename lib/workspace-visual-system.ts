@@ -1,6 +1,6 @@
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
-export const WORKSPACE_UI_REVISION = "2026.10.02.1";
+export const WORKSPACE_UI_REVISION = "2026.10.02.2";
 export const CURRENT_DESKTOP_VERSION = "0.8.0";
 
 export const WORKSPACE_THEME = {
@@ -17,20 +17,30 @@ export const WORKSPACE_THEME = {
     buttonText: "#ffffff",
     accent: "#7ba9ff",
     accentSoft: "rgba(86,134,244,0.17)",
+    violet: "#8b7cff",
+    violetSoft: "rgba(139,124,255,0.10)",
+    violetLine: "rgba(139,124,255,0.18)",
+    panelHighlight: "rgba(139,124,255,0.05)",
   },
   light: {
-    bg: "#f1f5fd",
-    surface: "#ffffff",
-    surface2: "#eaf1fd",
-    text: "#142746",
-    muted: "#596d8c",
-    muted2: "#7183a1",
-    border: "rgba(46,82,146,0.12)",
-    borderStrong: "rgba(46,82,146,0.24)",
-    button: "#244caa",
+    // Light mode is intentionally cool/lavender instead of paper-white:
+    // less glare when switching from dark mode, while preserving contrast.
+    bg: "#e9ecf5",
+    surface: "#f7f7fb",
+    surface2: "#eeedf7",
+    text: "#172038",
+    muted: "#5d6680",
+    muted2: "#737b96",
+    border: "rgba(89,75,154,0.14)",
+    borderStrong: "rgba(91,72,172,0.26)",
+    button: "#5d55cf",
     buttonText: "#ffffff",
-    accent: "#3561d8",
-    accentSoft: "rgba(65,105,208,0.11)",
+    accent: "#6859d6",
+    accentSoft: "rgba(104,89,214,0.12)",
+    violet: "#7458d7",
+    violetSoft: "rgba(116,88,215,0.09)",
+    violetLine: "rgba(116,88,215,0.19)",
+    panelHighlight: "rgba(116,88,215,0.055)",
   },
 } as const;
 
@@ -69,5 +79,9 @@ export function themeToCssVars(theme: "light" | "dark") {
     "--button-text": t.buttonText,
     "--accent": t.accent,
     "--accent-soft": t.accentSoft,
+    "--violet": t.violet,
+    "--violet-soft": t.violetSoft,
+    "--violet-line": t.violetLine,
+    "--panel-highlight": t.panelHighlight,
   } as Record<string, string>;
 }
