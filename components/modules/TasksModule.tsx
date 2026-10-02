@@ -167,6 +167,7 @@ export default function TasksModule({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [syncWarning, setSyncWarning] = useState("");
+  const [syncCalendarReview, setSyncCalendarReview] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(initialRecordId ? "list" : "board");
@@ -435,6 +436,7 @@ export default function TasksModule({
       if (status === "done" && enabledModules.includes("calendar")) {
         try {
           const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncCalendarReview(sync.futureScheduled > 0);
           setSyncWarning(
             sync.futureScheduled > 0
               ? `Lucrarea este finalizată, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
@@ -444,9 +446,11 @@ export default function TasksModule({
           );
         } catch (syncError) {
           console.error(syncError);
+          setSyncCalendarReview(true);
           setSyncWarning("Lucrarea este finalizată, dar programările trecute nu au putut fi sincronizate automat.");
         }
       } else {
+        setSyncCalendarReview(false);
         setSyncWarning("");
       }
     } catch (statusError) {
@@ -467,6 +471,7 @@ export default function TasksModule({
       if (progress === 100 && enabledModules.includes("calendar")) {
         try {
           const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncCalendarReview(sync.futureScheduled > 0);
           setSyncWarning(
             sync.futureScheduled > 0
               ? `Lucrarea este la 100%, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
@@ -476,9 +481,11 @@ export default function TasksModule({
           );
         } catch (syncError) {
           console.error(syncError);
+          setSyncCalendarReview(true);
           setSyncWarning("Lucrarea este la 100%, dar programările trecute nu au putut fi sincronizate automat.");
         }
       } else {
+        setSyncCalendarReview(false);
         setSyncWarning("");
       }
     } catch (progressError) {
@@ -747,9 +754,14 @@ export default function TasksModule({
         </div>
       )}
       {syncWarning ? (
-        <p className="mt-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-[11px] leading-5 text-amber-300">
-          {syncWarning}
-        </p>
+        <div className="mt-3 flex flex-col gap-2 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[11px] leading-5 text-amber-300">{syncWarning}</p>
+          {syncCalendarReview && enabledModules.includes("calendar") ? (
+            <button type="button" onClick={() => onOpenModule("calendar")} className="h-9 shrink-0 rounded-full border border-amber-300/30 px-3 text-[10px] font-semibold text-amber-200">
+              Deschide Calendar →
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {createOpen && canWrite && (
