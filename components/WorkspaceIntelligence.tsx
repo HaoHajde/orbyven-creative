@@ -510,16 +510,16 @@ export default function WorkspaceIntelligence({
       <div className="mt-3 grid gap-2">
         {actions.map((action, index) => action.kind === "confirm_proposal" ? (
           <div key={action.proposalId} className="rounded-[14px] border border-amber-400/20 bg-amber-400/[0.06] p-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
-            <p className="mt-1 text-[9px] leading-4 text-[var(--muted)]">
-              Propunerea expiră automat și poate fi executată o singură dată. Nu va reapărea ca acțiune în istoricul salvat.
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">
+              Confirmă pentru execuție. Propunerea expiră automat.
             </p>
             <div className="mt-3 flex gap-2">
               <button
                 type="button"
                 disabled={proposalBusy}
                 onClick={() => void decideProposal(action, "confirm")}
-                className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+                className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40"
               >
                 {proposalBusy ? "Se execută…" : action.label}
               </button>
@@ -527,7 +527,7 @@ export default function WorkspaceIntelligence({
                 type="button"
                 disabled={proposalBusy}
                 onClick={() => void decideProposal(action, "reject")}
-                className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold disabled:opacity-40"
+                className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[11px] font-semibold disabled:opacity-40"
               >
                 Renunță
               </button>
@@ -537,12 +537,12 @@ export default function WorkspaceIntelligence({
           <div key={action.planId} className="rounded-[15px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN MODE</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN</p>
                 <p className="mt-1 text-[10px] text-[var(--muted)]">
-                  Fiecare pas se confirmă separat. Nu există „Confirmă tot”.
+                  Confirmare pas cu pas.
                 </p>
               </div>
-              <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[8px] font-semibold text-[var(--muted)]">
+              <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[9px] font-semibold text-[var(--muted)]">
                 {action.steps.filter((step) => step.status === "executed").length}/{action.steps.length}
               </span>
             </div>
@@ -558,29 +558,29 @@ export default function WorkspaceIntelligence({
                 return (
                   <div key={step.proposalId} className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/55 px-3 py-2.5">
                     <div className="flex items-start gap-2.5">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] text-[8px] font-bold">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] text-[9px] font-bold">
                         {step.status === "executed" ? "✓" : step.index}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold leading-4">{step.summary}</p>
-                        <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{statusLabel}</p>
+                        <p className="text-[12px] font-semibold leading-5">{step.summary}</p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{statusLabel}</p>
                         {step.status === "ready" ? (
                           <div className="mt-2 flex gap-2">
                             <button
                               type="button"
                               disabled={proposalBusy}
                               onClick={() => decidePlanStep(action, step, "confirm")}
-                              className="rounded-full bg-[var(--button)] px-3 py-1.5 text-[9px] font-semibold text-[var(--button-text)] disabled:opacity-40"
+                              className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40"
                             >
-                              {proposalBusy ? "Se execută…" : "Confirmă pasul"}
+                              {proposalBusy ? "Se execută…" : "Confirmă"}
                             </button>
                             <button
                               type="button"
                               disabled={proposalBusy}
                               onClick={() => decidePlanStep(action, step, "reject")}
-                              className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-[9px] font-semibold disabled:opacity-40"
+                              className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[11px] font-semibold disabled:opacity-40"
                             >
-                              Oprește planul
+                              Oprește
                             </button>
                           </div>
                         ) : null}
@@ -595,8 +595,8 @@ export default function WorkspaceIntelligence({
                 <div className="flex items-start gap-2.5">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 text-[11px] text-[#b9c5ff]">↻</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
-                    <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">{action.recovery.message}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
+                    <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">{action.recovery.message}</p>
                     <button
                       type="button"
                       disabled={proposalBusy}
@@ -607,7 +607,7 @@ export default function WorkspaceIntelligence({
                           void recoverPlanAction(action);
                         }
                       }}
-                      className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
+                      className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[10px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
                     >
                       {proposalBusy ? "Se pregătește…" : action.recovery.label}
                     </button>
@@ -618,12 +618,12 @@ export default function WorkspaceIntelligence({
           </div>
         ) : action.kind === "repair_plan" ? (
           <div key={`repair-${action.blockedStep}-${index}`} className="rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.06] p-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">{action.message}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">{action.message}</p>
             <button
               type="button"
               onClick={() => preparePromptRepair(action.suggestedPrompt)}
-              className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff]"
+              className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[10px] font-semibold text-[#c7d0ff]"
             >
               {action.label}
             </button>
@@ -649,7 +649,7 @@ export default function WorkspaceIntelligence({
   return createPortal(
         <div
           style={themeVars}
-          className="contents text-[var(--text)]"
+          className="orbyven-workspace-text-scale contents text-[var(--text)]"
           data-orbyven-intelligence-theme-scope="true"
         >
           <>
@@ -696,26 +696,26 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
-                      <h2 className="mt-1 truncate text-[18px] font-semibold tracking-[-0.04em]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
+                      <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
-                      <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
-                        Thread-urile sunt private pentru contul tău în această firmă și se sincronizează între device-uri.
+                      <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">
+                        Conversații private, sincronizate între device-uri.
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
                         type="button"
                         onClick={newConversation}
-                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[10px] font-semibold"
                       >
                         + Nou
                       </button>
                       <button
                         type="button"
                         onClick={() => setHistoryOpen((current) => !current)}
-                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[9px] font-semibold"
+                        className="rounded-full border border-[var(--border)] px-2.5 py-1.5 text-[10px] font-semibold"
                       >
                         Istoric
                       </button>
@@ -735,7 +735,7 @@ export default function WorkspaceIntelligence({
                   {historyOpen ? (
                     <div className="grid gap-2">
                       {historyLoading ? (
-                        <p className="py-6 text-center text-[10px] text-[var(--muted)]">Se încarcă istoricul…</p>
+                        <p className="py-6 text-center text-[11px] text-[var(--muted)]">Se încarcă istoricul…</p>
                       ) : conversations.length ? conversations.map((item) => (
                         <button
                           key={item.id}
@@ -747,15 +747,15 @@ export default function WorkspaceIntelligence({
                               : "border-[var(--border)] bg-[var(--surface-2)]/55 hover:border-[var(--border-strong)]"
                           }`}
                         >
-                          <span className="block truncate text-[10px] font-semibold">{item.title}</span>
-                          <span className="mt-1 block text-[9px] text-[var(--muted-2)]">
+                          <span className="block truncate text-[11px] font-semibold">{item.title}</span>
+                          <span className="mt-1 block text-[10px] text-[var(--muted-2)]">
                             {new Intl.DateTimeFormat("ro-RO", {
                               day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
                             }).format(new Date(item.updatedAt))}
                           </span>
                         </button>
                       )) : (
-                        <p className="py-6 text-center text-[10px] text-[var(--muted)]">Nu ai încă discuții salvate.</p>
+                        <p className="py-6 text-center text-[11px] text-[var(--muted)]">Nu ai încă discuții salvate.</p>
                       )}
                     </div>
                   ) : (
@@ -767,7 +767,7 @@ export default function WorkspaceIntelligence({
                               key={item}
                               type="button"
                               onClick={() => void ask(item)}
-                              className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[10px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+                              className="rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-3 text-left text-[11px] font-semibold leading-4 transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
                             >
                               {item}
                             </button>
@@ -776,37 +776,51 @@ export default function WorkspaceIntelligence({
                       ) : null}
     
                       <div className="grid gap-3">
-                        {messages.map((message) => message.role === "user" ? (
-                          <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[11px] leading-5 text-[var(--button-text)]">
-                            {message.content}
-                          </div>
-                        ) : (
-                          <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[8px] font-bold text-[#aab9ff]">
-                                {specialistLabels[message.specialist || "general"]}
-                              </span>
-                              <span className="text-[8px] text-[var(--muted-2)]">ORBYVEN</span>
-                            </div>
-                            <p className="mt-2.5 text-[12px] leading-5 text-[var(--text)]">{message.content}</p>
-                            {message.facts.length ? (
-                              <div className="mt-3 grid grid-cols-2 gap-2">
-                                {message.facts.map((fact, index) => (
-                                  <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
-                                    <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
-                                    <p className="mt-1 text-[10px] font-semibold">{fact.value}</p>
-                                  </div>
-                                ))}
+                        {messages.map((message) => {
+                          if (message.role === "user") {
+                            return (
+                              <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[12px] leading-5 text-[var(--button-text)]">
+                                {message.content}
                               </div>
-                            ) : null}
-                            {renderAssistantActions(message.actions)}
-                          </article>
-                        ))}
-    
+                            );
+                          }
+
+                          const plan = message.actions.find(
+                            (action): action is PlanAction => action.kind === "review_plan"
+                          );
+                          const displayContent = plan
+                            ? `Plan pregătit · ${plan.steps.length} pași`
+                            : message.content;
+                          const displayFacts = plan ? [] : message.facts;
+
+                          return (
+                            <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[9px] font-bold text-[#aab9ff]">
+                                  {specialistLabels[message.specialist || "general"]}
+                                </span>
+                                <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN</span>
+                              </div>
+                              <p className="mt-2.5 text-[13px] leading-5 text-[var(--text)]">{displayContent}</p>
+                              {displayFacts.length ? (
+                                <div className="mt-3 grid grid-cols-2 gap-2">
+                                  {displayFacts.map((fact, index) => (
+                                    <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
+                                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
+                                      <p className="mt-1 text-[11px] font-semibold">{fact.value}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {renderAssistantActions(message.actions)}
+                            </article>
+                          );
+                        })}
+
                         {loading ? (
                           <div role="status" className="mr-16 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-5 text-center">
                             <div className="mx-auto h-5 w-5 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
-                            <p className="mt-2 text-[9px] text-[var(--muted)]">Analizez workspace-ul firmei…</p>
+                            <p className="mt-2 text-[10px] text-[var(--muted)]">Analizez workspace-ul…</p>
                           </div>
                         ) : null}
                       </div>
@@ -814,7 +828,7 @@ export default function WorkspaceIntelligence({
                   )}
     
                   {error ? (
-                    <p role="alert" className="mt-3 rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[10px] leading-4 text-rose-300">{error}</p>
+                    <p role="alert" className="mt-3 rounded-[13px] border border-rose-400/20 bg-rose-400/[0.07] px-3 py-3 text-[11px] leading-4 text-rose-300">{error}</p>
                   ) : null}
                 </div>
     
@@ -827,18 +841,18 @@ export default function WorkspaceIntelligence({
                         onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
                         rows={1}
                         placeholder="Întreabă ORBYVEN…"
-                        className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] leading-4 text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
+                        className="max-h-28 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-[12px] leading-5 text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
                       />
                       <button
                         type="submit"
                         disabled={!canSend}
-                        className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[10px] font-semibold text-[var(--button-text)] disabled:opacity-35"
+                        className="h-9 shrink-0 rounded-[11px] bg-[var(--button)] px-3 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-35"
                       >
                         Trimite
                       </button>
                     </div>
-                    <p className="mt-2 px-1 text-[8px] text-[var(--muted-2)]">
-                      0.8.13 Next Best Action · responsabilitatea, contextul comercial și dosarul operațional sunt verificate înainte de execuție.
+                    <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
+                      0.8.13 · Acțiunile sunt verificate înainte de execuție.
                     </p>
                   </form>
                 ) : null}
