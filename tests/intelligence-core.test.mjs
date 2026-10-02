@@ -41,7 +41,7 @@ test("Finance specialist uses paged exact cashflow reads and does not expose fin
 
 test("Global workspace mounts one ORBYVEN Intelligence entry point", () => {
   const workspace = read("components/WorkspaceShell.tsx");
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(workspace, /<WorkspaceIntelligence/);
   assert.match(panel, /\/api\/ai\/intelligence/);
   assert.match(panel, /ORBYVEN Intelligence/);
@@ -183,7 +183,7 @@ test("Focus explainability is structured, compact and persisted without a schema
   const types = read("lib/ai/intelligence-types.ts");
   const brief = read("lib/ai/business-briefing.ts");
   const conversation = read("lib/ai/conversation-server.ts");
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
 
   assert.match(types, /export type IntelligenceFocusInsight/);
   assert.match(types, /focus\?: IntelligenceFocusInsight/);
@@ -209,7 +209,7 @@ test("Decision Support compares options without choosing or mutating", () => {
   const support = read("lib/ai/business-decision-support.ts");
   const query = read("lib/ai/operational-query.ts");
   const conversation = read("lib/ai/conversation-server.ts");
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
 
   assert.match(types, /export type IntelligenceDecisionOption/);
   assert.match(types, /export type IntelligenceDecisionSupport/);
@@ -234,7 +234,7 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   const support = read("lib/ai/business-decision-support.ts");
   const route = read("app/api/ai/decisions/handoff/route.ts");
   const desktop = read("app/api/desktop/ai/decisions/handoff/route.ts");
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
 
   assert.match(types, /handoffPrompt\?: string/);
   assert.match(types, /handoffAvailable\?: boolean/);
@@ -271,7 +271,7 @@ test("Action Outcome Loop rechecks only completed plans and remains read-only", 
   const route = read("app/api/ai/outcomes/recheck/route.ts");
   const desktop = read("app/api/desktop/ai/outcomes/recheck/route.ts");
   const conversation = read("lib/ai/conversation-server.ts");
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
 
   assert.match(types, /export type IntelligenceOutcome/);
   assert.match(types, /status: "no_longer_primary" \| "shifted" \| "still_priority"/);
@@ -297,7 +297,7 @@ test("Action Outcome Loop rechecks only completed plans and remains read-only", 
 
 
 test("Adaptive Follow-up routes Outcome states back into read-only analysis", () => {
-  const panel = read("components/WorkspaceIntelligence.tsx");
+  const panel = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
 
   assert.match(panel, /function outcomeFollowUp/);
   assert.match(panel, /outcome\.status === "no_longer_primary"/);
