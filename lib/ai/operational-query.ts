@@ -2,6 +2,7 @@ import { createBillingServiceClient, type BillingActor } from "@/lib/billing/sup
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { detectOperationalQuery, type OperationalQueryKind } from "@/lib/ai/operational-query-core";
+import { answerBusinessBriefing } from "@/lib/ai/business-briefing";
 
 type TaskRow = {
   id: string;
@@ -387,6 +388,13 @@ export async function answerOperationalQuery(
 ): Promise<IntelligenceResponse | null> {
   const kind = detectOperationalQuery(prompt);
   if (!kind) return null;
+
+  if (kind === "briefing") {
+    if (![...available].some((moduleId) => ["tasks", "leads", "estimates", "calendar"].includes(moduleId))) {
+      return unavailable("Lucrări / Lead-uri / Devize / Calendar");
+    }
+    return answerBusinessBriefing(actor, available);
+  }
 
   if (kind === "lead_followups") {
     if (!available.has("leads")) return unavailable("Lead-uri");
