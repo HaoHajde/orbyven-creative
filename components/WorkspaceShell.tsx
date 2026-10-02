@@ -422,7 +422,7 @@ export default function WorkspaceShell({
                 aria-haspopup="dialog"
                 aria-expanded={createMenuOpen}
                 onClick={() => setCreateMenuOpen(true)}
-                className="flex h-9 items-center justify-center rounded-full bg-[var(--button)] px-3 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:px-4"
+                className="hidden h-9 items-center justify-center rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:flex"
               >
                 <span className="sm:hidden" aria-hidden="true">+</span>
                 <span className="hidden sm:inline">+ Creează</span>
