@@ -218,7 +218,7 @@ function ModuleWorkspacePreview({
             </div>
 
             <div className="mt-5 grid grid-cols-3 gap-2">
-              {["Client", "Context", "Acțiune"].map((item, index) => (
+              {["Client", "Context", "Action"].map((item, index) => (
                 <div key={item} className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
                   <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">0{index + 1}</p>
                   <p className="mt-2 text-[10px] font-semibold">{item}</p>
@@ -587,7 +587,7 @@ export default function ServicesPage() {
         <div className="mt-5 grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
           <div>
             <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">The website does not stop at the <span className="text-[var(--home-violet)]">website.</span></h2>
-            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clients, lucrări, calendar și oferte pot rămâne legate de același context.</p>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clients, projects, calendar and quotes can stay connected to the same context.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
             <Link href="/cerere?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Build the system →</Link>
@@ -605,9 +605,9 @@ export default function ServicesPage() {
             <h2 className="max-w-4xl text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">The invitation can continue beyond <span className="text-[var(--home-violet)]">RSVP.</span></h2>
             <p className="mt-5 max-w-lg text-[12px] leading-6 text-[var(--muted)]">An example of how RSVPs can become event operations, not just rows in a table.</p>
           </div>
-          <nav aria-label="Servicii de invitații" className="flex flex-wrap gap-2">
+          <nav aria-label="Invitation services" className="flex flex-wrap gap-2">
             {[
-              ["/invitatii-nunta", "Nuntă"],
+              ["/invitatii-nunta", "Wedding"],
               ["/invitatii-botez", "Botez"],
               ["/invitatii-majorat", "Majorat"],
             ].map(([href, label]) => (
