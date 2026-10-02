@@ -558,6 +558,8 @@ export default function WorkspaceIntelligence({
           organizationId,
           conversationId,
           optionIndex,
+          expectedSubject: decision.subject,
+          expectedOptionLabel: decision.options[optionIndex]?.label,
         }),
       });
       const body = (await response.json()) as IntelligenceResponse & {
