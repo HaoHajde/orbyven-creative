@@ -363,8 +363,8 @@ function parseModelResult(
     candidate.brand = current.brand;
   }
 
-  const draft = { ...candidate } as EditableSite & { preset?: EditableSite["preset"] };
-  delete draft.preset;
+  const { preset, ...draft } = candidate;
+  void preset;
   return { summary, draft, suggestions };
 }
 
