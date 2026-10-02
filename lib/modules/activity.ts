@@ -344,9 +344,9 @@ export async function loadWorkspaceActivity(
       actionLabel:
         action.rule === "post_service_recovery"
           ? "Rezolvă"
-          : action.rule === "post_service_review"
+          : action.rule.startsWith("post_service_review")
             ? "Review"
-            : action.rule === "post_service_referral"
+            : action.rule.startsWith("post_service_referral")
               ? "Recomandare"
               : action.rule === "post_service_upsell"
                 ? "Ofertă nouă"

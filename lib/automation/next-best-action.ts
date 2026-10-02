@@ -42,8 +42,10 @@ const RULE_ORDER: Record<string, number> = {
   post_service_feedback: 20,
   post_service_feedback_followup: 21,
   post_service_review: 22,
-  post_service_referral: 23,
-  post_service_upsell: 24,
+  post_service_review_followup: 23,
+  post_service_referral: 24,
+  post_service_referral_followup: 25,
+  post_service_upsell: 26,
 };
 
 function ruleOrder(rule?: string) {

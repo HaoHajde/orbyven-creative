@@ -506,14 +506,17 @@ export default function TasksModule({
     }
   };
 
-  const recordGrowthEvent = async (type: PostServiceEventType) => {
+  const recordGrowthEvent = async (
+    type: PostServiceEventType,
+    score?: number
+  ): Promise<boolean> => {
     if (
       !canWrite ||
       !selectedTask?.client_id ||
       selectedTask.status !== "done" ||
       selectedTask.kind === "task" ||
       saving
-    ) return;
+    ) return false;
 
     setSaving(true);
     setError("");
@@ -522,7 +525,9 @@ export default function TasksModule({
         organizationId,
         selectedTask.client_id,
         selectedTask.id,
-        type
+        type,
+        type === "feedback_scored" && score ? `Feedback înregistrat: ${score}/5.` : undefined,
+        score
       );
       setGrowthState(
         await loadPostServiceGrowthState(
@@ -532,11 +537,24 @@ export default function TasksModule({
         )
       );
       setSnapshotIso(new Date().toISOString());
+      return true;
     } catch (growthError) {
       console.error(growthError);
       setError("Starea post-serviciu nu a putut fi actualizată.");
+      return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const createGrowthEstimate = async () => {
+    if (!selectedTask?.client_id || saving) return;
+    const recorded = await recordGrowthEvent("upsell_offered");
+    if (recorded) {
+      onOpenModule("estimates", {
+        create: true,
+        clientId: selectedTask.client_id,
+      });
     }
   };
 
@@ -988,10 +1006,10 @@ export default function TasksModule({
             saving={saving}
             canWrite={canWrite}
             estimatesEnabled={enabledModules.includes("estimates")}
-            onEvent={(type) => void recordGrowthEvent(type)}
+            onEvent={(type, score) => void recordGrowthEvent(type, score)}
             onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
             onCreateRecovery={() => onOpenModule("tasks", { create: true, clientId: selectedTask.client_id! })}
-            onCreateEstimate={() => onOpenModule("estimates", { create: true, clientId: selectedTask.client_id! })}
+            onCreateEstimate={() => void createGrowthEstimate()}
           />
         )}
       {selectedTask && (
@@ -1072,7 +1090,7 @@ function PostServiceGrowthPanel({
   saving: boolean;
   canWrite: boolean;
   estimatesEnabled: boolean;
-  onEvent: (type: PostServiceEventType) => void;
+  onEvent: (type: PostServiceEventType, score?: number) => void;
   onOpenClient: () => void;
   onCreateRecovery: () => void;
   onCreateEstimate: () => void;
@@ -1092,6 +1110,8 @@ function PostServiceGrowthPanel({
     state,
     now: nowIso ? new Date(nowIso) : new Date(0),
   });
+  const reviewResolved = Boolean(state.reviewCompletedAt || state.reviewDeclinedAt);
+  const referralResolved = Boolean(state.referralReceivedAt || state.referralDeclinedAt);
 
   return (
     <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
@@ -1100,11 +1120,18 @@ function PostServiceGrowthPanel({
           <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
             ORBYVEN · POST-SERVICE GROWTH
           </p>
-          <h2 className="mt-1 text-[15px] font-semibold">
-            Feedback → review → recomandare → oportunitate nouă.
-          </h2>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h2 className="text-[15px] font-semibold">
+              Feedback → review → recomandare → oportunitate nouă.
+            </h2>
+            {state.feedbackScore !== null && (
+              <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold">
+                {state.feedbackScore}/5
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
-            {action?.detail ?? "Nu există o acțiune comercială urgentă pentru această lucrare."}
+            {action?.detail ?? "Fluxul este în regulă; ORBYVEN va ridica următorul pas când devine relevant."}
           </p>
         </div>
         {action && (
@@ -1115,62 +1142,125 @@ function PostServiceGrowthPanel({
       </div>
 
       {canWrite && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {state.feedback === "none" && (
-            <>
-              <button type="button" disabled={saving} onClick={() => onEvent("feedback_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-                Marchează feedback cerut
-              </button>
-              <button type="button" disabled={saving} onClick={() => onEvent("feedback_positive")} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">
-                Feedback pozitiv
-              </button>
-              <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
-                Problemă raportată
-              </button>
-            </>
+        <div className="mt-4 space-y-4 border-t border-[var(--border)] pt-4">
+          {(state.feedback === "none" || state.feedback === "requested") && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">
+                Feedback client
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {state.feedback === "none" && (
+                  <button type="button" disabled={saving} onClick={() => onEvent("feedback_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+                    Marchează feedback cerut
+                  </button>
+                )}
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <button
+                    key={score}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onEvent("feedback_scored", score)}
+                    className="h-9 min-w-10 rounded-full bg-[var(--accent-soft)] px-3 text-xs font-semibold text-[var(--accent)] disabled:opacity-50"
+                  >
+                    {score}★
+                  </button>
+                ))}
+                <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
+                  Problemă raportată
+                </button>
+              </div>
+            </div>
           )}
-          {state.feedback === "requested" && (
-            <>
-              <button type="button" disabled={saving} onClick={() => onEvent("feedback_positive")} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">
-                Feedback pozitiv
-              </button>
-              <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
-                Problemă raportată
-              </button>
-            </>
-          )}
+
           {state.feedback === "issue" && (
-            <>
-              <button type="button" onClick={onOpenClient} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold">
-                Deschide clientul
-              </button>
-              <button type="button" onClick={onCreateRecovery} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
-                + Lucrare de remediere
-              </button>
-              <button type="button" disabled={saving} onClick={() => onEvent("recovery_resolved")} className="h-9 rounded-full border border-emerald-500/30 px-3.5 text-xs font-semibold text-emerald-600 disabled:opacity-50">
-                Remediere rezolvată ✓
-              </button>
-            </>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-rose-500">
+                Recovery
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={onOpenClient} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold">
+                  Deschide clientul
+                </button>
+                <button type="button" onClick={onCreateRecovery} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
+                  + Lucrare de remediere
+                </button>
+                <button type="button" disabled={saving} onClick={() => onEvent("recovery_resolved")} className="h-9 rounded-full border border-emerald-500/30 px-3.5 text-xs font-semibold text-emerald-600 disabled:opacity-50">
+                  Remediere rezolvată ✓
+                </button>
+              </div>
+            </div>
           )}
-          {state.feedback === "positive" && !state.reviewRequestedAt && (
-            <button type="button" disabled={saving} onClick={() => onEvent("review_requested")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
-              Marchează review cerut
-            </button>
-          )}
-          {state.feedback === "positive" && state.reviewRequestedAt && !state.referralRequestedAt && (
-            <button type="button" disabled={saving} onClick={() => onEvent("referral_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-              Marchează recomandare cerută
-            </button>
-          )}
-          {action?.rule === "post_service_upsell" && estimatesEnabled && (
-            <>
-              <button type="button" onClick={onCreateEstimate} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
-                + Ofertă nouă
-              </button>
-              <button type="button" disabled={saving} onClick={() => onEvent("upsell_dismissed")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-                Amintește-mi peste 30 zile
-              </button>
-            </>
+
+          {state.feedback === "positive" &&
+            !state.reviewRequestedAt &&
+            !reviewResolved && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Review</p>
+                <button type="button" disabled={saving} onClick={() => onEvent("review_requested")} className="mt-2 h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
+                  Marchează review cerut
+                </button>
+              </div>
+            )}
+
+          {state.feedback === "positive" &&
+            state.reviewRequestedAt &&
+            !reviewResolved && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Rezultat review</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" disabled={saving} onClick={() => onEvent("review_completed")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
+                    Review primit ✓
+                  </button>
+                  <button type="button" disabled={saving} onClick={() => onEvent("review_declined")} className="h-9 rounded-full border border-[var(--border)] px-3.5 text-xs font-semibold text-[var(--muted)] disabled:opacity-50">
+                    Nu dorește
+                  </button>
+                </div>
+              </div>
+            )}
+
+          {state.feedback === "positive" &&
+            state.reviewCompletedAt &&
+            !state.referralRequestedAt &&
+            !referralResolved && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Recomandare</p>
+                <button type="button" disabled={saving} onClick={() => onEvent("referral_requested")} className="mt-2 h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+                  Marchează recomandare cerută
+                </button>
+              </div>
+            )}
+
+          {state.feedback === "positive" &&
+            state.reviewCompletedAt &&
+            state.referralRequestedAt &&
+            !referralResolved && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Rezultat recomandare</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" disabled={saving} onClick={() => onEvent("referral_received")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
+                    Recomandare primită ✓
+                  </button>
+                  <button type="button" disabled={saving} onClick={() => onEvent("referral_declined")} className="h-9 rounded-full border border-[var(--border)] px-3.5 text-xs font-semibold text-[var(--muted)] disabled:opacity-50">
+                    Nu acum
+                  </button>
+                </div>
+              </div>
+            )}
+
+          {action?.rule === "post_service_upsell" && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Oportunitate nouă</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {estimatesEnabled && (
+                  <button type="button" disabled={saving} onClick={onCreateEstimate} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
+                    + Ofertă nouă
+                  </button>
+                )}
+                <button type="button" disabled={saving} onClick={() => onEvent("upsell_scheduled")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+                  Amintește-mi peste 30 zile
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
