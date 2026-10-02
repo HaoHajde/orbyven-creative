@@ -487,9 +487,9 @@ export default function ServicesPage() {
               transition={{ duration: .95, delay: .06, ease: easeOut }}
               className="mt-7 max-w-[980px] text-[clamp(58px,8.2vw,128px)] font-semibold leading-[.82] tracking-[-.074em]"
             >
-              Construim.
+              We build.
               <br />
-              Conectăm.
+              We connect.
               <br />
               <span className="text-[#a58bff]">We automate.</span>
             </motion.h1>
@@ -543,7 +543,7 @@ export default function ServicesPage() {
         <Chapter>What we build</Chapter>
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <h2 className="max-w-4xl text-[clamp(40px,5.5vw,72px)] font-semibold leading-[.92] tracking-[-.06em]">
-            Cinci direcții. <span className="text-[var(--home-violet)]">One ecosystem.</span>
+            Five directions. <span className="text-[var(--home-violet)]">One ecosystem.</span>
           </h2>
           <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">Start simple. Add only what solves a real problem.</p>
         </div>
@@ -608,8 +608,8 @@ export default function ServicesPage() {
           <nav aria-label="Invitation services" className="flex flex-wrap gap-2">
             {[
               ["/invitatii-nunta", "Wedding"],
-              ["/invitatii-botez", "Botez"],
-              ["/invitatii-majorat", "Majorat"],
+              ["/invitatii-botez", "Christening"],
+              ["/invitatii-majorat", "Celebration"],
             ].map(([href, label]) => (
               <Link key={href} href={href} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[var(--border-strong)]">{label} ↗</Link>
             ))}
