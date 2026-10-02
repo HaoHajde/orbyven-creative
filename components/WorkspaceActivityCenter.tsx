@@ -113,7 +113,7 @@ export default function WorkspaceActivityCenter({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]"
+        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9"
       >
         <span aria-hidden="true">◔</span>
         {items.length > 0 ? (
@@ -139,9 +139,9 @@ export default function WorkspaceActivityCenter({
           <section
             role="dialog"
             aria-label="Atenționări ORBYVEN"
-            className="fixed left-3 right-3 top-[72px] z-[90] max-h-[calc(100dvh-84px)] overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_26px_90px_rgba(0,0,0,0.28)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[390px]"
+            className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 top-[calc(3.75rem+env(safe-area-inset-top))] z-[90] flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--bg)] shadow-[0_26px_90px_rgba(0,0,0,0.28)] sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:max-h-[calc(100dvh-84px)] sm:w-[390px]"
           >
-            <header className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4">
+            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-2)]">
                   ORBYVEN · AUTOMATION
@@ -163,7 +163,7 @@ export default function WorkspaceActivityCenter({
               </button>
             </header>
 
-            <div className="max-h-[calc(100dvh-176px)] overflow-y-auto overscroll-contain p-2.5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 sm:max-h-[calc(100dvh-176px)]">
               {nativePushAvailable ? (
                 <div className="mb-2 flex items-center justify-between gap-3 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
                   <div className="min-w-0">

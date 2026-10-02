@@ -65,6 +65,18 @@ a {
   select {
     font-size: 16px !important;
   }
+
+  /* Keep the iOS keyboard from fighting the fixed app chrome. When a form
+     control has focus, the keyboard owns the bottom of the screen and the
+     dock / floating AI trigger step out until focus returns to the page. */
+  .orbyven-workspace-shell:has(input:focus, textarea:focus, select:focus)
+    [data-workspace-mobile-dock="true"],
+  .orbyven-workspace-shell:has(input:focus, textarea:focus, select:focus)
+    [data-workspace-mobile-float="true"] {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 img,

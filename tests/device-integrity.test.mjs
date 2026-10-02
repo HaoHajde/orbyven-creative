@@ -9,6 +9,9 @@ test("touch devices use focus-safe form control sizing", () => {
   const css = read("app/globals.css");
   assert.match(css, /@media \(hover: none\) and \(pointer: coarse\)/);
   assert.match(css, /input:not\(\[type="checkbox"\]\).*font-size: 16px !important;/s);
+  assert.match(css, /data-workspace-mobile-dock="true"/);
+  assert.match(css, /data-workspace-mobile-float="true"/);
+  assert.match(css, /:has\(input:focus, textarea:focus, select:focus\)/);
 });
 
 test("workspace fixed mobile controls respect dynamic viewport and safe area", () => {
@@ -24,12 +27,15 @@ test("mobile overlays remain scrollable on short and landscape screens", () => {
   const activity = read("components/WorkspaceActivityCenter.tsx");
   assert.match(header, /max-h-\[calc\(100dvh-96px\)\]/);
   assert.match(header, /overscroll-contain/);
-  assert.match(activity, /max-h-\[calc\(100dvh-84px\)\]/);
-  assert.match(activity, /max-h-\[calc\(100dvh-176px\)\]/);
+  assert.match(activity, /bottom-\[max\(0\.75rem,env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(activity, /top-\[calc\(3\.75rem\+env\(safe-area-inset-top\)\)\]/);
+  assert.match(activity, /min-h-0 flex-1 overflow-y-auto overscroll-contain/);
 });
 
-test("iOS native chrome can shrink instead of clipping narrow widths", () => {
+test("iOS native shell defers visible chrome to the trusted ORBYVEN web app", () => {
   const source = read("ios/App.tsx");
+  assert.match(source, /const webAppOwnsChrome = isTrustedOrbyvenUrl\(currentUrl\)/);
+  assert.match(source, /!webAppOwnsChrome \? \(/);
   assert.match(source, /brandRow: \{ flex: 1, minWidth: 0/);
   assert.match(source, /brandCopy: \{ flex: 1, minWidth: 0 \}/);
   assert.match(source, /numberOfLines=\{1\} style=\{\[styles\.subtitle/);

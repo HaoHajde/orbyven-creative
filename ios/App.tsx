@@ -541,10 +541,15 @@ export default function App() {
   const muted = dark ? "#91a0b8" : "#617089";
   const border = dark ? "#1a2940" : "#dfe5ef";
   const effectiveConnection = deviceOffline ? "offline" : connection;
+  // The authenticated ORBYVEN web app already owns its header and mobile dock.
+  // Keep the native shell visually invisible on trusted ORBYVEN pages so a
+  // future .ipa matches the approved PWA UI instead of duplicating chrome.
+  const webAppOwnsChrome = isTrustedOrbyvenUrl(currentUrl);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]}>
       <StatusBar barStyle={dark ? "light-content" : "dark-content"} />
+      {!webAppOwnsChrome ? (
       <View style={[styles.header, { backgroundColor: surface, borderBottomColor: border }]}>
         <View style={styles.brandRow}>
           <View style={styles.mark}>
@@ -565,6 +570,7 @@ export default function App() {
           </Text>
         </View>
       </View>
+      ) : null}
 
       <View style={styles.content}>
         <WebView
@@ -628,6 +634,7 @@ export default function App() {
         />
       </View>
 
+      {!webAppOwnsChrome ? (
       <View style={[styles.toolbar, { backgroundColor: surface, borderTopColor: border }]}>
         <ToolbarButton label="‹" hint="Înapoi" disabled={!canGoBack} onPress={() => webRef.current?.goBack()} text={text} muted={muted} />
         <ToolbarButton label="⌂" hint="Workspace" onPress={() => {
@@ -639,6 +646,7 @@ export default function App() {
         <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
         <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
       </View>
+      ) : null}
 
       {privacyShielded ? (
         <View style={[styles.privacyShield, { backgroundColor: background }]}>
