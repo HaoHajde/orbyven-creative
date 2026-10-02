@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.7
+# ORBYVEN iOS — Alpha 0.8
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,17 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.7:
+Native Alpha 0.8:
+- continuitate de rețea: o pierdere scurtă de internet nu mai forțează reload-ul WebView dacă pagina rămâne validă;
+- reload complet doar când WebView-ul chiar a avut eroare de încărcare;
+- indicator nativ discret de loading și stare offline, fără să înlocuiască Dashboard-ul;
+- eveniment `orbyven:native-network-restored` pentru refresh punctual după reconectare;
+- refresh silențios al workspace-ului la revenirea aplicației în foreground, fără flash de loading;
+- refresh automat al Activity Center după reconectare;
+- protecție împotriva requesturilor duplicate la resume prin throttling;
+- dacă un modul devine indisponibil după refresh de entitlement, aplicația revine sigur în Overview;
+
+Păstrat din Alpha 0.7:
 - handshake explicit native → web prin `window.__ORBYVEN_NATIVE__`, fără a folosi user-agent-ul drept sursă de adevăr;
 - runtime-ul web marchează `data-app-mode="native"` și publică platforma/versiunea shell-ului pentru UI și diagnostic;
 - capabilitățile native sunt declarate explicit (biometric lock, deep links, documente, haptics, remindere, network recovery, push registration);
@@ -201,3 +211,12 @@ Versiunea 0.6.0 pregătește notificările push remote fără să slăbească au
 Versiunea 0.7.0 transformă legătura dintre Dashboard și shell-ul iOS într-un contract explicit. WebView-ul injectează înainte de încărcarea aplicației un runtime limitat la informații de platformă, versiune și capabilități UI; acesta nu conține tokenuri, credentiale, sesiuni sau drepturi de autorizare. Autentificarea și RLS rămân exclusiv în fluxul ORBYVEN existent.
 
 Tema aleasă în Dashboard este trimisă către shell-ul iOS prin bridge-ul React Native WebView, astfel încât status bar-ul și ecranele native auxiliare să nu mai poată rămâne într-o temă diferită față de workspace. La revenirea din background, shell-ul emite explicit evenimentul `orbyven:app-resume`, pe lângă protecția biometrică existentă.
+
+
+## Alpha 0.8
+
+Versiunea 0.8.0 este orientată spre utilizarea zilnică pe iPhone. Shell-ul păstrează WebView-ul existent în cazul unei întreruperi scurte de internet și evită pierderea contextului din Dashboard. Dacă încărcarea web a eșuat efectiv, reconectarea declanșează în continuare reload-ul controlat.
+
+La revenirea în aplicație, Dashboard-ul își revalidează silențios workspace-ul, profilul, rolul și modulele disponibile. Refresh-ul nu activează ecranul global de loading și este limitat pentru a evita requesturi duplicate atunci când iOS emite mai multe evenimente apropiate de resume/focus.
+
+Indicatorul nativ de loading este o linie discretă, iar starea offline apare ca un chip temporar peste aplicație. Niciunul nu modifică autentificarea, RLS sau datele persistente.
