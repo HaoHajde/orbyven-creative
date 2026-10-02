@@ -9,6 +9,7 @@ export type WorkspaceOpenOptions = {
   taskId?: string;
   estimateId?: string;
   purchaseOrderId?: string;
+  documentId?: string;
 };
 
 export type WorkspaceNavigationIntent = WorkspaceOpenOptions & {
