@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import HomePageClient from "@/components/HomePageClientEn";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfigEn as siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   alternates: { canonical: "https://www.orbyven.com/" },
