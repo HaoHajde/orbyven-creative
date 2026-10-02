@@ -292,6 +292,67 @@ export async function syncCrmAfterEstimateSent(
   };
 }
 
+export async function syncCrmAfterEstimateClosedWithoutAcceptance(
+  organizationId: string,
+  clientId: string,
+  status: "rejected" | "expired",
+  estimateReference?: string | null
+) {
+  requireOrganizationId(organizationId);
+  if (!clientId.trim()) {
+    return { updated: false as const, reason: "missing_client" as const };
+  }
+
+  const { data: lead, error: leadError } = await orbyvenSupabase
+    .from("crm_leads")
+    .select("id,kind,stage")
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .single();
+
+  if (leadError || !lead) {
+    throw leadError ?? new Error("Clientul devizului nu a putut fi încărcat.");
+  }
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateError } = await orbyvenSupabase
+    .from("crm_leads")
+    .update({ last_contact_at: now })
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) {
+    return { updated: false as const, reason: "state_changed" as const };
+  }
+
+  const label = estimateReference?.trim() ? " " + estimateReference.trim() : "";
+  const outcome = status === "rejected" ? "respins" : "expirat";
+  const { error: activityError } = await orbyvenSupabase
+    .from("crm_lead_activities")
+    .insert({
+      organization_id: organizationId,
+      lead_id: clientId,
+      kind: "status",
+      body:
+        "Devizul" +
+        label +
+        " a fost marcat " +
+        outcome +
+        ". Stadiul CRM a fost păstrat pentru decizie manuală.",
+      occurred_at: now,
+    });
+
+  return {
+    updated: true as const,
+    activityLogged: !activityError,
+    preservedStage: lead.stage,
+    preservedKind: lead.kind,
+  };
+}
+
 export async function syncCrmAfterAcceptedEstimate(
   organizationId: string,
   clientId: string,
