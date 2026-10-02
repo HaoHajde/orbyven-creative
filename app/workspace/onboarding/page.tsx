@@ -27,7 +27,14 @@ function WorkspaceOnboardingPageContent() {
   const searchParams = useSearchParams();
   const planValue = searchParams.get("plan");
   const checkoutPlan = isBillingPlanId(planValue) ? planValue : null;
-  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
+  const checkoutProduct = searchParams.get("product") === "web-design-dashboard" ? "web-design-dashboard" : null;
+  const checkoutMode = searchParams.get("mode") === "web" ? "web" : "ecosystem";
+  const checkoutQuery = checkoutPlan
+    ? `?plan=${checkoutPlan}&checkout=1${checkoutProduct ? `&product=${checkoutProduct}&mode=${checkoutMode}` : ""}`
+    : "";
+  const checkoutDestination = checkoutProduct
+    ? `/porneste/web-design${checkoutQuery}`
+    : checkoutDestination;
   const [companyName, setCompanyName] = useState("");
   const [selectedModules, setSelectedModules] = useState<OrbyvenModuleId[]>(() =>
     checkoutPlan ? [...BILLING_PLANS[checkoutPlan].entitlements] : ["overview", "leads", "tasks"]
@@ -47,7 +54,7 @@ function WorkspaceOnboardingPageContent() {
         if (cancelled) return;
 
         if (destination !== "/workspace/onboarding") {
-          router.replace(checkoutPlan && destination === "/workspace" ? `/contact${checkoutQuery}` : destination);
+          router.replace(checkoutPlan && destination === "/workspace" ? checkoutDestination : destination);
           return;
         }
 
@@ -110,7 +117,7 @@ function WorkspaceOnboardingPageContent() {
       return;
     }
 
-    router.replace(checkoutPlan ? `/contact${checkoutQuery}` : "/workspace");
+    router.replace(checkoutPlan ? checkoutDestination : "/workspace");
     router.refresh();
   };
 
