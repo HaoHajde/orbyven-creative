@@ -132,6 +132,7 @@ export default function DesktopWorkspaceModules({
         initialCreate={initialCreate}
         initialRecordId={intent?.recordId}
         initialTaskId={intent?.taskId}
+        initialPurchaseOrderId={intent?.purchaseOrderId}
       />
     );
   }
@@ -143,6 +144,7 @@ export default function DesktopWorkspaceModules({
         organizationId={organizationId}
         locale={locale}
         role={role}
+        enabledModules={enabledModules}
         onOpenModule={onOpenModule}
         initialRecordId={intent?.recordId}
         initialTaskId={intent?.taskId}
@@ -164,10 +166,13 @@ export default function DesktopWorkspaceModules({
         organizationId={organizationId}
         locale={locale}
         role={role}
+        enabledModules={enabledModules}
+        onOpenModule={onOpenModule}
         initialCreate={initialCreate}
         initialClientId={intent?.clientId}
         initialTaskId={intent?.taskId}
         initialEstimateId={intent?.estimateId}
+        initialPurchaseOrderId={intent?.purchaseOrderId}
       />
     );
   }
