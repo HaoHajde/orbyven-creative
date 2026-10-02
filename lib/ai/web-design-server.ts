@@ -8,6 +8,11 @@ import {
   type SiteContentItem,
   type SiteFaqItem,
 } from "@/lib/ai/site-editor";
+import {
+  applyWebDesignStrategy,
+  buildWebDesignStrategy,
+  webDesignStrategyInstruction,
+} from "@/lib/ai/web-design-intent";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -490,6 +495,9 @@ export async function generateWebDesignForActor(
   const config = webDesignConfig();
   if (!config) throw new Error("WEB_DESIGN_AI_NOT_CONFIGURED");
 
+  const strategy = buildWebDesignStrategy(prompt, current);
+  const strategyInstruction = webDesignStrategyInstruction(strategy);
+
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
 
@@ -521,12 +529,16 @@ export async function generateWebDesignForActor(
           "Nu inventa recenzii, ratinguri, ani de experiență, număr de clienți, certificări, premii, prețuri, reduceri, adrese, telefoane, program, garanții, termene sau disponibilitate. " +
           "Orice cifră din copy trebuie să existe deja în cererea utilizatorului sau în draftul curent. Dacă lipsesc date reale pentru portofoliu, folosește etichete neutre precum «Exemplu vizual» și explică faptul că trebuie înlocuite. " +
           "Nu produce URL-uri, cod, JSX, JavaScript, CSS, HTML sau markdown. Alege numai variantele și câmpurile permise de schemă. " +
-          "Păstrează un CTA principal clar, ierarhie vizuală bună, texte scurte, contrast bun și o paletă coerentă. Nu ascunde secțiunea hero.",
+          "Păstrează un CTA principal clar, ierarhie vizuală bună, texte scurte, contrast bun și o paletă coerentă. Nu ascunde secțiunea hero. " +
+          "Folosește Site Strategy ca arhitectură de conversie: respectă obiectivul principal, evită secțiunile redundante și nu transforma automat toate site-urile în aceeași structură. " +
+          "Dacă request_mode este refine, modifică doar ce cere utilizatorul și păstrează structura neschimbată dacă nu este cerută explicit.\n\n" +
+          strategyInstruction,
         input: JSON.stringify({
           user_request: prompt.slice(0, 2000),
           organization_name: organization?.name ?? null,
           legal_name: organization?.legal_name ?? null,
           current_site: current,
+          site_strategy: strategy,
         }),
         max_output_tokens: 3600,
         text: { format: WEB_DESIGN_FORMAT },
@@ -560,10 +572,13 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_OUTPUT_GUARD");
     }
 
-    const nextDraft = readSiteDraft({
+    const parsedDraft = readSiteDraft({
       preset: current.preset,
       ...result.draft,
     });
+    const nextDraft = parsedDraft
+      ? readSiteDraft(applyWebDesignStrategy(parsedDraft, strategy))
+      : null;
     if (!nextDraft) {
       await finishQuota(quota.requestId, false, usage, "DRAFT_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
