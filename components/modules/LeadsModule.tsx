@@ -637,11 +637,35 @@ export default function LeadsModule({
 
               {canWrite && selectedLead.kind === "lead" ? (
                 <div className="mt-4">
-                  <ModuleNextAction
-                    title="Transformă cererea în client"
-                    description="Păstrezi istoricul și poți porni apoi lucrarea, oferta sau programarea."
-                    action={<button type="button" onClick={convertToClient} disabled={saving} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Transformă →</button>}
-                  />
+                  {selectedLead.stage === "won" ? (
+                    <ModuleNextAction
+                      title="Cererea este câștigată"
+                      description="Transformă profilul în client fără să pierzi istoricul comercial."
+                      action={<button type="button" onClick={convertToClient} disabled={saving} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Transformă în client →</button>}
+                    />
+                  ) : selectedLead.stage === "lost" ? (
+                    <ModuleNextAction
+                      title="Cererea este închisă ca pierdută"
+                      description="Istoricul rămâne disponibil. Redeschide pipeline-ul doar printr-o schimbare explicită de status."
+                    />
+                  ) : selectedLead.stage === "proposal" && enabledModules.includes("estimates") ? (
+                    <ModuleNextAction
+                      title="Oferta este în lucru"
+                      description="Deschide contextul comercial al acestei cereri pentru următorul pas."
+                      action={<button type="button" onClick={() => onOpenModule("estimates", { clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide oferta →</button>}
+                    />
+                  ) : enabledModules.includes("estimates") ? (
+                    <ModuleNextAction
+                      title="Pregătește oferta"
+                      description="Clientul și contextul CRM sunt păstrate automat; după creare, pipeline-ul trece în Propunere."
+                      action={<button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă →</button>}
+                    />
+                  ) : (
+                    <ModuleNextAction
+                      title="Continuă calificarea cererii"
+                      description="Actualizează statusul sau următorul follow-up înainte de conversia în client."
+                    />
+                  )}
                 </div>
               ) : canWrite && selectedLead.kind === "client" ? (
                 <div className="mt-4">
