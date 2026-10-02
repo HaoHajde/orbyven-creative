@@ -368,15 +368,18 @@ export default function WebDesignSpecialist() {
   const commitDraft = (
     next: EditableSite,
     source: "local" | "preset",
-    lastPrompt?: string
+    lastPrompt?: string,
+    preserveInterview = false
   ) => {
     if (JSON.stringify(next) === JSON.stringify(draft)) return;
     setHistory((current) => [...current.slice(-29), draft]);
     setDraft(next);
     setQualityScore(null);
     setReadinessScore(null);
-    setInterviewQuestions([]);
-    setInterviewAnswer("");
+    if (!preserveInterview) {
+      setInterviewQuestions([]);
+      setInterviewAnswer("");
+    }
     void saveRemote(next, source, lastPrompt);
   };
 
@@ -560,7 +563,8 @@ export default function WebDesignSpecialist() {
       commitDraft(
         localResult.draft,
         "local",
-        `interview:${activeInterviewQuestion.id}`
+        `interview:${activeInterviewQuestion.id}`,
+        true
       );
       setInterviewQuestions((current) => current.slice(1));
       setInterviewAnswer("");
