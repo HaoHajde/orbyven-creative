@@ -25,13 +25,16 @@ import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import {
   Field,
   ModuleEmpty,
+  ModuleAdvancedFields,
   ModuleError,
   ModuleHeader,
   ModuleMetric,
+  ModuleProgressiveMetrics,
   moduleInputClass,
 } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useWorkspaceCreateFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 
 type Props = {
   organizationId: string;
@@ -202,6 +205,12 @@ export default function ExpensesModule({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  useWorkspaceLiveContext({
+    clientId: expenseForm.clientId || incomeForm.clientId || initialClientId,
+    taskId: scopeTaskId || expenseForm.taskId || incomeForm.taskId || undefined,
+    estimateId: initialEstimateId,
+    purchaseOrderId: expenseForm.purchaseOrderId || initialPurchaseOrderId,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -550,12 +559,15 @@ export default function ExpensesModule({
         </p>
       ) : null}
 
-      <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <ModuleMetric label="Încasări luna aceasta" value={formatMoney(metrics.monthIncome, "RON", locale)} note="registru operațional · RON" />
-        <ModuleMetric label="Cheltuieli luna aceasta" value={formatMoney(metrics.monthExpenses, "RON", locale)} note="registru operațional · RON" />
-        <ModuleMetric label="Cashflow lunar" value={formatMoney(metrics.cashFlow, "RON", locale)} note="încasări minus cheltuieli · RON" />
-        <ModuleMetric label="De încasat" value={formatMoney(metrics.outstanding, "RON", locale)} note={metrics.overdue ? `${metrics.overdue} scadențe depășite` : "fără restanțe · RON"} />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-6"
+        primary={<>
+          <ModuleMetric label="Cashflow lunar" value={formatMoney(metrics.cashFlow, "RON", locale)} note="încasări minus cheltuieli · RON" />
+          <ModuleMetric label="De încasat" value={formatMoney(metrics.outstanding, "RON", locale)} note={metrics.overdue ? `${metrics.overdue} scadențe depășite` : "fără restanțe · RON"} />
+          <ModuleMetric label="Încasări luna aceasta" value={formatMoney(metrics.monthIncome, "RON", locale)} note="registru operațional · RON" />
+        </>}
+        secondary={<ModuleMetric label="Cheltuieli luna aceasta" value={formatMoney(metrics.monthExpenses, "RON", locale)} note="registru operațional · RON" />}
+      />
 
       {scopeTaskId ? (
         <div className="mt-4 flex items-center gap-2">
@@ -591,42 +603,22 @@ export default function ExpensesModule({
             <div><h2 className="text-sm font-semibold">Cheltuială nouă</h2><p className="mt-1 text-[10px] text-[var(--muted)]">{expenseForm.purchaseOrderId ? "Costul de achiziție intră în cashflow; materialul intră în costul lucrării doar când este consumat din stoc." : "Leag-o de lucrare pentru costurile operaționale care nu vin din stoc."}</p></div>
             <button type="button" onClick={() => setExpenseOpen(false)} className="text-lg text-[var(--muted)]">×</button>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Data *"><input type="date" value={expenseForm.occurredOn} onChange={(e) => setExpenseForm((c) => ({ ...c, occurredOn: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Categorie *"><input value={expenseForm.category} onChange={(e) => setExpenseForm((c) => ({ ...c, category: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Sumă (lei) *"><input type="number" min="0.01" step="0.01" value={expenseForm.amount} onChange={(e) => setExpenseForm((c) => ({ ...c, amount: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Descriere *"><input value={expenseForm.description} onChange={(e) => setExpenseForm((c) => ({ ...c, description: e.target.value }))} className={moduleInputClass} /></Field>
-            <Field label="Furnizor"><input disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.vendor} onChange={(e) => setExpenseForm((c) => ({ ...c, vendor: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`} /></Field>
-            <Field label="Plată">
-              <select value={expenseForm.paymentMethod} onChange={(e) => setExpenseForm((c) => ({ ...c, paymentMethod: e.target.value as ExpenseForm["paymentMethod"] }))} className={moduleInputClass}>
-                <option value="">Nespecificat</option>
-                {(Object.keys(paymentLabels) as ExpensePaymentMethod[]).map((key) => <option key={key} value={key}>{paymentLabels[key]}</option>)}
-              </select>
-            </Field>
-            <Field label="Client">
-              <select value={expenseForm.clientId} disabled={Boolean(expenseForm.purchaseOrderId || tasks.find((item) => item.id === expenseForm.taskId)?.client_id)} onChange={(e) => setExpenseForm((c) => ({ ...c, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}>
-                <option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Lucrare">
-              <select disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.taskId} onChange={(e) => chooseExpenseTask(e.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
-                <option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-              </select>
-            </Field>
-            <Field label="Document justificativ">
-              <select value={expenseForm.documentId} onChange={(e) => chooseExpenseDocument(e.target.value)} className={moduleInputClass}>
-                <option value="">Fără document</option>{documents.filter((item) => !expenseForm.purchaseOrderId || !item.purchase_order_id || item.purchase_order_id === expenseForm.purchaseOrderId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </Field>
-            {enabledModules.includes("inventory") ? (
-              <Field label="Comandă furnizor">
-                <select value={expenseForm.purchaseOrderId} onChange={(e) => choosePurchaseOrder(e.target.value)} className={moduleInputClass}>
-                  <option value="">Fără comandă furnizor</option>
-                  {purchaseOrders.filter((item) => ["ordered","partially_received","received"].includes(item.status)).map((item) => <option key={item.purchase_order_id} value={item.purchase_order_id}>{item.reference} · {item.supplier_name}</option>)}
-                </select>
-              </Field>
-            ) : null}
           </div>
+          <ModuleAdvancedFields label="Legături și dovadă">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="Furnizor"><input disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.vendor} onChange={(e) => setExpenseForm((c) => ({ ...c, vendor: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`} /></Field>
+              <Field label="Plată"><select value={expenseForm.paymentMethod} onChange={(e) => setExpenseForm((c) => ({ ...c, paymentMethod: e.target.value as ExpenseForm["paymentMethod"] }))} className={moduleInputClass}><option value="">Nespecificat</option>{(Object.keys(paymentLabels) as ExpensePaymentMethod[]).map((key) => <option key={key} value={key}>{paymentLabels[key]}</option>)}</select></Field>
+              <Field label="Client"><select value={expenseForm.clientId} disabled={Boolean(expenseForm.purchaseOrderId || tasks.find((item) => item.id === expenseForm.taskId)?.client_id)} onChange={(e) => setExpenseForm((c) => ({ ...c, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+              <Field label="Lucrare"><select disabled={Boolean(expenseForm.purchaseOrderId)} value={expenseForm.taskId} onChange={(e) => chooseExpenseTask(e.target.value)} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
+              <Field label="Document justificativ"><select value={expenseForm.documentId} onChange={(e) => chooseExpenseDocument(e.target.value)} className={moduleInputClass}><option value="">Fără document</option>{documents.filter((item) => !expenseForm.purchaseOrderId || !item.purchase_order_id || item.purchase_order_id === expenseForm.purchaseOrderId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+              {enabledModules.includes("inventory") ? <Field label="Comandă furnizor"><select value={expenseForm.purchaseOrderId} onChange={(e) => choosePurchaseOrder(e.target.value)} className={moduleInputClass}><option value="">Fără comandă furnizor</option>{purchaseOrders.filter((item) => ["ordered","partially_received","received"].includes(item.status)).map((item) => <option key={item.purchase_order_id} value={item.purchase_order_id}>{item.reference} · {item.supplier_name}</option>)}</select></Field> : null}
+            </div>
+          </ModuleAdvancedFields>
           {initialEstimateId ? <p className="mt-3 text-[10px] text-[var(--muted)]">Va fi asociată și devizului din care ai deschis Finanțe.</p> : null}
           <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Salvează cheltuiala"}</button></div>
         </form>
@@ -638,7 +630,7 @@ export default function ExpensesModule({
             <div><h2 className="text-sm font-semibold">Încasare nouă</h2><p className="mt-1 text-[10px] text-[var(--muted)]">Poți lega plata de un document emis extern sau o poți înregistra manual.</p></div>
             <button type="button" onClick={() => setIncomeOpen(false)} className="text-lg text-[var(--muted)]">×</button>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Factură / document">
               <select value={incomeForm.invoiceId} onChange={(e) => chooseInvoice(e.target.value)} className={moduleInputClass}>
                 <option value="">Încasare manuală</option>
@@ -650,6 +642,9 @@ export default function ExpensesModule({
             <Field label="Data *"><input type="date" value={incomeForm.occurredOn} onChange={(e) => setIncomeForm((c) => ({ ...c, occurredOn: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Sumă (lei) *"><input type="number" min="0.01" step="0.01" value={incomeForm.amount} onChange={(e) => setIncomeForm((c) => ({ ...c, amount: e.target.value }))} className={moduleInputClass} /></Field>
             <Field label="Descriere *"><input value={incomeForm.description} onChange={(e) => setIncomeForm((c) => ({ ...c, description: e.target.value }))} className={moduleInputClass} /></Field>
+          </div>
+          <ModuleAdvancedFields label="Asocieri și referință">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Metodă">
               <select value={incomeForm.paymentMethod} onChange={(e) => setIncomeForm((c) => ({ ...c, paymentMethod: e.target.value as IncomeForm["paymentMethod"] }))} className={moduleInputClass}>
                 <option value="">Nespecificat</option>
@@ -668,7 +663,8 @@ export default function ExpensesModule({
               </select>
             </Field>
             <Field label="Notă"><input value={incomeForm.note} onChange={(e) => setIncomeForm((c) => ({ ...c, note: e.target.value }))} className={moduleInputClass} /></Field>
-          </div>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Înregistrează încasarea"}</button></div>
         </form>
       ) : null}
