@@ -18,7 +18,7 @@ export default function ConsumerInformationPage() {
     >
       <LegalSection title="Merchant identity">
         <p>
-          The company name, tax ID, Trade Register number, registered office and VAT status must be displayed and verified before contracts are concluded with consumers. The brand identity does not replace the merchant's legal name.
+          The company name, tax ID, Trade Register number, registered office and VAT status must be displayed and verified before contracts are concluded with consumers. The brand identity does not replace the merchant’s legal name.
         </p>
       </LegalSection>
 
@@ -36,7 +36,7 @@ export default function ConsumerInformationPage() {
 
       <LegalSection title="Withdrawal and early performance">
         <p>
-          The statutory withdrawal right and its exceptions are determined under Romanian Emergency Ordinance no. 34/2014 according to the nature of the service. We do not assume that every customized invitation or digital service automatically excludes withdrawal. Where the law requires it, starting performance during the withdrawal period and any subsequent loss of the right require the consumer's express request and separate confirmation, together with confirmation of the contract on a durable medium.
+          The statutory withdrawal right and its exceptions are determined under Romanian Emergency Ordinance no. 34/2014 according to the nature of the service. We do not assume that every customized invitation or digital service automatically excludes withdrawal. Where the law requires it, starting performance during the withdrawal period and any subsequent loss of the right require the consumer’s express request and separate confirmation, together with confirmation of the contract on a durable medium.
         </p>
         <p>
           Until this flow is implemented, any early start is agreed individually through legally validated documents; this page does not ask consumers to waive statutory rights.
@@ -45,7 +45,7 @@ export default function ConsumerInformationPage() {
 
       <LegalSection title="Complaints and alternative dispute resolution">
         <p>
-          Complaints may be sent to the contact address displayed in the legal center. Consumers may also consult the Romanian consumer authority's{" "}
+          Complaints may be sent to the contact address displayed in the legal center. Consumers may also consult the Romanian consumer authority’s{" "}
           <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" className="underline">
             SAL platform
           </a>
