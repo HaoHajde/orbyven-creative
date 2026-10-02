@@ -1297,7 +1297,14 @@ test("Web Design editor persists and sends bounded Smart Interview facts immedia
     specialist,
     /INTERVIEW_FACTS_KEY = "orbyven-web-design-interview-facts-v01"/
   );
-  assert.match(specialist, /getItem\(INTERVIEW_FACTS_KEY\)/);
+  assert.match(
+    specialist,
+    /getItem\(interviewFactsStorageKey\)/
+  );
+  assert.doesNotMatch(
+    specialist,
+    /getItem\(INTERVIEW_FACTS_KEY\)/
+  );
   assert.match(specialist, /interviewFacts: \(factOverride \?\? interviewFacts\)\.slice\(-8\)/);
   assert.match(specialist, /generateWithAi\(interviewPrompt, nextFacts\)/);
   assert.match(specialist, /removeItem\(INTERVIEW_FACTS_KEY\)/);
@@ -1319,7 +1326,7 @@ test("Rejected claim answers do not turn the interview question into positive ev
 });
 
 
-test("Web Design browser state is isolated per organization with one-time legacy migration", () => {
+test("Web Design browser state is organization-scoped and never imports unowned legacy state", () => {
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
   assert.match(specialist, /function workspaceStorageKey\(base: string, organizationId: string\)/);
@@ -1327,11 +1334,29 @@ test("Web Design browser state is isolated per organization with one-time legacy
   assert.match(specialist, /workspaceStorageKey\(\s*VISUAL_MEMORY_KEY,\s*workspaceId\s*\)/);
   assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_QUEUE_KEY,\s*workspaceId\s*\)/);
   assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_FACTS_KEY,\s*workspaceId\s*\)/);
-  assert.match(specialist, /removeItem\(STORAGE_KEY\)/);
-  assert.match(specialist, /removeItem\(LEGACY_STORAGE_KEY\)/);
-  assert.match(specialist, /removeItem\(VISUAL_MEMORY_KEY\)/);
-  assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
-  assert.match(specialist, /removeItem\(INTERVIEW_FACTS_KEY\)/);
+
+  assert.match(specialist, /for \(const legacyKey of \[/);
+  for (const key of [
+    "STORAGE_KEY",
+    "LEGACY_STORAGE_KEY",
+    "VISUAL_MEMORY_KEY",
+    "INTERVIEW_QUEUE_KEY",
+    "INTERVIEW_FACTS_KEY",
+  ]) {
+    assert.ok(specialist.includes(key), key);
+  }
+
+  assert.match(specialist, /getItem\(draftStorageKey\)/);
+  assert.match(specialist, /getItem\(visualMemoryStorageKey\)/);
+  assert.match(specialist, /getItem\(interviewQueueStorageKey\)/);
+  assert.match(specialist, /getItem\(interviewFactsStorageKey\)/);
+
+  assert.doesNotMatch(specialist, /getItem\(STORAGE_KEY\)/);
+  assert.doesNotMatch(specialist, /getItem\(LEGACY_STORAGE_KEY\)/);
+  assert.doesNotMatch(specialist, /getItem\(VISUAL_MEMORY_KEY\)/);
+  assert.doesNotMatch(specialist, /getItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.doesNotMatch(specialist, /getItem\(INTERVIEW_FACTS_KEY\)/);
+
   assert.match(
     specialist,
     /workspaceStorageKey\(STORAGE_KEY, organizationId\)/
