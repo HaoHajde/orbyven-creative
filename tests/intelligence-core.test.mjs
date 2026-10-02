@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
 import { detectOperationalQuery } from "../lib/ai/operational-query-core.ts";
-import { detectEntityIntelligenceQuery } from "../lib/ai/entity-intelligence-core.ts";
+import {
+  detectEntityIntelligenceQuery,
+  detectEntityQuestionScope,
+} from "../lib/ai/entity-intelligence-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -111,4 +114,27 @@ test("Entity Intelligence detects named client/work queries and stays bounded re
   assert.match(entity, /FINANCE_ROLES/);
   assert.match(entity, /available\.has\("expenses"\)/);
   assert.doesNotMatch(entity, /\.(insert|update|delete|upsert)\s*\(/);
+});
+
+
+test("Scoped Entity Questions classifies finance, estimates, calendar, documents and history", () => {
+  assert.equal(detectEntityQuestionScope("Cât am încasat de la clientul Popescu?"), "finance");
+  assert.equal(detectEntityQuestionScope("Ce devize are clientul Popescu?"), "estimates");
+  assert.equal(detectEntityQuestionScope("Când e următoarea programare pentru clientul Popescu?"), "calendar");
+  assert.equal(detectEntityQuestionScope("Ce documente are lucrarea Revizie centrală?"), "documents");
+  assert.equal(detectEntityQuestionScope("Ce am făcut pentru clientul Popescu?"), "history");
+  assert.equal(detectEntityQuestionScope("Arată-mi clientul Popescu"), "overview");
+
+  const entity = read("lib/ai/entity-intelligence.ts");
+  const scopes = read("lib/ai/entity-intelligence-scopes.ts");
+  assert.match(entity, /clientScopedResponse/);
+  assert.match(entity, /workScopedResponse/);
+  assert.match(entity, /EntityFinanceSummary/);
+  assert.match(scopes, /moduleEnabled/);
+  assert.match(scopes, /roleAllowed/);
+  assert.match(scopes, /scope === "finance"/);
+  assert.match(scopes, /scope === "estimates"/);
+  assert.match(scopes, /scope === "calendar"/);
+  assert.match(scopes, /scope === "documents"/);
+  assert.doesNotMatch(scopes, /\.(insert|update|delete|upsert)\s*\(/);
 });
