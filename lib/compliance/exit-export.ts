@@ -52,6 +52,28 @@ const MAX_ARCHIVE_BYTES = 8 * 1024 * 1024;
 
 export class TenantExportError extends Error {}
 
+function canonicalizeExportValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeExportValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string,unknown>)
+        .sort(([left],[right]) => left < right ? -1 : left > right ? 1 : 0)
+        .map(([key,nested]) => [key,canonicalizeExportValue(nested)])
+    );
+  }
+  return value;
+}
+
+function stableRows(rows: unknown[]) {
+  return rows
+    .map(row => {
+      const value=canonicalizeExportValue(row);
+      return {value,key:JSON.stringify(value)};
+    })
+    .sort((left,right) => left.key < right.key ? -1 : left.key > right.key ? 1 : 0)
+    .map(item => item.value);
+}
+
 export function requireExportableCase(
   item: { organization_id:string;status:string },
   organizationId:string,
@@ -82,7 +104,7 @@ export async function buildTenantArchive(
     if((data??[]).length>PER_TABLE_LIMIT) {
       throw new TenantExportError("Archive limit reached in "+name+"; manual paginated transfer required.");
     }
-    datasets[name]=data??[];
+    datasets[name]=stableRows(data??[]);
   }
   const archive={
     format:"orbyven-tenant-export",
@@ -90,7 +112,7 @@ export async function buildTenantArchive(
     case_id:caseId,
     organization_id:organizationId,
     generated_at:generatedAt,
-    organization:org,
+    organization:canonicalizeExportValue(org),
     datasets,
     exclusions:[
       "Storage document/photo/audio bytes (transfer and verify separately)",

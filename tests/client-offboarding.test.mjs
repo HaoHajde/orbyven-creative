@@ -94,3 +94,23 @@ test("owner-only download, staff-only authorization, and clear distinction from 
   assert.match(page,/Sol icită exportul datelor|Solicită exportul datelor/);
   assert.match(staffUI,/Predarea și închiderea datelor clientului/);
 });
+
+
+test("archive checksum is stable when Supabase returns rows in a different order",async()=>{
+  const makeAdmin=(reverse)=>({from:(table)=>({
+    select:()=>({eq:(column,value)=>{
+      if(table==="organizations")return {maybeSingle:async()=>({
+        data:{updated_at:"2026-09-30T00:00:00Z",id:value,name:"Client Pilot",slug:"pilot",legal_name:null,lifecycle_status:"active",created_at:"2026-01-01T00:00:00Z"},error:null
+      })};
+      const rows=[
+        {organization_id:value,id:"b",nested:{z:1,a:2}},
+        {nested:{a:1,z:2},id:"a",organization_id:value},
+      ];
+      return {range:async()=>({data:reverse?[...rows].reverse():rows,error:null})};
+    }}),
+  })});
+  const first=await buildTenantArchive(makeAdmin(false),org,caseId,"2026-09-30T12:00:00.000Z");
+  const second=await buildTenantArchive(makeAdmin(true),org,caseId,"2026-09-30T12:00:00.000Z");
+  assert.equal(first.sha256,second.sha256);
+  assert.equal(first.payload,second.payload);
+});

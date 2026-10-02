@@ -1,104 +1,277 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEFAULT_SITE,
   SITE_PRESETS,
   SITE_PRESET_LABELS,
-  SECTION_LABELS,
   readSiteDraft,
   type EditableSite,
   type SitePresetId,
 } from "@/lib/ai/site-editor";
-import { applyLocalPreviewCommand } from "@/lib/ai/local-preview-commands";
-import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
+import {
+  applyLocalPreviewCommand,
+  shouldUseGenerativeWebDesign,
+} from "@/lib/ai/local-preview-commands";
+import {
+  getCurrentWorkspace,
+  getWorkspaceEntryPath,
+} from "@/lib/orbyven-workspace";
+import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import WebDesignPreview, {
+  type PreviewDevice,
+} from "@/components/ai/WebDesignPreview";
 
-const STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
+const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
+const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 
 const QUICK = [
-  "Vreau o tematică black & gold cu layout editorial",
-  "Vreau scris mare și layout centrat",
+  "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
+  "Propune o variantă luxury black & gold, editorială, cu mult spațiu și CTA puternic.",
+  "Fă o variantă foarte minimalistă, luminoasă și orientată spre conversie.",
   "Ascunde secțiunea despre",
-  "Titlu: Un site care lucrează pentru afacerea ta",
 ];
+
+type GenerationBody = {
+  draft?: unknown;
+  summary?: string;
+  suggestions?: string[];
+  remainingToday?: number | null;
+  error?: string;
+  code?: string;
+};
+
+async function getAccessToken() {
+  const { data, error } = await orbyvenSupabase.auth.getSession();
+  if (error || !data.session?.access_token) {
+    throw new Error("Sesiunea a expirat. Reautentifică-te.");
+  }
+  return data.session.access_token;
+}
 
 export default function WebDesignSpecialist() {
   const router = useRouter();
   const [draft, setDraft] = useState<EditableSite>(DEFAULT_SITE);
   const [history, setHistory] = useState<EditableSite[]>([]);
   const [prompt, setPrompt] = useState("");
-  const [message, setMessage] = useState("Web Design Specialist este pregătit.");
+  const [message, setMessage] = useState("Web Design Intelligence este pregătit.");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [hydrated, setHydrated] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
   useEffect(() => {
     let active = true;
-    void getWorkspaceEntryPath().then((path) => {
-      if (!active) return;
-      if (path !== "/workspace") {
-        router.replace(path);
-        return;
-      }
-      setAuthorized(true);
-    }).catch(() => {
-      if (active) router.replace("/workspace/login");
-    });
-    return () => { active = false; };
-  }, [router]);
 
-  useEffect(() => {
-    if (!authorized) return;
-    const timer = window.setTimeout(() => {
+    void (async () => {
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = readSiteDraft(JSON.parse(saved));
-          if (parsed) setDraft(parsed);
+        const path = await getWorkspaceEntryPath();
+        if (!active) return;
+        if (path !== "/workspace") {
+          router.replace(path);
+          return;
+        }
+
+        const workspace = await getCurrentWorkspace();
+        if (!active) return;
+        if (!workspace) {
+          router.replace("/workspace/login");
+          return;
+        }
+
+        setOrganizationId(workspace.organization.id);
+        setCanEdit(workspace.membership.role !== "viewer");
+        setAuthorized(true);
+
+        let localDraft: EditableSite | null = null;
+        try {
+          const saved =
+            window.localStorage.getItem(STORAGE_KEY) ??
+            window.localStorage.getItem(LEGACY_STORAGE_KEY);
+          if (saved) {
+            localDraft = readSiteDraft(JSON.parse(saved));
+            if (localDraft) {
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localDraft));
+              window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design local draft could not be restored", error);
+        }
+        if (localDraft) setDraft(localDraft);
+
+        try {
+          const token = await getAccessToken();
+          const response = await fetch(
+            `/api/ai/web-design/draft?organizationId=${encodeURIComponent(workspace.organization.id)}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: "no-store",
+            }
+          );
+          if (response.ok) {
+            const body = (await response.json()) as { draft?: unknown };
+            const remote = readSiteDraft(body.draft);
+            if (active && remote) {
+              setDraft(remote);
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+              setMessage("Am restaurat draftul sincronizat din ORBYVEN.");
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design remote draft unavailable", error);
         }
       } catch (error) {
-        console.warn("ORBYVEN Web Design draft could not be restored", error);
+        console.error(error);
+        if (active) router.replace("/workspace/login");
       } finally {
-        setHydrated(true);
+        if (active) setHydrated(true);
       }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [authorized]);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   useEffect(() => {
     if (!hydrated || !authorized) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   }, [draft, hydrated, authorized]);
 
-  const visibleSections = useMemo(
-    () => draft.sectionOrder.filter((section) => !draft.hiddenSections.includes(section)),
-    [draft]
-  );
+  const saveRemote = async (
+    next: EditableSite,
+    source: "local" | "preset",
+    lastPrompt?: string
+  ) => {
+    if (!organizationId || !canEdit) return;
+    setSaveState("saving");
+    try {
+      const token = await getAccessToken();
+      const response = await fetch("/api/ai/web-design/draft", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          organizationId,
+          draft: next,
+          source,
+          prompt: lastPrompt ?? null,
+        }),
+      });
+      if (!response.ok) throw new Error("draft save failed");
+      setSaveState("saved");
+      window.setTimeout(() => setSaveState("idle"), 1400);
+    } catch (error) {
+      console.warn("ORBYVEN Web Design remote save unavailable", error);
+      setSaveState("idle");
+    }
+  };
 
-  const applyPrompt = (value?: string) => {
+  const commitDraft = (
+    next: EditableSite,
+    source: "local" | "preset",
+    lastPrompt?: string
+  ) => {
+    if (JSON.stringify(next) === JSON.stringify(draft)) return;
+    setHistory((current) => [...current.slice(-29), draft]);
+    setDraft(next);
+    void saveRemote(next, source, lastPrompt);
+  };
+
+  const generateWithAi = async (request: string) => {
+    if (!organizationId || !canEdit || aiBusy) return false;
+    setAiBusy(true);
+    setMessage("ORBYVEN construiește o variantă nouă din componente validate…");
+
+    try {
+      const token = await getAccessToken();
+      const response = await fetch("/api/ai/web-design/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          organizationId,
+          prompt: request,
+          currentDraft: draft,
+        }),
+      });
+
+      const body = (await response.json()) as GenerationBody;
+      if (!response.ok) throw new Error(body.error || "Generatorul AI nu a răspuns.");
+
+      const next = readSiteDraft(body.draft);
+      if (!next) throw new Error("Generatorul a returnat un draft invalid.");
+
+      setHistory((current) => [...current.slice(-29), draft]);
+      setDraft(next);
+      setSuggestions((body.suggestions ?? []).slice(0, 4));
+      setMessage(
+        (body.summary || "Varianta AI a fost aplicată.") +
+          (typeof body.remainingToday === "number"
+            ? ` · ${body.remainingToday} generări rămase astăzi`
+            : "")
+      );
+      return true;
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Generatorul AI nu a putut finaliza varianta."
+      );
+      return false;
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const applyPrompt = async (value?: string, forceAi = false) => {
     const request = (value ?? prompt).trim();
-    if (!request) return;
-    const result = applyLocalPreviewCommand(draft, request);
+    if (!request || aiBusy) return;
+
     setPrompt(request);
-    if (!result) {
-      setMessage("Cererea are nevoie de interpretare creativă. Motorul local 0.8 nu inventează copy și nu apelează încă un provider extern.");
+    const local = applyLocalPreviewCommand(draft, request);
+    const wantsAi = forceAi || shouldUseGenerativeWebDesign(request) || !local;
+
+    if (wantsAi && canEdit && organizationId) {
+      const generated = await generateWithAi(request);
+      if (generated) return;
+      if (!local) return;
+      setMessage("AI indisponibil momentan; am aplicat doar partea deterministă a cererii.");
+    }
+
+    if (local) {
+      commitDraft(local.draft, "local", request);
+      setSuggestions([]);
+      setMessage(local.message);
       return;
     }
-    if (JSON.stringify(result.draft) !== JSON.stringify(draft)) {
-      setHistory((current) => [...current.slice(-19), draft]);
-      setDraft(result.draft);
-    }
-    setMessage(result.message);
+
+    setMessage(
+      canEdit
+        ? "Cererea are nevoie de generatorul AI. Verifică activarea providerului Web Design în mediul ORBYVEN."
+        : "Rolul tău poate vizualiza designul, dar nu îl poate modifica."
+    );
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    applyPrompt();
+    void applyPrompt();
   };
 
   const selectPreset = (preset: SitePresetId) => {
-    setHistory((current) => [...current.slice(-19), draft]);
-    setDraft(SITE_PRESETS[preset]);
+    const next = SITE_PRESETS[preset];
+    commitDraft(next, "preset");
+    setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
   };
 
@@ -107,13 +280,23 @@ export default function WebDesignSpecialist() {
     if (!previous) return;
     setDraft(previous);
     setHistory((current) => current.slice(0, -1));
+    setSuggestions([]);
     setMessage("Am revenit la versiunea anterioară.");
+    void saveRemote(previous, "local", "undo");
   };
 
   const reset = () => {
-    setHistory((current) => [...current.slice(-19), draft]);
-    setDraft(SITE_PRESETS[draft.preset]);
+    const next = SITE_PRESETS[draft.preset];
+    commitDraft(next, "preset");
+    setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
+  };
+
+  const alternative = () => {
+    void applyPrompt(
+      "Propune o altă variantă completă și coerentă pentru același business. Schimbă compoziția, variantele de secțiuni și direcția vizuală, dar păstrează toate faptele reale și scopul principal.",
+      true
+    );
   };
 
   if (!authorized) {
@@ -127,132 +310,164 @@ export default function WebDesignSpecialist() {
   return (
     <main className="min-h-screen bg-[#090b13] text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#090b13]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <button type="button" onClick={() => router.push("/workspace")} className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold text-white/70 hover:text-white">← Workspace</button>
+            <button
+              type="button"
+              onClick={() => router.push("/workspace")}
+              className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold text-white/70 hover:text-white"
+            >
+              ← Workspace
+            </button>
             <div className="min-w-0">
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · WEB DESIGN</p>
-              <h1 className="truncate text-[16px] font-semibold tracking-[-0.03em]">Web Design Specialist</h1>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#91a8ff]">
+                ORBYVEN INTELLIGENCE · WEB DESIGN
+              </p>
+              <h1 className="truncate text-[16px] font-semibold tracking-[-0.03em]">
+                Generative Web Design Specialist
+              </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={!history.length} onClick={undo} className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold disabled:opacity-30">Undo</button>
-            <button type="button" onClick={reset} className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold">Reset</button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[9px] text-white/35">
+              {saveState === "saving" ? "Se salvează…" : saveState === "saved" ? "Salvat în cloud" : "Draft sincronizat"}
+            </span>
+            <button
+              type="button"
+              disabled={!history.length || aiBusy}
+              onClick={undo}
+              className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold disabled:opacity-30"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              disabled={aiBusy}
+              onClick={reset}
+              className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold disabled:opacity-30"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              disabled={aiBusy || !canEdit}
+              onClick={alternative}
+              className="rounded-full bg-white px-3 py-2 text-[10px] font-semibold text-black disabled:opacity-30"
+            >
+              Altă propunere
+            </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1500px] gap-4 p-4 sm:p-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="rounded-[24px] border border-white/10 bg-white/[0.045] p-4 shadow-2xl">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">SPECIALIST</p>
-            <h2 className="mt-1 text-[18px] font-semibold">Descrie schimbarea.</h2>
-            <p className="mt-2 text-[10px] leading-5 text-white/50">Motorul local modifică doar schema validată: layout, paletă, secțiuni și text furnizat explicit. Nu generează cod arbitrar.</p>
-          </div>
+      <div className="mx-auto grid max-w-[1600px] gap-4 p-4 sm:p-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <aside className="h-fit rounded-[24px] border border-white/10 bg-white/[0.045] p-4 shadow-2xl xl:sticky xl:top-20">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
+            DESIGN COPILOT
+          </p>
+          <h2 className="mt-1 text-[18px] font-semibold">Descrie business-ul sau schimbarea.</h2>
+          <p className="mt-2 text-[10px] leading-5 text-white/50">
+            ORBYVEN folosește gratuit motorul local pentru comenzi simple și AI doar când cererea are nevoie de compoziție, copy sau o variantă nouă. Modelul returnează date validate, niciodată cod executabil.
+          </p>
 
-          <label className="mt-5 block text-[9px] font-bold uppercase tracking-[0.12em] text-white/40">Preset</label>
+          <label className="mt-5 block text-[9px] font-bold uppercase tracking-[0.12em] text-white/40">
+            Punct de pornire
+          </label>
           <select
             value={draft.preset}
+            disabled={aiBusy || !canEdit}
             onChange={(event) => selectPreset(event.target.value as SitePresetId)}
-            className="mt-2 h-10 w-full rounded-[12px] border border-white/10 bg-black/25 px-3 text-[11px] outline-none"
+            className="mt-2 h-10 w-full rounded-[12px] border border-white/10 bg-black/25 px-3 text-[11px] outline-none disabled:opacity-40"
           >
             {(Object.keys(SITE_PRESETS) as SitePresetId[]).map((id) => (
-              <option key={id} value={id}>{SITE_PRESET_LABELS[id]}</option>
+              <option key={id} value={id}>
+                {SITE_PRESET_LABELS[id]}
+              </option>
             ))}
           </select>
 
           <form onSubmit={submit} className="mt-4">
             <textarea
               value={prompt}
-              onChange={(event) => setPrompt(event.target.value.slice(0, 1200))}
-              rows={5}
-              placeholder="Ex: fă site-ul black & gold, layout editorial și titlul mai mare"
-              className="w-full resize-none rounded-[14px] border border-white/10 bg-black/25 px-3 py-3 text-[11px] leading-5 outline-none placeholder:text-white/25 focus:border-[#7897ff]/45"
+              disabled={aiBusy || !canEdit}
+              onChange={(event) => setPrompt(event.target.value.slice(0, 2000))}
+              rows={7}
+              placeholder="Ex: florărie premium în Bragadiru, public 25–45, vreau un site editorial cald, axat pe comenzi și personalizare. Nu inventa recenzii sau cifre."
+              className="w-full resize-none rounded-[14px] border border-white/10 bg-black/25 px-3 py-3 text-[11px] leading-5 outline-none placeholder:text-white/25 focus:border-[#7897ff]/45 disabled:opacity-40"
             />
-            <button className="mt-2 h-10 w-full rounded-[12px] bg-white text-[11px] font-semibold text-black">Aplică în preview</button>
+            <button
+              disabled={aiBusy || !canEdit}
+              className="mt-2 h-11 w-full rounded-[12px] bg-white text-[11px] font-semibold text-black disabled:opacity-40"
+            >
+              {aiBusy ? "Construiesc varianta…" : "Aplică / Generează"}
+            </button>
           </form>
 
           <div className="mt-4 grid gap-2">
             {QUICK.map((item) => (
-              <button key={item} type="button" onClick={() => applyPrompt(item)} className="rounded-[12px] border border-white/10 bg-white/[0.035] px-3 py-2.5 text-left text-[10px] leading-4 text-white/70 hover:bg-white/[0.07]">
+              <button
+                key={item}
+                type="button"
+                disabled={aiBusy || !canEdit}
+                onClick={() => void applyPrompt(item)}
+                className="rounded-[12px] border border-white/10 bg-white/[0.035] px-3 py-2.5 text-left text-[10px] leading-4 text-white/70 hover:bg-white/[0.07] disabled:opacity-35"
+              >
                 {item}
               </button>
             ))}
           </div>
 
+          {suggestions.length ? (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                Următoarele îmbunătățiri
+              </p>
+              <div className="mt-2 grid gap-2">
+                {suggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    disabled={aiBusy || !canEdit}
+                    onClick={() => void applyPrompt(item, true)}
+                    className="rounded-[12px] border border-[#7897ff]/15 bg-[#7897ff]/[0.06] px-3 py-2.5 text-left text-[10px] leading-4 text-[#c1ccff] disabled:opacity-35"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-4 rounded-[13px] border border-[#7897ff]/15 bg-[#7897ff]/[0.07] px-3 py-3 text-[10px] leading-5 text-[#c1ccff]">
             {message}
           </div>
-        </aside>
 
-        <section className="min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[#11141d] p-2 shadow-[0_30px_100px_rgba(0,0,0,0.38)]">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">LIVE PREVIEW</p>
-              <p className="mt-1 text-[11px] font-semibold">{draft.brand}</p>
-            </div>
-            <div className="flex gap-1.5">
-              {draft.sectionOrder.map((section) => (
-                <span key={section} className={`h-1.5 w-1.5 rounded-full ${draft.hiddenSections.includes(section) ? "bg-white/10" : "bg-[#8198ff]"}`} title={SECTION_LABELS[section]} />
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+              Preview
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {(["desktop", "tablet", "mobile"] as PreviewDevice[]).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setDevice(item)}
+                  className={`rounded-[10px] border px-2 py-2 text-[9px] font-semibold ${
+                    device === item
+                      ? "border-white/25 bg-white text-black"
+                      : "border-white/10 bg-white/[0.03] text-white/55"
+                  }`}
+                >
+                  {item === "desktop" ? "Desktop" : item === "tablet" ? "Tablet" : "Mobil"}
+                </button>
               ))}
             </div>
           </div>
+        </aside>
 
-          <div
-            className="min-h-[640px] overflow-hidden rounded-[22px] transition-colors"
-            style={{ background: draft.background, color: draft.textColor }}
-          >
-            {visibleSections.map((section) => {
-              if (section === "hero") {
-                return (
-                  <section key={section} className={`grid min-h-[420px] items-center gap-8 px-7 py-14 sm:px-10 lg:px-14 ${draft.layout === "split" ? "lg:grid-cols-2" : ""}`}>
-                    <div className={draft.layout === "centered" ? "mx-auto max-w-3xl text-center" : draft.layout === "editorial" ? "max-w-4xl" : ""}>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: draft.accent }}>{draft.eyebrow}</p>
-                      <h2 className={`mt-4 font-semibold tracking-[-0.055em] ${draft.headlineSize === "large" ? "text-[clamp(3rem,7vw,6.5rem)] leading-[0.9]" : "text-[clamp(2.5rem,5.5vw,5rem)] leading-[0.94]"}`}>
-                        {draft.headline}
-                      </h2>
-                      <p className="mt-6 max-w-2xl text-[14px] leading-7 opacity-65">{draft.description}</p>
-                      <button type="button" className="mt-7 rounded-full px-5 py-3 text-[11px] font-semibold" style={{ background: draft.accent, color: "#fff" }}>{draft.cta}</button>
-                    </div>
-                    {draft.layout === "split" ? (
-                      <div className="min-h-[260px] rounded-[28px] border border-black/5 shadow-inner" style={{ background: draft.surface }}>
-                        <div className="flex h-full min-h-[260px] items-center justify-center opacity-30">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.16em]">Visual / Media Area</span>
-                        </div>
-                      </div>
-                    ) : null}
-                  </section>
-                );
-              }
-              if (section === "services") {
-                return (
-                  <section key={section} className="border-t border-black/10 px-7 py-12 sm:px-10 lg:px-14" style={{ background: draft.surface }}>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: draft.accent }}>SERVICII</p>
-                    <h3 className="mt-2 text-[28px] font-semibold tracking-[-0.04em]">{draft.servicesTitle}</h3>
-                    <div className="mt-6 grid gap-3 md:grid-cols-3">
-                      {[1,2,3].map((item) => <div key={item} className="min-h-28 rounded-[18px] border border-black/10 p-4"><span className="text-[11px] font-semibold">Serviciu {item}</span></div>)}
-                    </div>
-                  </section>
-                );
-              }
-              if (section === "about") {
-                return (
-                  <section key={section} className="border-t border-black/10 px-7 py-12 sm:px-10 lg:px-14">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: draft.accent }}>DESPRE</p>
-                    <h3 className="mt-2 text-[28px] font-semibold tracking-[-0.04em]">{draft.aboutTitle}</h3>
-                    <p className="mt-4 max-w-2xl text-[13px] leading-6 opacity-65">{draft.aboutDescription}</p>
-                  </section>
-                );
-              }
-              return (
-                <section key={section} className="border-t border-black/10 px-7 py-12 sm:px-10 lg:px-14" style={{ background: draft.surface }}>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: draft.accent }}>CONTACT</p>
-                  <h3 className="mt-2 text-[28px] font-semibold tracking-[-0.04em]">{draft.contactTitle}</h3>
-                  <p className="mt-4 max-w-2xl text-[13px] leading-6 opacity-65">{draft.contactDescription}</p>
-                </section>
-              );
-            })}
-          </div>
+        <section className="min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[#11141d] shadow-[0_30px_100px_rgba(0,0,0,0.38)]">
+          <WebDesignPreview draft={draft} device={device} />
         </section>
       </div>
     </main>
