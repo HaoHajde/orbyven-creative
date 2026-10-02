@@ -1,7 +1,4 @@
-import darkSymbol from "../../public/branding/orbyven-logo-dark.png";
-import lightSymbol from "../../public/branding/orbyven-logo-light.png";
-import darkFullLogo from "../../public/branding/orbyven-icon-dark.png";
-import lightFullLogo from "../../public/branding/orbyven-icon-light.png";
+import iconUrl from "../../app/icon.svg?url";
 
 type Theme = "light" | "dark";
 
@@ -14,11 +11,7 @@ type BrandLogoProps = {
 export default function DesktopBrandLogo({
   compact = false,
   className = "",
-  theme = "light",
 }: BrandLogoProps) {
-  const symbolSrc = theme === "dark" ? darkSymbol : lightSymbol;
-  const fullLogoSrc = theme === "dark" ? darkFullLogo : lightFullLogo;
-
   const preventNavigation = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
   };
@@ -32,7 +25,7 @@ export default function DesktopBrandLogo({
         className={"group inline-flex shrink-0 items-center gap-3.5 " + className}
       >
         <img
-          src={symbolSrc}
+          src={iconUrl}
           alt=""
           width={64}
           height={64}
@@ -51,14 +44,27 @@ export default function DesktopBrandLogo({
   }
 
   return (
-    <a href="/" onClick={preventNavigation} aria-label="ORBYVEN CREATIVE" className={"inline-block " + className}>
+    <a
+      href="/"
+      onClick={preventNavigation}
+      aria-label="ORBYVEN CREATIVE"
+      className={"group inline-flex items-center gap-4 " + className}
+    >
       <img
-        src={fullLogoSrc}
-        alt="ORBYVEN CREATIVE"
-        width={340}
-        height={220}
-        className="h-auto w-[190px] object-contain transition-opacity duration-300 sm:w-[220px]"
+        src={iconUrl}
+        alt=""
+        width={72}
+        height={72}
+        className="h-[58px] w-[58px] object-contain transition duration-300 group-hover:scale-[1.03]"
       />
+      <span className="leading-none">
+        <span className="block text-[20px] font-semibold tracking-[0.16em] text-[var(--text)]">
+          ORBYVEN
+        </span>
+        <span className="mt-2 block text-[10px] font-semibold tracking-[0.3em] text-[#4b46ee]">
+          CREATIVE
+        </span>
+      </span>
     </a>
   );
 }
