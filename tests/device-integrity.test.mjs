@@ -60,3 +60,26 @@ test("dashboard text scaling has an explicit visual-integrity contract", () => {
   assert.match(qa, /Text escaped its visual frame/);
   assert.match(qa, /Text-scale control escaped its frame/);
 });
+
+
+test("workspace light theme uses a low-glare violet visual system", () => {
+  const visual = read("lib/workspace-visual-system.ts");
+  const shell = read("components/WorkspaceShell.tsx");
+  const css = read("app/globals.css");
+
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.02\.2"/);
+  assert.match(visual, /bg: "#e9ecf5"/);
+  assert.match(visual, /surface: "#f7f7fb"/);
+  assert.match(visual, /violet: "#7458d7"/);
+  assert.match(visual, /"--violet-line": t\.violetLine/);
+
+  assert.match(shell, /data-orbyven-theme=\{theme\}/);
+  assert.match(shell, /orbyven-workspace-light-bg/);
+  assert.match(shell, /data-workspace-surface="sidebar"/);
+  assert.match(shell, /data-workspace-surface="module"/);
+
+  assert.match(css, /ORBYVEN WORKSPACE LIGHT THEME/);
+  assert.match(css, /radial-gradient\(ellipse 58% 46% at 8% 7%/);
+  assert.match(css, /background-image: linear-gradient\(145deg, var\(--panel-highlight\), transparent 34%\)/);
+  assert.match(css, /border-color: var\(--violet-line\)/);
+});
