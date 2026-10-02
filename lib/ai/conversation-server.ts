@@ -159,6 +159,7 @@ export async function persistAssistantResponse(
   const decisionFacts = response.decision
     ? [
         { label: "Decision · Context", value: response.decision.subject },
+        { label: "Decision · Handoff", value: response.decision.handoffAvailable ? "yes" : "no" },
         ...response.decision.options.slice(0, 3).map((option, index) => ({
           label: `Decision · ${index + 1}`,
           value: [option.label, option.impact, option.tradeoff, option.whenToUse].join("¦"),
