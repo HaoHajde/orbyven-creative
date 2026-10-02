@@ -1302,3 +1302,18 @@ test("Web Design editor persists and sends bounded Smart Interview facts immedia
   assert.match(specialist, /generateWithAi\(interviewPrompt, nextFacts\)/);
   assert.match(specialist, /removeItem\(INTERVIEW_FACTS_KEY\)/);
 });
+
+
+test("Rejected claim answers do not turn the interview question into positive evidence", () => {
+  const evidence = interviewFactsToEvidence([
+    {
+      id: "claim_evidence",
+      question: "Poți confirma garanția și autorizarea?",
+      answer: "Nu",
+    },
+  ]);
+
+  assert.match(evidence, /NU confirmă/);
+  assert.doesNotMatch(evidence, /garan/i);
+  assert.doesNotMatch(evidence, /autoriz/i);
+});
