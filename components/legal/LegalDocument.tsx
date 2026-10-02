@@ -2,15 +2,17 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { legalConfig, operatorLabel } from "@/lib/legal-config";
+import LanguageSwitch from "@/components/LanguageSwitch";
 
 type LegalDocumentProps = {
   eyebrow: string;
   title: string;
   intro: string;
   children: ReactNode;
+  locale?: "ro" | "en";
 };
 
-const legalLinks = [
+const legalLinksRo = [
   ["/legal/terms", "Termeni"],
   ["/legal/subscriptions", "Abonamente"],
   ["/legal/privacy", "Confidențialitate"],
@@ -23,12 +25,39 @@ const legalLinks = [
   ["/legal/complaints", "Reclamații"],
 ] as const;
 
+const legalLinksEn = [
+  ["/legal/terms", "Terms"],
+  ["/legal/privacy", "Privacy"],
+] as const;
+
 export default function LegalDocument({
   eyebrow,
   title,
   intro,
   children,
+  locale = "ro",
 }: LegalDocumentProps) {
+  const copy = locale === "en"
+    ? {
+        center: "Legal center",
+        prelaunch: "Pre-launch document. The operator's legal identity and VAT treatment must be completed before commercial payments are activated. Billing remains automatically blocked until then.",
+        documents: "Documents",
+        taxId: "Tax ID",
+        registry: "Trade Register",
+        version: "Version",
+        updated: "Updated",
+      }
+    : {
+        center: "Centrul juridic",
+        prelaunch: "Document de pre-lansare. Datele juridice ale operatorului și tratamentul TVA trebuie completate înainte de activarea plăților comerciale. Sistemul de billing este blocat automat până atunci.",
+        documents: "Documente",
+        taxId: "CUI/CIF",
+        registry: "Registrul Comerțului",
+        version: "Versiune",
+        updated: "Actualizat",
+      };
+  const legalLinks = locale === "en" ? legalLinksEn : legalLinksRo;
+
   return (
     <main className="min-h-screen bg-white text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">
       <header className="border-b border-black/[0.08] dark:border-white/[0.1]">
@@ -36,12 +65,15 @@ export default function LegalDocument({
           <Link href="/" className="text-sm font-semibold tracking-[0.16em]">
             ORBYVEN
           </Link>
-          <Link
-            href="/legal"
-            className="text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6]"
-          >
-            Centrul juridic
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/legal"
+              className="hidden text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6] sm:inline-flex"
+            >
+              Centrul juridic
+            </Link>
+            <LanguageSwitch variant="light" initialLocale={locale} />
+          </div>
         </div>
       </header>
 
@@ -85,14 +117,14 @@ export default function LegalDocument({
 
             <div className="mt-4 rounded-[24px] border border-black/[0.08] p-5 text-xs leading-5 text-[#6e6e73] dark:border-white/[0.1] dark:text-[#a1a1a6]">
               <p className="font-semibold text-current">{operatorLabel()}</p>
-              {legalConfig.taxId && <p className="mt-2">CUI/CIF: {legalConfig.taxId}</p>}
+              {legalConfig.taxId && <p className="mt-2">{copy.taxId}: {legalConfig.taxId}</p>}
               {legalConfig.registrationNumber && (
-                <p>Registrul Comerțului: {legalConfig.registrationNumber}</p>
+                <p>{copy.registry}: {legalConfig.registrationNumber}</p>
               )}
               {legalConfig.registeredOffice && <p>{legalConfig.registeredOffice}</p>}
               <p className="mt-2">{legalConfig.contactEmail}</p>
-              <p className="mt-4">Versiune: {legalConfig.documentVersion}</p>
-              <p>Actualizat: {legalConfig.lastUpdated}</p>
+              <p className="mt-4">{copy.version}: {legalConfig.documentVersion}</p>
+              <p>{copy.updated}: {legalConfig.lastUpdated}</p>
             </div>
           </aside>
         </div>

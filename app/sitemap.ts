@@ -26,6 +26,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/templates", changeFrequency: "weekly" as const, priority: 0.85 },
     { path: "/ai-web-design", changeFrequency: "weekly" as const, priority: 0.9 },
     { path: "/contact", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/invitatii-nunta", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/invitatii-botez", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/invitatii-majorat", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/solutii", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/studii-de-caz", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/ghid", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/despre", changeFrequency: "monthly" as const, priority: 0.7 },
+    { path: "/creare-site", changeFrequency: "monthly" as const, priority: 0.9 },
+    { path: "/site-prezentare", changeFrequency: "monthly" as const, priority: 0.9 },
+    { path: "/web-design-bucuresti", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/redesign-site", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/site-pentru-firme-mici", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/site-pentru-instalatori", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/site-pentru-detailing-auto", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/site-pentru-servicii-evenimente", changeFrequency: "monthly" as const, priority: 0.75 },
   ];
 
   if (locale === "en") {

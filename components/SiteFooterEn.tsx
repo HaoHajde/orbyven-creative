@@ -28,9 +28,6 @@ const seoLinks = [
 const legalLinks = [
   ["/legal/terms", "Terms"],
   ["/legal/privacy", "Privacy"],
-  ["/legal/cookies", "Cookies"],
-  ["/legal/consumer", "Consumer information"],
-  ["/legal/ai", "AI use"],
 ] as const;
 
 export default function SiteFooter({ theme, activePage }: { theme: Theme; activePage: SitePage }) {

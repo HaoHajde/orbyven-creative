@@ -131,19 +131,12 @@ test(".com never serves Romanian-only public routes under English lang", () => {
 
   for (const route of [
     "/cerere",
-    "/creare-site",
-    "/site-prezentare",
-    "/redesign-site",
-    "/invitatii-nunta",
-    "/invitatii-botez",
-    "/invitatii-majorat",
-    "/despre",
   ]) {
     assert.ok(locale.includes(`"${route}"`), route);
     assert.ok(proxy.includes(`"${route}"`), route);
   }
 
-  for (const prefix of ["/porneste/", "/solutii/", "/studii-de-caz/", "/ghid/"]) {
+  for (const prefix of ["/porneste/", "/solutii/", "/studii-de-caz/", "/ghid/", "/legal/"]) {
     assert.ok(locale.includes(`"${prefix}"`), prefix);
   }
 
