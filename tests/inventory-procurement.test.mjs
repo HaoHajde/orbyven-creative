@@ -159,7 +159,19 @@ test("procurement consolidates shopping by supplier and real work cost includes 
   assert.match(inventoryUi, /estimatedCents/);
   assert.match(tasksData, /realOperationalCostCents/);
   assert.match(tasksData, /\(expensesCents \?\? 0\) \+ \(inventoryConsumedCents \?\? 0\)/);
-  assert.match(tasksUi, /cheltuieli \+ .* consumuri stoc/);
+  assert.match(tasksUi, /cheltuieli operative \+ .* consumuri stoc/);
+});
+
+test("Purchase Orders bridge directly to evidence and finance when those modules are enabled", () => {
+  const inventoryUi = read("components/modules/InventoryModule.tsx");
+  const workspace = read("components/WorkspaceContent.tsx");
+  const navigation = read("lib/workspace-navigation.ts");
+  assert.match(inventoryUi, /\+ Dovadă/);
+  assert.match(inventoryUi, /Finanțe ↗/);
+  assert.match(inventoryUi, /purchaseOrderId: order\.id/);
+  assert.match(navigation, /purchaseOrderId\?: string/);
+  assert.match(workspace, /initialPurchaseOrderId=\{intent\?\.purchaseOrderId\}/);
+  assert.match(workspace, /InventoryModule[^\n]+enabledModules=\{enabledModules\}/);
 });
 
 test("production inventory migrations are exact and keep stock writes guarded", () => {
