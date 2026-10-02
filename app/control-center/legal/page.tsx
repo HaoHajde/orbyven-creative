@@ -39,9 +39,9 @@ type PrivacyCase = {
 };
 type Payload = {
   organizations:Organization[];contracts:Contract[];checkouts:Acceptance[];
-  subscriptions:Subscription[];privacyCases:PrivacyCase[];orderEvidence:OrderEvidence[];exitCases:ExitCase[];
+  subscriptions:Subscription[];privacyCases:PrivacyCase[];orderEvidence:OrderEvidence[];exitCases:ExitCase[];offboardingConfigured:boolean;
 };
-const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[],orderEvidence:[],exitCases:[]};
+const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[],orderEvidence:[],exitCases:[],offboardingConfigured:false};
 const INPUT = "w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-indigo-400";
 const BUTTON = "rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium hover:border-indigo-400 disabled:opacity-50";
 const statuses = ["received","identity_check","triage","in_progress","responded","closed"] as const;
@@ -237,6 +237,9 @@ export default function LegalOperationsPage() {
               aprobă generarea pachetului și revizuiește manual retenția, copiile de siguranță,
               Storage și sistemele externe. Nu se execută ștergeri automate.
             </p>
+            {!payload.offboardingConfigured&&<p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[.07] p-4 text-sm text-amber-100">
+              Migrarea de offboarding nu este activată încă. Dosarul contractual și registrul GDPR rămân disponibile; exportul clientului rămâne blocat până la release-ul bazei de date.
+            </p>}
             <div className="mt-5 space-y-4">
               {payload.exitCases.length===0&&<p className="text-sm text-white/50">Nu există cereri de predare.</p>}
               {payload.exitCases.map(c=>{

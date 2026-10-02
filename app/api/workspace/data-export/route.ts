@@ -17,8 +17,13 @@ function code(error:unknown) {
   if(message==="ORG_ACCESS_REQUIRED"||message==="BILLING_ADMIN_REQUIRED"||
     message==="OWNER_REQUIRED")return json({error:"organization_access_denied"},403);
   if(error instanceof TenantExportError)return json({error:"archive_unavailable",reason:error.message},409);
-  if(error&&typeof error==="object"&&"code" in error &&
-      String((error as {code:unknown}).code)==="23505")return json({error:"open_exit_case_exists"},409);
+  if(error&&typeof error==="object"&&"code" in error) {
+    const databaseCode=String((error as {code:unknown}).code);
+    if(["42P01","PGRST205","42703"].includes(databaseCode)) {
+      return json({error:"offboarding_migration_required"},503);
+    }
+    if(databaseCode==="23505")return json({error:"open_exit_case_exists"},409);
+  }
   console.error("ORBYVEN exit operation failed",message);
   return json({error:"exit_operation_unavailable"},500);
 }

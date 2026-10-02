@@ -82,9 +82,13 @@ export async function GET(request: Request) {
             .select("id,organization_id,status,requested_at,package_sha256,package_generated_at,action_note,closure_reference")
             .order("requested_at",{ascending:false}).limit(100),
     ]);
-    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult,exitResult]) {
+    for (const result of [casesResult,contractsResult,acceptancesResult,subscriptionsResult,ordersResult]) {
       if (result.error) throw result.error;
     }
+    const exitErrorCode=exitResult.error && typeof exitResult.error==="object" && "code" in exitResult.error
+      ?String((exitResult.error as {code?:unknown}).code??""):"";
+    const offboardingConfigured=!["42P01","PGRST205","42703"].includes(exitErrorCode);
+    if(exitResult.error&&offboardingConfigured)throw exitResult.error;
     return reply({
       organizations:organizations ?? [],
       privacyCases:casesResult.data ?? [],
@@ -92,7 +96,8 @@ export async function GET(request: Request) {
       checkouts:acceptancesResult.data ?? [],
       subscriptions:subscriptionsResult.data ?? [],
       orderEvidence:ordersResult.data ?? [],
-      exitCases:exitResult.data ?? [],
+      exitCases:offboardingConfigured?(exitResult.data ?? []):[],
+      offboardingConfigured,
       limitPerList:100,
       canonicalAcceptanceSource:"billing_terms_acceptances",
       // A manual registry entry never claims to be a signed agreement.

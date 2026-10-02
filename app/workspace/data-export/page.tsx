@@ -45,7 +45,9 @@ export default function WorkspaceDataExportPage() {
           headers:await authorization(),cache:"no-store",
         });
         const data=await response.json() as {cases?:ExitCase[];error?:string};
-        if(!response.ok)throw new Error(data.error||"Registrul de export nu poate fi citit.");
+        if(!response.ok)throw new Error(data.error==="offboarding_migration_required"
+          ?"Exportul este pregătit în aplicație, dar migrarea bazei de date nu este activată încă."
+          :data.error||"Registrul de export nu poate fi citit.");
         if(!cancelled){setCases(data.cases??[]);setLoading(false);}
       }catch(e){if(!cancelled){setError(e instanceof Error?e.message:"Export indisponibil.");setLoading(false);}}
     };

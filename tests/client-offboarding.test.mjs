@@ -152,3 +152,12 @@ test("offboarding actor audit IDs do not foreign-key Auth users",()=>{
   assert.match(migration,/status <> 'closed' and closure_reference is null and closed_at is null/);
   assert.match(migration,/Archive evidence is not allowed before package generation/);
 });
+
+
+test("offboarding migration gate fails safely without disabling Legal and GDPR",()=>{
+  assert.match(ownerAPI,/offboarding_migration_required/);
+  assert.match(staffAPI,/offboardingConfigured/);
+  assert.match(staffAPI,/exitCases:offboardingConfigured/);
+  assert.match(staffUI,/Migrarea de offboarding nu este activată încă/);
+  assert.match(page,/migrarea bazei de date nu este activată încă/);
+});
