@@ -19,5 +19,28 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/servicii", "/templates", "/contact", "/ai-web-design"],
+  matcher: [
+    "/",
+    "/servicii",
+    "/templates",
+    "/contact",
+    "/ai-web-design",
+    "/despre",
+    "/solutii",
+    "/studii-de-caz",
+    "/ghid",
+    "/creare-site",
+    "/site-prezentare",
+    "/web-design-bucuresti",
+    "/redesign-site",
+    "/site-pentru-firme-mici",
+    "/site-pentru-instalatori",
+    "/site-pentru-detailing-auto",
+    "/site-pentru-servicii-evenimente",
+    "/invitatii-nunta",
+    "/invitatii-botez",
+    "/invitatii-majorat",
+    "/legal/privacy",
+    "/legal/terms",
+  ],
 };
