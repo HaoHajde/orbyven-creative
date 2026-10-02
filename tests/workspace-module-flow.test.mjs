@@ -532,3 +532,19 @@ test("task calendar sync warnings are actionable and status-sync keeps a stable 
   assert.match(sync, /scheduleUpdated: false as const/);
   assert.match(sync, /nextScheduledAt: null/);
 });
+
+
+test("purchase order receipt status stays database-owned and completed receipt hands off to evidence", () => {
+  const migration = read("supabase/migrations/20260930071344_alpha09_inventory_procurement_core.sql");
+  assert.match(migration, /when has_items and all_received then 'received'/);
+  assert.match(migration, /when has_any_received then 'partially_received'/);
+  assert.match(migration, /create trigger ops_inventory_movements_after_insert/);
+
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /procurementHandoff/);
+  assert.match(inventory, /completesOrder/);
+  assert.match(inventory, /Recepția este completă/);
+  assert.match(inventory, /\+ Dovadă furnizor →/);
+  assert.match(inventory, /purchaseOrderId: procurementHandoff\.purchaseOrderId/);
+  assert.match(inventory, /Înregistrează costul →/);
+});
