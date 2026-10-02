@@ -91,6 +91,9 @@ test("theme-switchable pages expose the shared theme shell and persistent palett
     "app/servicii/page.tsx",
     "app/contact/page.tsx",
     "components/ProjectRequestFlow.tsx",
+    "app/porneste/web-design/page.tsx",
+    "app/porneste/invitatie/page.tsx",
+    "app/porneste/oferta/page.tsx",
     "components/WorkspaceShell.tsx",
   ]) {
     const source = read(path);
