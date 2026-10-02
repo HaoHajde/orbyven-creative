@@ -6,10 +6,10 @@ Updated **2 October 2026** against current `main`.
 Every change must preserve code integrity, reusable structure, lightweight delivery and Web/Desktop parity without recreating business logic in two places.
 
 ### Web baseline
-- 277 source files in `app/`, `components/` and `lib/`.
-- 11 files above 35 KiB; a twelfth is blocked.
+- 293 source files in `app/`, `components/` and `lib/`.
+- 12 files above 35 KiB; a thirteenth is blocked.
 - Hard per-file ceiling: **64 KiB**.
-- `TasksModule.tsx` is now ~63.3 KiB and therefore intentionally sits right below the ceiling. Further material growth should extract coherent responsibilities rather than raise the limit.
+- `TasksModule.tsx` was split again on 2 October 2026; the Work Dossier summary now lives in `components/modules/tasks/WorkFileSummary.tsx`, keeping the main module below the 64 KiB hard ceiling. Further growth must continue through extraction, not by raising the ceiling.
 - Other hotspots: `ClientTemplateSite.tsx`, Inventory, SEO foundation, Calendar, Control Center, Leads, Intelligence, Services, Expenses and Homepage.
 
 ### Windows Desktop baseline
