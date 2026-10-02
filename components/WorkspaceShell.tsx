@@ -182,8 +182,12 @@ export default function WorkspaceShell({
 
     if (!savedModule || !enabledModules.includes(savedModule)) return;
 
-    setActiveModule(savedModule);
-    setNavigation({ module: savedModule, token: 1 });
+    const restoreTimer = window.setTimeout(() => {
+      setActiveModule(savedModule);
+      setNavigation({ module: savedModule, token: 1 });
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
   }, [workspace, enabledModules]);
 
   const activeDefinition =
