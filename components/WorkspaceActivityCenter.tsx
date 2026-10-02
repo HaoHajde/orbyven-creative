@@ -101,6 +101,7 @@ export default function WorkspaceActivityCenter({
       clientId: item.clientId,
       taskId: item.taskId,
       estimateId: item.estimateId,
+      purchaseOrderId: item.purchaseOrderId,
     };
     onOpenModule(item.module, options);
   };
