@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import LanguageSwitch from "@/components/LanguageSwitch";
+
 const primaryNav = [
   { href: "/solutii", label: "Soluții" },
   { href: "/studii-de-caz", label: "Studii de caz" },
@@ -52,12 +54,15 @@ export default function SeoShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <Link
-            href="/cerere"
-            className="inline-flex h-10 items-center rounded-full bg-[#171719] px-5 text-[12px] font-semibold text-white"
-          >
-            Începe un proiect
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/cerere"
+              className="hidden h-10 items-center rounded-full bg-[#171719] px-5 text-[12px] font-semibold text-white sm:inline-flex"
+            >
+              Începe un proiect
+            </Link>
+            <LanguageSwitch variant="light" />
+          </div>
         </div>
       </header>
 
