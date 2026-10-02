@@ -1,8 +1,50 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
-
 import { detectOperationalQuery, type OperationalQueryKind } from "@/lib/ai/operational-query-core";
+
+export type OperationalQueryKind =
+  | "overdue_tasks"
+  | "blocked_tasks"
+  | "unassigned_tasks"
+  | "today"
+  | "lead_followups"
+  | "estimate_followups";
+
+type TaskRow = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string | null;
+  assignee: string | null;
+  client_id: string | null;
+  scheduled_at: string | null;
+  due_at: string | null;
+};
+
+type LeadRow = {
+  id: string;
+  name: string;
+  next_follow_up_at: string | null;
+};
+
+type EstimateRow = {
+  id: string;
+  reference: string;
+  title: string;
+  valid_until: string | null;
+  client_id: string | null;
+  task_id: string | null;
+  updated_at: string;
+};
+
+type CalendarRow = {
+  id: string;
+  title: string;
+  start_at: string;
+  client_id: string | null;
+  task_id: string | null;
+};
 
 const OPEN_TASKS = new Set(["done", "cancelled"]);
 const OPEN_LEADS = new Set(["won", "lost"]);
