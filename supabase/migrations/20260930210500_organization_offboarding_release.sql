@@ -1,6 +1,7 @@
 -- Legal & Trust release 2026-09-30: manual, auditable client offboarding. No automatic destruction.
 -- Depends on 20260925144000 Legal & Trust and 20260927181500 order evidence.
--- Actor UUIDs are intentionally not foreign keys to auth.users: audit evidence must not block Auth account deletion.\ncreate table if not exists public.organization_exit_cases (
+-- Actor UUIDs are intentionally not foreign keys to auth.users: audit evidence must not block Auth account deletion.
+create table if not exists public.organization_exit_cases (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete restrict,
   requested_by uuid,
