@@ -164,10 +164,12 @@ export async function persistAssistantResponse(
       ]
     : [];
 
+  const baseFacts = response.decision ? response.facts.slice(0, 4) : response.facts;
+
   await appendAssistantConversationMessage(actor, conversationId, {
     specialist: response.specialist,
     content: response.answer,
-    facts: [...response.facts, ...focusFacts, ...decisionFacts].slice(0, 12),
+    facts: [...baseFacts, ...focusFacts, ...decisionFacts].slice(0, 12),
   });
 }
 
