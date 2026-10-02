@@ -29,4 +29,7 @@ test("advanced offer hero compresses dashboard chrome instead of overflowing mob
   assert.match(hero, /grid-cols-\[minmax\(0,1fr\)_68px\]/);
   assert.match(hero, /h-12 w-12[^"]*sm:h-20 sm:w-20/);
   assert.match(hero, /min-w-0 truncate rounded-\[9px\]/);
+  assert.match(hero, /function InteractiveHeroStage/);
+  assert.match(hero, /event\.pointerType === "touch"/);
+  assert.match(hero, /<InteractiveHeroStage/);
 });
