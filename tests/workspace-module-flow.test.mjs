@@ -226,6 +226,7 @@ test("receipt evidence flows directly from documents into finance context", () =
   assert.match(finance, /initialDocumentId\?: string/);
   assert.match(finance, /documentId: initialDocumentId \?\? ""/);
   assert.match(finance, /contexts\.documents\.find\(\(item\) => item\.id === initialDocumentId\)/);
+  assert.match(finance, /description: current\.description \|\| document\.name/);
 
   const expenseData = read("lib/modules/expenses.ts");
   assert.match(expenseData, /client_id: string \| null/);
