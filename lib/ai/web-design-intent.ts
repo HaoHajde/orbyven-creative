@@ -1,5 +1,6 @@
 import {
   SECTION_IDS,
+  SITE_PRESETS,
   type EditableSite,
   type SiteSectionId,
 } from "./site-editor.ts";
@@ -351,11 +352,18 @@ function explicitSectionRules(prompt: string) {
 
   for (const id of SECTION_IDS) {
     for (const term of SECTION_TERMS[id]) {
-      const index = value.indexOf(term);
-      if (index < 0) continue;
-      const around = value.slice(Math.max(0, index - 28), Math.min(value.length, index + term.length + 28));
-      if (hideWords.some((word) => around.includes(word))) hide.add(id);
-      if (showWords.some((word) => around.includes(word))) show.add(id);
+      let offset = 0;
+      while (offset < value.length) {
+        const index = value.indexOf(term, offset);
+        if (index < 0) break;
+
+        const prefix = value.slice(Math.max(0, index - 24), index).trim();
+        const nearestWord = prefix.split(/\s+/).slice(-4).join(" ");
+        if (hideWords.some((word) => nearestWord.includes(word))) hide.add(id);
+        if (showWords.some((word) => nearestWord.includes(word))) show.add(id);
+
+        offset = index + term.length;
+      }
     }
   }
 
@@ -364,6 +372,17 @@ function explicitSectionRules(prompt: string) {
 
   for (const id of show) hide.delete(id);
   return { show, hide };
+}
+
+function hasNonDemoContext(current: EditableSite) {
+  const preset = SITE_PRESETS[current.preset];
+  return (
+    current.brand !== preset.brand ||
+    current.headline !== preset.headline ||
+    current.description !== preset.description ||
+    current.cta !== preset.cta ||
+    JSON.stringify(current.services) !== JSON.stringify(preset.services)
+  );
 }
 
 function alternateVisibleOrder(visible: SiteSectionId[], current: EditableSite) {
@@ -463,7 +482,11 @@ export function buildWebDesignStrategy(
     ...SECTION_IDS,
   ]).slice(0, SECTION_IDS.length);
 
-  const evidenceScore = archetypeResult.score + goalResult.score;
+  const promptEvidenceScore = promptArchetype.score + promptGoal.score;
+  const contextEvidenceScore = hasNonDemoContext(current)
+    ? contextArchetype.score + contextGoal.score
+    : 0;
+  const evidenceScore = Math.max(promptEvidenceScore, contextEvidenceScore);
   const confidence =
     evidenceScore >= 3 ? "high" : evidenceScore >= 1 ? "medium" : "low";
 
