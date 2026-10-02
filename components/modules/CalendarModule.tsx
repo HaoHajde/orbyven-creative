@@ -671,7 +671,13 @@ export default function CalendarModule({
 
       {selectedEvent && canWrite ? (
         <div className="mt-4">
-          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
+          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 && activeResources.length === 0 && enabledModules.includes("team") ? (
+            <ModuleNextAction
+              title="Adaugă resurse înainte de execuție"
+              description="Lucrarea este programată, dar firma nu are încă oameni sau resurse active disponibile în scheduler."
+              action={<button type="button" onClick={() => onOpenModule("team")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide Echipă →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
             <ModuleNextAction
               title="Alocă resurse înainte de execuție"
               description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
