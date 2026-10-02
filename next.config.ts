@@ -39,10 +39,45 @@ const englishPublicRoutes = [
   { source: "/robots.txt", destination: "/en/robots.txt" },
 ] as const;
 
+const englishLegacyRedirects = [
+  { source: "/creare-site", destination: "/services" },
+  { source: "/site-prezentare", destination: "/services" },
+  { source: "/redesign-site", destination: "/services" },
+  { source: "/web-design-bucuresti", destination: "/services" },
+  { source: "/site-pentru-detailing-auto", destination: "/services" },
+  { source: "/site-pentru-firme-mici", destination: "/services" },
+  { source: "/site-pentru-instalatori", destination: "/services" },
+  { source: "/site-pentru-servicii-evenimente", destination: "/services" },
+  { source: "/invitatii-nunta", destination: "/templates" },
+  { source: "/invitatii-botez", destination: "/templates" },
+  { source: "/invitatii-majorat", destination: "/templates" },
+  { source: "/studii-de-caz", destination: "/templates" },
+  { source: "/ghid", destination: "/services" },
+  { source: "/solutii", destination: "/services" },
+  { source: "/despre", destination: "/" },
+  { source: "/porneste", destination: "/contact" },
+  { source: "/porneste/invitatie", destination: "/contact" },
+  { source: "/porneste/web-design", destination: "/contact" },
+  { source: "/en", destination: "/" },
+  { source: "/en/services", destination: "/services" },
+  { source: "/en/templates", destination: "/templates" },
+  { source: "/en/contact", destination: "/contact" },
+] as const;
+
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  async redirects() {
+    return englishDomainHosts.flatMap((host) =>
+      englishLegacyRedirects.map(({ source, destination }) => ({
+        source,
+        destination,
+        permanent: true,
+        has: [{ type: "host" as const, value: host }],
+      }))
+    );
+  },
   async rewrites() {
     return {
       beforeFiles: englishDomainHosts.flatMap((host) =>
