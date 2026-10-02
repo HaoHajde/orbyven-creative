@@ -237,11 +237,15 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   const panel = read("components/WorkspaceIntelligence.tsx");
 
   assert.match(types, /handoffPrompt\?: string/);
+  assert.match(types, /handoffAvailable\?: boolean/);
   assert.match(support, /function handoffPlanPrompt/);
   assert.match(support, /Creează task/);
   assert.match(support, /apoi creează task/);
   assert.match(support, /available\.has\("tasks"\)/);
   assert.match(route, /Compară opțiunile pentru Focus #1/);
+  assert.match(route, /DECISION_STALE/);
+  assert.match(route, /decision\.subject !== expectedSubject/);
+  assert.match(route, /option\.label !== expectedOptionLabel/);
   assert.match(route, /answerIntelligenceForActor\(\s*actor,\s*option\.handoffPrompt/);
   assert.match(route, /review_plan/);
   assert.match(route, /confirm_proposal/);
@@ -252,5 +256,8 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   assert.match(desktop, /desktopOptionsResponse/);
   assert.match(panel, /\/api\/ai\/decisions\/handoff/);
   assert.match(panel, /Pregătește planul/);
+  assert.match(panel, /handoffAvailable/);
+  assert.match(panel, /expectedSubject: decision\.subject/);
+  assert.match(panel, /expectedOptionLabel:/);
   assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
 });
