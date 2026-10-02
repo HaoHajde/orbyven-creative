@@ -205,6 +205,16 @@ export default function EstimatesModule({
       shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
     };
   }, [taskMaterialPlan]);
+  const materialBlocksScheduling = Boolean(
+    selected?.status === "accepted" &&
+    selected.task_id &&
+    inventoryEnabled &&
+    (
+      taskMaterialPlanLoading ||
+      taskMaterialPlanError ||
+      (taskMaterialPlan && (taskMaterialSummary.unready > 0 || taskMaterialSummary.shortages > 0))
+    )
+  );
 
   useWorkspaceLiveContext({ estimateId: selected?.id, clientId: selected?.client_id ?? undefined, taskId: selected?.task_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
@@ -510,7 +520,8 @@ export default function EstimatesModule({
             <div className="mt-5 flex flex-wrap gap-2">
               {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
               {enabledModules.includes("tasks") && selected.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selected.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
-              {canWrite && enabledModules.includes("calendar") && (selected.client_id || selected.task_id) && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+              {canWrite && enabledModules.includes("calendar") && (selected.client_id || selected.task_id) && !materialBlocksScheduling && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+              {materialBlocksScheduling && selected.task_id && inventoryEnabled && <button type="button" onClick={() => onOpenModule("inventory", { taskId: selected.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Materiale ↗</button>}
               {canDelete && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
             </div>
             {canWrite ? <div className="mt-6 flex flex-wrap gap-2">
