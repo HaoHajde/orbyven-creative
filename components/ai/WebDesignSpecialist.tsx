@@ -67,6 +67,10 @@ type GenerationBody = {
     selectedDistance?: number;
     styleAffinity?: number;
   };
+  refineScope?: {
+    strict?: boolean;
+    targets?: string[];
+  };
   error?: string;
   code?: string;
 };
@@ -300,8 +304,15 @@ export default function WebDesignSpecialist() {
         typeof body.selection?.evaluatedCandidates === "number"
           ? body.selection.evaluatedCandidates
           : 1;
+      const lockedTargets =
+        body.refineScope?.strict && Array.isArray(body.refineScope.targets)
+          ? body.refineScope.targets.slice(0, 4)
+          : [];
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (lockedTargets.length > 0
+            ? ` · editare izolată: ${lockedTargets.join(", ")}`
+            : "") +
           (candidateCount > 1
             ? ` · selectată din ${candidateCount} variante interne`
             : "") +

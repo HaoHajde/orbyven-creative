@@ -23,6 +23,10 @@ import {
 import { selectBestWebDesignCandidate } from "../lib/ai/web-design-candidate-selection.ts";
 import { evaluateWebDesignReadiness } from "../lib/ai/web-design-readiness.ts";
 import { autonomouslyRefineWebDesign } from "../lib/ai/web-design-autorefine.ts";
+import {
+  applyWebDesignRefineScope,
+  resolveWebDesignRefineScope,
+} from "../lib/ai/web-design-refine-locks.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -652,4 +656,103 @@ test("Visual Memory novelty logic remains deterministic and network-free", () =>
   assert.match(selector, /visualMemoryCompared/);
   assert.doesNotMatch(selector, /fetch\(/);
   assert.doesNotMatch(selector, /Math\.random/);
+});
+
+
+test("Refine Locks isolate explicit section and palette edits from unrelated AI changes", () => {
+  const current = SITE_PRESETS.florarie;
+  const prompt = "Schimbă doar hero-ul și culorile. Păstrează restul.";
+  const strategy = buildWebDesignStrategy(prompt, current);
+  const scope = resolveWebDesignRefineScope(prompt, strategy);
+
+  const noisyCandidate = {
+    ...current,
+    brand: "NU SCHIMBA BRANDUL",
+    headline: "Un hero nou, mai clar.",
+    description: "Descriere nouă pentru hero.",
+    cta: "Comandă acum",
+    servicesTitle: "SERVICII SCHIMBATE GREȘIT",
+    services: current.services.map((item) => ({
+      ...item,
+      title: `MODIFICAT ${item.title}`,
+    })),
+    contactTitle: "CONTACT SCHIMBAT GREȘIT",
+    accent: "#112233",
+    background: "#fefefe",
+    surface: "#eeeeee",
+    textColor: "#111111",
+    layout: "split",
+  };
+
+  const locked = applyWebDesignRefineScope(noisyCandidate, current, scope);
+
+  assert.equal(scope.strict, true);
+  assert.ok(scope.targets.includes("hero"));
+  assert.ok(scope.targets.includes("palette"));
+  assert.equal(locked.headline, noisyCandidate.headline);
+  assert.equal(locked.description, noisyCandidate.description);
+  assert.equal(locked.cta, noisyCandidate.cta);
+  assert.equal(locked.accent, noisyCandidate.accent);
+  assert.equal(locked.background, noisyCandidate.background);
+  assert.equal(locked.servicesTitle, current.servicesTitle);
+  assert.deepEqual(locked.services, current.services);
+  assert.equal(locked.contactTitle, current.contactTitle);
+  assert.equal(locked.brand, current.brand);
+  assert.equal(locked.layout, current.layout);
+});
+
+test("Refine Locks allow targeted visibility changes without leaking unrelated edits", () => {
+  const current = SITE_PRESETS.instalatii;
+  const prompt = "Ascunde FAQ și păstrează restul.";
+  const strategy = buildWebDesignStrategy(prompt, current);
+  const scope = resolveWebDesignRefineScope(prompt, strategy);
+  const candidate = {
+    ...current,
+    headline: "NU TREBUIE SCHIMBAT",
+    hiddenSections: [...new Set([...current.hiddenSections, "faq"])],
+  };
+
+  const locked = applyWebDesignRefineScope(candidate, current, scope);
+
+  assert.equal(scope.strict, true);
+  assert.deepEqual(scope.targets, ["faq"]);
+  assert.equal(locked.hiddenSections.includes("faq"), true);
+  assert.equal(locked.headline, current.headline);
+});
+
+test("Broad visual refinement remains flexible when no explicit field is targeted", () => {
+  const current = SITE_PRESETS.studio;
+  const prompt = "Fă-l mai premium, mai elegant și mai aerisit.";
+  const strategy = buildWebDesignStrategy(prompt, current);
+  const scope = resolveWebDesignRefineScope(prompt, strategy);
+  const candidate = {
+    ...current,
+    headline: "Direcție nouă",
+    visualTone: "luxury",
+    density: "airy",
+  };
+
+  const result = applyWebDesignRefineScope(candidate, current, scope);
+
+  assert.equal(strategy.mode, "refine");
+  assert.equal(scope.strict, false);
+  assert.deepEqual(result, candidate);
+});
+
+test("Generative Web Design applies Refine Locks before candidate selection", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const locks = read("lib/ai/web-design-refine-locks.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(server, /resolveWebDesignRefineScope\(prompt, strategy\)/);
+  assert.match(server, /webDesignRefineScopeInstruction\(refineScope\)/);
+  assert.match(server, /applyWebDesignRefineScope\(strategicDraft, current, refineScope\)/);
+  assert.ok(
+    server.indexOf("applyWebDesignRefineScope(strategicDraft") <
+      server.indexOf("selectBestWebDesignCandidate")
+  );
+  assert.match(server, /refineScope,/);
+  assert.match(locks, /mergeTargetVisibility/);
+  assert.match(specialist, /editare izolată/);
+  assert.doesNotMatch(locks, /fetch\(/);
 });
