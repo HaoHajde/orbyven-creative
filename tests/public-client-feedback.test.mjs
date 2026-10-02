@@ -60,6 +60,9 @@ test("public feedback UI is login-free and submits only score plus optional note
   const form = read("components/public/ClientFeedbackForm.tsx");
   const service = read("lib/modules/feedback-links.ts");
   assert.match(page, /ClientFeedbackForm token=\{token\}/);
+  assert.match(page, /index: false/);
+  assert.match(page, /follow: false/);
+  assert.match(page, /referrer: "no-referrer"/);
   assert.match(form, /\[1, 2, 3, 4, 5\]/);
   assert.match(form, /Trimite feedback/);
   assert.match(form, /Link unic, utilizabil o singură dată/);
