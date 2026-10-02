@@ -54,6 +54,36 @@ button:disabled{cursor:not-allowed;opacity:.58}
   left:36px;
   top:24px;
 }
+.auth-language{
+  position:absolute;
+  z-index:3;
+  right:36px;
+  top:30px;
+  display:flex;
+  gap:3px;
+  padding:4px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:999px;
+  background:rgba(12,18,33,.72);
+  backdrop-filter:blur(18px);
+}
+.auth-language button{
+  min-width:36px;
+  height:30px;
+  padding:0 9px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:#8290aa;
+  font-size:10px;
+  font-weight:760;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.auth-language button.active{
+  background:#f5f7ff;
+  color:#0a1020;
+}
 .orbyven-brand{
   display:flex;
   align-items:center;
@@ -201,6 +231,7 @@ button:disabled{cursor:not-allowed;opacity:.58}
 @media(max-width:640px){
   .auth-background{padding:78px 16px}
   .auth-top{left:18px;top:16px}
+  .auth-language{right:18px;top:20px}
   .auth-card{padding:26px 22px;border-radius:23px}
   .orbyven-brand__symbol{width:44px;height:44px}
   .orbyven-brand__text strong{font-size:13px}
