@@ -425,7 +425,7 @@ export default function VideoAiStudio() {
                     </div>
                     <p className="mt-5 text-[11px] font-medium text-[var(--muted)]">{engine.note}</p>
                     <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--muted-2)]">{engine.status}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
 
