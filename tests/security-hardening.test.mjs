@@ -216,3 +216,18 @@ test("anonymous Data API grants stay limited to intentional public intake", () =
   assert.match(anonSurfaceHardening, /new\.updated_at = pg_catalog\.now\(\)/);
   assert.match(anonSurfaceHardening, /from public, anon/);
 });
+
+
+const bootstrapModuleAllowlistSync = read("supabase/migrations/20261002072543_bootstrap_module_allowlist_sync.sql");
+
+test("bootstrap allowlist stays synchronized with current selectable workspace modules", () => {
+  for (const moduleId of [
+    "overview", "leads", "tasks", "calendar", "estimates",
+    "documents", "inventory", "expenses", "thermal", "team",
+  ]) assert.ok(bootstrapModuleAllowlistSync.includes(`'${moduleId}'`), moduleId);
+  assert.match(bootstrapModuleAllowlistSync, /security definer/i);
+  assert.match(bootstrapModuleAllowlistSync, /set search_path = ''/);
+  assert.match(bootstrapModuleAllowlistSync, /auth\.uid\(\)/);
+  assert.match(bootstrapModuleAllowlistSync, /grant execute on function public\.bootstrap_organization\(text,text,text\[\]\)\s*to authenticated/);
+  assert.match(bootstrapModuleAllowlistSync, /Commercial access is still enforced separately by entitlements and restrictive RLS/);
+});
