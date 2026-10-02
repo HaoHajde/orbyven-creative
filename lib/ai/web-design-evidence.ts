@@ -43,7 +43,7 @@ const CONCEPT_TERMS: Record<WebDesignEvidenceConcept, string[]> = {
     "free delivery",
     "free shipping",
   ],
-  nonstop: ["non stop", "nonstop", "program permanent", "deschis permanent"],
+  nonstop: ["non stop", "non-stop", "nonstop", "program permanent", "deschis permanent"],
   market_leader: [
     "lider de piata",
     "market leader",
