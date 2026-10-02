@@ -5,14 +5,14 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.8 declares the Expo push project dependency without hardcoding an EAS id", () => {
+test("Alpha 0.9 declares the Expo push project dependency without hardcoding an EAS id", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
   const app = read("../App.tsx");
 
-  assert.equal(pkg.version, "0.8.0");
+  assert.equal(pkg.version, "0.9.0");
   assert.equal(pkg.dependencies["expo-constants"], "~57.0.20");
-  assert.equal(config.expo.version, "0.8.0");
+  assert.equal(config.expo.version, "0.9.0");
   assert.match(app, /Constants\.expoConfig/);
   assert.match(app, /Constants\.easConfig/);
   assert.match(app, /getExpoPushTokenAsync\(\{ projectId \}\)/);
@@ -24,7 +24,9 @@ test("remote notification navigation is restricted to ORBYVEN URLs", () => {
   const app = read("../App.tsx");
 
   assert.match(app, /typeof data\?\.url === "string"/);
-  assert.match(app, /isTrustedOrbyvenUrl\(resolved\)/);
+  assert.match(app, /const navigateTrustedUrl = useCallback/);
+  assert.match(app, /if \(!isTrustedOrbyvenUrl\(url\)\) return/);
+  assert.match(app, /navigateTrustedUrl\(resolved\)/);
   assert.match(app, /url\.startsWith\("orbyven:\/\/"\)/);
 });
 
