@@ -24,7 +24,7 @@ export function detectOperationalQuery(prompt: string): OperationalQueryKind | n
   const value = normalize(prompt);
   if (!value || value.length > 1200) return null;
 
-  if (/\b(briefing|focus|prioritatile mele|prioritatile de azi|cu ce incep|ce rezolv prima data|ce trebuie sa rezolv acum|ce e cel mai important acum)\b/.test(value)) return "briefing";
+  if (/\b(briefing\w*|focus|prioritatile mele|prioritatile de azi|cu ce incep|ce rezolv prima data|ce trebuie sa rezolv acum|ce e cel mai important acum)\b/.test(value)) return "briefing";
 
   if (/\b(blocat|blocate|blocata|blocaj|blocaje)\b/.test(value)) return "blocked_tasks";
   if (/\b(fara responsabil|fara asignare|nealocat|nealocate|neasignat|neasignate|neatribuit|neatribuite)\b/.test(value)) {
