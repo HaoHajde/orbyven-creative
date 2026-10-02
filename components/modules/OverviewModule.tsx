@@ -3,6 +3,7 @@
 import { ModuleError } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
+import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
@@ -165,6 +166,33 @@ export default function OverviewModule({
         sortAt: contact.next_follow_up_at as string,
         rule: retention ? "client_retention_follow_up" : "lead_follow_up",
         clientId: contact.id,
+      });
+    }
+
+    for (const client of snapshot.leads.filter((lead) => lead.kind === "client")) {
+      const lifecycle = evaluateClientLifecycle({
+        id: client.id,
+        name: client.name,
+        kind: "client",
+        lastContactAt: client.last_contact_at,
+        nextFollowUpAt: client.next_follow_up_at,
+        convertedAt: client.converted_at,
+        createdAt: client.created_at,
+      }, new Date(snapshotNow));
+      if (!lifecycle?.needsReactivation) continue;
+
+      attention.push({
+        key: `client-reactivation-${client.id}`,
+        module: "leads",
+        recordId: client.id,
+        clientId: client.id,
+        title: lifecycle.state === "dormant"
+          ? `${client.name} poate fi reactivat`
+          : `${client.name} intră în răcire`,
+        meta: lifecycle.detail,
+        level: "attention",
+        sortAt: lifecycle.lastTouchAt,
+        rule: "client_reactivation",
       });
     }
 

@@ -8,7 +8,7 @@ const source = readFileSync(
   "utf8"
 );
 const workspaceSource = readFileSync(
-  join(process.cwd(), "components/ClientWorkspace.tsx"),
+  join(process.cwd(), "components/WorkspaceShell.tsx"),
   "utf8"
 );
 

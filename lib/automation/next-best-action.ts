@@ -31,11 +31,13 @@ const RULE_ORDER: Record<string, number> = {
   purchase_order_due: 9,
   estimate_expiring: 10,
   estimate_follow_up: 11,
-  lead_follow_up: 12,
-  accepted_estimate_needs_schedule: 13,
-  operation_due_soon: 14,
-  operation_unplanned: 15,
-  appointment_upcoming: 16,
+  client_retention_follow_up: 12,
+  lead_follow_up: 13,
+  client_reactivation: 14,
+  accepted_estimate_needs_schedule: 15,
+  operation_due_soon: 16,
+  operation_unplanned: 17,
+  appointment_upcoming: 18,
 };
 
 function ruleOrder(rule?: string) {
@@ -44,7 +46,12 @@ function ruleOrder(rule?: string) {
 
 function contextKey(item: NextBestActionCandidate) {
   if (item.taskId) return "task:" + item.taskId;
-  if (item.clientId && item.rule === "lead_follow_up") return "client:" + item.clientId;
+  if (
+    item.clientId &&
+    ["lead_follow_up", "client_retention_follow_up", "client_reactivation"].includes(item.rule ?? "")
+  ) {
+    return "client:" + item.clientId;
+  }
   if (item.module && item.recordId) return item.module + ":" + item.recordId;
   return item.key;
 }
