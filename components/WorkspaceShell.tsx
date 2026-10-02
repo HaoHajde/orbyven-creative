@@ -9,7 +9,7 @@ import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
-import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, themeToCssVars } from "@/lib/workspace-visual-system";
+import { WORKSPACE_CREATE_MODULES, WORKSPACE_NAV_GROUPS, WORKSPACE_THEME, themeToCssVars } from "@/lib/workspace-visual-system";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import {
   registerPushDevice,
