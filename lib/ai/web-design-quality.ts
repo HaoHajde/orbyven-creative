@@ -181,6 +181,7 @@ export function critiqueWebDesign(
 
   const normalizedCta = normalize(draft.cta);
   if (
+    strategy.mode !== "refine" &&
     GENERIC_CTA.has(normalizedCta) &&
     strategy.primaryAction !== "contact"
   ) {
