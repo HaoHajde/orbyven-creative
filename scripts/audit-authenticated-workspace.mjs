@@ -138,6 +138,27 @@ try {
         await auditScaledWorkspace(page, device, scale);
       }
 
+      await page.evaluate(() => {
+        window.localStorage.setItem("orbyven-dashboard-theme", "light");
+      });
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.locator('button[aria-label="Schimbă tema"]').waitFor();
+      const lightThemeState = await page.evaluate(() => {
+        const root = document.querySelector('main[data-orbyven-theme="light"]');
+        if (!root) return { rootFound: false, overflow: true, bg: "", accent: "" };
+        const style = getComputedStyle(root);
+        return {
+          rootFound: true,
+          overflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+          bg: style.getPropertyValue("--bg").trim().toLowerCase(),
+          accent: style.getPropertyValue("--accent").trim().toLowerCase(),
+        };
+      });
+      if (!lightThemeState.rootFound) throw new Error("Workspace light theme marker missing");
+      if (lightThemeState.overflow) throw new Error("Workspace light theme horizontal overflow");
+      if (["#fff", "#ffffff", "white"].includes(lightThemeState.bg)) throw new Error("Workspace light theme reverted to pure white");
+      if (!lightThemeState.accent) throw new Error("Workspace light theme accent missing");
+
       const aiLauncher = page.getByRole("button", { name: "Deschide ORBYVEN Intelligence" });
       await aiLauncher.click();
       const aiDialog = page.getByRole("dialog", { name: "ORBYVEN Intelligence" });
