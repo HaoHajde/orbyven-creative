@@ -15,7 +15,7 @@
     "test:performance": "node --test tests/performance-boundaries.test.mjs tests/workspace-auth-performance.test.mjs tests/device-integrity.test.mjs",
     "test:data": "node --experimental-strip-types --test tests/data-efficiency.test.mjs",
     "test:seo": "node --test tests/seo-contract.test.mjs",
-    "test:compliance": "node --experimental-strip-types --test tests/compliance-foundation.test.mjs",
+    "test:compliance": "node --experimental-strip-types --test tests/compliance-foundation.test.mjs tests/legal-audit-retention.test.mjs",
     "test:orders": "node --experimental-strip-types --test tests/order-evidence.test.mjs",
     "test:offboarding": "node --experimental-strip-types --test tests/client-offboarding.test.mjs"
   },

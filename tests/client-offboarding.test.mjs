@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  TENANT_EXPORT_TABLES,requireExportableCase,buildTenantArchive,TenantExportError,
+  TENANT_EXPORT_TABLES,TENANT_EXPORT_COLUMNS,requireExportableCase,buildTenantArchive,TenantExportError,
 } from "../lib/compliance/exit-export.ts";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
@@ -34,6 +34,11 @@ test("export allowlist excludes cross-tenant/Auth/platform and raw payment data"
   assert.ok(TENANT_EXPORT_TABLES.includes("thermal_sketches"));
   assert.ok(TENANT_EXPORT_TABLES.includes("ai_conversations"));
   assert.ok(TENANT_EXPORT_TABLES.includes("ai_action_proposals"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("ops_purchase_order_item_progress"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("ops_inventory_procurement_gaps"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("client_portal_links"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("client_portal_estimate_decisions"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("ai_web_design_drafts"));
   for(const name of ["auth.users","platform_staff","platform_audit_log",
     "billing_webhook_events","privacy_request_cases","ai_language_calls","ai_editor_calls","user_push_devices","storage.objects"]){
     assert.ok(!TENANT_EXPORT_TABLES.includes(name),name);
@@ -127,4 +132,23 @@ test("archive checksum is stable when Supabase returns rows in a different order
   const second=await buildTenantArchive(makeAdmin(true),org,caseId,"2026-09-30T12:00:00.000Z");
   assert.equal(first.sha256,second.sha256);
   assert.equal(first.payload,second.payload);
+});
+
+
+test("portal export projections never include access-token or IP fingerprint material",()=>{
+  assert.doesNotMatch(TENANT_EXPORT_COLUMNS.client_portal_links??"",/token_hash/);
+  assert.doesNotMatch(TENANT_EXPORT_COLUMNS.client_portal_estimate_decisions??"",/ip_sha256|user_agent/);
+  assert.match(TENANT_EXPORT_COLUMNS.client_portal_links??"",/client_id/);
+  assert.match(TENANT_EXPORT_COLUMNS.client_portal_estimate_decisions??"",/offer_sha256/);
+});
+
+
+test("offboarding actor audit IDs do not foreign-key Auth users",()=>{
+  assert.doesNotMatch(migration,/requested_by uuid references auth\.users/);
+  assert.doesNotMatch(migration,/action_by uuid references auth\.users/);
+  assert.doesNotMatch(migration,/package_generated_by uuid references auth\.users/);
+  assert.doesNotMatch(migration,/actor_user_id uuid references auth\.users/);
+  assert.match(migration,/Actor UUIDs are intentionally not foreign keys/);
+  assert.match(migration,/status <> 'closed' and closure_reference is null and closed_at is null/);
+  assert.match(migration,/Archive evidence is not allowed before package generation/);
 });

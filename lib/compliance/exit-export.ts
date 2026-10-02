@@ -15,6 +15,8 @@ export const TENANT_EXPORT_TABLES = [
   "ops_task_checklist_items",
   "calendar_events",
   "calendar_event_resources",
+  "client_portal_estimate_decisions",
+  "client_portal_links",
   "sales_estimates",
   "sales_estimate_items",
   "sales_material_requirements",
@@ -27,9 +29,11 @@ export const TENANT_EXPORT_TABLES = [
   "ops_material_recipes",
   "ops_material_recipe_items",
   "ops_inventory_movements",
+  "ops_inventory_procurement_gaps",
   "ops_suppliers",
   "ops_purchase_orders",
   "ops_purchase_order_items",
+  "ops_purchase_order_item_progress",
   "ops_resources",
   "ops_resource_unavailability",
   "people_team_members",
@@ -38,6 +42,7 @@ export const TENANT_EXPORT_TABLES = [
   "ai_conversations",
   "ai_conversation_messages",
   "ai_action_proposals",
+  "ai_web_design_drafts",
   "billing_terms_acceptances",
   "subscriptions",
   "billing_invoices",
@@ -46,6 +51,14 @@ export const TENANT_EXPORT_TABLES = [
   "billing_order_evidence",
   "legal_contract_records",
 ] as const;
+
+export const TENANT_EXPORT_COLUMNS: Partial<Record<(typeof TENANT_EXPORT_TABLES)[number],string>> = {
+  // Portal access/security material is deliberately excluded from the client archive.
+  client_portal_links:
+    "id,organization_id,client_id,label,expires_at,revoked_at,created_by,created_at",
+  client_portal_estimate_decisions:
+    "id,organization_id,client_id,link_id,estimate_id,decision,actor_name,offer_snapshot,offer_sha256,created_at",
+};
 
 const PER_TABLE_LIMIT = 2000;
 const PAGE_SIZE = 500;
@@ -104,7 +117,8 @@ async function loadTenantRows(
   for(let start=0;start<count;start+=PAGE_SIZE) {
     const end=Math.min(start+PAGE_SIZE-1,count-1);
     const {data,error}=await admin.from(name)
-      .select("*").eq("organization_id",organizationId).range(start,end);
+      .select(TENANT_EXPORT_COLUMNS[name as (typeof TENANT_EXPORT_TABLES)[number]]??"*")
+      .eq("organization_id",organizationId).range(start,end);
     if(error)throw new TenantExportError("Archive cannot safely include "+name);
     rows.push(...(data??[]));
   }
@@ -143,7 +157,7 @@ export async function buildTenantArchive(
       "Supabase Auth identities/passwords/sessions (never included)",
       "Platform staff, internal incident/security audit logs, AI provider telemetry and usage counters",
       "Stripe payment methods and raw webhook payloads",
-      "Push-device tokens, external provider records, backups and third-party archives",
+      "Push-device tokens, client-portal token hashes/IP fingerprints, external provider records, backups and third-party archives",
     ],
     notice:"Generating this archive is not confirmation of delivery, erasure, retention review or contract termination.",
   };

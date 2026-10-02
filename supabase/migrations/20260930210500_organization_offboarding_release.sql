@@ -1,20 +1,20 @@
 -- Legal & Trust release 2026-09-30: manual, auditable client offboarding. No automatic destruction.
 -- Depends on 20260925144000 Legal & Trust and 20260927181500 order evidence.
-create table if not exists public.organization_exit_cases (
+-- Actor UUIDs are intentionally not foreign keys to auth.users: audit evidence must not block Auth account deletion.\ncreate table if not exists public.organization_exit_cases (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete restrict,
-  requested_by uuid references auth.users(id) on delete set null,
+  requested_by uuid,
   requested_at timestamptz not null default now(),
   status text not null default 'requested' check (
     status in ('requested','authorized','package_generated','retention_review','closed')
   ),
   action_note text not null default 'Exportul organizației a fost solicitat.'
     check (char_length(action_note) between 8 and 500),
-  action_by uuid references auth.users(id) on delete set null,
+  action_by uuid,
   updated_at timestamptz not null default now(),
   package_sha256 text check (package_sha256 is null or package_sha256 ~ '^[0-9a-f]{64}$'),
   package_generated_at timestamptz,
-  package_generated_by uuid references auth.users(id) on delete set null,
+  package_generated_by uuid,
   closure_reference text check (closure_reference is null or char_length(closure_reference) between 8 and 450),
   closed_at timestamptz,
   constraint generated_package_complete check (
@@ -22,7 +22,8 @@ create table if not exists public.organization_exit_cases (
     or (package_sha256 is not null and package_generated_at is not null and package_generated_by is not null)
   ),
   constraint closed_with_documented_review check (
-    status <> 'closed' or (closure_reference is not null and closed_at is not null)
+    (status = 'closed' and closure_reference is not null and closed_at is not null)
+    or (status <> 'closed' and closure_reference is null and closed_at is null)
   )
 );
 create unique index if not exists organization_exit_one_active_case_idx
@@ -37,7 +38,7 @@ create table if not exists public.organization_exit_events (
   prior_status text,
   next_status text not null,
   action_note text not null,
-  actor_user_id uuid references auth.users(id) on delete set null,
+  actor_user_id uuid,
   package_sha256 text,
   created_at timestamptz not null default now()
 );
@@ -75,6 +76,10 @@ begin
   end if;
   if old.status = 'closed' then
     raise exception 'Closed exit records are immutable' using errcode='42501';
+  end if;
+  if new.status in ('requested','authorized')
+     and (new.package_sha256 is not null or new.package_generated_at is not null or new.package_generated_by is not null) then
+    raise exception 'Archive evidence is not allowed before package generation' using errcode='23514';
   end if;
   if new.status = 'package_generated' and new.package_sha256 is null then
     raise exception 'Archive evidence required before package_generated' using errcode='23514';
