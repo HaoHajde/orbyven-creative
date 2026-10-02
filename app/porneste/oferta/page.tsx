@@ -405,7 +405,7 @@ function OfferPageContent() {
   const rawOffer = searchParams.get("offer");
   const offerId: PublicOfferId | null = isPublicOfferId(rawOffer) ? rawOffer : null;
   const [theme, setTheme] = useState<Theme>("dark");
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ offerId: PublicOfferId | null; value: boolean }>({\n    offerId,\n    value: false,\n  });\n  const confirmed = confirmation.offerId === offerId ? confirmation.value : false;
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -504,7 +504,7 @@ function OfferPageContent() {
           </div>
 
           <div className="mt-4">
-            <CheckoutPanel offerId={offerId} confirmed={confirmed} onToggle={() => setConfirmed((current) => !current)} />
+            <CheckoutPanel offerId={offerId} confirmed={confirmed} onToggle={() =>\n              setConfirmation((current) => ({\n                offerId,\n                value: current.offerId === offerId ? !current.value : true,\n              }))\n            } />
           </div>
         </div>
       </section>
