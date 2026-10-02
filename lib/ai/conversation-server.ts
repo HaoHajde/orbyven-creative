@@ -1,4 +1,4 @@
-import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
+import { createBillingActorClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse, IntelligenceSpecialist } from "@/lib/ai/intelligence-types";
 
 export type IntelligenceConversationSummary = {
@@ -38,7 +38,7 @@ export async function ensureConversation(
   conversationId: string | null,
   firstPrompt: string
 ): Promise<{ id: string; title: string }> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
 
   if (conversationId) {
     const { data, error } = await client
@@ -71,7 +71,7 @@ export async function ensureConversation(
 }
 
 async function touchConversation(actor: BillingActor, conversationId: string, timestamp: string) {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const { error } = await client
     .from("ai_conversations")
     .update({ updated_at: timestamp })
@@ -91,7 +91,7 @@ export async function appendUserConversationMessage(
   const content = prompt.trim().slice(0, 1200);
   if (content.length < 2) throw new Error("INVALID_CONVERSATION_MESSAGE");
 
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const timestamp = new Date().toISOString();
   const { error } = await client
     .from("ai_conversation_messages")
@@ -122,7 +122,7 @@ export async function appendAssistantConversationMessage(
   const content = input.content.trim().slice(0, 6000);
   if (!content) throw new Error("INVALID_CONVERSATION_MESSAGE");
 
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const timestamp = new Date().toISOString();
   const { error } = await client
     .from("ai_conversation_messages")
@@ -159,7 +159,7 @@ export async function loadRecentConversationContext(
   conversationId: string,
   limit = 8
 ): Promise<IntelligenceConversationMessage[]> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const safeLimit = Math.min(12, Math.max(2, Math.round(limit)));
   const { data, error } = await client
     .from("ai_conversation_messages")
@@ -186,7 +186,7 @@ export async function listIntelligenceConversations(
   actor: BillingActor,
   limit = 20
 ): Promise<IntelligenceConversationSummary[]> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const safeLimit = Math.min(50, Math.max(1, Math.round(limit)));
   const { data, error } = await client
     .from("ai_conversations")
@@ -212,7 +212,7 @@ export async function loadIntelligenceConversation(
   conversation: IntelligenceConversationSummary;
   messages: IntelligenceConversationMessage[];
 }> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const [conversationResult, messagesResult] = await Promise.all([
     client
       .from("ai_conversations")
