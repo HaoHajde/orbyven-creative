@@ -113,10 +113,21 @@ export async function markOfferManually(org:string,estimateId:string,status:"sen
 }
 export async function syncOfferStatusFromEstimate(org:string,estimateId:string,status:"sent"|"accepted"){
   if(!org||!estimateId)throw new Error("Firma și devizul sunt obligatorii.");
-  const existing=await orbyvenSupabase.from("sales_commercial_documents")
+  let existing=await orbyvenSupabase.from("sales_commercial_documents")
     .select("id,status").eq("organization_id",org).eq("estimate_id",estimateId).eq("document_type","offer").maybeSingle();
   if(existing.error)throw existing.error;
-  if(!existing.data)return {synced:false as const,reason:"missing" as const};
+
+  if(!existing.data){
+    const source=await getSource(org,estimateId);
+    const lines=await getLines(org,estimateId);
+    if(!source.client_id||!source.task_id||!lines.length){
+      return {synced:false as const,reason:"missing_context" as const};
+    }
+    await makeClientOfferDraft(org,estimateId);
+    existing=await orbyvenSupabase.from("sales_commercial_documents")
+      .select("id,status").eq("organization_id",org).eq("estimate_id",estimateId).eq("document_type","offer").single();
+    if(existing.error||!existing.data)throw existing.error??new Error("Oferta comercială nu a putut fi reîncărcată.");
+  }
 
   if(status==="sent"){
     if(existing.data.status==="sent"||existing.data.status==="accepted")return {synced:false as const,reason:"already" as const};
