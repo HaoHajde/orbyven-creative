@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
-const migration=read("supabase/migrations/20261002104500_legal_audit_actor_decoupling.sql");
+const migration=read("supabase/migrations/20261002080702_legal_audit_actor_decoupling.sql");
 const legal=read("supabase/migrations/20260928165933_legal_trust_foundation_alpha071.sql");
 const order=read("supabase/migrations/20260928165937_billing_order_evidence_alpha071.sql");
 
