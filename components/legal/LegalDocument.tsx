@@ -9,6 +9,7 @@ type LegalDocumentProps = {
   title: string;
   intro: string;
   children: ReactNode;
+  locale?: "ro" | "en";
 };
 
 const legalLinks = [
@@ -29,7 +30,27 @@ export default function LegalDocument({
   title,
   intro,
   children,
+  locale = "ro",
 }: LegalDocumentProps) {
+  const copy = locale === "en"
+    ? {
+        center: "Legal center",
+        prelaunch: "Pre-launch document. The operator's legal identity and VAT treatment must be completed before commercial payments are activated. Billing remains automatically blocked until then.",
+        documents: "Documents",
+        taxId: "Tax ID",
+        registry: "Trade Register",
+        version: "Version",
+        updated: "Updated",
+      }
+    : {
+        center: "{copy.center}",
+        prelaunch: "{copy.prelaunch}",
+        documents: "{copy.documents}",
+        taxId: "CUI/CIF",
+        registry: "Registrul Comerțului",
+        version: "Versiune",
+        updated: "Actualizat",
+      };
   return (
     <main className="min-h-screen bg-white text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">
       <header className="border-b border-black/[0.08] dark:border-white/[0.1]">
@@ -89,14 +110,14 @@ export default function LegalDocument({
 
             <div className="mt-4 rounded-[24px] border border-black/[0.08] p-5 text-xs leading-5 text-[#6e6e73] dark:border-white/[0.1] dark:text-[#a1a1a6]">
               <p className="font-semibold text-current">{operatorLabel()}</p>
-              {legalConfig.taxId && <p className="mt-2">CUI/CIF: {legalConfig.taxId}</p>}
+              {legalConfig.taxId && <p className="mt-2">{copy.taxId}: {legalConfig.taxId}</p>}
               {legalConfig.registrationNumber && (
-                <p>Registrul Comerțului: {legalConfig.registrationNumber}</p>
+                <p>{copy.registry}: {legalConfig.registrationNumber}</p>
               )}
               {legalConfig.registeredOffice && <p>{legalConfig.registeredOffice}</p>}
               <p className="mt-2">{legalConfig.contactEmail}</p>
-              <p className="mt-4">Versiune: {legalConfig.documentVersion}</p>
-              <p>Actualizat: {legalConfig.lastUpdated}</p>
+              <p className="mt-4">{copy.version}: {legalConfig.documentVersion}</p>
+              <p>{copy.updated}: {legalConfig.lastUpdated}</p>
             </div>
           </aside>
         </div>
