@@ -5,14 +5,14 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.10 declares the Expo push project dependency without hardcoding an EAS id", () => {
+test("Alpha 0.11 declares the Expo push project dependency without hardcoding an EAS id", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
   const app = read("../App.tsx");
 
-  assert.equal(pkg.version, "0.10.0");
+  assert.equal(pkg.version, "0.11.0");
   assert.equal(pkg.dependencies["expo-constants"], "~57.0.20");
-  assert.equal(config.expo.version, "0.10.0");
+  assert.equal(config.expo.version, "0.11.0");
   assert.match(app, /Constants\.expoConfig/);
   assert.match(app, /Constants\.easConfig/);
   assert.match(app, /getExpoPushTokenAsync\(\{ projectId \}\)/);
