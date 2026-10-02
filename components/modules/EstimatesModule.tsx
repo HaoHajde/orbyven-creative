@@ -22,7 +22,7 @@ import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveCo
 import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
-import { addRequirementsFromRecipe } from "@/lib/ecosystem/actions";
+import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
 import {
   loadMaterialLibrary,recipeEstimatePreview,
   type MaterialLibrary,
@@ -103,6 +103,7 @@ export default function EstimatesModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
   const [taskMaterialPlan, setTaskMaterialPlan] = useState<InventoryTaskMaterialPlan[] | null>(null);
   const [taskMaterialPlanTaskId, setTaskMaterialPlanTaskId] = useState<string | null>(null);
   const [taskMaterialPlanLoading, setTaskMaterialPlanLoading] = useState(false);
@@ -353,6 +354,25 @@ export default function EstimatesModule({
     setError("");
     try {
       const next = await setEstimateStatus(organizationId, selected.id, status);
+      if (status === "sent" || status === "accepted") {
+        try {
+          const sync = await syncOfferStatusFromEstimate(organizationId, selected.id, status);
+          setSyncWarning(
+            sync.synced
+              ? status === "accepted"
+                ? "Devizul și documentul de ofertă sunt sincronizate ca acceptate."
+                : "Devizul și documentul de ofertă sunt sincronizate ca trimise."
+              : sync.reason === "missing"
+                ? "Devizul a fost actualizat. Nu există încă un document comercial de ofertă de sincronizat."
+                : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Devizul a fost actualizat, dar documentul comercial asociat necesită verificare manuală.");
+        }
+      } else {
+        setSyncWarning("");
+      }
       setEstimates((current) => current.map((item) => item.id === next.id ? next : item));
     } catch (statusError) {
       console.error(statusError);
@@ -390,6 +410,7 @@ export default function EstimatesModule({
         action={canWrite ? <button type="button" onClick={() => {if(!createOpen){setRevisionSource(null);setForm(emptyForm);setLines([newLine()]);setRecipeLines({});}setCreateOpen(current=>!current);}} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)]">{createOpen ? "Închide" : "+ Ofertă nouă"}</button> : null}
       />
       <div className="mt-8"><ModuleError message={error} /></div>
+      {syncWarning ? <p className="mt-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-[11px] leading-5 text-amber-300">{syncWarning}</p> : null}
 
       <ModuleProgressiveMetrics
         className="mt-8"
