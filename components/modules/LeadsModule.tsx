@@ -164,6 +164,25 @@ export default function LeadsModule({
   const selectedLifecycle = selectedLead?.kind === "client"
     ? lifecycleByClient.get(selectedLead.id) ?? null
     : null;
+  const clientLifecycleOwnsPrimaryAction = Boolean(
+    selectedLead?.kind === "client" &&
+    selectedLifecycle &&
+    (
+      selectedLifecycle.state === "overdue" ||
+      selectedLifecycle.state === "scheduled" ||
+      selectedLifecycle.needsReactivation
+    )
+  );
+  const clientPrimaryModule: OrbyvenModuleId | null =
+    selectedLead?.kind === "client" && !clientLifecycleOwnsPrimaryAction
+      ? enabledModules.includes("tasks")
+        ? "tasks"
+        : enabledModules.includes("estimates")
+          ? "estimates"
+          : enabledModules.includes("calendar")
+            ? "calendar"
+            : null
+      : null;
   useWorkspaceLiveContext({ clientId: selectedLead?.id });
   useWorkspaceRecordFocus(initialRecordId, selectedLeadId, loading);
   useWorkspaceSelectionWarp(selectedLeadId, loading);
@@ -698,9 +717,9 @@ export default function LeadsModule({
                     <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--bg)]">
                       <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Alte acțiuni</summary>
                       <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
-                        {enabledModules.includes("tasks") && <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Lucrare</button>}
-                        {enabledModules.includes("estimates") && <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
-                        {enabledModules.includes("calendar") && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
+                        {enabledModules.includes("tasks") && clientPrimaryModule !== "tasks" && <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Lucrare</button>}
+                        {enabledModules.includes("estimates") && clientPrimaryModule !== "estimates" && <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
+                        {enabledModules.includes("calendar") && clientPrimaryModule !== "calendar" && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
                       </div>
                     </details>
                   )}
