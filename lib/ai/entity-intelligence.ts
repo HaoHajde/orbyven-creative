@@ -1,10 +1,7 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
-
-type EntityQuery =
-  | { kind: "client"; value: string }
-  | { kind: "work"; value: string };
+import { detectEntityIntelligenceQuery } from "@/lib/ai/entity-intelligence-core";
 
 type ClientRow = {
   id: string;
@@ -79,64 +76,6 @@ type InvoiceRow = {
 const FINANCE_ROLES = new Set(["owner", "admin", "manager"]);
 const CLOSED_WORK = new Set(["done", "cancelled"]);
 const CLOSED_ESTIMATE = new Set(["accepted", "rejected", "expired"]);
-const QUERY_HINT =
-  /\b(arata|arată|cauta|caută|gaseste|găsește|detalii|rezumat|situatia|situația|statusul|status|ce stii|ce știi|ce se intampla|ce se întâmplă|ce am facut|ce am făcut|istoric|despre|cum stam|cum stăm)\b/i;
-
-function normalize(value: string) {
-  return value
-    .trim()
-    .toLocaleLowerCase("ro-RO")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-}
-
-function cleanEntityValue(value: string | undefined) {
-  const clean = value
-    ?.trim()
-    .replace(/^["„”'\s]+|["„”'\s?!.]+$/g, "")
-    .replace(/\s+/g, " ");
-  if (!clean || clean.length < 2 || clean.length > 160) return null;
-  return clean;
-}
-
-function explicitField(prompt: string, label: "client" | "lucrare") {
-  const pattern = new RegExp(
-    "(?:^|[;\\n]\\s*)" + label + "\\s*:\\s*([^;\\n]+)",
-    "i"
-  );
-  return cleanEntityValue(prompt.match(pattern)?.[1]);
-}
-
-export function detectEntityIntelligenceQuery(prompt: string): EntityQuery | null {
-  const cleanPrompt = prompt.trim();
-  if (!cleanPrompt || cleanPrompt.length > 2400 || !QUERY_HINT.test(cleanPrompt)) return null;
-
-  const explicitWork = explicitField(cleanPrompt, "lucrare");
-  if (explicitWork) return { kind: "work", value: explicitWork };
-
-  const explicitClient = explicitField(cleanPrompt, "client");
-  if (explicitClient) return { kind: "client", value: explicitClient };
-
-  const workMatch = cleanPrompt.match(
-    /(?:lucrarea|lucrare)\s+["„”']?([^,;\n?]+?)["„”']?(?=\s*(?:\?|$|;))/i
-  );
-  const work = cleanEntityValue(workMatch?.[1]);
-  if (work && !/^(aceea|aceasta|asta|de mai sus|anterioara|precedenta)$/i.test(normalize(work))) {
-    return { kind: "work", value: work };
-  }
-
-  const clientMatch = cleanPrompt.match(
-    /(?:clientul|client)\s+["„”']?([^,;\n?]+?)["„”']?(?=\s*(?:\?|$|;))/i
-  );
-  const client = cleanEntityValue(clientMatch?.[1]);
-  if (client && !/^(acela|acesta|asta|de mai sus|anterior|precedent)$/i.test(normalize(client))) {
-    return { kind: "client", value: client };
-  }
-
-  return null;
-}
-
 function searchable(value: string) {
   return value.replace(/[%_]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
 }
