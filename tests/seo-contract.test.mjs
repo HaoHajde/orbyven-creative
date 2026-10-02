@@ -90,3 +90,33 @@ test("service and invitation hubs expose descriptive internal links", () => {
   assert.ok(invitations.includes("relatedInvitationCategories"));
 });
 
+
+test("RO and EN domains keep host-specific robots, sitemap and canonicals", () => {
+  const sitemap = read("app/sitemap.ts");
+  const robots = read("app/robots.ts");
+  const domainLocale = read("lib/domain-locale.ts");
+
+  for (const source of [sitemap, robots]) {
+    assert.ok(source.includes("publicLocaleForHost"));
+    assert.ok(source.includes("publicOriginForLocale"));
+    assert.ok(source.includes('requestHeaders.get("x-forwarded-host")'));
+  }
+
+  assert.ok(sitemap.includes('if (locale === "en")'));
+  assert.ok(sitemap.includes('const englishRoutes = ['));
+  for (const route of ["/servicii", "/templates", "/contact", "/ai-web-design"]) {
+    assert.ok(sitemap.includes(route), route);
+  }
+  assert.ok(domainLocale.includes('"https://www.orbyven.com"'));
+
+  const englishLayouts = [
+    ["app/en/servicii/layout.tsx", "https://www.orbyven.com/servicii"],
+    ["app/en/templates/layout.tsx", "https://www.orbyven.com/templates"],
+    ["app/en/contact/layout.tsx", "https://www.orbyven.com/contact"],
+  ];
+  for (const [path, canonical] of englishLayouts) {
+    assert.ok(read(path).includes(canonical), path);
+  }
+  assert.ok(read("app/en/templates/layout.tsx").includes("TemplateExperienceLayer"));
+  assert.ok(read("app/en/contact/layout.tsx").includes("orbyven-start-cards"));
+});
