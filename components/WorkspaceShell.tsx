@@ -26,6 +26,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -81,6 +82,7 @@ export default function WorkspaceShell({
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
   const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
+  const lastNativeRefreshAt = useRef(0);
 
 
   const loadWorkspace = useCallback(async () => {
@@ -111,6 +113,23 @@ export default function WorkspaceShell({
       console.error(error);
       setLoadError("Workspace-ul nu a putut fi încărcat. Încearcă din nou.");
       setLoading(false);
+    }
+  }, [onUnauthenticated]);
+
+  const refreshWorkspaceSilently = useCallback(async () => {
+    try {
+      const nextWorkspace = await getCurrentWorkspace();
+      if (nextWorkspace) {
+        setWorkspace(nextWorkspace);
+        setLoadError("");
+        return;
+      }
+
+      const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authData.user) await onUnauthenticated();
+    } catch (error) {
+      console.error("Silent workspace refresh failed", error);
     }
   }, [onUnauthenticated]);
 
@@ -152,6 +171,22 @@ export default function WorkspaceShell({
     bridge?.postMessage(JSON.stringify({ type: "orbyven:theme", theme }));
   }, [theme]);
 
+  useEffect(() => {
+    const refreshFromNative = () => {
+      const now = Date.now();
+      if (now - lastNativeRefreshAt.current < 1200) return;
+      lastNativeRefreshAt.current = now;
+      void refreshWorkspaceSilently();
+    };
+
+    window.addEventListener("orbyven:app-resume", refreshFromNative);
+    window.addEventListener("orbyven:native-network-restored", refreshFromNative);
+    return () => {
+      window.removeEventListener("orbyven:app-resume", refreshFromNative);
+      window.removeEventListener("orbyven:native-network-restored", refreshFromNative);
+    };
+  }, [refreshWorkspaceSilently]);
+
   const requestNativeHaptic = useCallback(() => {
     const bridge = (window as Window & {
       ReactNativeWebView?: { postMessage: (message: string) => void };
@@ -168,6 +203,17 @@ export default function WorkspaceShell({
     () => ORBYVEN_MODULES.filter((definition) => enabledModules.includes(definition.id)),
     [enabledModules]
   );
+
+  useEffect(() => {
+    if (!enabledModules.includes(activeModule)) {
+      setPanel("workspace");
+      setActiveModule("overview");
+      setNavigation((current) => ({
+        module: "overview",
+        token: current.token + 1,
+      }));
+    }
+  }, [activeModule, enabledModules]);
 
   const activeDefinition =
     ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ?? ORBYVEN_MODULES[0];
