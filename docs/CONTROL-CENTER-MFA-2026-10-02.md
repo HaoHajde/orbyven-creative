@@ -24,3 +24,12 @@ Normal client workspaces are not affected by this policy.
 There are currently no enabled rows in `platform_staff`; this is the safest point to enforce MFA before the first permanent internal staff account is activated. The temporary environment allowlist is also subject to the same AAL2 requirement.
 
 Leaked-password protection remains a separate Supabase Auth project setting and must still be enabled in the Supabase Dashboard/Management API when administrative access is available.
+
+
+## Database defense-in-depth
+
+Migration `20261002075203_platform_staff_mfa_guard.sql` adds a fail-closed trigger on `public.platform_staff`. An internal staff row cannot be enabled unless the target user already owns at least one `auth.mfa_factors` record with `status = 'verified'`.
+
+The trigger is implemented by a private `SECURITY DEFINER` function with an empty `search_path`, and direct execution is revoked from `public`, `anon`, and `authenticated`.
+
+Live verification after migration: trigger present, guard function present, 0 active staff, 0 enabled staff without verified MFA.

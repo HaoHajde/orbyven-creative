@@ -252,3 +252,14 @@ test("control center requires aal2 and provides a TOTP enrollment/challenge flow
   assert.match(controlCenterLogin, /auth\.mfa\.challengeAndVerify\(/);
   assert.match(controlCenterLogin, /autoComplete="one-time-code"/);
 });
+
+
+const platformStaffMfaGuard = read("supabase/migrations/20261002075203_platform_staff_mfa_guard.sql");
+
+test("permanent platform staff cannot be enabled without verified MFA", () => {
+  assert.match(platformStaffMfaGuard, /auth\.mfa_factors/);
+  assert.match(platformStaffMfaGuard, /mf\.status = 'verified'/);
+  assert.match(platformStaffMfaGuard, /before insert or update of user_id, enabled/);
+  assert.match(platformStaffMfaGuard, /platform_staff_verified_mfa_guard/);
+  assert.match(platformStaffMfaGuard, /revoke all on function private\.require_verified_mfa_for_platform_staff\(\)/);
+});
