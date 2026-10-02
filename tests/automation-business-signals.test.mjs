@@ -500,6 +500,38 @@ test("Next Best Action collapses duplicate attention for the same operation cont
   assert.equal(ranked[0].key, "owner");
 });
 
+test("Next Best Action keeps one procurement action per PO and prioritizes missing received cost", () => {
+  const ranked = rankNextBestActions([
+    {
+      key: "evidence",
+      level: "attention",
+      sortAt: "2026-10-01T12:00:00.000Z",
+      rule: "procurement_evidence_missing",
+      module: "documents",
+      purchaseOrderId: "po-1",
+    },
+    {
+      key: "cost",
+      level: "attention",
+      sortAt: "2026-10-02T12:00:00.000Z",
+      rule: "procurement_cost_missing",
+      module: "expenses",
+      purchaseOrderId: "po-1",
+    },
+    {
+      key: "task",
+      level: "attention",
+      sortAt: "2026-10-01T08:00:00.000Z",
+      rule: "operation_unassigned",
+      module: "tasks",
+      taskId: "task-1",
+    },
+  ]);
+  assert.equal(ranked.filter((item) => item.purchaseOrderId === "po-1").length, 1);
+  assert.equal(ranked.find((item) => item.purchaseOrderId === "po-1")?.key, "cost");
+  assert.equal(ranked.some((item) => item.key === "task"), true);
+});
+
 test("Next Best Action remains stable for equal business context", () => {
   const ranked = rankNextBestActions([
     { key: "b", level: "attention", sortAt: "2026-09-30T08:00:00.000Z", rule: "estimate_follow_up" },
