@@ -408,7 +408,11 @@ export function buildWebDesignStrategy(
   const goalResult = inferGoal(prompt, archetypeResult.archetype);
   const explicit = explicitSectionRules(prompt);
 
-  let visible = baseVisibleSections(goalResult.goal, archetypeResult.archetype);
+  let visible =
+    mode === "refine"
+      ? current.sectionOrder.filter((id) => !current.hiddenSections.includes(id))
+      : baseVisibleSections(goalResult.goal, archetypeResult.archetype);
+
   visible = uniqueSections([
     ...visible.filter((id) => !explicit.hide.has(id)),
     ...SECTION_IDS.filter((id) => explicit.show.has(id) && !visible.includes(id)),
@@ -416,10 +420,6 @@ export function buildWebDesignStrategy(
 
   if (!visible.includes("hero")) visible.unshift("hero");
   if (!visible.includes("contact") && !explicit.hide.has("contact")) visible.push("contact");
-
-  if (mode === "refine" && explicit.show.size <= 1 && explicit.hide.size === 0) {
-    visible = current.sectionOrder.filter((id) => !current.hiddenSections.includes(id));
-  }
 
   if (mode === "alternative") {
     visible = alternateVisibleOrder(visible, current);
