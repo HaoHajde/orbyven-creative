@@ -671,3 +671,24 @@ test("fully paid invoices are logged in CRM without blocking finance", () => {
   assert.match(financeData, /await syncCrmAfterInvoicePaid/);
   assert.match(financeData, /CRM invoice payment sync failed/);
 });
+
+
+test("work dossier carries minimal financial closeout context", () => {
+  const tasksData = read("lib/modules/tasks.ts");
+  assert.match(tasksData, /financeDraftInvoicesCount: number \| null/);
+  assert.match(tasksData, /financeOpenInvoicesCount: number \| null/);
+  assert.match(tasksData, /financeOverdueInvoicesCount: number \| null/);
+  assert.match(tasksData, /financeOutstandingCents: number \| null/);
+  assert.match(tasksData, /sales_commercial_documents/);
+  assert.match(tasksData, /finance_income_entries/);
+
+  const readiness = read("lib/automation/work-readiness.ts");
+  assert.match(readiness, /key: "financial"/);
+  assert.match(readiness, /label: "Închidere financiară"/);
+  assert.match(readiness, /facturi au scadența depășită/);
+  assert.match(readiness, /Mai sunt de încasat/);
+
+  const summary = read("components/modules/tasks/WorkFileSummary.tsx");
+  assert.match(summary, /attention\.key === "financial"/);
+  assert.match(summary, /label: "Închide financiar"/);
+});
