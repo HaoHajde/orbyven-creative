@@ -30,7 +30,7 @@ export default function LegalDocument({
   children,
 }: LegalDocumentProps) {
   return (
-    <main data-orbyven-theme="light" className="orbyven-theme-shell min-h-screen bg-[#f1eef8] text-[#201b2d] dark:bg-[#09090a] dark:text-[#f5f5f7]">
+    <main className="min-h-screen bg-[#f1eef8] text-[#201b2d] dark:bg-[#09090a] dark:text-[#f5f5f7]">
       <header className="border-b border-[#6654b8]/15 dark:border-white/[0.1]">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-6 px-6 py-6 md:px-10">
           <Link href="/" className="text-sm font-semibold tracking-[0.16em]">
