@@ -1,31 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { PUBLIC_CHECKOUT_IS_DEMO, PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
+import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 
 type Theme = "light" | "dark";
-
-function getThemeVars(theme: Theme) {
-  return {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#101014" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171c" : "#f1f1f5",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#777781" : "#878790",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--home-violet": "#a58bff",
-    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
-  } as CSSProperties;
-}
 
 export default function ContactPage() {
   const [theme, setTheme] = useState<Theme>("light");
@@ -37,7 +20,7 @@ export default function ContactPage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(nextTheme);
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -47,24 +30,25 @@ export default function ContactPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(next);
       return next;
     });
   };
 
-  const vars = getThemeVars(theme);
+  const vars = publicThemeVars(theme);
 
   return (
     <main
+      data-orbyven-theme={theme}
       style={{
         ...vars,
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
             ? "linear-gradient(180deg,#0b0912 0%,#0a0910 42%,#09090d 100%)"
-            : "linear-gradient(180deg,#fbfaff 0%,#f8f8fb 46%,#f6f6fa 100%)",
+            : "linear-gradient(180deg,#f3f0f9 0%,#ece8f5 46%,#f2eff8 100%)",
       }}
-      className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
+      className="orbyven-theme-shell relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-24rem] h-[60rem] w-[78rem] max-w-[92vw] -translate-x-1/2 rounded-full bg-[rgba(126,93,255,.12)] blur-[175px]" />
