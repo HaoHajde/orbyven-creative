@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { readSiteDraft } from "@/lib/ai/site-editor";
 import { generateWebDesignForActor } from "@/lib/ai/web-design-server";
+import { readWebDesignInterviewFacts } from "@/lib/ai/web-design-interview";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
           .map((item) => readSiteDraft(item))
           .filter((item): item is NonNullable<typeof item> => item !== null)
       : [];
+    const interviewFacts = readWebDesignInterviewFacts(body.interviewFacts);
 
     if (!/^[a-f0-9-]{36}$/i.test(organizationId)) {
       return NextResponse.json({ error: "organization_id invalid" }, { status: 400 });
@@ -35,7 +37,8 @@ export async function POST(request: Request) {
       actor,
       prompt,
       currentDraft,
-      recentDrafts
+      recentDrafts,
+      interviewFacts
     );
 
     return NextResponse.json(result, {
