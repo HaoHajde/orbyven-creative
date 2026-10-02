@@ -3,14 +3,6 @@ import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import { detectOperationalQuery, type OperationalQueryKind } from "@/lib/ai/operational-query-core";
 
-export type OperationalQueryKind =
-  | "overdue_tasks"
-  | "blocked_tasks"
-  | "unassigned_tasks"
-  | "today"
-  | "lead_followups"
-  | "estimate_followups";
-
 type TaskRow = {
   id: string;
   title: string;
