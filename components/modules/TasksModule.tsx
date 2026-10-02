@@ -26,7 +26,16 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { attachAcceptedEstimateToTask } from "@/lib/modules/estimates";
 import { scheduleCrmFollowUp } from "@/lib/modules/leads";
+import {
+  loadPostServiceGrowthState,
+  recordPostServiceEvent,
+} from "@/lib/modules/client-growth";
 import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
+import {
+  evaluatePostServiceGrowth,
+  type PostServiceEventType,
+  type PostServiceGrowthState,
+} from "@/lib/automation/post-service-growth";
 import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
@@ -162,6 +171,8 @@ export default function TasksModule({
   const [workContext, setWorkContext] = useState<WorkTaskContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [contextError, setContextError] = useState("");
+  const [growthState, setGrowthState] = useState<PostServiceGrowthState | null>(null);
+  const [growthLoading, setGrowthLoading] = useState(false);
 
   const canWrite = role !== "viewer";
   useWorkspaceCreateFocus(createOpen);
@@ -273,6 +284,43 @@ export default function TasksModule({
     () => new Map(clients.map((client) => [client.id, client])),
     [clients]
   );
+
+  useEffect(() => {
+    if (
+      !selectedTask ||
+      selectedTask.status !== "done" ||
+      selectedTask.kind === "task" ||
+      !selectedTask.client_id
+    ) {
+      const timer = window.setTimeout(() => setGrowthState(null), 0);
+      return () => window.clearTimeout(timer);
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setGrowthLoading(true);
+      void loadPostServiceGrowthState(
+        organizationId,
+        selectedTask.client_id!,
+        selectedTask.id
+      )
+        .then((state) => {
+          if (active) setGrowthState(state);
+        })
+        .catch((growthError) => {
+          console.error(growthError);
+          if (active) setGrowthState(null);
+        })
+        .finally(() => {
+          if (active) setGrowthLoading(false);
+        });
+    }, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [organizationId, selectedTask]);
 
   const filteredTasks = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase(locale);
@@ -453,6 +501,40 @@ export default function TasksModule({
     } catch (recurringError) {
       console.error(recurringError);
       setError("Următoarea lucrare nu a putut fi creată.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const recordGrowthEvent = async (type: PostServiceEventType) => {
+    if (
+      !canWrite ||
+      !selectedTask?.client_id ||
+      selectedTask.status !== "done" ||
+      selectedTask.kind === "task" ||
+      saving
+    ) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      await recordPostServiceEvent(
+        organizationId,
+        selectedTask.client_id,
+        selectedTask.id,
+        type
+      );
+      setGrowthState(
+        await loadPostServiceGrowthState(
+          organizationId,
+          selectedTask.client_id,
+          selectedTask.id
+        )
+      );
+      setSnapshotIso(new Date().toISOString());
+    } catch (growthError) {
+      console.error(growthError);
+      setError("Starea post-serviciu nu a putut fi actualizată.");
     } finally {
       setSaving(false);
     }
@@ -893,6 +975,25 @@ export default function TasksModule({
             onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
           />
         )}
+      {selectedTask &&
+        selectedTask.status === "done" &&
+        selectedTask.kind !== "task" &&
+        selectedTask.client_id &&
+        enabledModules.includes("leads") && (
+          <PostServiceGrowthPanel
+            task={selectedTask}
+            state={growthState}
+            loading={growthLoading}
+            nowIso={snapshotIso}
+            saving={saving}
+            canWrite={canWrite}
+            estimatesEnabled={enabledModules.includes("estimates")}
+            onEvent={(type) => void recordGrowthEvent(type)}
+            onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
+            onCreateRecovery={() => onOpenModule("tasks", { create: true, clientId: selectedTask.client_id! })}
+            onCreateEstimate={() => onOpenModule("estimates", { create: true, clientId: selectedTask.client_id! })}
+          />
+        )}
       {selectedTask && (
         <WorkFileSummary
           task={selectedTask}
@@ -948,6 +1049,129 @@ export default function TasksModule({
         }
       `}</style>
     </div>
+  );
+}
+
+function PostServiceGrowthPanel({
+  task,
+  state,
+  loading,
+  nowIso,
+  saving,
+  canWrite,
+  estimatesEnabled,
+  onEvent,
+  onOpenClient,
+  onCreateRecovery,
+  onCreateEstimate,
+}: {
+  task: WorkTask;
+  state: PostServiceGrowthState | null;
+  loading: boolean;
+  nowIso: string;
+  saving: boolean;
+  canWrite: boolean;
+  estimatesEnabled: boolean;
+  onEvent: (type: PostServiceEventType) => void;
+  onOpenClient: () => void;
+  onCreateRecovery: () => void;
+  onCreateEstimate: () => void;
+}) {
+  if (loading) {
+    return (
+      <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]">
+        Se încarcă bucla post-serviciu…
+      </section>
+    );
+  }
+  if (!state) return null;
+
+  const action = evaluatePostServiceGrowth({
+    taskTitle: task.title,
+    completedAt: task.completed_at,
+    state,
+    now: nowIso ? new Date(nowIso) : new Date(0),
+  });
+
+  return (
+    <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
+            ORBYVEN · POST-SERVICE GROWTH
+          </p>
+          <h2 className="mt-1 text-[15px] font-semibold">
+            Feedback → review → recomandare → oportunitate nouă.
+          </h2>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
+            {action?.detail ?? "Nu există o acțiune comercială urgentă pentru această lucrare."}
+          </p>
+        </div>
+        {action && (
+          <span className="self-start rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--muted)]">
+            {action.level === "urgent" ? "Prioritar" : action.level === "attention" ? "Recomandat" : "Următorul pas"}
+          </span>
+        )}
+      </div>
+
+      {canWrite && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {state.feedback === "none" && (
+            <>
+              <button type="button" disabled={saving} onClick={() => onEvent("feedback_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+                Marchează feedback cerut
+              </button>
+              <button type="button" disabled={saving} onClick={() => onEvent("feedback_positive")} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">
+                Feedback pozitiv
+              </button>
+              <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
+                Problemă raportată
+              </button>
+            </>
+          )}
+          {state.feedback === "requested" && (
+            <>
+              <button type="button" disabled={saving} onClick={() => onEvent("feedback_positive")} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">
+                Feedback pozitiv
+              </button>
+              <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
+                Problemă raportată
+              </button>
+            </>
+          )}
+          {state.feedback === "issue" && (
+            <>
+              <button type="button" onClick={onOpenClient} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold">
+                Deschide clientul
+              </button>
+              <button type="button" onClick={onCreateRecovery} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
+                + Lucrare de remediere
+              </button>
+            </>
+          )}
+          {state.feedback === "positive" && !state.reviewRequestedAt && (
+            <button type="button" disabled={saving} onClick={() => onEvent("review_requested")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
+              Marchează review cerut
+            </button>
+          )}
+          {state.feedback === "positive" && state.reviewRequestedAt && !state.referralRequestedAt && (
+            <button type="button" disabled={saving} onClick={() => onEvent("referral_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+              Marchează recomandare cerută
+            </button>
+          )}
+          {action?.rule === "post_service_upsell" && estimatesEnabled && (
+            <>
+              <button type="button" onClick={onCreateEstimate} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
+                + Ofertă nouă
+              </button>
+              <button type="button" disabled={saving} onClick={() => onEvent("upsell_dismissed")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
+                Amintește-mi peste 30 zile
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
