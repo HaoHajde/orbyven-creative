@@ -33,19 +33,19 @@ export default function LanguageSwitch({
   const baseClass = useMemo(
     () =>
       variant === "light"
-        ? "border-black/10 bg-black/[.035] text-black/55"
+        ? "border-black/10 bg-black/[.035] text-black/55 dark:border-white/10 dark:bg-white/[.06] dark:text-white/55"
         : "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--muted)]",
     [variant],
   );
 
   const activeClass =
     variant === "light"
-      ? "bg-[#171719] text-white"
+      ? "bg-[#171719] text-white dark:bg-white dark:text-[#111113]"
       : "bg-[var(--button)] text-[var(--button-text)]";
 
   const inactiveHover =
     variant === "light"
-      ? "hover:text-black"
+      ? "hover:text-black dark:hover:text-white"
       : "hover:text-[var(--text)]";
 
   return (
