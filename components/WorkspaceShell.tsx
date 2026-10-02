@@ -5,7 +5,6 @@ import WorkspaceOrbitBackground from "@/components/WorkspaceOrbitBackground";
 import WorkspaceContent from "@/components/WorkspaceContent";
 import WorkspaceSearch from "@/components/WorkspaceSearch";
 import WorkspaceActivityCenter from "@/components/WorkspaceActivityCenter";
-import WorkspaceIntelligence from "@/components/WorkspaceIntelligence";
 import WorkspaceModuleStore from "@/components/WorkspaceModuleStore";
 import WorkspaceStateScreen from "@/components/WorkspaceStateScreen";
 import { ORBYVEN_MODULES, type OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -22,6 +21,7 @@ import {
   setOrganizationModuleEnabled,
   type OrbyvenWorkspace,
 } from "@/lib/orbyven-workspace";
+import dynamic from "next/dynamic";
 import {
   useCallback,
   useEffect,
@@ -32,6 +32,18 @@ import {
 
 type Theme = "light" | "dark";
 type Panel = "workspace" | "modules";
+
+const WorkspaceIntelligence = dynamic(
+  () => import("@/components/WorkspaceIntelligence"),
+  {
+    loading: () => (
+      <span
+        aria-hidden="true"
+        className="inline-block h-9 w-9 rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75"
+      />
+    ),
+  }
+);
 
 type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
