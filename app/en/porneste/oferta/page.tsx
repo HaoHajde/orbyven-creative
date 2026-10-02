@@ -232,7 +232,7 @@ function FeatureScene({
         ) : isWeb ? (
           feature === "Dashboard" ? (
             <div className="grid h-full grid-cols-[.23fr_.77fr] gap-3">
-              <div className="rounded-[16px] border border-white/8 bg-white/[.03] p-3">{["Overview","Clients","Tasks","Calendar"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${i===0?"bg-[#7655ff]":"text-white/38"}`}>{x}</div>)}</div>
+              <div className="rounded-[16px] border border-white/8 bg-white/[.03] p-3">{["Overview","Clients","Tasks","Calendar"].map((x)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${i===0?"bg-[#7655ff]":"text-white/38"}`}>{x}</div>)}</div>
               <div className="grid grid-cols-2 gap-3">{[["124","Clients"],["18","Tasks"],["75%","Progress"],["+45%","Growth"]].map(([n,l])=><div key={l} className="rounded-[16px] border border-white/8 bg-white/[.035] p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></div>)}</div>
             </div>
           ) : feature === "Responsive" ? (
@@ -261,12 +261,12 @@ function FeatureScene({
               <div className="w-full max-w-[540px] rounded-[22px] border border-white/8 bg-white/[.03] p-5"><div className="flex items-center justify-between"><p className="text-[15px] font-semibold">October</p><span className="text-[8px] text-white/35">2026</span></div><div className="mt-5 grid grid-cols-7 gap-2">{Array.from({length:35}).map((_,i)=><div key={i} className={`grid h-10 place-items-center rounded-[10px] text-[8px] ${[12,18,24].includes(i)?"bg-[#7d59ff] text-white":"bg-white/[.035] text-white/45"}`}>{i+1}</div>)}</div></div>
             </div>
           ) : feature === "Tasks" ? (
-            <div className="grid h-full place-items-center"><div className="w-full max-w-[560px] space-y-3">{["Website nou","Trimite oferta","Contact client","Prepare estimate"].map((x,i)=><div key={x} className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.035] p-4"><span className={`grid h-8 w-8 place-items-center rounded-full ${i<2?"bg-emerald-400/12 text-emerald-300":"bg-[#8f6cff]/12 text-[#c0afff]"}`}>{i<2?"✓":i+1}</span><span className="text-[10px] font-semibold">{x}</span></div>)}</div></div>
+            <div className="grid h-full place-items-center"><div className="w-full max-w-[560px] space-y-3">{["Website nou","Trimite oferta","Contact client","Prepare estimate"].map((x)=><div key={x} className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.035] p-4"><span className={`grid h-8 w-8 place-items-center rounded-full ${i<2?"bg-emerald-400/12 text-emerald-300":"bg-[#8f6cff]/12 text-[#c0afff]"}`}>{i<2?"✓":i+1}</span><span className="text-[10px] font-semibold">{x}</span></div>)}</div></div>
           ) : feature === "AI" || feature === "Automations" ? (
-            <div className="grid h-full place-items-center"><div className="flex items-center gap-5">{["CRM","AI","Tasks"].map((x,i)=><div key={x} className="flex items-center gap-5"><div className={`grid h-24 w-24 place-items-center rounded-[22px] border ${x==="AI"?"border-[#a98dff]/60 bg-[#8f6cff]/18 shadow-[0_0_40px_rgba(126,93,255,.22)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-2 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[#9f7cff]">→</span>:null}</div>)}</div></div>
+            <div className="grid h-full place-items-center"><div className="flex items-center gap-5">{["CRM","AI","Tasks"].map((x)=><div key={x} className="flex items-center gap-5"><div className={`grid h-24 w-24 place-items-center rounded-[22px] border ${x==="AI"?"border-[#a98dff]/60 bg-[#8f6cff]/18 shadow-[0_0_40px_rgba(126,93,255,.22)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-2 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[#9f7cff]">→</span>:null}</div>)}</div></div>
           ) : (
             <div className="grid h-full grid-cols-[.22fr_.78fr] gap-3">
-              <div className="rounded-[16px] border border-white/8 bg-white/[.025] p-3">{["Dashboard","CRM","Tasks","Calendar","Quotes","Inventory","AI"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</div>
+              <div className="rounded-[16px] border border-white/8 bg-white/[.025] p-3">{["Dashboard","CRM","Tasks","Calendar","Quotes","Inventory","AI"].map((x)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</div>
               <div className="grid grid-cols-2 gap-3">{[["124","Clients"],["18","Projects"],["12","Tasks"],["75%","Progress"]].map(([n,l])=><div key={l} className="rounded-[16px] border border-white/8 bg-white/[.035] p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></div>)}</div>
             </div>
           )
@@ -702,10 +702,7 @@ function CheckoutPanel({
   );
 }
 
-function OfferPageContent() {
-  const searchParams = useSearchParams();
-  const rawOffer = searchParams.get("offer");
-  const offerId: PublicOfferId | null = isPublicOfferId(rawOffer) ? rawOffer : null;
+function OfferPageView({ offerId }: { offerId: PublicOfferId | null }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [confirmed, setConfirmed] = useState(false);
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
@@ -747,11 +744,6 @@ function OfferPageContent() {
       return next;
     });
   };
-
-  useEffect(() => {
-    setConfirmed(false);
-    setActiveFeature(null);
-  }, [offerId]);
 
   if (!offerId) {
     return (
@@ -882,6 +874,14 @@ function OfferPageContent() {
       </section>
     </main>
   );
+}
+
+function OfferPageContent() {
+  const searchParams = useSearchParams();
+  const rawOffer = searchParams.get("offer");
+  const offerId: PublicOfferId | null = isPublicOfferId(rawOffer) ? rawOffer : null;
+
+  return <OfferPageView key={offerId ?? rawOffer ?? "invalid"} offerId={offerId} />;
 }
 
 export default function OfferPage() {
