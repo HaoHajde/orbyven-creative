@@ -23,7 +23,10 @@ import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPane
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
 import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
-import { syncCrmAfterAcceptedEstimate } from "@/lib/automation/status-sync";
+import {
+  syncCrmAfterAcceptedEstimate,
+  syncCrmAfterEstimateCreated,
+} from "@/lib/automation/status-sync";
 import {
   loadMaterialLibrary,recipeEstimatePreview,
   type MaterialLibrary,
@@ -320,6 +323,29 @@ export default function EstimatesModule({
         sourceEstimateId: revisionSource,
         items: preparedLines.map((line) => ({ description: line.description, quantity: Number(line.quantity), unitPriceLei: Number(line.price) })),
       });
+      if (created.client_id) {
+        try {
+          const crm = await syncCrmAfterEstimateCreated(
+            organizationId,
+            created.client_id,
+            created.reference
+          );
+          setSyncWarning(
+            crm.updated
+              ? crm.activityLogged
+                ? "CRM-ul a mutat cererea automat în stadiul Propunere."
+                : "CRM-ul a mutat cererea în Propunere; jurnalul activității nu a putut fi completat."
+              : crm.reason === "terminal_stage" && crm.stage === "lost"
+                ? "Cererea este marcată «Pierdut» în CRM; stadiul nu a fost suprascris automat."
+                : ""
+          );
+        } catch (crmError) {
+          console.error(crmError);
+          setSyncWarning("Devizul a fost creat, dar stadiul CRM nu a putut fi sincronizat automat.");
+        }
+      } else {
+        setSyncWarning("");
+      }
       setEstimates((current) => [created, ...current]);
       setSelectedId(created.id);
       const savedItems=await listEstimateItems(organizationId,created.id);
