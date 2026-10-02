@@ -23,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.10.0";
+const APP_VERSION = "0.11.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -39,6 +39,7 @@ const NATIVE_RUNTIME = {
     "documents",
     "haptics",
     "local-notifications",
+    "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
     "network-state-bridge",
@@ -72,6 +73,13 @@ type CalendarReminderMessage = {
   title: string;
   startAt: string;
   reminderMinutes: number | null;
+  location?: string | null;
+};
+
+type WorkReminderMessage = {
+  taskId: string;
+  title: string;
+  dueAt: string;
   location?: string | null;
 };
 
@@ -129,6 +137,48 @@ async function cancelCalendarReminder(eventId: string) {
       Notifications.cancelScheduledNotificationAsync(request.identifier)
     )
   );
+}
+
+async function cancelWorkReminder(taskId: string) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const matches = scheduled.filter(
+    (request) =>
+      request.content.data?.kind === "work-task" &&
+      request.content.data?.taskId === taskId
+  );
+  await Promise.all(
+    matches.map((request) =>
+      Notifications.cancelScheduledNotificationAsync(request.identifier)
+    )
+  );
+}
+
+async function scheduleWorkReminder(message: WorkReminderMessage) {
+  await cancelWorkReminder(message.taskId);
+
+  const dueAt = new Date(message.dueAt).getTime();
+  if (!Number.isFinite(dueAt) || dueAt <= Date.now()) return null;
+
+  const allowed = await notificationsAllowed();
+  if (!allowed) throw new Error("notification-permission-denied");
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: "ORBYVEN · Termen lucrare",
+      body: message.location
+        ? message.title + " · " + message.location
+        : message.title,
+      sound: true,
+      data: {
+        kind: "work-task",
+        taskId: message.taskId,
+      },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(dueAt),
+    },
+  });
 }
 
 async function scheduleCalendarReminder(message: CalendarReminderMessage) {
@@ -208,6 +258,7 @@ export default function App() {
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
   const pendingCalendarEventId = useRef<string | null>(null);
+  const pendingWorkTaskId = useRef<string | null>(null);
   const pendingDocumentsIntent = useRef(false);
   const webRuntimeReadyRef = useRef(false);
   const workspaceReadyRef = useRef(false);
@@ -459,6 +510,17 @@ export default function App() {
     );
   }, []);
 
+  const flushPendingWorkTaskIntent = useCallback(() => {
+    const taskId = pendingWorkTaskId.current;
+    if (!taskId || !workspaceReadyRef.current) return;
+
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-task-record',{detail:{taskId:" +
+        JSON.stringify(taskId) +
+        "}})); true;",
+    );
+  }, []);
+
   const flushPendingDocumentsIntent = useCallback(() => {
     if (!pendingDocumentsIntent.current || !workspaceReadyRef.current) return;
     pendingDocumentsIntent.current = false;
@@ -479,6 +541,19 @@ export default function App() {
       setTimeout(flushPendingCalendarIntent, 0);
     }
   }, [currentUrl, flushPendingCalendarIntent, navigateTrustedUrl]);
+
+  const openWorkTask = useCallback((taskId: string) => {
+    pendingWorkTaskId.current = taskId;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      navigateTrustedUrl(WORKSPACE_URL);
+      return;
+    }
+
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingWorkTaskIntent, 0);
+    }
+  }, [currentUrl, flushPendingWorkTaskIntent, navigateTrustedUrl]);
 
   const openDocuments = useCallback(() => {
     void Haptics.selectionAsync().catch(() => undefined);
@@ -511,6 +586,11 @@ export default function App() {
         typeof data.eventId === "string"
       ) {
         openCalendarRecord(data.eventId);
+      } else if (
+        data?.kind === "work-task" &&
+        typeof data.taskId === "string"
+      ) {
+        openWorkTask(data.taskId);
       } else if (typeof data?.url === "string") {
         openNotificationUrl(data.url);
       } else {
@@ -530,15 +610,17 @@ export default function App() {
       Notifications.addNotificationResponseReceivedListener(handleResponse);
 
     return () => subscription.remove();
-  }, [openCalendarRecord, openNotificationUrl]);
+  }, [openCalendarRecord, openNotificationUrl, openWorkTask]);
 
   const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
     try {
       const message = JSON.parse(event.nativeEvent.data) as {
         type?: string;
         eventId?: string;
+        taskId?: string;
         title?: string;
         startAt?: string;
+        dueAt?: string;
         reminderMinutes?: number | null;
         location?: string | null;
         theme?: NativeTheme;
@@ -552,6 +634,7 @@ export default function App() {
         workspaceReadyRef.current = true;
         setTimeout(() => {
           flushPendingCalendarIntent();
+          flushPendingWorkTaskIntent();
           flushPendingDocumentsIntent();
         }, 0);
       } else if (message.type === "orbyven:haptic") {
@@ -626,6 +709,48 @@ export default function App() {
       } else if (message.type === "orbyven:document-selected") {
         void Haptics.selectionAsync().catch(() => undefined);
       } else if (
+        message.type === "orbyven:schedule-work-reminder" &&
+        typeof message.taskId === "string" &&
+        typeof message.title === "string" &&
+        typeof message.dueAt === "string"
+      ) {
+        void scheduleWorkReminder({
+          taskId: message.taskId,
+          title: message.title,
+          dueAt: message.dueAt,
+          location: message.location,
+        })
+          .then(() =>
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success,
+            ).catch(() => undefined),
+          )
+          .catch((error: unknown) => {
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Error,
+            ).catch(() => undefined);
+            if (
+              error instanceof Error &&
+              error.message === "notification-permission-denied"
+            ) {
+              Alert.alert(
+                "Notificări dezactivate",
+                "Activează notificările pentru ORBYVEN din Settings ca să primești termenele lucrărilor.",
+              );
+            }
+          });
+      } else if (
+        message.type === "orbyven:cancel-work-reminder" &&
+        typeof message.taskId === "string"
+      ) {
+        void cancelWorkReminder(message.taskId).catch(() => undefined);
+      } else if (
+        message.type === "orbyven:native-task-opened" &&
+        typeof message.taskId === "string" &&
+        pendingWorkTaskId.current === message.taskId
+      ) {
+        pendingWorkTaskId.current = null;
+      } else if (
         message.type === "orbyven:schedule-calendar-reminder" &&
         typeof message.eventId === "string" &&
         typeof message.title === "string" &&
@@ -675,7 +800,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent]);
+  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
