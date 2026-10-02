@@ -149,6 +149,16 @@ export default function WorkspaceShell({
 
 
   useEffect(() => {
+    const { data } = orbyvenSupabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      setWorkspace(null);
+      void Promise.resolve(onSignedOut());
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, [onSignedOut]);
+
+  useEffect(() => {
     const bridge = (window as Window & {
       ReactNativeWebView?: { postMessage: (message: string) => void };
     }).ReactNativeWebView;
