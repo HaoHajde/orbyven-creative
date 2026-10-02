@@ -526,14 +526,13 @@ export async function recoverPlan(
   }
 
   const auditClient = createBillingServiceClient(actor);
-  const { error: auditError } = await auditClient.from("platform_audit_log").insert({
-    actor_user_id: actor.userId,
-    actor_role: actor.role,
-    organization_id: actor.organizationId,
-    action: "ai_plan.recovered",
-    target_type: "ai_plan",
-    target_id: newPlanId,
-    metadata: {
+  const { error: auditError } = await auditClient.rpc("ai_action_audit_write", {
+    p_organization_id: actor.organizationId,
+    p_actor_id: actor.userId,
+    p_action: "ai_plan.recovered",
+    p_target_type: "ai_plan",
+    p_target_id: newPlanId,
+    p_metadata: {
       previous_plan_id: planId,
       new_plan_id: newPlanId,
       root_plan_id: blockedMeta.rootPlanId || planId,
