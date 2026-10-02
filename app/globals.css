@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1d1d1f;
+  --background: #f1eef8;
+  --foreground: #201b2d;
 }
 
 @theme inline {
@@ -83,6 +83,56 @@ iframe {
 :focus-visible {
   outline: 2px solid #4b46ee;
   outline-offset: 3px;
+}
+
+
+/* =========================================================
+   ORBYVEN LIGHT THEME ATMOSPHERE
+   Lavender-tinted light surfaces reduce the white flash after dark mode.
+   Applied only to canonical ORBYVEN theme shells; client templates keep
+   their own art direction.
+   ========================================================= */
+
+.orbyven-theme-shell {
+  transition:
+    background-color 260ms ease,
+    color 220ms ease;
+}
+
+.orbyven-theme-shell[data-orbyven-theme="light"] {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 8% 4%, rgba(102, 79, 221, 0.145), transparent 31%),
+    radial-gradient(circle at 94% 18%, rgba(154, 103, 236, 0.095), transparent 29%),
+    radial-gradient(circle at 52% 104%, rgba(91, 77, 222, 0.075), transparent 36%),
+    linear-gradient(118deg, transparent 0 46%, rgba(91, 77, 222, 0.028) 46.12%, transparent 46.28% 100%);
+}
+
+.orbyven-theme-shell[data-orbyven-theme="light"] :where(
+  article,
+  aside,
+  section,
+  nav,
+  header,
+  footer,
+  [role="dialog"]
+)[class*="border-[var(--border)]"] {
+  outline: 1px solid rgba(91, 77, 222, 0.025);
+  outline-offset: -1px;
+}
+
+.orbyven-theme-shell[data-orbyven-theme="light"] :where(
+  input,
+  textarea,
+  select
+) {
+  caret-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbyven-theme-shell {
+    transition: none;
+  }
 }
 
 /* =========================================================
