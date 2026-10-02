@@ -17,6 +17,10 @@ import {
   critiqueWebDesign,
   type WebDesignQualityReport,
 } from "@/lib/ai/web-design-quality";
+import {
+  applyDesignDna,
+  designDnaInstruction,
+} from "@/lib/ai/web-design-variation";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -502,6 +506,7 @@ export async function generateWebDesignForActor(
 
   const strategy = buildWebDesignStrategy(prompt, current);
   const strategyInstruction = webDesignStrategyInstruction(strategy);
+  const variationInstruction = designDnaInstruction(current, strategy, prompt);
 
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
@@ -537,7 +542,8 @@ export async function generateWebDesignForActor(
           "Păstrează un CTA principal clar, ierarhie vizuală bună, texte scurte, contrast bun și o paletă coerentă. Nu ascunde secțiunea hero. " +
           "Folosește Site Strategy ca arhitectură de conversie: respectă obiectivul principal, evită secțiunile redundante și nu transforma automat toate site-urile în aceeași structură. " +
           "Dacă request_mode este refine, modifică doar ce cere utilizatorul și păstrează structura neschimbată dacă nu este cerută explicit.\n\n" +
-          strategyInstruction,
+          strategyInstruction +
+          (variationInstruction ? "\n\n" + variationInstruction : ""),
         input: JSON.stringify({
           user_request: prompt.slice(0, 2000),
           organization_name: organization?.name ?? null,
@@ -589,7 +595,15 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
-    const qualityResult = critiqueWebDesign(strategicDraft, strategy);
+    const variedDraft = readSiteDraft(
+      applyDesignDna(strategicDraft, current, strategy, prompt)
+    );
+    if (!variedDraft) {
+      await finishQuota(quota.requestId, false, usage, "VARIATION_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const qualityResult = critiqueWebDesign(variedDraft, strategy);
     const nextDraft = readSiteDraft(qualityResult.draft);
     if (!nextDraft) {
       await finishQuota(quota.requestId, false, usage, "QUALITY_INVALID");
