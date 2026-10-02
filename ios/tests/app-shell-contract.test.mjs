@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.8 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.9 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.8.0");
+  assert.equal(pkg.version, "0.9.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -38,10 +38,10 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 });
 
 
-test("Alpha 0.8 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+test("Alpha 0.9 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.8\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.9\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
@@ -65,7 +65,7 @@ test("native workspace navigation can request bounded selection haptics", () => 
 });
 
 
-test("Alpha 0.8 preserves in-flight workspace state across short network interruptions", () => {
+test("Alpha 0.9 preserves in-flight workspace state across short network interruptions", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"state-preserving-reconnect"/);
@@ -79,4 +79,24 @@ test("Alpha 0.8 preserves in-flight workspace state across short network interru
     app,
     /if \(definitelyOnline && previousReachability\.current === false\)[\s\S]{0,180}webRef\.current\?\.reload\(\)/,
   );
+});
+
+
+test("Alpha 0.9 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
+  const app = read("App.tsx");
+
+  assert.match(app, /"stateful-deep-links"/);
+  assert.match(app, /"workspace-continuity"/);
+  assert.match(app, /const navigateTrustedUrl = useCallback/);
+  assert.match(app, /currentUrlRef\.current === url/);
+  assert.match(app, /setCurrentUrl\(url\)/);
+  assert.match(app, /startInLoadingState=\{!webHasLoaded\}/);
+  assert.match(app, /setWebHasLoaded\(true\)/);
+  assert.match(app, /setWebHasLoaded\(false\)/);
+
+  const nativeLinkBlock = app.match(
+    /const openNativeLink = useCallback\([\s\S]*?\}, \[navigateTrustedUrl\]\);/
+  )?.[0] ?? "";
+  assert.match(nativeLinkBlock, /navigateTrustedUrl\(webUrl\)/);
+  assert.doesNotMatch(nativeLinkBlock, /setReloadKey/);
 });
