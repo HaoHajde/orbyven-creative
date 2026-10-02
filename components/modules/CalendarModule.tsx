@@ -82,6 +82,51 @@ const emptyForm: CreateForm = {
   resourceIds: [],
 };
 
+type NativeCalendarBridgeWindow = Window & {
+  ReactNativeWebView?: {
+    postMessage: (message: string) => void;
+  };
+};
+
+function postCalendarReminderBridge(calendarEvent: CalendarEvent) {
+  const bridge = (window as NativeCalendarBridgeWindow).ReactNativeWebView;
+  if (!bridge) return;
+
+  if (
+    calendarEvent.status !== "scheduled" ||
+    calendarEvent.reminder_minutes === null
+  ) {
+    bridge.postMessage(
+      JSON.stringify({
+        type: "orbyven:cancel-calendar-reminder",
+        eventId: calendarEvent.id,
+      })
+    );
+    return;
+  }
+
+  bridge.postMessage(
+    JSON.stringify({
+      type: "orbyven:schedule-calendar-reminder",
+      eventId: calendarEvent.id,
+      title: calendarEvent.title,
+      startAt: calendarEvent.start_at,
+      reminderMinutes: calendarEvent.reminder_minutes,
+      location: calendarEvent.location || null,
+    })
+  );
+}
+
+function cancelCalendarReminderBridge(eventId: string) {
+  const bridge = (window as NativeCalendarBridgeWindow).ReactNativeWebView;
+  bridge?.postMessage(
+    JSON.stringify({
+      type: "orbyven:cancel-calendar-reminder",
+      eventId,
+    })
+  );
+}
+
 const typeLabels: Record<CalendarEventType, string> = {
   appointment: "Programare",
   work: "Lucrare",
@@ -469,6 +514,9 @@ export default function CalendarModule({
         ...createdAssignments,
       ]);
       setSelectedId(created.id);
+      if (created.reminder_minutes !== null) {
+        postCalendarReminderBridge(created);
+      }
       setCreateOpen(false);
       setForm(emptyForm);
     } catch (createError) {
@@ -499,6 +547,7 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
+      postCalendarReminderBridge(updated);
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
@@ -544,6 +593,7 @@ export default function CalendarModule({
     setError("");
     try {
       await deleteCalendarEvent(organizationId, calendarEvent.id);
+      cancelCalendarReminderBridge(calendarEvent.id);
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
     } catch (deleteError) {
