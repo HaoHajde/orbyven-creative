@@ -10,6 +10,7 @@ export type WorkspaceOpenOptions = {
   estimateId?: string;
   purchaseOrderId?: string;
   documentId?: string;
+  prefillTitle?: string;
 };
 
 export type WorkspaceNavigationIntent = WorkspaceOpenOptions & {
