@@ -43,9 +43,9 @@ export default function LegalDocument({
         updated: "Updated",
       }
     : {
-        center: "{copy.center}",
-        prelaunch: "{copy.prelaunch}",
-        documents: "{copy.documents}",
+        center: "Centrul juridic",
+        prelaunch: "Document de pre-lansare. Datele juridice ale operatorului și tratamentul TVA trebuie completate înainte de activarea plăților comerciale. Sistemul de billing este blocat automat până atunci.",
+        documents: "Documente",
         taxId: "CUI/CIF",
         registry: "Registrul Comerțului",
         version: "Versiune",
