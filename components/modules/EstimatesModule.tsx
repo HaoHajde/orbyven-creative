@@ -130,7 +130,13 @@ export default function EstimatesModule({
         const task = nextTasks.find((item) => item.id === initialTaskId);
         if (task) setForm((current) => ({ ...current, title: current.title || task.title, clientId: task.client_id || current.clientId }));
       }
-      setSelectedId((current) => current && nextEstimates.some((item) => item.id === current) ? current : nextEstimates[0]?.id ?? null);
+      setSelectedId((current) => {
+        if (current && nextEstimates.some((item) => item.id === current)) return current;
+        const taskEstimate = initialTaskId
+          ? nextEstimates.find((item) => item.task_id === initialTaskId)
+          : null;
+        return taskEstimate?.id ?? nextEstimates[0]?.id ?? null;
+      });
     } catch (loadError) {
       console.error(loadError);
       setError("Ofertele nu au putut fi încărcate.");
