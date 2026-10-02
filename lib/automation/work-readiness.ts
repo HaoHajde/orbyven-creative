@@ -80,9 +80,12 @@ export function evaluateWorkReadiness(input: {
   const assignee = normalized(operation.assignee);
   const operationalKind = operation.kind === "work" || operation.kind === "order";
   const executionSoon =
-    operation.status === "in_progress" ||
-    within(operation.scheduledAt, now, 7 * DAY_MS) ||
-    within(operation.dueAt, now, 7 * DAY_MS);
+    !["done", "cancelled"].includes(operation.status) &&
+    (
+      operation.status === "in_progress" ||
+      within(operation.scheduledAt, now, 7 * DAY_MS) ||
+      within(operation.dueAt, now, 7 * DAY_MS)
+    );
 
   if (operation.status === "blocked") {
     checks.push({
@@ -205,7 +208,10 @@ export function evaluateWorkReadiness(input: {
     checks.push({ key: "checklist", label: "Checklist", state: "info", message: "Nu există pași de checklist definiți." });
   } else if (!pendingChecklist) {
     checks.push({ key: "checklist", label: "Checklist", state: "good", message: "Checklist complet." });
-  } else if (operation.status === "done" || within(operation.dueAt, now, DAY_MS)) {
+  } else if (
+    operation.status === "done" ||
+    (operation.status !== "cancelled" && within(operation.dueAt, now, DAY_MS))
+  ) {
     checks.push({
       key: "checklist",
       label: "Checklist",
