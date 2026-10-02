@@ -42,6 +42,7 @@ type CalendarRow = {
 };
 
 type FocusLevel = "urgent" | "attention" | "upcoming";
+type FocusReason = "blocked" | "overdue" | "priority" | "unassigned" | "unplanned" | "lead_followup" | "estimate_followup" | "appointment";
 
 type FocusCandidate = {
   key: string;
@@ -50,6 +51,7 @@ type FocusCandidate = {
   sortAt: string;
   title: string;
   meta: string;
+  reason: FocusReason;
   action: IntelligenceAction;
 };
 
@@ -95,6 +97,53 @@ function taskAction(row: TaskRow, label: string): IntelligenceAction {
 
 function candidateActionLabel(candidate: FocusCandidate) {
   return candidate.action.kind === "open_module" ? candidate.action.label : candidate.title;
+}
+
+function focusInsight(candidate: FocusCandidate) {
+  const explanations: Record<FocusReason, { why: string; consequence: string; nextStep: string }> = {
+    blocked: {
+      why: "Lucrarea este oprită și nu poate avansa fără o decizie.",
+      consequence: "Amânarea poate împinge termenul și bloca pașii dependenți.",
+      nextStep: "Deschide lucrarea și elimină blocajul principal.",
+    },
+    overdue: {
+      why: "Termenul este deja depășit.",
+      consequence: "Întârzierea poate crește presiunea operațională și riscul față de client.",
+      nextStep: "Verifică stadiul și stabilește imediat următoarea acțiune.",
+    },
+    priority: {
+      why: "Lucrarea este marcată cu prioritate ridicată în workspace.",
+      consequence: "Dacă rămâne în urmă, poate împinge activități mai puțin flexibile.",
+      nextStep: "Confirmă responsabilul și următorul checkpoint.",
+    },
+    unassigned: {
+      why: "Execuția este apropiată sau activă, dar nu are responsabil.",
+      consequence: "Fără ownership clar, lucrarea poate rămâne nepreluată.",
+      nextStep: "Alocă un responsabil înainte de următorul interval de lucru.",
+    },
+    unplanned: {
+      why: "Lucrarea este deschisă de peste 24h fără programare sau termen.",
+      consequence: "Poate dispărea din fluxul zilnic și deveni restantă fără semnal clar.",
+      nextStep: "Adaugă o programare sau un termen realist.",
+    },
+    lead_followup: {
+      why: "Follow-up-ul comercial este scadent sau deja restant.",
+      consequence: "O întârziere suplimentară poate reduce șansa de conversie.",
+      nextStep: "Contactează lead-ul și actualizează următorul follow-up.",
+    },
+    estimate_followup: {
+      why: "Oferta expiră curând sau nu a primit răspuns de câteva zile.",
+      consequence: "Fără follow-up, oportunitatea poate rămâne blocată sau se poate răci.",
+      nextStep: "Verifică oferta și fă follow-up comercial.",
+    },
+    appointment: {
+      why: "Există o programare în următoarele 24 de ore.",
+      consequence: "Dacă pregătirea lipsește, execuția poate începe cu întârziere.",
+      nextStep: "Verifică ora, contextul și resursele necesare.",
+    },
+  };
+  const insight = explanations[candidate.reason];
+  return { ...insight, confidence: "high" as const };
 }
 
 function rankCandidates(candidates: FocusCandidate[]) {
@@ -189,6 +238,7 @@ export async function answerBusinessBriefing(
         sortAt: task.due_at ?? task.created_at,
         title: "Deblochează · " + task.title,
         meta: task.due_at && task.due_at < nowIso ? "Blocat și cu termen depășit" : "Lucrarea este oprită",
+        reason: "blocked",
         action: taskAction(task, "Deblochează · " + task.title),
       });
       continue;
@@ -202,6 +252,7 @@ export async function answerBusinessBriefing(
         sortAt: task.due_at,
         title: "Termen depășit · " + task.title,
         meta: "Scadent " + formatShort(task.due_at),
+        reason: "overdue",
         action: taskAction(task, "Deschide · " + task.title),
       });
       continue;
@@ -215,6 +266,7 @@ export async function answerBusinessBriefing(
         sortAt: task.due_at ?? task.scheduled_at ?? task.created_at,
         title: (task.priority === "urgent" ? "Urgent · " : "Prioritate ridicată · ") + task.title,
         meta: task.assignee?.trim() ? "Responsabil: " + task.assignee.trim() : "Fără responsabil",
+        reason: "priority",
         action: taskAction(task, "Deschide · " + task.title),
       });
     }
@@ -227,6 +279,7 @@ export async function answerBusinessBriefing(
         sortAt: task.scheduled_at ?? task.created_at,
         title: "Fără responsabil · " + task.title,
         meta: task.status === "in_progress" ? "Este deja în lucru" : "Este programată în următoarele 24h",
+        reason: "unassigned",
         action: taskAction(task, "Alocă · " + task.title),
       });
     }
@@ -239,6 +292,7 @@ export async function answerBusinessBriefing(
         sortAt: task.created_at,
         title: "Fără programare · " + task.title,
         meta: "Deschisă de peste 24h fără termen",
+        reason: "unplanned",
         action: taskAction(task, "Programează · " + task.title),
       });
     }
@@ -254,6 +308,7 @@ export async function answerBusinessBriefing(
       sortAt: lead.next_follow_up_at,
       title: "Follow-up lead · " + lead.name,
       meta: overdue ? "Follow-up restant" : "Scadent până mâine",
+      reason: "lead_followup",
       action: {
         kind: "open_module",
         label: "Contactează · " + lead.name,
@@ -274,6 +329,7 @@ export async function answerBusinessBriefing(
       sortAt: estimate.valid_until ? estimate.valid_until + "T12:00:00.000Z" : estimate.updated_at,
       title: (expiring ? "Ofertă de urmărit · " : "Ofertă fără răspuns · ") + estimate.reference,
       meta: estimate.title,
+      reason: "estimate_followup",
       action: {
         kind: "open_module",
         label: "Follow-up · " + estimate.reference,
@@ -294,6 +350,7 @@ export async function answerBusinessBriefing(
       sortAt: event.start_at,
       title: "Programare · " + event.title,
       meta: formatShort(event.start_at),
+      reason: "appointment",
       action: {
         kind: "open_module",
         label: "Calendar · " + event.title,
@@ -331,6 +388,7 @@ export async function answerBusinessBriefing(
       ...candidate.action,
       label: candidateActionLabel(candidate),
     })),
+    focus: next ? focusInsight(next) : undefined,
     generatedBy: "orbyven_core",
   };
 }
