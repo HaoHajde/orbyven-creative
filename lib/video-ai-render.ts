@@ -71,6 +71,9 @@ export function readVideoRenderRequest(value: unknown): VideoRenderRequest | nul
   const board = storyboard as Record<string, unknown>;
 
   if (
+    typeof board.title !== "string" ||
+    board.title.trim().length < 2 ||
+    board.title.length > 200 ||
     typeof board.summary !== "string" ||
     board.summary.trim().length < 2 ||
     board.summary.length > 4000 ||
@@ -87,9 +90,34 @@ export function readVideoRenderRequest(value: unknown): VideoRenderRequest | nul
   for (const scene of board.scenes) {
     if (!scene || typeof scene !== "object" || Array.isArray(scene)) return null;
     const item = scene as Record<string, unknown>;
+    const start = Number(item.start);
+    const end = Number(item.end);
     if (
       typeof item.id !== "string" ||
+      item.id.length < 1 ||
+      item.id.length > 120 ||
+      !Number.isInteger(Number(item.index)) ||
+      Number(item.index) < 1 ||
+      Number(item.index) > 12 ||
+      !Number.isFinite(start) ||
+      !Number.isFinite(end) ||
+      start < 0 ||
+      end <= start ||
+      end > Number(board.duration) ||
       typeof item.title !== "string" ||
+      item.title.trim().length < 1 ||
+      item.title.length > 180 ||
+      typeof item.purpose !== "string" ||
+      item.purpose.length < 2 ||
+      item.purpose.length > 600 ||
+      typeof item.camera !== "string" ||
+      item.camera.length < 2 ||
+      item.camera.length > 600 ||
+      typeof item.transition !== "string" ||
+      item.transition.length < 2 ||
+      item.transition.length > 600 ||
+      typeof item.onScreenText !== "string" ||
+      item.onScreenText.length > 180 ||
       typeof item.generationPrompt !== "string" ||
       item.generationPrompt.length < 10 ||
       item.generationPrompt.length > 5000
