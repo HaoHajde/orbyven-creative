@@ -36,6 +36,13 @@ type TextScale = 0.9 | 1 | 1.1 | 1.2 | 1.3;
 
 const TEXT_SCALE_STEPS: TextScale[] = [0.9, 1, 1.1, 1.2, 1.3];
 const DEFAULT_TEXT_SCALE: TextScale = 1.1;
+const TEXT_SCALE_SIDEBAR_WIDTH: Record<TextScale, string> = {
+  0.9: "206px",
+  1: "206px",
+  1.1: "216px",
+  1.2: "228px",
+  1.3: "240px",
+};
 
 type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
@@ -340,6 +347,7 @@ export default function WorkspaceShell({
   const vars = {
     ...themeToCssVars(theme),
     "--orbyven-text-scale": textScale,
+    "--workspace-sidebar-width": TEXT_SCALE_SIDEBAR_WIDTH[textScale],
   } as CSSProperties;
 
   if (loading) {
@@ -435,8 +443,8 @@ export default function WorkspaceShell({
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[206px_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100dvh-90px)] rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+      <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[var(--workspace-sidebar-width)_minmax(0,1fr)] md:px-4 md:pb-6">
+        <aside className="sticky top-[77px] hidden h-[calc(100dvh-90px)] min-w-0 overflow-y-auto overscroll-contain rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
@@ -472,37 +480,38 @@ export default function WorkspaceShell({
           })}
 
           <div className="mt-auto space-y-2 pt-6">
-            <div className="rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-semibold text-[var(--muted)]">Dimensiune text</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => changeTextScale(-1)}
-                    disabled={textScale === TEXT_SCALE_STEPS[0]}
-                    aria-label="Micșorează textul"
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] text-[12px] font-semibold disabled:opacity-30"
-                  >
-                    A−
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetTextScale}
-                    title="Revino la 100%"
-                    className="min-w-[44px] rounded-full px-1.5 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
-                  >
-                    {Math.round(textScale * 100)}%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeTextScale(1)}
-                    disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
-                    aria-label="Mărește textul"
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] text-[12px] font-semibold disabled:opacity-30"
-                  >
-                    A+
-                  </button>
-                </div>
+            <div data-workspace-text-scale-control="desktop" className="min-w-0 rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
+                <button
+                  type="button"
+                  onClick={resetTextScale}
+                  title="Revino la 100%"
+                  aria-label="Revino la dimensiunea textului 100%"
+                  className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
+                >
+                  {Math.round(textScale * 100)}%
+                </button>
+              </div>
+              <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(-1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[0]}
+                  aria-label="Micșorează textul"
+                  className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A−
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
+                  aria-label="Mărește textul"
+                  className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A+
+                </button>
               </div>
             </div>
             <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
@@ -605,32 +614,35 @@ export default function WorkspaceShell({
               })}
             </div>
 
-            <div className="mt-3 flex items-center justify-between rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2">
-              <span className="text-[11px] font-semibold text-[var(--muted)]">Text {Math.round(textScale * 100)}%</span>
-              <div className="flex items-center gap-1.5">
+            <div data-workspace-text-scale-control="mobile" className="mt-3 min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2.5">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
+                <button
+                  type="button"
+                  onClick={resetTextScale}
+                  aria-label="Revino la dimensiunea textului 100%"
+                  title="Revino la 100%"
+                  className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold text-[var(--muted-2)]"
+                >
+                  {Math.round(textScale * 100)}%
+                </button>
+              </div>
+              <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => changeTextScale(-1)}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
                   aria-label="Micșorează textul"
-                  className="flex h-8 min-w-8 items-center justify-center rounded-full border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                  className="flex h-9 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A−
-                </button>
-                <button
-                  type="button"
-                  onClick={resetTextScale}
-                  className="h-8 rounded-full px-2 text-[9px] font-semibold text-[var(--muted-2)]"
-                  title="Revino la 100%"
-                >
-                  100%
                 </button>
                 <button
                   type="button"
                   onClick={() => changeTextScale(1)}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
                   aria-label="Mărește textul"
-                  className="flex h-8 min-w-8 items-center justify-center rounded-full border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                  className="flex h-9 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A+
                 </button>
