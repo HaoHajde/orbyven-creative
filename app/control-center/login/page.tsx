@@ -68,7 +68,8 @@ export default function ControlCenterLoginPage() {
 
     if (factorsError) throw factorsError;
 
-    const verifiedTotp = factors.totp.find(
+    const totpFactors = factors.totp ?? [];
+    const verifiedTotp = totpFactors.find(
       (factor) => factor.status === "verified"
     );
 
@@ -80,7 +81,7 @@ export default function ControlCenterLoginPage() {
       return;
     }
 
-    for (const factor of factors.totp.filter(
+    for (const factor of totpFactors.filter(
       (candidate) => candidate.status !== "verified"
     )) {
       await orbyvenSupabase.auth.mfa.unenroll({ factorId: factor.id });
@@ -94,8 +95,13 @@ export default function ControlCenterLoginPage() {
 
     if (enrollError) throw enrollError;
 
+    const secret = enrollment.totp?.secret;
+    if (!secret) {
+      throw new Error("TOTP enrollment did not return a secret.");
+    }
+
     setMfaFactorId(enrollment.id);
-    setMfaSecret(enrollment.totp.secret);
+    setMfaSecret(secret);
     setMfaCode("");
     setMfaMode("enroll");
   };
