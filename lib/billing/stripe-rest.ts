@@ -169,30 +169,32 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
   params.set("metadata[merchant_type]", commercialIdentity.entityType);
 
   if (offerId === "invitation") {
+    const invitationOffer = PUBLIC_OFFERS.invitation;
     params.set("mode", "payment");
     params.set("submit_type", "pay");
     setInlinePrice(params, 0, {
-      amountLei: offer.priceLei,
+      amountLei: invitationOffer.priceLei,
       name: "Invitație online personalizată ORBYVEN",
       description: "Design personalizat, RSVP și experiență online pentru eveniment.",
     });
   }
 
   if (offerId === "web") {
+    const webOffer = PUBLIC_OFFERS.web;
     params.set("mode", "subscription");
     params.set("submit_type", "subscribe");
     setInlinePrice(params, 0, {
-      amountLei: offer.priceLei,
+      amountLei: webOffer.priceLei,
       name: "Web design ORBYVEN",
       description: "Website personalizat. Include 30 de zile ORBYVEN Dashboard pentru primul utilizator.",
     });
     setInlinePrice(params, 1, {
-      amountLei: offer.recurringLei,
+      amountLei: webOffer.recurringLei,
       name: "ORBYVEN Dashboard",
       description: "Pachetul continuă după perioada inclusă de 30 de zile.",
       recurring: true,
     });
-    params.set("subscription_data[trial_period_days]", String(offer.trialDays));
+    params.set("subscription_data[trial_period_days]", String(webOffer.trialDays));
     params.set("subscription_data[metadata][public_offer]", offerId);
     params.set("subscription_data[metadata][plan_id]", "business");
     params.set("subscription_data[metadata][merchant_key]", commercialIdentity.entityKey || "prelaunch");
@@ -204,10 +206,11 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
   }
 
   if (offerId === "advanced") {
+    const advancedOffer = PUBLIC_OFFERS.advanced;
     params.set("mode", "subscription");
     params.set("submit_type", "subscribe");
     setInlinePrice(params, 0, {
-      amountLei: offer.recurringLei,
+      amountLei: advancedOffer.recurringLei,
       name: "ORBYVEN Advanced",
       description: "Web design + Dashboard + module personalizabile pentru fluxurile firmei.",
       recurring: true,
