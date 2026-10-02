@@ -18,6 +18,10 @@ export type WorkReadinessContext = {
   upcomingEventsCount: number;
   expensesCount: number | null;
   expensesCents: number | null;
+  financeDraftInvoicesCount: number | null;
+  financeOpenInvoicesCount: number | null;
+  financeOverdueInvoicesCount: number | null;
+  financeOutstandingCents: number | null;
   inventoryMovementsCount: number | null;
   openPurchaseOrdersCount: number | null;
   inventoryConsumedCents: number | null;
@@ -28,7 +32,7 @@ export type WorkReadinessContext = {
 };
 
 export type WorkReadinessCheck = {
-  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "procurement" | "costs";
+  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "procurement" | "costs" | "financial";
   label: string;
   state: WorkReadinessCheckState;
   message: string;
@@ -332,6 +336,36 @@ export function evaluateWorkReadiness(input: {
       label: "Costuri",
       state: "unavailable",
       message: canAccessFinances ? "Contextul financiar nu este disponibil." : "Vizibil doar pentru rolurile financiare.",
+    });
+  }
+
+  if (
+    canAccessFinances &&
+    enabled.expenses &&
+    context &&
+    operation.status === "done" &&
+    operationalKind
+  ) {
+    const draftInvoices = context.financeDraftInvoicesCount ?? 0;
+    const openInvoices = context.financeOpenInvoicesCount ?? 0;
+    const overdueInvoices = context.financeOverdueInvoicesCount ?? 0;
+    const outstandingCents = context.financeOutstandingCents ?? 0;
+
+    checks.push({
+      key: "financial",
+      label: "Închidere financiară",
+      state:
+        overdueInvoices > 0 || draftInvoices > 0 || openInvoices > 0
+          ? "attention"
+          : "good",
+      message:
+        overdueInvoices > 0
+          ? overdueInvoices + " facturi au scadența depășită pentru această lucrare."
+          : draftInvoices > 0
+            ? draftInvoices + " facturi sunt încă în ciornă."
+            : openInvoices > 0
+              ? "Mai sunt de încasat " + (outstandingCents / 100).toFixed(2) + " RON."
+              : "Nu sunt detectate facturi sau încasări deschise pentru această lucrare.",
     });
   }
 
