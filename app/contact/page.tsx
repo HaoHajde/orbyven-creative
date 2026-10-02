@@ -78,20 +78,20 @@ export default function ContactPage() {
         <div className="mx-auto max-w-[1500px]">
           <p className="orbyven-home-kicker">
             <span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span>
-            <span>ORBYVEN · GET STARTED</span>
+            <span>ORBYVEN · PORNEȘTE</span>
             <span aria-hidden="true" className="orbyven-home-kicker-line" />
           </p>
 
           <div className="mt-7 grid gap-8 lg:grid-cols-[.92fr_1.08fr] lg:items-end">
             <h1 className="max-w-[760px] text-[clamp(58px,6.6vw,104px)] font-semibold leading-[.87] tracking-[-.072em]">
-              Choose how
+              Alege cum
               <br />
-              <span className="text-[var(--home-violet)]">you want to start.</span>
+              <span className="text-[var(--home-violet)]">vrei să pornim.</span>
             </h1>
 
             <div className="max-w-xl lg:justify-self-end lg:pb-3">
               <p className="text-[14px] leading-7 text-[var(--muted)] sm:text-[15px]">
-                Three different directions, three different experiences. Choose a card to enter the dedicated flow.
+                Trei direcții diferite, trei experiențe diferite. Apasă pe card și intri direct în fluxul dedicat.
               </p>
             </div>
           </div>
@@ -99,8 +99,8 @@ export default function ContactPage() {
           {PUBLIC_CHECKOUT_IS_DEMO ? (
             <div className="mt-8 flex flex-col gap-3 rounded-[22px] border border-amber-300/20 bg-amber-300/[.06] px-5 py-4 text-[11px] leading-5 text-amber-100/80 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-bold uppercase tracking-[.14em] text-amber-200">TEST / DEMO MODE</p>
-                <p className="mt-1 text-white/58">No real payments are collected and no commercial order is placed. Use Stripe test data only.</p>
+                <p className="font-bold uppercase tracking-[.14em] text-amber-200">MOD TEST / DEMO</p>
+                <p className="mt-1 text-white/58">Nu se încasează bani reali și nu se încheie o comandă comercială. Folosește doar datele de test Stripe.</p>
               </div>
               <span className="shrink-0 rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-[9px] font-bold text-amber-100">SANDBOX</span>
             </div>
@@ -129,8 +129,8 @@ export default function ContactPage() {
               </div>
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">01 · EVENT</span>
-                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · TEST" : "CUSTOM"}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">01 · EVENIMENT</span>
+                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · TEST" : "PERSONALIZAT"}</span>
                 </div>
 
                 <div className="max-w-[420px]">
@@ -139,18 +139,18 @@ export default function ContactPage() {
                   </div>
                   <div className="mb-5 flex items-end gap-2">
                     <span className="text-[54px] font-semibold leading-none tracking-[-.075em]">{PUBLIC_OFFERS.invitation.priceLei}</span>
-                    <span className="pb-1 text-[11px] font-semibold text-white/55">RON · one-time</span>
+                    <span className="pb-1 text-[11px] font-semibold text-white/55">lei · o singură dată</span>
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.94] tracking-[-.06em] sm:text-[42px]">
-                    Digital invitation
+                    Invitație online
                     <br />
-                    customized.
+                    personalizată.
                   </h2>
                   <p className="mt-4 max-w-sm text-[12px] leading-6 text-white/66">
-                    Design, RSVP, locations and an experience built around your event.
+                    Design, RSVP, locații și experiență construită în jurul evenimentului.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">02 · WEB DESIGN</span>
-                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · 30 DAYS" : "30 DAYS FREE"}</span>
+                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · 30 ZILE" : "30 ZILE GRATUIT"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
@@ -191,20 +191,20 @@ export default function ContactPage() {
                   <div className="mb-5">
                     <div className="flex items-end gap-2">
                       <span className="text-[58px] font-semibold leading-none tracking-[-.08em]">{PUBLIC_OFFERS.web.priceLei}</span>
-                      <span className="pb-1 text-[11px] font-semibold text-white/55">RON now</span>
+                      <span className="pb-1 text-[11px] font-semibold text-white/55">lei acum</span>
                     </div>
-                    <p className="mt-2 text-[10px] font-semibold text-[#c9bbff]">then {PUBLIC_OFFERS.web.recurringLei} RON/month after 30 days</p>
+                    <p className="mt-2 text-[10px] font-semibold text-[#c9bbff]">apoi {PUBLIC_OFFERS.web.recurringLei} lei/lună după 30 zile</p>
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
-                    Your website.
+                    Website-ul tău.
                     <br />
-                    <span className="text-[#b9a6ff]">30 days of Dashboard free.</span>
+                    <span className="text-[#b9a6ff]">30 zile Dashboard gratuit.</span>
                   </h2>
                   <p className="mt-4 max-w-md text-[12px] leading-6 text-white/66">
-                    With your first web design purchase, the first user can try ORBYVEN Dashboard for 30 days.
+                    La prima achiziție de web design, primul utilizator testează ORBYVEN Dashboard timp de 30 de zile.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
@@ -222,12 +222,12 @@ export default function ContactPage() {
                 </div>
                 <div className="mt-4 grid grid-cols-[.34fr_.66fr] gap-3">
                   <div className="grid gap-2">
-                    {["Overview","Clients","Projects","Quotes","Automations"].map((item,index)=>(
+                    {["Overview","Clienți","Lucrări","Oferte","Automatizări"].map((item,index)=>(
                       <div key={item} className={`rounded-[9px] border px-2.5 py-2 text-[7px] font-semibold ${index===0?"border-[#a58bff]/25 bg-[#a58bff]/12 text-white":"border-white/7 bg-white/[.025] text-white/45"}`}>{item}</div>
                     ))}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {["Leads","Calendar","Quotes","Inventory"].map((item,index)=>(
+                    {["Leads","Calendar","Devize","Stoc"].map((item,index)=>(
                       <div key={item} className="rounded-[12px] border border-white/8 bg-white/[.035] p-3">
                         <p className="text-[7px] uppercase tracking-[.12em] text-white/30">{item}</p>
                         <p className="mt-3 text-[18px] font-semibold tracking-[-.05em]">{[24,8,12,31][index]}</p>
@@ -239,28 +239,28 @@ export default function ContactPage() {
               </div>
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">03 · ECOSYSTEM</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">03 · ECOSISTEM</span>
                   <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · ADVANCED" : "ADVANCED"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#a58bff]/24 bg-[#a58bff]/12 px-3 py-2 text-[8px] font-semibold text-[#d8ceff] backdrop-blur-xl">
-                    CUSTOM MODULES · AUTOMATIONS · AI
+                    PERSONALIZAT MODULES · AUTOMATIONS · AI
                   </div>
                   <div className="mb-5 flex items-end gap-2">
                     <span className="text-[58px] font-semibold leading-none tracking-[-.08em]">{PUBLIC_OFFERS.advanced.priceLei}</span>
-                    <span className="pb-1 text-[11px] font-semibold text-white/55">RON/month</span>
+                    <span className="pb-1 text-[11px] font-semibold text-white/55">lei/lună</span>
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Web design +
                     <br />
-                    <span className="text-[#b9a6ff]">Advanced Dashboard.</span>
+                    <span className="text-[#b9a6ff]">Dashboard avansat.</span>
                   </h2>
                   <p className="mt-4 max-w-md text-[12px] leading-6 text-white/68">
-                    We connect your website to business operations and tailor modules around your workflows.
+                    Conectăm site-ul cu operațiunile firmei și personalizăm modulele în jurul fluxurilor tale.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
@@ -268,8 +268,8 @@ export default function ContactPage() {
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-4 rounded-[20px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-5 py-4 text-[10px] text-[var(--muted)] backdrop-blur-xl">
-            <span>You can return here anytime to change direction.</span>
-            <span className="hidden font-semibold text-[var(--text)] sm:inline">Choose a card →</span>
+            <span>Poți reveni oricând aici pentru a schimba direcția.</span>
+            <span className="hidden font-semibold text-[var(--text)] sm:inline">Alege un card →</span>
           </div>
         </div>
       </section>
