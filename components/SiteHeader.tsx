@@ -90,7 +90,7 @@ export default function SiteHeader({
               <BrandLogo compact theme={theme} />
             </div>
 
-            <nav className="hidden items-center gap-8 text-[13px] font-medium text-[var(--muted)] md:flex">
+            <nav className="hidden items-center gap-5 text-[13px] font-medium text-[var(--muted)] md:flex lg:gap-7 xl:gap-8">
               {navItems.map((item) => {
                 const active = activePage === item.key;
                 return (
