@@ -2,8 +2,16 @@ export type EntityIntelligenceQuery =
   | { kind: "client"; value: string }
   | { kind: "work"; value: string };
 
+export type EntityQuestionScope =
+  | "overview"
+  | "finance"
+  | "estimates"
+  | "calendar"
+  | "documents"
+  | "history";
+
 const QUERY_HINT =
-  /\b(arata|arată|cauta|caută|gaseste|găsește|detalii|rezumat|situatia|situația|statusul|status|ce stii|ce știi|ce se intampla|ce se întâmplă|ce am facut|ce am făcut|istoric|despre|cum stam|cum stăm)\b/i;
+  /\b(arata|arată|cauta|caută|gaseste|găsește|detalii|rezumat|situatia|situația|statusul|status|ce stii|ce știi|ce se intampla|ce se întâmplă|ce am facut|ce am făcut|istoric|despre|cum stam|cum stăm|incas|încas|plat|factur|cost|cheltu|financ|bani|ofert|deviz|document|fisier|fișier|programar|calendar|cand|când|urmator|următor)\w*\b/i;
 
 function normalize(value: string) {
   return value
@@ -61,4 +69,17 @@ export function detectEntityIntelligenceQuery(
   }
 
   return null;
+}
+
+
+export function detectEntityQuestionScope(prompt: string): EntityQuestionScope {
+  const value = normalize(prompt);
+
+  if (/\b(incas|plat|factur|cost|cheltu|financ|bani)\w*/.test(value)) return "finance";
+  if (/\b(ofert|deviz)\w*/.test(value)) return "estimates";
+  if (/\b(programar|calendar|cand|urmator|intalnir|vizit)\w*/.test(value)) return "calendar";
+  if (/\b(document|fisier|atasament)\w*/.test(value)) return "documents";
+  if (/\b(istoric|ce am facut|activitat|contactat|contact)\w*/.test(value)) return "history";
+
+  return "overview";
 }

@@ -1,7 +1,16 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
-import { detectEntityIntelligenceQuery } from "@/lib/ai/entity-intelligence-core";
+import {
+  detectEntityIntelligenceQuery,
+  detectEntityQuestionScope,
+  type EntityQuestionScope,
+} from "@/lib/ai/entity-intelligence-core";
+import {
+  clientScopedResponse,
+  workScopedResponse,
+  type EntityFinanceSummary,
+} from "@/lib/ai/entity-intelligence-scopes";
 
 type ClientRow = {
   id: string;
@@ -245,7 +254,8 @@ function missingResponse(kind: "client" | "work", value: string): IntelligenceRe
 async function clientOverview(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>,
-  entity: ClientRow
+  entity: ClientRow,
+  scope: EntityQuestionScope
 ): Promise<IntelligenceResponse> {
   const db = createBillingServiceClient(actor);
   const canFinance = FINANCE_ROLES.has(actor.role) && available.has("expenses");
@@ -366,6 +376,9 @@ async function clientOverview(
   ];
 
   let financeSentence = "";
+  let expensesCents = 0;
+  let incomeCents = 0;
+  let outstandingCents = 0;
   if (canFinance) {
     const expenseRows = (expenseResult.data ?? []) as Array<{ amount_cents: number; currency: string }>;
     const incomeRows = (incomeResult.data ?? []) as Array<{ amount_cents: number; currency: string; commercial_document_id: string | null }>;
@@ -378,13 +391,13 @@ async function clientOverview(
         (paidByInvoice.get(row.commercial_document_id) ?? 0) + Number(row.amount_cents || 0)
       );
     }
-    const expensesCents = expenseRows
+    expensesCents = expenseRows
       .filter((row) => row.currency === "RON")
       .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
-    const incomeCents = incomeRows
+    incomeCents = incomeRows
       .filter((row) => row.currency === "RON")
       .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
-    const outstandingCents = invoices
+    outstandingCents = invoices
       .filter((row) => row.currency === "RON")
       .reduce(
         (sum, row) =>
@@ -399,6 +412,28 @@ async function clientOverview(
     );
     financeSentence = outstandingCents > 0 ? ` Financiar, mai sunt ${ron(outstandingCents)} de încasat.` : "";
   }
+
+  const finance: EntityFinanceSummary = {
+    moduleEnabled: available.has("expenses"),
+    roleAllowed: FINANCE_ROLES.has(actor.role),
+    incomeCents,
+    expensesCents,
+    outstandingCents,
+  };
+  const scoped = clientScopedResponse({
+    scope,
+    available,
+    clientId: entity.id,
+    name,
+    tasks,
+    estimates,
+    activeEstimateCount: activeEstimates.length,
+    events,
+    documents,
+    activities,
+    finance,
+  });
+  if (scoped) return scoped;
 
   const actions = [
     { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
@@ -450,14 +485,22 @@ async function clientOverview(
 async function workOverview(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>,
-  entity: WorkRow
+  entity: WorkRow,
+  scope: EntityQuestionScope
 ): Promise<IntelligenceResponse> {
   const db = createBillingServiceClient(actor);
   const canFinance = FINANCE_ROLES.has(actor.role) && available.has("expenses");
   const nowIso = new Date().toISOString();
 
-  const [clientResult, estimatesResult, eventsResult, documentsResult, expenseResult] =
-    await Promise.all([
+  const [
+    clientResult,
+    estimatesResult,
+    eventsResult,
+    documentsResult,
+    expenseResult,
+    incomeResult,
+    invoicesResult,
+  ] = await Promise.all([
       entity.client_id
         ? db
             .from("crm_leads")
@@ -503,9 +546,35 @@ async function workOverview(
             .eq("task_id", entity.id)
             .limit(200)
         : Promise.resolve({ data: [], error: null }),
+      canFinance
+        ? db
+            .from("finance_income_entries")
+            .select("amount_cents,currency,commercial_document_id")
+            .eq("organization_id", actor.organizationId)
+            .eq("task_id", entity.id)
+            .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+      canFinance
+        ? db
+            .from("sales_commercial_documents")
+            .select("id,reference,status,total_cents,currency,due_on,client_id,task_id")
+            .eq("organization_id", actor.organizationId)
+            .eq("task_id", entity.id)
+            .eq("document_type", "invoice_draft")
+            .neq("status", "cancelled")
+            .limit(100)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
-  for (const result of [clientResult, estimatesResult, eventsResult, documentsResult, expenseResult]) {
+  for (const result of [
+    clientResult,
+    estimatesResult,
+    eventsResult,
+    documentsResult,
+    expenseResult,
+    incomeResult,
+    invoicesResult,
+  ]) {
     if (result.error) throw result.error;
   }
 
@@ -526,14 +595,64 @@ async function workOverview(
   ];
 
   let financeSentence = "";
+  let expensesCents = 0;
+  let incomeCents = 0;
+  let outstandingCents = 0;
   if (canFinance) {
     const expenseRows = (expenseResult.data ?? []) as Array<{ amount_cents: number; currency: string }>;
-    const costs = expenseRows
+    const incomeRows = (incomeResult.data ?? []) as Array<{ amount_cents: number; currency: string; commercial_document_id: string | null }>;
+    const invoices = (invoicesResult.data ?? []) as InvoiceRow[];
+    const paidByInvoice = new Map<string, number>();
+    for (const row of incomeRows) {
+      if (!row.commercial_document_id || row.currency !== "RON") continue;
+      paidByInvoice.set(
+        row.commercial_document_id,
+        (paidByInvoice.get(row.commercial_document_id) ?? 0) + Number(row.amount_cents || 0)
+      );
+    }
+    expensesCents = expenseRows
       .filter((row) => row.currency === "RON")
       .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
-    facts.push({ label: "Costuri înregistrate", value: ron(costs) });
-    financeSentence = costs > 0 ? ` Costurile financiare înregistrate sunt ${ron(costs)}.` : "";
+    incomeCents = incomeRows
+      .filter((row) => row.currency === "RON")
+      .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
+    outstandingCents = invoices
+      .filter((row) => row.currency === "RON")
+      .reduce(
+        (sum, row) =>
+          sum + Math.max(0, Number(row.total_cents || 0) - (paidByInvoice.get(row.id) ?? 0)),
+        0
+      );
+    facts.push(
+      { label: "Încasat", value: ron(incomeCents) },
+      { label: "Costuri înregistrate", value: ron(expensesCents) },
+      { label: "De încasat", value: ron(outstandingCents) }
+    );
+    financeSentence = expensesCents > 0 ? ` Costurile financiare înregistrate sunt ${ron(expensesCents)}.` : "";
   }
+
+  const finance: EntityFinanceSummary = {
+    moduleEnabled: available.has("expenses"),
+    roleAllowed: FINANCE_ROLES.has(actor.role),
+    incomeCents,
+    expensesCents,
+    outstandingCents,
+  };
+  const scoped = workScopedResponse({
+    scope,
+    available,
+    taskId: entity.id,
+    clientId: entity.client_id,
+    title: entity.title,
+    status: entity.status,
+    progress: Number(entity.progress || 0),
+    updatedAt: entity.updated_at,
+    estimates,
+    events,
+    documents,
+    finance,
+  });
+  if (scoped) return scoped;
 
   const actions = [
     {
@@ -595,6 +714,7 @@ export async function answerEntityIntelligenceQuery(
 ): Promise<IntelligenceResponse | null> {
   const query = detectEntityIntelligenceQuery(prompt);
   if (!query) return null;
+  const scope = detectEntityQuestionScope(prompt);
 
   if (query.kind === "client") {
     if (!available.has("leads")) return unavailableEntityModule("client");
@@ -606,7 +726,7 @@ export async function answerEntityIntelligenceQuery(
         candidates.map((row) => ({ id: row.id, label: displayClient(row) }))
       );
     }
-    return clientOverview(actor, available, candidates[0]);
+    return clientOverview(actor, available, candidates[0], scope);
   }
 
   if (!available.has("tasks")) return unavailableEntityModule("work");
@@ -618,5 +738,5 @@ export async function answerEntityIntelligenceQuery(
       candidates.map((row) => ({ id: row.id, label: row.title }))
     );
   }
-  return workOverview(actor, available, candidates[0]);
+  return workOverview(actor, available, candidates[0], scope);
 }
