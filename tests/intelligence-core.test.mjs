@@ -241,7 +241,9 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   assert.match(support, /function handoffPlanPrompt/);
   assert.match(support, /Creează task/);
   assert.match(support, /apoi creează task/);
+  assert.match(support, /HANDOFF_ROLES/);
   assert.match(support, /available\.has\("tasks"\)/);
+  assert.match(support, /HANDOFF_ROLES\.has\(actor\.role\)/);
   assert.match(route, /Compară opțiunile pentru Focus #1/);
   assert.match(route, /DECISION_STALE/);
   assert.match(route, /decision\.subject !== expectedSubject/);
