@@ -30,10 +30,15 @@ test("Video AI Director creates bounded scene plans for social durations", () =>
 
 test("Video AI render gateway is authenticated, bounded and disabled by default", () => {
   const route = read("app/api/video-ai/render/route.ts");
+  const historyRoute = read("app/api/video-ai/jobs/route.ts");
+  const jobStore = read("lib/video-ai-job-store.ts");
+  const migration = read("supabase/migrations/20261002095912_video_ai_render_jobs.sql");
   const env = read(".env.example");
   const contract = read("lib/video-ai-render.ts");
 
   assert.match(route, /authenticateBillingActor/);
+  assert.match(route, /persistVideoJob/);
+  assert.match(route, /VIDEO_JOB_PERSISTENCE_REQUIRED/);
   assert.match(route, /contentLength > 250_000/);
   assert.match(route, /Cache-Control": "no-store"/);
   assert.match(route, /ORBYVEN_VIDEO_RENDER_ENDPOINT/);
@@ -41,6 +46,12 @@ test("Video AI render gateway is authenticated, bounded and disabled by default"
   assert.match(route, /controller\.abort\(\).*25_000|25_000/);
   assert.match(contract, /provider_required/);
   assert.match(contract, /generationPrompt\.length > 5000/);
+  assert.match(historyRoute, /authenticateBillingActor/);
+  assert.match(historyRoute, /listVideoJobs/);
+  assert.match(jobStore, /video_ai_jobs/);
+  assert.match(migration, /enable row level security/);
+  assert.match(migration, /revoke all on table public\.video_ai_jobs from public, anon, authenticated/);
+  assert.match(migration, /grant select, insert, update, delete on table public\.video_ai_jobs to service_role/);
   assert.match(env, /ORBYVEN_VIDEO_AI_ENABLED=false/);
   assert.match(env, /ORBYVEN_VIDEO_RENDER_PROVIDER=/);
   assert.match(env, /ORBYVEN_VIDEO_RENDER_ENDPOINT=/);
