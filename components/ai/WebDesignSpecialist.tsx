@@ -339,7 +339,10 @@ export default function WebDesignSpecialist() {
     void saveRemote(next, source, lastPrompt);
   };
 
-  const generateWithAi = async (request: string) => {
+  const generateWithAi = async (
+    request: string,
+    factOverride?: WebDesignInterviewFact[]
+  ) => {
     if (!organizationId || !canEdit || aiBusy) return false;
     setAiBusy(true);
     setMessage("ORBYVEN construiește o variantă nouă din componente validate…");
@@ -357,7 +360,7 @@ export default function WebDesignSpecialist() {
           prompt: request,
           currentDraft: draft,
           recentDrafts: visualMemory.slice(-4),
-          interviewFacts: interviewFacts.slice(-8),
+          interviewFacts: (factOverride ?? interviewFacts).slice(-8),
         }),
       });
 
@@ -532,12 +535,8 @@ export default function WebDesignSpecialist() {
       return;
     }
 
-    const generated = await generateWithAi(interviewPrompt);
-    if (generated) {
-      setInterviewAnswer("");
-    } else {
-      setInterviewFacts(interviewFacts);
-    }
+    const generated = await generateWithAi(interviewPrompt, nextFacts);
+    if (generated) setInterviewAnswer("");
   };
 
   const skipInterviewQuestion = () => {
