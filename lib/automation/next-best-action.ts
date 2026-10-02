@@ -9,6 +9,7 @@ export type NextBestActionCandidate = {
   recordId?: string;
   taskId?: string;
   clientId?: string;
+  purchaseOrderId?: string;
 };
 
 const LEVEL_ORDER: Record<NextBestActionLevel, number> = {
@@ -27,17 +28,20 @@ const RULE_ORDER: Record<string, number> = {
   operation_unassigned: 5,
   execution_without_accepted_estimate: 6,
   invoice_receivable: 7,
-  inventory_shortage: 8,
-  purchase_order_due: 9,
-  estimate_expiring: 10,
-  estimate_follow_up: 11,
-  client_retention_follow_up: 12,
-  lead_follow_up: 13,
-  client_reactivation: 14,
-  accepted_estimate_needs_schedule: 15,
-  operation_due_soon: 16,
-  operation_unplanned: 17,
-  appointment_upcoming: 18,
+  procurement_cost_missing: 8,
+  inventory_shortage: 9,
+  purchase_order_due: 10,
+  procurement_evidence_missing: 11,
+  procurement_cost_variance: 12,
+  estimate_expiring: 13,
+  estimate_follow_up: 14,
+  client_retention_follow_up: 15,
+  lead_follow_up: 16,
+  client_reactivation: 17,
+  accepted_estimate_needs_schedule: 18,
+  operation_due_soon: 19,
+  operation_unplanned: 20,
+  appointment_upcoming: 21,
   post_service_recovery: 19,
   post_service_feedback: 20,
   post_service_feedback_followup: 21,
@@ -51,6 +55,7 @@ function ruleOrder(rule?: string) {
 }
 
 function contextKey(item: NextBestActionCandidate) {
+  if (item.purchaseOrderId) return "purchase-order:" + item.purchaseOrderId;
   if (item.taskId) return "task:" + item.taskId;
   if (
     item.clientId &&
