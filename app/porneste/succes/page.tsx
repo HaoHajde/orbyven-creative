@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-import { PUBLIC_OFFERS, isPublicOfferId } from "@/lib/commerce/public-offers";
+import { PUBLIC_CHECKOUT_IS_DEMO, PUBLIC_OFFERS, isPublicOfferId } from "@/lib/commerce/public-offers";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -16,8 +16,12 @@ function SuccessContent() {
     <main className="grid min-h-screen place-items-center bg-[#09090d] px-5 text-[#f5f5f7]">
       <div className="w-full max-w-[640px] rounded-[32px] border border-white/10 bg-white/[.035] p-7 shadow-[0_36px_120px_rgba(0,0,0,.35)] sm:p-10">
         <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-500/12 text-[18px] font-bold text-emerald-400">✓</span>
-        <p className="mt-6 text-[10px] font-bold uppercase tracking-[.18em] text-[#a58bff]">PLATĂ FINALIZATĂ</p>
-        <h1 className="mt-4 text-[44px] font-semibold leading-[.92] tracking-[-.065em]">Perfect. De aici construim.</h1>
+        <p className="mt-6 text-[10px] font-bold uppercase tracking-[.18em] text-[#a58bff]">
+          {PUBLIC_CHECKOUT_IS_DEMO ? "SIMULARE FINALIZATĂ" : "PLATĂ FINALIZATĂ"}
+        </p>
+        <h1 className="mt-4 text-[44px] font-semibold leading-[.92] tracking-[-.065em]">
+          {PUBLIC_CHECKOUT_IS_DEMO ? "Test reușit. Nu s-au încasat bani." : "Perfect. De aici construim."}
+        </h1>
         {offer ? (
           <div className="mt-7 rounded-[22px] border border-white/10 bg-white/[.045] p-5">
             <p className="text-[13px] font-semibold">{offer.name}</p>
@@ -25,13 +29,21 @@ function SuccessContent() {
           </div>
         ) : null}
         <p className="mt-6 text-[12px] leading-6 text-white/55">
-          Plata este confirmată de Stripe. Următorul pas este configurarea proiectului; detaliile le completăm după plată, nu înainte.
+          {PUBLIC_CHECKOUT_IS_DEMO
+            ? "Aceasta a fost o tranzacție Stripe de test. Nu s-au transferat bani și nu s-a încheiat o comandă comercială."
+            : "Plata este confirmată de Stripe. Următorul pas este configurarea proiectului; detaliile le completăm după plată, nu înainte."}
         </p>
         <Link
-          href={offerId ? `/cerere?source=checkout-success&offer=${offerId}` : "/cerere?source=checkout-success"}
+          href={
+            PUBLIC_CHECKOUT_IS_DEMO
+              ? "/contact"
+              : offerId
+                ? `/cerere?source=checkout-success&offer=${offerId}`
+                : "/cerere?source=checkout-success"
+          }
           className="mt-7 flex h-14 items-center justify-between rounded-[18px] bg-white px-5 text-[14px] font-semibold text-[#09090d]"
         >
-          <span>Continuă configurarea</span><span>→</span>
+          <span>{PUBLIC_CHECKOUT_IS_DEMO ? "Înapoi la oferte" : "Continuă configurarea"}</span><span>→</span>
         </Link>
       </div>
     </main>
