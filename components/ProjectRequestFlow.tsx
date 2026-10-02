@@ -17,7 +17,7 @@ import {
   useEffect,
   useMemo,
   useState,
-   type FormEvent,
+  type FormEvent,
 } from "react";
 
 type Theme = "light" | "dark";
