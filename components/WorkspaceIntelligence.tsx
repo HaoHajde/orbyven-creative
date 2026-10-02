@@ -128,6 +128,16 @@ function splitStoredDecision(facts: Array<{ label: string; value: string }>) {
   };
 }
 
+function outcomeFollowUp(outcome: NonNullable<IntelligenceResponse["outcome"]>) {
+  if (outcome.status === "no_longer_primary") {
+    return { label: "Vezi briefingul actual", prompt: "Fă-mi briefingul zilei" };
+  }
+  if (outcome.status === "shifted") {
+    return { label: "Compară noul Focus", prompt: "Compară opțiunile pentru Focus #1" };
+  }
+  return { label: "Compară din nou", prompt: "Compară opțiunile pentru Focus #1" };
+}
+
 export default function WorkspaceIntelligence({
   organizationId,
   themeVars,
@@ -911,7 +921,7 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.24</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.25</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -1039,6 +1049,17 @@ export default function WorkspaceIntelligence({
                                         Focus curent: {message.outcome.currentFocus}
                                       </p>
                                     ) : null}
+                                    <button
+                                      type="button"
+                                      disabled={loading}
+                                      onClick={() => {
+                                        const followUp = outcomeFollowUp(message.outcome!);
+                                        void ask(followUp.prompt);
+                                      }}
+                                      className="mt-2.5 rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[9px] font-semibold text-emerald-100/90 transition hover:bg-emerald-300/[0.10] disabled:opacity-40"
+                                    >
+                                      {outcomeFollowUp(message.outcome).label}
+                                    </button>
                                   </div>
                                 </div>
                               ) : null}
@@ -1158,7 +1179,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.24 · Outcome Loop · Re-check după plan · Confirmare înainte de execuție.
+                      0.8.25 · Adaptive Follow-up · Re-check → următorul pas controlat.
                     </p>
                   </form>
                 ) : null}
