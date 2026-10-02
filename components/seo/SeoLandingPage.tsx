@@ -14,11 +14,11 @@ export default function SeoLandingPage({ page, locale = "ro" }: { page: SeoLandi
 
   return (
     <SeoShell locale={locale}>
-      <SeoJsonLd kind="landing" page={page} breadcrumbs={breadcrumbs} />
+      <SeoJsonLd kind="landing" page={page} breadcrumbs={breadcrumbs} locale={locale} />
 
       <section className="px-5 pb-20 pt-10 sm:px-7 md:px-10 md:pb-28 md:pt-14">
         <div className="mx-auto max-w-[1380px]">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={breadcrumbs} locale={locale} />
           <div className="mt-12 grid gap-10 lg:grid-cols-[1.18fr_.82fr] lg:items-end">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-[#4b46ee]">{page.eyebrow}</p>
@@ -29,7 +29,7 @@ export default function SeoLandingPage({ page, locale = "ro" }: { page: SeoLandi
             <div className="lg:pb-2">
               <p className="max-w-xl text-[16px] leading-7 text-black/55">{page.intro}</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/cerere" className="inline-flex h-12 items-center rounded-full bg-[#171719] px-6 text-sm font-semibold text-white">
+                <Link href={locale === "ro" ? "/cerere" : "/contact"} className="inline-flex h-12 items-center rounded-full bg-[#171719] px-6 text-sm font-semibold text-white">
                   {locale === "ro" ? "Discută proiectul" : "Discuss your project"}
                 </Link>
                 <Link href="/templates" className="inline-flex h-12 items-center rounded-full border border-black/12 px-6 text-sm font-semibold">
@@ -107,6 +107,7 @@ export default function SeoLandingPage({ page, locale = "ro" }: { page: SeoLandi
         links={page.related}
         eyebrow={locale === "ro" ? "Continuă explorarea" : "Keep exploring"}
         title={locale === "ro" ? "Exemple, ghiduri și direcții care au legătură cu proiectul." : "Examples, guides and directions related to your project."}
+        locale={locale}
       />
     </SeoShell>
   );
