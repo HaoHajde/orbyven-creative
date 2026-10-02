@@ -94,6 +94,7 @@ test("theme-switchable pages expose the shared theme shell and persistent palett
     "app/porneste/web-design/page.tsx",
     "app/porneste/invitatie/page.tsx",
     "app/porneste/oferta/page.tsx",
+    "components/AiWebDesignEntry.tsx",
     "components/WorkspaceShell.tsx",
   ]) {
     const source = read(path);
@@ -109,8 +110,9 @@ test("theme-switchable pages expose the shared theme shell and persistent palett
   const webDesignStart = read("app/porneste/web-design/page.tsx");
   const invitationStart = read("app/porneste/invitatie/page.tsx");
   const offerStart = read("app/porneste/oferta/page.tsx");
+  const aiWebDesign = read("components/AiWebDesignEntry.tsx");
 
-  for (const source of [home, templates, services, contact, request, webDesignStart, invitationStart, offerStart]) {
+  for (const source of [home, templates, services, contact, request, webDesignStart, invitationStart, offerStart, aiWebDesign]) {
     assert.match(source, /themeBodyBackground/);
     assert.match(source, /publicThemeVars/);
   }
