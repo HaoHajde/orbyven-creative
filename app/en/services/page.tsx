@@ -43,7 +43,7 @@ const services: Service[] = [
     title: "Landing page",
     line: "One offer, one direction and a simple path to conversion.",
     href: "/contact?service=landing-page",
-    linkLabel: "Build a landing page",
+    linkLabel: "Business websites and landing pages",
     tags: ["Campaigns", "Conversion", "Analytics"],
     gradient: "radial-gradient(circle at 76% 18%, rgba(82,126,255,.31), transparent 31%), radial-gradient(circle at 16% 78%, rgba(89,61,176,.28), transparent 36%), linear-gradient(140deg,#090b18,#10162e 58%,#07080d)",
   },
@@ -52,7 +52,7 @@ const services: Service[] = [
     title: "Redesign",
     line: "We keep what works and rebuild the experience slowing you down.",
     href: "/contact?service=redesign",
-    linkLabel: "Start a redesign",
+    linkLabel: "Website redesign",
     tags: ["UI", "UX", "Performance"],
     gradient: "radial-gradient(circle at 22% 24%, rgba(190,88,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(92,49,147,.28), transparent 36%), linear-gradient(140deg,#110914,#201027 58%,#09070b)",
   },
@@ -61,9 +61,18 @@ const services: Service[] = [
     title: "Digital experience",
     line: "Invitations, microsites and interactions built for the right context.",
     href: "/templates#events-invitations",
-    linkLabel: "Explore digital experiences",
+    linkLabel: "Invitations and digital experiences",
     tags: ["RSVP", "Microsite", "Custom"],
     gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.36), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.20), transparent 36%), linear-gradient(140deg,#0a0914,#171326 55%,#07070b)",
+  },
+  {
+    number: "05",
+    title: "AI Web Design",
+    line: "Describe your business and direction. ORBYVEN generates, refines and compares website directions.",
+    href: "/ai-web-design",
+    linkLabel: "Deschide AI Web Design ORBYVEN",
+    tags: ["AI", "Preview live", "Design DNA"],
+    gradient: "radial-gradient(circle at 18% 18%, rgba(116,92,255,.42), transparent 32%), radial-gradient(circle at 82% 74%, rgba(61,114,255,.25), transparent 38%), linear-gradient(140deg,#0b0916,#161126 56%,#08070d)",
   },
 ];
 
@@ -105,7 +114,7 @@ const modulePreviews: ModulePreview[] = [
     label: "Quotes",
     eyebrow: "COMMERCIAL",
     title: "The quote continues the workflow.",
-    note: "The estimate is no longer isolated from the client and the job.",
+    note: "The estimate is no longer isolated from the client and job.",
     rows: ["Draft ready", "Sent to client", "Accepted → job"],
   },
 ];
@@ -185,7 +194,7 @@ function ModuleWorkspacePreview({
             <div className="flex items-center gap-3">
               <span className="text-[8px] font-bold uppercase tracking-[.18em] text-[#a58bff]">{active.eyebrow}</span>
               <span className="h-px w-8 bg-[var(--border-strong)]" />
-              <span className="text-[8px] font-semibold text-[var(--muted-2)]">Active</span>
+              <span className="text-[8px] font-semibold text-[var(--muted-2)]">Activ</span>
             </div>
             <h3 className="mt-5 max-w-xl text-[clamp(28px,4vw,46px)] font-semibold leading-[.96] tracking-[-.055em]">{active.title}</h3>
             <p className="mt-4 max-w-lg text-[12px] leading-6 text-[var(--muted)]">{active.note}</p>
@@ -228,10 +237,10 @@ function SeatingPreview() {
     <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--panel)] shadow-[0_28px_100px_rgba(0,0,0,.12)]">
       <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">EVENT / DASHBOARD</p>
+          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">EVENIMENT / DASHBOARD</p>
           <p className="mt-1 text-[12px] font-semibold">Guest seating</p>
         </div>
-        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">VISUAL EXAMPLE</span>
+        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">EXEMPLU VIZUAL</span>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_235px]">
@@ -245,9 +254,9 @@ function SeatingPreview() {
               backgroundSize: "28px 28px",
             }}
           />
-          <div className="absolute left-[5%] top-[5%] rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">ROOM A</div>
+          <div className="absolute left-[5%] top-[5%] rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">SALON A</div>
           <div className="absolute bottom-[6%] left-1/2 -translate-x-1/2 rounded-[15px] border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] px-6 py-3 text-center">
-            <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[#a58bff]">Head table</p>
+            <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[#a58bff]">Masa mirilor</p>
             <p className="mt-1 text-[10px] font-semibold">Diana & Florin</p>
           </div>
 
@@ -261,7 +270,7 @@ function SeatingPreview() {
               transition={{ duration: 5 + index * .4, repeat: Infinity, ease: "easeInOut" }}
             >
               <div className="text-center">
-                <p className="text-[8px] font-bold uppercase tracking-[.12em] text-[#a58bff]">Table {table.id}</p>
+                <p className="text-[8px] font-bold uppercase tracking-[.12em] text-[#a58bff]">Masa {table.id}</p>
                 <p className="mt-1 text-[10px] font-semibold">{table.guests} guests</p>
               </div>
             </motion.div>
@@ -307,7 +316,7 @@ function AiPreview() {
           <span className="grid h-8 w-8 place-items-center rounded-full border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] text-[12px] text-[#a58bff]">✦</span>
           <div>
             <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ORBYVEN AI</p>
-            <p className="mt-1 text-[12px] font-semibold">Context engine</p>
+            <p className="mt-1 text-[12px] font-semibold">Motor contextual</p>
           </div>
         </div>
         <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">PREVIEW</span>
@@ -535,7 +544,7 @@ export default function ServicesPage() {
         <Chapter>What we build</Chapter>
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <h2 className="max-w-4xl text-[clamp(40px,5.5vw,72px)] font-semibold leading-[.92] tracking-[-.06em]">
-            Four directions. <span className="text-[var(--home-violet)]">One connected ecosystem.</span>
+            Five directions. <span className="text-[var(--home-violet)]">One connected ecosystem.</span>
           </h2>
           <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">We start simple and add only what solves a real problem.</p>
         </div>
@@ -548,7 +557,7 @@ export default function ServicesPage() {
               whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: .15 }}
               transition={{ duration: .65, delay: index * .045, ease: easeOut }}
-              className="group relative min-h-[260px] overflow-hidden rounded-[30px] border border-white/10 p-6 text-white shadow-[0_20px_70px_rgba(0,0,0,.14)] sm:p-7"
+              className={`group relative min-h-[260px] overflow-hidden rounded-[30px] border border-white/10 p-6 text-white shadow-[0_20px_70px_rgba(0,0,0,.14)] sm:p-7 ${service.href === "/ai-web-design" ? "md:col-span-2" : ""}`}
               style={{ background: service.gradient }}
             >
               <div aria-hidden="true" className="absolute -right-6 -top-8 text-[120px] font-semibold leading-none tracking-[-.09em] text-white/[.035]">{service.number}</div>
@@ -617,10 +626,15 @@ export default function ServicesPage() {
         <div className="mt-5 grid gap-8 lg:grid-cols-[.74fr_1.26fr] lg:items-end">
           <div>
             <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Share the intent. The system keeps the <span className="text-[var(--home-violet)]">contextul.</span></h2>
-            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">A product preview for the contextual engine we are building: request, constraints, plan and visual result.</p>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">AI Web Design is available as an ORBYVEN product: brief, structure, live preview, alternatives and controlled refinement.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
-            <span className="rounded-full border border-[rgba(165,139,255,.26)] bg-[var(--accent-soft)] px-4 py-3 text-[9px] font-semibold text-[#a58bff]">AI · CONTEXT · CONTROL</span>
+            <Link
+              href="/ai-web-design"
+              className="inline-flex h-11 items-center rounded-full border border-[rgba(165,139,255,.30)] bg-[var(--accent-soft)] px-5 text-[10px] font-semibold text-[#a58bff] transition hover:border-[#a58bff]"
+            >
+              Open AI Web Design →
+            </Link>
           </div>
         </div>
         <div className="mt-9">
@@ -638,10 +652,11 @@ export default function ServicesPage() {
             <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">A project can start as a business website and later add landing pages, forms, operational modules or custom experiences. We add only what makes sense for the business.</p>
             <nav aria-label="Learn more about web design" className="mt-6 flex flex-wrap gap-2">
               {[
-                { href: "/contact?service=website", label: "Website design" },
-                { href: "/contact?service=landing-page", label: "Business website" },
+                { href: "/contact?service=website", label: "Creare site" },
+                { href: "/contact?service=landing-page", label: "Site de prezentare" },
                 { href: "/contact?service=website", label: "Web design" },
                 { href: "/contact?service=redesign", label: "Redesign" },
+                { href: "/ai-web-design", label: "AI Web Design" },
                 { href: "/templates", label: "Case studies" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[#a58bff]">{item.label} ↗</Link>
