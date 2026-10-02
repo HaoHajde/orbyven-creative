@@ -200,7 +200,7 @@ test("Focus explainability is structured, compact and persisted without a schema
   assert.match(panel, />De ce</);
   assert.match(panel, />Risc</);
   assert.match(panel, />Următor</);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
 });
 
 
@@ -225,7 +225,7 @@ test("Decision Support compares options without choosing or mutating", () => {
   assert.match(panel, /data-orbyven-decision-support="true"/);
   assert.match(panel, /Compromis:/);
   assert.match(panel, /Potrivit când:/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
 });
 
 
@@ -261,7 +261,7 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   assert.match(panel, /handoffAvailable/);
   assert.match(panel, /expectedSubject: decision\.subject/);
   assert.match(panel, /expectedOptionLabel:/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
 });
 
 
@@ -292,5 +292,20 @@ test("Action Outcome Loop rechecks only completed plans and remains read-only", 
   assert.match(panel, /\/api\/ai\/outcomes\/recheck/);
   assert.match(panel, /data-orbyven-outcome="true"/);
   assert.match(panel, /latestPlan\.steps\.every/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
+});
+
+
+test("Adaptive Follow-up routes Outcome states back into read-only analysis", () => {
+  const panel = read("components/WorkspaceIntelligence.tsx");
+
+  assert.match(panel, /function outcomeFollowUp/);
+  assert.match(panel, /outcome\.status === "no_longer_primary"/);
+  assert.match(panel, /Vezi briefingul actual/);
+  assert.match(panel, /Fă-mi briefingul zilei/);
+  assert.match(panel, /Compară noul Focus/);
+  assert.match(panel, /Compară din nou/);
+  assert.match(panel, /Compară opțiunile pentru Focus #1/);
+  assert.match(panel, /void ask\(followUp\.prompt\)/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
 });
