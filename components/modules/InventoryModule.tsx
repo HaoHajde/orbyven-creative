@@ -529,19 +529,35 @@ export default function InventoryModule({
           remainingPurchaseQuantity(entry.ordered_quantity, entry.received_quantity) <= 0
       );
 
+    const autoReserveForTask = Boolean(order?.task_id);
     const ok = await run(
-      () => receivePurchaseOrderItem(organizationId, item, remaining),
+      async () => {
+        await receivePurchaseOrderItem(organizationId, item, remaining);
+        if (order?.task_id) {
+          await reserveAvailableInventoryForTask(
+            organizationId,
+            order.task_id,
+            item.material_id
+          );
+        }
+      },
       completesOrder
-        ? "Recepția este completă. Comanda furnizor a fost închisă automat de sistem."
-        : "Recepția a fost înregistrată în stoc."
+        ? autoReserveForTask
+          ? "Recepția este completă. PO-ul s-a închis, iar stocul disponibil a fost rezervat automat pentru lucrare."
+          : "Recepția este completă. Comanda furnizor a fost închisă automat de sistem."
+        : autoReserveForTask
+          ? "Recepția a intrat în stoc și disponibilul a fost rezervat automat pentru lucrare."
+          : "Recepția a fost înregistrată în stoc."
     );
 
-    if (ok && completesOrder && order) {
-      setProcurementHandoff({
-        purchaseOrderId: order.id,
-        taskId: order.task_id,
-        reference: order.reference,
-      });
+    if (ok && order) {
+      if (completesOrder) {
+        setProcurementHandoff({
+          purchaseOrderId: order.id,
+          taskId: order.task_id,
+          reference: order.reference,
+        });
+      }
       if (order.task_id && planTaskId === order.task_id) {
         await loadTaskPlan();
       }
