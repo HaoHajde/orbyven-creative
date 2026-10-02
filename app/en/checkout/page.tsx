@@ -27,7 +27,7 @@ function PaymentRedirectContent() {
       const response = await fetch("/api/public-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer: offerId }),
+        body: JSON.stringify({ offer: offerId, locale: "en" }),
       });
       const payload = await response.json() as {
         url?: string;
@@ -45,7 +45,7 @@ function PaymentRedirectContent() {
         return;
       }
 
-      throw new Error(payload.error || "Checkout is temporarily unavailable.");
+      throw new Error("Checkout is temporarily unavailable.");
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Checkout is temporarily unavailable.");
       setStatus("error");
