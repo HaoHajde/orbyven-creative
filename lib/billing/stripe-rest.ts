@@ -155,7 +155,6 @@ function setInlinePrice(
 
 export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
   requirePublicCheckoutReady();
-  const offer = PUBLIC_OFFERS[offerId];
   const params = new URLSearchParams();
   const siteUrl = getSiteUrl();
 
