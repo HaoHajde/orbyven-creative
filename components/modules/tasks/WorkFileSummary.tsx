@@ -103,7 +103,9 @@ export default function WorkFileSummary({
             ? { label: "Rezolvă materialele", module: "inventory" as OrbyvenModuleId, options: { taskId: task.id } as WorkspaceOpenOptions }
             : attention.key === "costs" && enabledModules.includes("expenses") && canAccessFinances
               ? { label: "Înregistrează cost", module: "expenses" as OrbyvenModuleId, options: { create: true, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
-              : attention.key === "ownership" && enabledModules.includes("team")
+              : attention.key === "financial" && enabledModules.includes("expenses") && canAccessFinances
+                ? { label: "Închide financiar", module: "expenses" as OrbyvenModuleId, options: { taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+                : attention.key === "ownership" && enabledModules.includes("team")
                 ? { label: "Deschide echipa", module: "team" as OrbyvenModuleId, options: undefined }
                 : null
     : null;
