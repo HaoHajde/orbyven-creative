@@ -38,6 +38,7 @@ const NATIVE_RUNTIME = {
     "documents",
     "haptics",
     "local-notifications",
+    "navigation-haptics",
     "network-recovery",
     "push-registration",
   ],
@@ -451,7 +452,9 @@ export default function App() {
         theme?: NativeTheme;
       };
 
-      if (
+      if (message.type === "orbyven:haptic") {
+        void Haptics.selectionAsync().catch(() => undefined);
+      } else if (
         message.type === "orbyven:theme" &&
         (message.theme === "light" || message.theme === "dark")
       ) {

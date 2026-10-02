@@ -51,3 +51,15 @@ test("Alpha 0.7 exposes a bounded native runtime bridge and follows the workspac
   assert.match(app, /setWebTheme\(message\.theme\)/);
   assert.match(app, /orbyven:app-resume/);
 });
+
+
+test("native workspace navigation can request bounded selection haptics", () => {
+  const app = read("App.tsx");
+  const workspace = read("../components/WorkspaceShell.tsx");
+
+  assert.match(app, /"navigation-haptics"/);
+  assert.match(app, /message\.type === "orbyven:haptic"/);
+  assert.match(app, /Haptics\.selectionAsync\(\)/);
+  assert.match(workspace, /const requestNativeHaptic = useCallback/);
+  assert.match(workspace, /type: "orbyven:haptic"/);
+});
