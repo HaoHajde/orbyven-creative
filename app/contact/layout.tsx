@@ -43,12 +43,15 @@ export default function ContactLayout({ children }: { children: ReactNode }) {
           }
 
           .orbyven-start-cards:has(.orbyven-start-card:hover) .orbyven-start-card {
-            flex-grow: .72;
+            flex-grow: .56;
+            filter: saturate(.72) brightness(.78);
           }
 
           .orbyven-start-cards:has(.orbyven-start-card:hover) .orbyven-start-card:hover {
-            flex-grow: 1.72;
-            transform: translateY(-6px);
+            flex-grow: 2.15;
+            transform: translateY(-8px);
+            filter: saturate(1.08) brightness(1.04);
+            box-shadow: 0 42px 140px rgba(65, 44, 145, .30);
           }
         }
       `}</style>
