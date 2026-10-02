@@ -57,20 +57,29 @@ export default function AppModeRuntime() {
       }
     };
 
+    const syncNativeNetwork = (event: Event) => {
+      const online = (event as CustomEvent<{ online?: boolean }>).detail?.online;
+      if (typeof online !== "boolean") return;
+      document.documentElement.dataset.nativeNetwork = online ? "online" : "offline";
+    };
+
     syncMode();
     media.addEventListener("change", syncMode);
     window.addEventListener("orbyven:native-ready", syncMode);
+    window.addEventListener("orbyven:native-network-change", syncNativeNetwork);
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("pageshow", resume);
 
     return () => {
       media.removeEventListener("change", syncMode);
       window.removeEventListener("orbyven:native-ready", syncMode);
+      window.removeEventListener("orbyven:native-network-change", syncNativeNetwork);
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("pageshow", resume);
       delete document.documentElement.dataset.appMode;
       delete document.documentElement.dataset.nativePlatform;
       delete document.documentElement.dataset.nativeVersion;
+      delete document.documentElement.dataset.nativeNetwork;
     };
   }, []);
 
