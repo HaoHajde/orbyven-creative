@@ -48,7 +48,6 @@ type CalendarRow = {
 const OPEN_TASKS = new Set(["done", "cancelled"]);
 const OPEN_LEADS = new Set(["won", "lost"]);
 const TIME_ZONE = "Europe/Bucharest";
-const DAY_MS = 86400000;
 
 function normalize(value: string) {
   return value
