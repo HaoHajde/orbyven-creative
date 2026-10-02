@@ -78,7 +78,7 @@ function themeVars(theme: Theme) {
 
 function InvitationPreview() {
   return (
-    <div className="relative h-full min-h-[460px] overflow-hidden rounded-[30px] border border-white/10 bg-[#17101d]">
+    <div className="relative h-full min-h-[560px] overflow-hidden rounded-[30px] border border-white/10 bg-[#17101d]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(242,216,255,.22),transparent_26%),radial-gradient(circle_at_82%_18%,rgba(133,93,255,.18),transparent_30%),linear-gradient(150deg,#26162b,#100c16_56%,#09090d)]" />
       <div className="absolute left-1/2 top-[9%] h-[73%] w-[56%] -translate-x-1/2 rotate-[-3deg] rounded-[30px] border border-white/14 bg-[#f6f0e9] shadow-[0_42px_100px_rgba(0,0,0,.36)]">
         <div className="absolute inset-4 rounded-[23px] border border-[#4d3655]/10" />
@@ -103,7 +103,7 @@ function InvitationPreview() {
 
 function WebPreview() {
   return (
-    <div className="relative h-full min-h-[460px] overflow-hidden rounded-[30px] border border-white/10 bg-[#0b0d14]">
+    <div className="relative h-full min-h-[560px] overflow-hidden rounded-[30px] border border-white/10 bg-[#0b0d14]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_12%,rgba(71,106,255,.24),transparent_30%),linear-gradient(145deg,#0e1320,#090b11_60%,#08090d)]" />
       <div className="absolute left-[7%] right-[7%] top-[9%] h-[62%] overflow-hidden rounded-[26px] border border-white/12 bg-[#0d1018] shadow-[0_36px_90px_rgba(0,0,0,.38)]">
         <div className="flex h-9 items-center justify-between border-b border-white/8 px-4">
@@ -138,7 +138,7 @@ function WebPreview() {
 
 function AdvancedPreview() {
   return (
-    <div className="relative h-full min-h-[460px] overflow-hidden rounded-[30px] border border-[#a58bff]/16 bg-[#0d0a17]">
+    <div className="relative h-full min-h-[560px] overflow-hidden rounded-[30px] border border-[#a58bff]/16 bg-[#0d0a17]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.28),transparent_30%),radial-gradient(circle_at_18%_70%,rgba(75,70,238,.16),transparent_38%),linear-gradient(150deg,#18102c,#0d0b17_58%,#09090d)]" />
       <div className="absolute left-[6%] right-[6%] top-[8%] h-[70%] overflow-hidden rounded-[26px] border border-white/10 bg-[#0c0b13]/92 p-5 shadow-[0_38px_100px_rgba(0,0,0,.42)]">
         <div className="flex items-center justify-between">
@@ -182,6 +182,211 @@ function PlanVisual({ offerId }: { offerId: PublicOfferId }) {
   if (offerId === "invitation") return <InvitationPreview />;
   if (offerId === "web") return <WebPreview />;
   return <AdvancedPreview />;
+}
+
+function InvitationStory() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr_.9fr]">
+      <div className="relative min-h-[310px] overflow-hidden rounded-[28px] border border-white/10 bg-[#151019] p-5 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(191,148,255,.22),transparent_26%),linear-gradient(145deg,#201326,#0d0a11)]" />
+        <div className="relative">
+          <p className="text-[8px] font-bold uppercase tracking-[.17em] text-white/38">EXPERIENȚA INVITATULUI</p>
+          <div className="mt-5 grid grid-cols-[.42fr_.58fr] gap-4">
+            <div className="rounded-[22px] border border-white/10 bg-white/[.04] p-3">
+              <div className="mx-auto h-[188px] w-[96px] rounded-[24px] border border-white/12 bg-[#f4eee7] p-3 shadow-[0_24px_60px_rgba(0,0,0,.3)]">
+                <div className="h-1.5 w-8 rounded-full bg-[#5c4563]/20" />
+                <div className="mt-8 text-center text-[#34263a]">
+                  <p className="text-[5px] font-bold tracking-[.22em]">SAVE THE DATE</p>
+                  <p className="mt-3 font-serif text-[17px] italic">A & M</p>
+                  <div className="mx-auto mt-5 h-7 w-14 rounded-full border border-[#4f3d56]/12" />
+                </div>
+              </div>
+            </div>
+            <div className="grid content-center gap-2">
+              {[
+                ["01", "Deschide linkul"],
+                ["02", "Vede detaliile"],
+                ["03", "Confirmă RSVP"],
+                ["04", "Ajunge la locație"],
+              ].map(([n,label]) => (
+                <div key={n} className="flex items-center gap-3 rounded-[14px] border border-white/8 bg-white/[.035] px-3 py-3">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white/8 text-[7px] font-bold text-white/50">{n}</span>
+                  <span className="text-[9px] font-semibold text-white/72">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">RSVP LIVE</p>
+        <div className="mt-6 flex items-end justify-between">
+          <div>
+            <p className="text-[46px] font-semibold leading-none tracking-[-.07em]">38</p>
+            <p className="mt-2 text-[9px] text-[var(--muted)]">confirmări</p>
+          </div>
+          <div className="grid h-16 w-16 place-items-center rounded-full border-[7px] border-[#a58bff]/18 text-[11px] font-bold text-[var(--home-violet)]">82%</div>
+        </div>
+        <div className="mt-7 space-y-2">
+          {[["Confirmat","28"],["În așteptare","7"],["Nu participă","3"]].map(([label,value],i)=>(
+            <div key={label} className="flex items-center justify-between rounded-[12px] bg-[var(--surface-2)] px-3 py-2.5">
+              <div className="flex items-center gap-2"><span className={"h-2 w-2 rounded-full "+(i===0?"bg-emerald-400":i===1?"bg-amber-300":"bg-white/20")} /><span className="text-[8px] text-[var(--muted)]">{label}</span></div>
+              <span className="text-[9px] font-semibold">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">TOTUL ÎNTR-UN LINK</p>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          {[
+            ["⌁","RSVP"],["⌂","Locații"],["◷","Countdown"],["✦","Poveste"],["♡","Galerie"],["↗","Maps"],
+          ].map(([icon,label])=>(
+            <div key={label} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] p-3">
+              <span className="text-[17px]">{icon}</span>
+              <p className="mt-3 text-[8px] font-semibold">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WebStory() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.12fr_.88fr_.9fr]">
+      <div className="relative min-h-[310px] overflow-hidden rounded-[28px] border border-white/10 bg-[#0b0d14] p-5 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_12%,rgba(73,108,255,.24),transparent_28%),linear-gradient(145deg,#0e1421,#090b11)]" />
+        <div className="relative">
+          <p className="text-[8px] font-bold uppercase tracking-[.17em] text-white/38">WEBSITE + MOBILE</p>
+          <div className="mt-5 grid grid-cols-[1fr_.34fr] gap-3">
+            <div className="overflow-hidden rounded-[18px] border border-white/10 bg-white/[.035]">
+              <div className="flex h-8 items-center gap-1.5 border-b border-white/8 px-3"><span className="h-1.5 w-1.5 rounded-full bg-white/15"/><span className="h-1.5 w-1.5 rounded-full bg-white/15"/><span className="h-1.5 w-1.5 rounded-full bg-white/15"/></div>
+              <div className="p-4">
+                <div className="h-2 w-16 rounded-full bg-[#a58bff]/60"/>
+                <div className="mt-4 h-7 w-[84%] rounded-[6px] bg-white/85"/>
+                <div className="mt-2 h-7 w-[62%] rounded-[6px] bg-white/85"/>
+                <div className="mt-4 h-2 w-[76%] rounded-full bg-white/12"/>
+                <div className="mt-2 h-2 w-[50%] rounded-full bg-white/8"/>
+                <div className="mt-5 h-9 w-28 rounded-full bg-white/88"/>
+              </div>
+            </div>
+            <div className="rounded-[20px] border border-white/10 bg-white/[.035] p-2">
+              <div className="h-[180px] rounded-[15px] border border-white/8 bg-[#11131b] p-3">
+                <div className="h-1.5 w-8 rounded-full bg-white/20"/>
+                <div className="mt-6 h-5 w-full rounded-[5px] bg-white/75"/>
+                <div className="mt-2 h-5 w-[72%] rounded-[5px] bg-white/75"/>
+                <div className="mt-4 h-16 rounded-[8px] bg-white/[.05]"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[#a58bff]/20 bg-[linear-gradient(145deg,rgba(126,93,255,.12),rgba(126,93,255,.035))] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--home-violet)]">30 ZILE DASHBOARD</p>
+        <p className="mt-6 text-[54px] font-semibold leading-none tracking-[-.075em]">30</p>
+        <p className="mt-2 text-[12px] font-semibold">zile incluse</p>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          {["Clienți","Task-uri","Calendar","Oferte"].map((item)=>(
+            <div key={item} className="rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] p-3 text-[8px] font-semibold">{item}</div>
+          ))}
+        </div>
+        <div className="mt-5 flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-3">
+          <span className="text-[8px] text-[var(--muted)]">primul utilizator</span>
+          <span className="text-[9px] font-bold">INCLUS</span>
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">CUM CURGE</p>
+        <div className="mt-7 space-y-2">
+          {[
+            ["AZI","399 lei","web design"],
+            ["30 ZILE","0 lei","dashboard inclus"],
+            ["APOI","499 lei/lună","dacă îl păstrezi"],
+          ].map(([step,value,label],index)=>(
+            <div key={step} className="relative flex items-center justify-between rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-4">
+              <div><p className="text-[7px] font-bold tracking-[.14em] text-[var(--muted-2)]">{step}</p><p className="mt-1 text-[8px] text-[var(--muted)]">{label}</p></div>
+              <p className="text-[16px] font-semibold">{value}</p>
+              {index<2?<span className="absolute -bottom-2 left-6 z-10 text-[10px] text-[var(--muted-2)]">↓</span>:null}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdvancedStory() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.15fr_.9fr_.85fr]">
+      <div className="relative min-h-[310px] overflow-hidden rounded-[28px] border border-[#a58bff]/16 bg-[#0c0a14] p-5 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_12%,rgba(145,102,255,.28),transparent_28%),linear-gradient(145deg,#17102a,#09090d)]" />
+        <div className="relative">
+          <div className="flex items-center justify-between">
+            <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[#c4b2ff]/58">BUSINESS OS</p>
+            <span className="rounded-full border border-[#a58bff]/20 bg-[#a58bff]/10 px-3 py-1.5 text-[7px] font-bold text-[#d6cbff]">CUSTOM</span>
+          </div>
+          <div className="mt-5 grid grid-cols-[.28fr_.72fr] gap-3">
+            <div className="grid gap-2">
+              {["Overview","Clienți","Lucrări","Stoc","AI"].map((item,index)=>(
+                <div key={item} className={"rounded-[10px] border px-3 py-3 text-[7px] font-semibold "+(index===0?"border-[#a58bff]/25 bg-[#a58bff]/12":"border-white/7 bg-white/[.025] text-white/45")}>{item}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ["CRM","24"],["Task-uri","18"],["Devize","12"],["Stoc","31"],["AI","ON"],["Custom","+"]
+              ].map(([label,value])=>(
+                <div key={label} className="rounded-[14px] border border-white/8 bg-white/[.035] p-3">
+                  <p className="text-[7px] text-white/28">{label}</p>
+                  <p className="mt-3 text-[20px] font-semibold">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--muted-2)]">MODULELE SE LEAGĂ</p>
+        <div className="relative mt-8 h-[205px]">
+          <div className="absolute left-1/2 top-1/2 h-px w-[68%] -translate-x-1/2 bg-[var(--border-strong)]"/>
+          <div className="absolute left-1/2 top-[20%] h-[60%] w-px -translate-x-1/2 bg-[var(--border-strong)]"/>
+          {[
+            ["CRM","left-0 top-[38%]"],
+            ["Oferte","right-0 top-[38%]"],
+            ["Task-uri","left-[34%] top-0"],
+            ["Stoc","left-[36%] bottom-0"],
+          ].map(([label,pos])=>(
+            <div key={label} className={"absolute "+pos+" rounded-full border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-3 text-[8px] font-semibold"}>{label}</div>
+          ))}
+          <div className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-[#a58bff]/30 bg-[var(--accent-soft)] text-center text-[8px] font-bold text-[var(--home-violet)]">ORBYVEN<br/>AI</div>
+        </div>
+      </div>
+
+      <div className="min-h-[310px] rounded-[28px] border border-[#a58bff]/20 bg-[linear-gradient(145deg,rgba(126,93,255,.10),rgba(126,93,255,.025))] p-5">
+        <p className="text-[8px] font-bold uppercase tracking-[.17em] text-[var(--home-violet)]">PERSONALIZABIL</p>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          {["CRM","Clienți","Lucrări","Calendar","Oferte","Stoc","AI","Custom +"].map((item,index)=>(
+            <div key={item} className={"rounded-[15px] border p-3 "+(index===7?"border-[#a58bff]/30 bg-[#a58bff]/12":"border-[var(--border)] bg-[var(--surface)]")}>
+              <div className="flex items-center justify-between gap-2"><span className="text-[8px] font-semibold">{item}</span><span className="text-[10px] text-[var(--muted-2)]">{index===7?"＋":"✓"}</span></div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-5 text-[9px] leading-5 text-[var(--muted)]">Pornim de la bază și adaptăm modulele la fluxul firmei.</p>
+      </div>
+    </div>
+  );
+}
+
+function VisualStory({ offerId }: { offerId: PublicOfferId }) {
+  if (offerId === "invitation") return <InvitationStory />;
+  if (offerId === "web") return <WebStory />;
+  return <AdvancedStory />;
 }
 
 function OfferPageContent() {
@@ -332,6 +537,17 @@ function OfferPageContent() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">PLANUL, DINTR-O PRIVIRE</p>
+                <h2 className="mt-2 text-[28px] font-semibold tracking-[-.05em] sm:text-[34px]">Mai puțin text. Mai mult ce vei folosi.</h2>
+              </div>
+              <span className="hidden rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)] sm:inline">{meta.eyebrow}</span>
+            </div>
+            <VisualStory offerId={offerId} />
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
