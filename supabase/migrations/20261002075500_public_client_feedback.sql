@@ -109,6 +109,13 @@ using (
   )
 );
 
+drop policy if exists billing_entitlement_guard on public.crm_feedback_links;
+create policy billing_entitlement_guard
+on public.crm_feedback_links
+as restrictive for all to authenticated
+using (private.is_billing_module_allowed(organization_id, 'leads'))
+with check (private.is_billing_module_allowed(organization_id, 'leads'));
+
 grant select, insert, update, delete on public.crm_feedback_links to authenticated;
 revoke all on public.crm_feedback_links from anon;
 
@@ -249,6 +256,14 @@ as $function$
       and fl.submitted_at is null
       and t.status = 'done'
       and t.client_id = fl.client_id
+      and (
+        not exists (
+          select 1
+          from public.subscriptions s
+          where s.organization_id = fl.organization_id
+        )
+        or private.has_module_entitlement(fl.organization_id, 'leads')
+      )
     ) as available,
     fl.submitted_at is not null as submitted
   from public.crm_feedback_links fl
@@ -313,6 +328,14 @@ begin
       and t.status = 'done'
   ) then
     raise exception 'feedback task unavailable' using errcode = 'P0001';
+  end if;
+
+  if exists (
+    select 1
+    from public.subscriptions s
+    where s.organization_id = v_link.organization_id
+  ) and not private.has_module_entitlement(v_link.organization_id, 'leads') then
+    raise exception 'feedback module unavailable' using errcode = 'P0001';
   end if;
 
   update public.crm_feedback_links
