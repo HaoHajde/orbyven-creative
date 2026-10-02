@@ -431,3 +431,30 @@ test("work closeout is suggested only after deterministic readiness conditions",
   const tasks = read("components/modules/TasksModule.tsx");
   assert.match(tasks, /onCompleteTask=\{\(\) => void changeStatus\(selectedTask, "done"\)\}/);
 });
+
+
+test("accepted estimates convert active leads into CRM clients without overwriting lost leads", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /export async function syncCrmAfterAcceptedEstimate/);
+  assert.match(sync, /lead\.stage === "lost"/);
+  assert.match(sync, /kind: "client"/);
+  assert.match(sync, /stage: "won"/);
+  assert.match(sync, /Convertit automat în client/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /syncCrmAfterAcceptedEstimate/);
+  assert.match(estimates, /status === "accepted" && next\.client_id/);
+  assert.match(estimates, /Clientul este marcat «Pierdut» în CRM/);
+});
+
+test("task lifecycle panels live outside the main tasks module", () => {
+  const tasks = read("components/modules/TasksModule.tsx");
+  const lifecycle = read("components/modules/tasks/TaskLifecyclePanels.tsx");
+  assert.match(tasks, /TaskLifecyclePanels/);
+  assert.match(tasks, /<AftercarePanel/);
+  assert.match(tasks, /<PostServiceGrowthPanel/);
+  assert.doesNotMatch(tasks, /function PostServiceGrowthPanel\(/);
+  assert.doesNotMatch(tasks, /function AftercarePanel\(/);
+  assert.match(lifecycle, /export function PostServiceGrowthPanel/);
+  assert.match(lifecycle, /export function AftercarePanel/);
+});
