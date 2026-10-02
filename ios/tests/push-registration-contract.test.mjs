@@ -30,7 +30,7 @@ test("remote notification navigation is restricted to ORBYVEN URLs", () => {
 
 test("push registration is explicit, bridged through the authenticated workspace and acknowledged", () => {
   const activity = read("../../components/WorkspaceActivityCenter.tsx");
-  const workspace = read("../../components/ClientWorkspace.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
   const helper = read("../../lib/modules/push-devices.ts");
 
   assert.match(activity, /orbyven:register-push/);
