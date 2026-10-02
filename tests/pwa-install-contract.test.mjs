@@ -55,6 +55,8 @@ test("installed web app publishes standalone runtime mode without caching privat
   assert.match(runtime, /dataset\.nativePlatform/);
   assert.match(runtime, /dataset\.nativeVersion/);
   assert.match(runtime, /orbyven:native-ready/);
+  assert.match(runtime, /orbyven:web-ready/);
+  assert.match(runtime, /ReactNativeWebView/);
   assert.match(runtime, /orbyven:native-network-change/);
   assert.match(runtime, /dataset\.nativeNetwork/);
   assert.match(runtime, /orbyven:app-resume/);
