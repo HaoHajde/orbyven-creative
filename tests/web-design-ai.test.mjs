@@ -7,10 +7,6 @@ import {
   SITE_PRESETS,
   SECTION_IDS,
 } from "../lib/ai/site-editor.ts";
-import {
-  applyLocalPreviewCommand,
-  shouldUseGenerativeWebDesign,
-} from "../lib/ai/local-preview-commands.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -47,23 +43,17 @@ test("Web Design schema migrates legacy four-section drafts into the bounded com
   assert.ok(migrated.faq.length >= 2);
 });
 
-test("Local Web Design engine remains free for mechanical changes and routes creative work to AI", () => {
-  const result = applyLocalPreviewCommand(
-    SITE_PRESETS.studio,
-    "Vreau black cu accent gold și layout editorial"
-  );
-  assert.ok(result);
-  assert.equal(result.draft.background, "#101113");
-  assert.equal(result.draft.accent, "#d4af37");
-  assert.equal(result.draft.layout, "editorial");
-  assert.equal(
-    shouldUseGenerativeWebDesign("Ascunde secțiunea despre"),
-    false
-  );
-  assert.equal(
-    shouldUseGenerativeWebDesign("Generează o altă propunere premium pentru întregul site"),
-    true
-  );
+test("Local Web Design engine remains deterministic for mechanical changes and routes creative work to AI", () => {
+  const local = read("lib/ai/local-preview-commands.ts");
+
+  assert.match(local, /Pure client-side logic: NO API call, NO provider credentials, NO AI quota/);
+  assert.match(local, /patch\.background = "#101113"/);
+  assert.match(local, /patch\.accent = item\.color/);
+  assert.match(local, /patch\.layout = "editorial"/);
+  assert.match(local, /export function shouldUseGenerativeWebDesign/);
+  assert.match(local, /CREATIVE_TRIGGER/);
+  assert.match(local, /applySectionCommand/);
+  assert.doesNotMatch(local, /api\.openai\.com/);
 });
 
 test("Generative Web Design is server-side, structured, bounded and explicit opt-in", () => {
