@@ -620,3 +620,18 @@ test("completed work reactivation cannot leave a 100 percent in-progress state",
   assert.match(tasks, /onClick=\{\(\) => onProgress\(0\)\}/);
   assert.match(tasks, /revine la „De făcut” și resetează progresul/);
 });
+
+
+test("rejected and expired estimates update CRM activity without forcing lost", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /syncCrmAfterEstimateClosedWithoutAcceptance/);
+  assert.match(sync, /status: "rejected" \| "expired"/);
+  assert.match(sync, /update\(\{ last_contact_at: now \}\)/);
+  assert.match(sync, /Stadiul CRM a fost păstrat pentru decizie manuală/);
+  assert.doesNotMatch(sync, /syncCrmAfterEstimateClosedWithoutAcceptance[\s\S]{0,2400}stage: "lost"/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /status === "rejected" \|\| status === "expired"/);
+  assert.match(estimates, /syncCrmAfterEstimateClosedWithoutAcceptance/);
+  assert.match(estimates, /fără să schimbe automat stadiul clientului/);
+});
