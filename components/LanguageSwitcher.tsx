@@ -1,0 +1,58 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
+type Locale = "ro" | "en";
+
+const ORIGIN_BY_LOCALE: Record<Locale, string> = {
+  ro: "https://orbyven.ro",
+  en: "https://www.orbyven.com",
+};
+
+export default function LanguageSwitcher({
+  locale,
+  compact = false,
+}: {
+  locale: Locale;
+  compact?: boolean;
+}) {
+  const pathname = usePathname() || "/";
+
+  const goTo = (target: Locale) => {
+    if (target === locale) return;
+
+    const search = window.location.search;
+    const hash = window.location.hash;
+    const next = new URL(pathname, ORIGIN_BY_LOCALE[target]);
+    next.search = search;
+    next.hash = hash;
+    window.location.assign(next.toString());
+  };
+
+  return (
+    <div
+      className={`inline-flex shrink-0 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1 ${compact ? "h-9" : "h-10"}`}
+      aria-label={locale === "ro" ? "Schimbă limba" : "Change language"}
+    >
+      {(["ro", "en"] as const).map((item) => {
+        const active = item === locale;
+        return (
+          <button
+            key={item}
+            type="button"
+            onClick={() => goTo(item)}
+            aria-pressed={active}
+            title={item === "ro" ? "Română" : "English"}
+            className={`flex h-full min-w-[34px] touch-manipulation items-center justify-center rounded-full px-2 text-[10px] font-bold tracking-[0.08em] transition ${
+              active
+                ? "bg-[var(--button)] text-[var(--button-text)]"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
+            }`}
+          >
+            {item.toUpperCase()}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
