@@ -80,13 +80,19 @@ export default function InvitationStartPage() {
 
           <div className="mt-12 overflow-hidden rounded-[34px] border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_30px_110px_rgba(0,0,0,.16)]">
             <div className="grid lg:grid-cols-[1.15fr_.85fr]">
-              <div
-                className="relative min-h-[480px] bg-cover bg-center"
-                style={{
-                  backgroundImage: "linear-gradient(180deg,rgba(7,6,10,.08),rgba(7,6,10,.78)),url('/demo/nunta/diana-florin/couple1.jpeg')",
-                }}
-              >
-                <div className="absolute inset-x-0 bottom-0 p-7 text-white sm:p-9">
+              <div className="relative min-h-[560px] overflow-hidden bg-[#140f18]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(240,205,255,.22),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(126,93,255,.20),transparent_28%),linear-gradient(150deg,#241428,#120d18_52%,#09090d)]" />
+                <div className="absolute inset-0 opacity-65 [background-image:linear-gradient(rgba(255,255,255,.024)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.024)_1px,transparent_1px)] [background-size:42px_42px]" />
+                <div className="absolute left-1/2 top-[10%] h-[68%] w-[58%] -translate-x-1/2 rotate-[-3deg] rounded-[34px] border border-white/14 bg-[#f5efe7] shadow-[0_42px_100px_rgba(0,0,0,.38)]">
+                  <div className="absolute inset-4 rounded-[26px] border border-[#412f49]/10" />
+                  <div className="absolute left-1/2 top-[18%] -translate-x-1/2 text-center text-[#302337]">
+                    <p className="text-[8px] font-bold uppercase tracking-[.28em]">SAVE THE DATE</p>
+                    <p className="mt-5 font-serif text-[34px] italic leading-none">A & M</p>
+                    <p className="mt-5 text-[7px] uppercase tracking-[.2em] text-[#6b5a70]">SATURDAY · 18:00</p>
+                  </div>
+                  <div className="absolute bottom-[19%] left-1/2 -translate-x-1/2 rounded-full border border-[#4b3653]/15 px-5 py-2 text-[7px] font-semibold uppercase tracking-[.18em] text-[#4b3653]">RSVP ONLINE</div>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0c0910] via-[#0c0910]/82 to-transparent p-7 pt-28 text-white sm:p-9">
                   <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/55">PREVIEW DE EXPERIENȚĂ</p>
                   <h2 className="mt-4 max-w-lg text-[42px] font-semibold leading-[.94] tracking-[-.06em]">Designul trebuie să pară al vostru, nu al unui template.</h2>
                 </div>
