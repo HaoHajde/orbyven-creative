@@ -152,3 +152,30 @@ test(".com never serves Romanian-only public routes under English lang", () => {
   assert.ok(!proxy.includes('"/workspace/:path*"'));
   assert.ok(!proxy.includes('"/api/:path*"'));
 });
+
+test("English sitemap follows the expanded translated route set", () => {
+  const sitemap = read("app/sitemap.ts");
+  const start = sitemap.indexOf("const englishCoreRoutes");
+  const end = sitemap.indexOf("const coreRoutes");
+  const englishBlock = start >= 0 && end > start ? sitemap.slice(start, end) : "";
+
+  assert.match(sitemap, /seoLandingPagesEn/);
+  for (const route of [
+    "/servicii",
+    "/templates",
+    "/ai-web-design",
+    "/solutii",
+    "/studii-de-caz",
+    "/ghid",
+    "/despre",
+    "/contact",
+  ]) {
+    assert.ok(englishBlock.includes(`path: "${route}"`), route);
+  }
+  for (const slug of ["creare-site", "site-prezentare", "redesign-site"]) {
+    assert.ok(read("lib/seo-foundation-en.ts").includes(`slug: "${slug}"`), slug);
+  }
+  for (const route of ["/invitatii-nunta", "/invitatii-botez", "/invitatii-majorat"]) {
+    assert.ok(!englishBlock.includes(route), route);
+  }
+});
