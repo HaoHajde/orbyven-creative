@@ -10,9 +10,26 @@ import {
   type VideoStyle,
 } from "@/lib/video-ai-director";
 import { motion } from "framer-motion";
+import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
+
+type RenderConfigState = {
+  enabled: boolean;
+  ready: boolean;
+  provider: "webhook" | "wan" | "ltx" | null;
+  endpointConfigured: boolean;
+};
+
+type RenderJobState = {
+  id: string;
+  status: "provider_required" | "queued" | "rendering" | "complete" | "failed";
+  provider: "webhook" | "wan" | "ltx" | null;
+  outputUrl: string | null;
+  providerJobId: string | null;
+  createdAt: string;
+};
 
 const defaultBrief =
   "Create a premium ORBYVEN Creative launch video that moves fluidly through Homepage, Templates, AI Web Design, Dashboard, connected modules and AI actions. Keep the real ORBYVEN product recognizable, use minimal text and cinematic continuous transitions.";
@@ -46,6 +63,13 @@ export default function VideoAiStudio() {
     buildStoryboard({ brief: defaultBrief, duration: 30, aspect: "9:16", style: "product" }),
   );
   const [copied, setCopied] = useState<string | null>(null);
+  const [referenceUrl, setReferenceUrl] = useState("");
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [renderConfig, setRenderConfig] = useState<RenderConfigState | null>(null);
+  const [renderJob, setRenderJob] = useState<RenderJobState | null>(null);
+  const [renderPackage, setRenderPackage] = useState<Record<string, unknown> | null>(null);
+  const [renderBusy, setRenderBusy] = useState(false);
+  const [renderError, setRenderError] = useState("");
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -57,6 +81,27 @@ export default function VideoAiStudio() {
       document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
     });
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void Promise.all([
+      fetch("/api/video-ai/render", { cache: "no-store" })
+        .then((response) => response.json())
+        .then((value: RenderConfigState) => {
+          if (active) setRenderConfig(value);
+        }),
+      orbyvenSupabase.auth.getSession().then(({ data }) => {
+        if (active) setAccessToken(data.session?.access_token ?? null);
+      }),
+    ]).catch((error) => {
+      console.warn("ORBYVEN Video AI readiness check unavailable", error);
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const vars = useMemo(
@@ -100,6 +145,61 @@ export default function VideoAiStudio() {
     await navigator.clipboard.writeText(value);
     setCopied(id);
     window.setTimeout(() => setCopied((current) => (current === id ? null : current)), 1300);
+  };
+
+  const startRender = async () => {
+    if (!accessToken) {
+      window.location.href = "/workspace/login?next=video-ai";
+      return;
+    }
+
+    setRenderBusy(true);
+    setRenderError("");
+    setRenderJob(null);
+    setRenderPackage(null);
+
+    try {
+      const response = await fetch("/api/video-ai/render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          storyboard,
+          referenceUrl: referenceUrl.trim() || undefined,
+        }),
+      });
+      const payload = (await response.json()) as {
+        error?: string;
+        job?: RenderJobState;
+        renderPackage?: Record<string, unknown>;
+      };
+
+      if (!response.ok || !payload.job) {
+        throw new Error(payload.error || "Render job could not be created.");
+      }
+
+      setRenderJob(payload.job);
+      setRenderPackage(payload.renderPackage ?? null);
+    } catch (error) {
+      setRenderError(error instanceof Error ? error.message : "Render job could not be created.");
+    } finally {
+      setRenderBusy(false);
+    }
+  };
+
+  const downloadRenderPackage = () => {
+    if (!renderPackage) return;
+    const blob = new Blob([JSON.stringify(renderPackage, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${renderJob?.id ?? "orbyven-video"}-render-package.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const allPrompts = storyboard.scenes
