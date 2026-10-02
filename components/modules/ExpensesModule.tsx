@@ -332,6 +332,10 @@ export default function ExpensesModule({
       (item) => item.status === "issued" && item.outstanding_cents > 0 && item.due_on && item.due_on < todayInput()
     ).length;
     const missingEvidence = scopedExpenses.filter((item) => !item.document_id).length;
+    const draftInvoices = scopedInvoices.filter((item) => item.status === "draft").length;
+    const openInvoices = scopedInvoices.filter(
+      (item) => item.status === "issued" && item.outstanding_cents > 0
+    ).length;
     return {
       monthExpenses,
       monthIncome,
@@ -339,6 +343,8 @@ export default function ExpensesModule({
       outstanding,
       overdue,
       missingEvidence,
+      draftInvoices,
+      openInvoices,
     };
   }, [scopedExpenses, scopedIncome, scopedInvoices]);
 
@@ -601,10 +607,30 @@ export default function ExpensesModule({
             description="Completează dovada ca dosarul financiar și operațional să rămână coerent."
             action={<button type="button" onClick={() => { setEvidenceOnly(true); setTab("expenses"); }} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Rezolvă dovezile →</button>}
           />
+        ) : scopeTaskId && metrics.draftInvoices > 0 ? (
+          <ModuleNextAction
+            title={`${metrics.draftInvoices} factură/facturi sunt încă în ciornă`}
+            description="Confirmă emiterea doar după ce documentul fiscal a fost emis în sistemul extern folosit de firmă."
+            action={<button type="button" onClick={() => setTab("invoices")} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Verifică factura →</button>}
+          />
+        ) : scopeTaskId && metrics.openInvoices > 0 ? (
+          <ModuleNextAction
+            title="Încasarea lucrării este încă deschisă"
+            description={`Mai sunt de încasat ${formatMoney(metrics.outstanding, "RON", locale)} pentru documentele emise ale acestei lucrări.`}
+            action={<button type="button" onClick={() => setTab("invoices")} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Vezi încasarea →</button>}
+          />
+        ) : scopeTaskId && scopedInvoices.length === 0 && enabledModules.includes("estimates") ? (
+          <ModuleNextAction
+            title="Nu există încă un document comercial pentru această lucrare"
+            description="Verifică oferta asociată. Ciorna financiară se generează din circuitul comercial, fără dublarea datelor."
+            action={<button type="button" onClick={() => onOpenModule("estimates", { taskId: scopeTaskId })} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Deschide oferta →</button>}
+          />
         ) : (
           <ModuleNextAction
-            title="Nu există o problemă financiară urgentă"
-            description="Poți continua cu înregistrările curente sau analiza cashflow-ului."
+            title={scopeTaskId ? "Închiderea financiară este în regulă" : "Nu există o problemă financiară urgentă"}
+            description={scopeTaskId
+              ? "Nu există restanțe, dovezi lipsă sau pași financiari deschiși detectați pentru această lucrare."
+              : "Poți continua cu înregistrările curente sau analiza cashflow-ului."}
           />
         )}
       </div>
