@@ -400,7 +400,7 @@ export async function createExpense(
       .eq("id", order.supplier_id)
       .single();
     if (supplierError || !supplier) throw new Error("Furnizorul comenzii nu este disponibil.");
-    linkedVendor = linkedVendor || supplier.name;
+    linkedVendor = supplier.name;
     linkedCurrency = order.currency || linkedCurrency;
 
     if (linkedTaskId) {
