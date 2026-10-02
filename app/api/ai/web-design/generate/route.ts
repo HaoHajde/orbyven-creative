@@ -13,6 +13,12 @@ export async function POST(request: Request) {
       typeof body.organizationId === "string" ? body.organizationId.trim() : "";
     const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
     const currentDraft = readSiteDraft(body.currentDraft);
+    const recentDrafts = Array.isArray(body.recentDrafts)
+      ? body.recentDrafts
+          .slice(-4)
+          .map((item) => readSiteDraft(item))
+          .filter((item): item is NonNullable<typeof item> => item !== null)
+      : [];
 
     if (!/^[a-f0-9-]{36}$/i.test(organizationId)) {
       return NextResponse.json({ error: "organization_id invalid" }, { status: 400 });
@@ -25,7 +31,12 @@ export async function POST(request: Request) {
     }
 
     const actor = await authenticateBillingActor(request, organizationId, false);
-    const result = await generateWebDesignForActor(actor, prompt, currentDraft);
+    const result = await generateWebDesignForActor(
+      actor,
+      prompt,
+      currentDraft,
+      recentDrafts
+    );
 
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
