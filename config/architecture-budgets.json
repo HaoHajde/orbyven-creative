@@ -80,6 +80,9 @@
       "TasksModule",
       "TeamModule",
       "ThermalPlannerModule"
+    ],
+    "workspaceShellDynamicComponents": [
+      "WorkspaceIntelligence"
     ]
   }
 }
