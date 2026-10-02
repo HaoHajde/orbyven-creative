@@ -70,24 +70,24 @@ test("real-auth QA requires dedicated secrets and never uploads private screensh
 });
 
 
-test("fast checkout preserves selected plan from public pricing through auth and onboarding", () => {
-  const home = read("components/HomePageClient.tsx");
+test("public offer cards preserve the selected product through the direct checkout route", () => {
   const contact = read("app/contact/page.tsx");
-  const register = read("app/workspace/register/page.tsx");
-  const login = read("app/workspace/login/page.tsx");
-  const callback = read("app/workspace/auth/callback/page.tsx");
-  const onboarding = read("app/workspace/onboarding/page.tsx");
+  const payment = read("app/porneste/plata/page.tsx");
+  const offers = read("lib/commerce/public-offers.ts");
 
-  assert.match(home, /href=\{\`\/contact\?plan=\$\{plan\.id\}&source=homepage\`\}/);
-  assert.match(contact, /\/api\/billing\/checkout/);
-  assert.match(contact, /Apple Pay/);
-  assert.match(contact, /Google Pay/);
-  assert.match(contact, /LEGAL_DOCUMENT_VERSION/);
-  assert.match(contact, /Creează cont și continuă/);
-  for (const source of [register, login, callback, onboarding]) {
-    assert.match(source, /checkoutQuery/);
-    assert.match(source, /\/contact\$\{checkoutQuery\}/);
-  }
-  assert.match(onboarding, /BILLING_PLANS\[checkoutPlan\]\.entitlements/);
-  assert.match(onboarding, /Plan selectat/);
+  assert.match(contact, /href="\/porneste\/plata\?offer=invitation"/);
+  assert.match(contact, /href="\/porneste\/plata\?offer=web"/);
+  assert.match(contact, /href="\/porneste\/plata\?offer=advanced"/);
+  assert.match(contact, /PUBLIC_OFFERS\.invitation\.priceLei/);
+  assert.match(contact, /PUBLIC_OFFERS\.web\.priceLei/);
+  assert.match(contact, /PUBLIC_OFFERS\.advanced\.priceLei/);
+
+  assert.match(payment, /isPublicOfferId\(rawOffer\)/);
+  assert.match(payment, /fetch\("\/api\/public-checkout"/);
+  assert.match(payment, /JSON\.stringify\(\{ offer: offerId \}\)/);
+  assert.match(payment, /SANDBOX_PAYMENT_LINKS/);
+  assert.match(payment, /payload\.code === "SANDBOX_FALLBACK"/);
+  assert.match(offers, /invitation:/);
+  assert.match(offers, /web:/);
+  assert.match(offers, /advanced:/);
 });
