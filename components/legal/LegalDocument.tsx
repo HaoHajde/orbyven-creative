@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { legalConfig, operatorLabel } from "@/lib/legal-config";
+import LanguageSwitch from "@/components/LanguageSwitch";
 
 type LegalDocumentProps = {
   eyebrow: string;
@@ -36,12 +37,15 @@ export default function LegalDocument({
           <Link href="/" className="text-sm font-semibold tracking-[0.16em]">
             ORBYVEN
           </Link>
-          <Link
-            href="/legal"
-            className="text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6]"
-          >
-            Centrul juridic
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/legal"
+              className="hidden text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6] sm:inline-flex"
+            >
+              Centrul juridic
+            </Link>
+            <LanguageSwitch variant="light" />
+          </div>
         </div>
       </header>
 
