@@ -1,4 +1,4 @@
-import type { EditableSite } from "@/lib/ai/site-editor";
+import type { EditableSite } from "./site-editor.ts";
 
 export type WebDesignEvidenceConcept =
   | "credentials"
