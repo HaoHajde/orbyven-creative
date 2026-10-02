@@ -66,6 +66,21 @@ export default function WorkFileSummary({
     : null;
 
   const attention = readiness?.checks.find((check) => check.state === "attention") ?? null;
+  const completionFinanceAction =
+    !attention &&
+    task.status === "done" &&
+    enabledModules.includes("expenses") &&
+    canAccessFinances
+      ? {
+          label: "Închide financiar",
+          module: "expenses" as OrbyvenModuleId,
+          options: {
+            taskId: task.id,
+            clientId: task.client_id ?? undefined,
+          } as WorkspaceOpenOptions,
+        }
+      : null;
+
   const nextAction = attention
     ? attention.key === "commercial" && enabledModules.includes("estimates")
       ? { label: "Deschide ofertele", module: "estimates" as OrbyvenModuleId, options: { create: context?.estimatesCount === 0, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
@@ -217,8 +232,19 @@ export default function WorkFileSummary({
         <div className="mt-3">
           <ModuleNextAction
             eyebrow="Acum"
-            title={task.status === "done" ? "Dosarul este coerent și lucrarea este finalizată" : "Poți continua execuția"}
-            description={task.status === "done" ? "Contextul rămâne disponibil pentru istoric, costuri și relația cu clientul." : "Nu există un blocaj operațional detectat în datele disponibile."}
+            title={task.status === "done" ? "Dosarul operațional este coerent" : "Poți continua execuția"}
+            description={task.status === "done"
+              ? "Lucrarea este finalizată. Următorul pas este verificarea încasării, facturii și costurilor asociate."
+              : "Nu există un blocaj operațional detectat în datele disponibile."}
+            action={completionFinanceAction ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule(completionFinanceAction.module, completionFinanceAction.options)}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                {completionFinanceAction.label} →
+              </button>
+            ) : undefined}
           />
         </div>
       ) : null}
