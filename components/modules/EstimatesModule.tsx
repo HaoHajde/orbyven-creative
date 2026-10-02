@@ -204,8 +204,13 @@ export default function EstimatesModule({
     const active = plan.filter((item) => item.outstanding_quantity > 0);
     return {
       lines: plan.length,
-      unready: active.filter((item) => item.reserved_quantity < item.outstanding_quantity).length,
-      shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
+      untracked: active.filter((item) => !item.stock_tracked).length,
+      unready: active.filter(
+        (item) => item.stock_tracked && item.reserved_quantity < item.outstanding_quantity
+      ).length,
+      shortages: active.filter(
+        (item) => item.stock_tracked && item.shortage_after_reservation > 0
+      ).length,
     };
   }, [taskMaterialPlan]);
   const materialBlocksScheduling = Boolean(
@@ -496,7 +501,11 @@ export default function EstimatesModule({
               <div className="mt-4">
                 <ModuleNextAction
                   title="Programează execuția"
-                  description={taskMaterialPlan && taskMaterialSummary.lines > 0 ? "Materialele sunt pregătite. Lucrarea poate intra în calendar." : "Nu există un blocaj material detectat. Lucrarea poate intra în calendar."}
+                  description={taskMaterialSummary.untracked > 0
+                    ? `${taskMaterialSummary.untracked} poziții nu folosesc stoc tracking și rămân de verificat manual; ORBYVEN nu le blochează automat. Lucrarea poate intra în calendar.`
+                    : taskMaterialPlan && taskMaterialSummary.lines > 0
+                      ? "Materialele urmărite sunt pregătite. Lucrarea poate intra în calendar."
+                      : "Nu există un blocaj material detectat. Lucrarea poate intra în calendar."}
                   action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
                 />
               </div>
