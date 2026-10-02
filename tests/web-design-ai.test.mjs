@@ -19,6 +19,7 @@ import {
   designDnaDistance,
   selectAlternativeDesignDna,
 } from "../lib/ai/web-design-variation.ts";
+import { evaluateWebDesignReadiness } from "../lib/ai/web-design-readiness.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -401,4 +402,69 @@ test("Generative Web Design applies Design DNA before Quality Critic", () => {
   assert.match(variation, /distanceFromCurrent/);
   assert.match(variation, /currentFingerprint/);
   assert.doesNotMatch(variation, /Math\.random/);
+});
+
+
+test("Publish Readiness flags demo content without blocking draft generation", () => {
+  const strategy = buildWebDesignStrategy(
+    "Creează un site pentru o firmă de servicii.",
+    SITE_PRESETS.studio
+  );
+  const quality = critiqueWebDesign(SITE_PRESETS.studio, strategy).report;
+  const readiness = evaluateWebDesignReadiness(
+    SITE_PRESETS.studio,
+    strategy,
+    quality
+  );
+
+  assert.ok(readiness.score < 90);
+  assert.notEqual(readiness.status, "ready");
+  assert.ok(readiness.placeholderCount > 0);
+  assert.ok(readiness.blockers.some((item) => item.code === "PLACEHOLDER_COPY"));
+  assert.ok(readiness.blockers.some((item) => item.code === "DEMO_BRAND"));
+});
+
+test("Publish Readiness reaches ready when real copy replaces placeholders and technical quality is strong", () => {
+  const draft = {
+    ...SITE_PRESETS.florarie,
+    brand: "Flora Nova",
+    headline: "Flori create pentru momentele care contează.",
+    description: "Buchete și aranjamente florale pregătite pentru comenzi și ocazii speciale.",
+    services: [
+      { title: "Buchete", description: "Selecții florale pentru cadouri și ocazii speciale." },
+      { title: "Aranjamente", description: "Compoziții florale pentru evenimente și spații." },
+      { title: "Personalizare", description: "Comenzi adaptate preferințelor și contextului oferit." },
+    ],
+    gallery: [
+      { title: "Buchet sezonier", description: "Selecție florală din colecția curentă." },
+      { title: "Aranjament floral", description: "Compoziție pentru ocazii speciale." },
+      { title: "Colecție cadou", description: "Selecție pregătită pentru a fi oferită." },
+    ],
+    hiddenSections: ["process", "faq"],
+  };
+  const strategy = buildWebDesignStrategy(
+    "Florărie cu produse și comenzi online.",
+    draft
+  );
+  const quality = critiqueWebDesign(draft, strategy).report;
+  const readiness = evaluateWebDesignReadiness(draft, strategy, quality);
+
+  assert.equal(readiness.status, "ready");
+  assert.equal(readiness.blockers.length, 0);
+  assert.equal(readiness.placeholderCount, 0);
+  assert.ok(readiness.score >= 90);
+});
+
+test("Generative Web Design returns publish readiness beside technical quality", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+  const readiness = read("lib/ai/web-design-readiness.ts");
+
+  assert.match(server, /evaluateWebDesignReadiness/);
+  assert.match(server, /readiness,/);
+  assert.match(specialist, /Ready \{readinessScore\}/);
+  assert.match(specialist, /elemente de completat înainte de publicare/);
+  assert.match(readiness, /PLACEHOLDER_COPY/);
+  assert.match(readiness, /DEMO_BRAND/);
+  assert.doesNotMatch(readiness, /fetch\(/);
 });
