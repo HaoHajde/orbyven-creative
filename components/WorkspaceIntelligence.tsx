@@ -65,7 +65,7 @@ function splitStoredOutcome(facts: Array<{ label: string; value: string }>) {
   const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
   const planId = value("Outcome · Plan");
   const rawStatus = value("Outcome · Status");
-  const status =
+  const status: NonNullable<IntelligenceResponse["outcome"]>["status"] | undefined =
     rawStatus === "no_longer_primary" || rawStatus === "shifted" || rawStatus === "still_priority"
       ? rawStatus
       : undefined;
