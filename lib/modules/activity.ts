@@ -14,6 +14,7 @@ import {
   evaluatePostServiceGrowth,
   parsePostServiceEvent,
   POST_SERVICE_PREFIX,
+  type PostServiceEvent,
 } from "@/lib/automation/post-service-growth";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 
@@ -298,7 +299,12 @@ export async function loadWorkspaceActivity(
       .map((task) => task.client_id)
       .filter((clientId): clientId is string => Boolean(clientId))
   );
-  const growthEventsByTask = new Map<string, ReturnType<typeof parsePostServiceEvent>[]>();
+  const activeEstimateClientIds = new Set(
+    (estimatesResult.data ?? [])
+      .map((estimate) => estimate.client_id)
+      .filter((clientId): clientId is string => Boolean(clientId))
+  );
+  const growthEventsByTask = new Map<string, PostServiceEvent[]>();
   for (const activity of growthActivitiesResult.data ?? []) {
     const event = parsePostServiceEvent(activity.body, activity.occurred_at);
     if (!event) continue;
@@ -310,16 +316,15 @@ export async function loadWorkspaceActivity(
   for (const task of completedGrowthTasksResult.data ?? []) {
     if (!task.client_id || !task.completed_at || task.kind === "task") continue;
     const state = buildPostServiceGrowthState(
-      (growthEventsByTask.get(task.id) ?? []).filter(
-        (event): event is NonNullable<typeof event> => Boolean(event)
-      )
+      growthEventsByTask.get(task.id) ?? []
     );
     const action = evaluatePostServiceGrowth({
       taskTitle: task.title,
       completedAt: task.completed_at,
       state,
       now,
-      hasOpenWorkForClient: openClientIds.has(task.client_id),
+      hasOpenWorkForClient:
+        openClientIds.has(task.client_id) || activeEstimateClientIds.has(task.client_id),
     });
     if (!action) continue;
 
