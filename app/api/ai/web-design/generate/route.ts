@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { readSiteDraft } from "@/lib/ai/site-editor";
-import { generateWebDesignForActor } from "@/lib/ai/web-design-server";
+import { generateOrchestratedWebDesign } from "@/lib/ai/web-design-orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const actor = await authenticateBillingActor(request, organizationId, false);
-    const result = await generateWebDesignForActor(actor, prompt, currentDraft);
+    const result = await generateOrchestratedWebDesign(actor, prompt, currentDraft);
 
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },

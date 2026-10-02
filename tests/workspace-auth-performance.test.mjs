@@ -70,20 +70,29 @@ test("real-auth QA requires dedicated secrets and never uploads private screensh
 });
 
 
-test("fast checkout preserves selected plan from public pricing through auth and onboarding", () => {
+test("public checkout and authenticated plan handoff preserve their respective offer context", () => {
   const home = read("components/HomePageClient.tsx");
   const contact = read("app/contact/page.tsx");
+  const paymentRedirect = read("app/porneste/plata/page.tsx");
+  const publicCheckout = read("app/api/public-checkout/route.ts");
   const register = read("app/workspace/register/page.tsx");
   const login = read("app/workspace/login/page.tsx");
   const callback = read("app/workspace/auth/callback/page.tsx");
   const onboarding = read("app/workspace/onboarding/page.tsx");
 
   assert.match(home, /href=\{\`\/contact\?plan=\$\{plan\.id\}&source=homepage\`\}/);
-  assert.match(contact, /\/api\/billing\/checkout/);
-  assert.match(contact, /Apple Pay/);
-  assert.match(contact, /Google Pay/);
-  assert.match(contact, /LEGAL_DOCUMENT_VERSION/);
-  assert.match(contact, /Creează cont și continuă/);
+
+  assert.match(contact, /href="\/porneste\/plata\?offer=invitation"/);
+  assert.match(contact, /href="\/porneste\/plata\?offer=web"/);
+  assert.match(contact, /href="\/porneste\/plata\?offer=advanced"/);
+  assert.match(contact, /PUBLIC_OFFERS\.web\.priceLei/);
+
+  assert.match(paymentRedirect, /fetch\("\/api\/public-checkout"/);
+  assert.match(paymentRedirect, /window\.location\.assign\(payload\.url\)/);
+  assert.match(publicCheckout, /isPublicOfferId/);
+  assert.match(publicCheckout, /createPublicOfferCheckoutSession/);
+  assert.match(publicCheckout, /Cache-Control": "no-store"/);
+
   for (const source of [register, login, callback, onboarding]) {
     assert.match(source, /checkoutQuery/);
     assert.match(source, /\/contact\$\{checkoutQuery\}/);
