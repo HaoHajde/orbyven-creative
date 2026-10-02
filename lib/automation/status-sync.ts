@@ -15,38 +15,68 @@ function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
 }
 
+export async function syncTaskCalendarSchedule(
+  organizationId: string,
+  taskId: string
+) {
+  requireOrganizationId(organizationId);
+  if (!taskId.trim()) throw new Error("task_id is required.");
+
+  const [{ data: task, error: taskError }, { data: nextEvent, error: eventError }] =
+    await Promise.all([
+      orbyvenSupabase
+        .from("ops_tasks")
+        .select("id,status,scheduled_at")
+        .eq("organization_id", organizationId)
+        .eq("id", taskId)
+        .single(),
+      orbyvenSupabase
+        .from("calendar_events")
+        .select("id,start_at")
+        .eq("organization_id", organizationId)
+        .eq("task_id", taskId)
+        .eq("event_type", "work")
+        .eq("status", "scheduled")
+        .order("start_at", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  if (taskError || !task) {
+    throw taskError ?? new Error("Lucrarea programată nu a putut fi încărcată.");
+  }
+  if (eventError) throw eventError;
+  if (task.status === "cancelled" || task.status === "done") {
+    return {
+      taskUpdated: false as const,
+      nextScheduledAt: nextEvent?.start_at ?? null,
+    };
+  }
+
+  const nextScheduledAt = nextEvent?.start_at ?? null;
+  if ((task.scheduled_at ?? null) === nextScheduledAt) {
+    return { taskUpdated: false as const, nextScheduledAt };
+  }
+
+  const { error } = await orbyvenSupabase
+    .from("ops_tasks")
+    .update({ scheduled_at: nextScheduledAt })
+    .eq("organization_id", organizationId)
+    .eq("id", taskId);
+
+  if (error) throw error;
+  return { taskUpdated: true as const, nextScheduledAt };
+}
+
 export async function syncTaskAfterWorkScheduled(
   organizationId: string,
   event: CalendarWorkEvent
 ) {
   requireOrganizationId(organizationId);
   if (event.event_type !== "work" || !event.task_id) {
-    return { taskUpdated: false as const };
+    return { taskUpdated: false as const, nextScheduledAt: null };
   }
-
-  const { data: task, error: taskError } = await orbyvenSupabase
-    .from("ops_tasks")
-    .select("id,status,scheduled_at")
-    .eq("organization_id", organizationId)
-    .eq("id", event.task_id)
-    .single();
-
-  if (taskError || !task) {
-    throw taskError ?? new Error("Lucrarea programată nu a putut fi încărcată.");
-  }
-  if (task.status === "cancelled" || task.status === "done" || task.scheduled_at) {
-    return { taskUpdated: false as const };
-  }
-
-  const { error } = await orbyvenSupabase
-    .from("ops_tasks")
-    .update({ scheduled_at: event.start_at })
-    .eq("organization_id", organizationId)
-    .eq("id", event.task_id)
-    .is("scheduled_at", null);
-
-  if (error) throw error;
-  return { taskUpdated: true as const };
+  return syncTaskCalendarSchedule(organizationId, event.task_id);
 }
 
 export async function syncTaskAfterWorkEventCompleted(
@@ -73,19 +103,25 @@ export async function syncTaskAfterWorkEventCompleted(
     throw taskError ?? new Error("Lucrarea programării nu a putut fi încărcată.");
   }
 
-  if ((task.status as WorkTaskStatus) !== "planned") {
-    return { taskUpdated: false as const };
+  let taskUpdated = false;
+  if ((task.status as WorkTaskStatus) === "planned") {
+    const { error } = await orbyvenSupabase
+      .from("ops_tasks")
+      .update({ status: "in_progress" })
+      .eq("organization_id", organizationId)
+      .eq("id", event.task_id)
+      .eq("status", "planned");
+
+    if (error) throw error;
+    taskUpdated = true;
   }
 
-  const { error } = await orbyvenSupabase
-    .from("ops_tasks")
-    .update({ status: "in_progress" })
-    .eq("organization_id", organizationId)
-    .eq("id", event.task_id)
-    .eq("status", "planned");
-
-  if (error) throw error;
-  return { taskUpdated: true as const };
+  const schedule = await syncTaskCalendarSchedule(organizationId, event.task_id);
+  return {
+    taskUpdated,
+    scheduleUpdated: schedule.taskUpdated,
+    nextScheduledAt: schedule.nextScheduledAt,
+  };
 }
 
 export async function completeElapsedWorkEventsForTask(
@@ -107,5 +143,19 @@ export async function completeElapsedWorkEventsForTask(
     .select("id");
 
   if (error) throw error;
-  return { completedEvents: (data ?? []).length };
+
+  const { count: futureScheduled, error: futureError } = await orbyvenSupabase
+    .from("calendar_events")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("task_id", taskId)
+    .eq("event_type", "work")
+    .eq("status", "scheduled")
+    .gt("end_at", nowIso);
+
+  if (futureError) throw futureError;
+  return {
+    completedEvents: (data ?? []).length,
+    futureScheduled: futureScheduled ?? 0,
+  };
 }
