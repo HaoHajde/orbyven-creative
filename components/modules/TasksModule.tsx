@@ -38,6 +38,7 @@ import {
 } from "@/lib/automation/post-service-growth";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import WorkFileSummary from "@/components/modules/tasks/WorkFileSummary";
+import { syncNativeCrmFollowUp } from "@/lib/modules/native-reminders";
 import {
   useCallback,
   useEffect,
@@ -518,6 +519,7 @@ export default function TasksModule({
             : entry
         )
       );
+      syncNativeCrmFollowUp(updatedClient);
     } catch (aftercareError) {
       console.error(aftercareError);
       setError("Revenirea către client nu a putut fi programată.");
