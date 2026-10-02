@@ -6,7 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
