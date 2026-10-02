@@ -31,6 +31,10 @@ import {
   guardWebDesignEvidence,
   type WebDesignEvidenceGuardReport,
 } from "@/lib/ai/web-design-evidence";
+import {
+  deriveWebDesignBriefGaps,
+  type WebDesignBriefGapReport,
+} from "@/lib/ai/web-design-brief-gaps";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -69,6 +73,7 @@ export type WebDesignGenerationResult = {
   selection: WebDesignCandidateSelectionReport;
   refineScope: WebDesignRefineScope;
   evidence: WebDesignEvidenceGuardReport;
+  briefGaps: WebDesignBriefGapReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -646,6 +651,13 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
+    const briefGaps = deriveWebDesignBriefGaps(
+      nextDraft,
+      strategy,
+      selectedResult.readiness,
+      evidenceResult.report
+    );
+
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
     await finishQuota(quota.requestId, true, usage);
 
@@ -665,6 +677,7 @@ export async function generateWebDesignForActor(
       selection: selectedResult.selection,
       refineScope,
       evidence: evidenceResult.report,
+      briefGaps,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
