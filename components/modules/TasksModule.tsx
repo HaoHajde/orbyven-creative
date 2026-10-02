@@ -1102,6 +1102,7 @@ export default function TasksModule({
           enabledModules={enabledModules}
           canAccessFinances={canAccessFinances}
           onOpenModule={onOpenModule}
+          onCompleteTask={() => void changeStatus(selectedTask, "done")}
         />
       )}
       {selectedTask && (
