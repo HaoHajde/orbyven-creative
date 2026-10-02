@@ -44,7 +44,7 @@ test("calendar module mirrors its existing reminder_minutes into native reminder
 });
 
 test("workspace opens the exact calendar record and acknowledges native routing", () => {
-  const workspace = read("../../components/ClientWorkspace.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
 
   assert.match(workspace, /orbyven:native-calendar-record/);
   assert.match(workspace, /openModule\("calendar", \{ recordId: eventId \}\)/);
