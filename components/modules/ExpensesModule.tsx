@@ -241,6 +241,7 @@ export default function ExpensesModule({
           setExpenseForm((current) => ({
             ...current,
             documentId: document.id,
+            description: current.description || document.name,
             clientId: document.client_id || current.clientId,
             taskId: document.task_id || current.taskId,
             purchaseOrderId: document.purchase_order_id || current.purchaseOrderId,
