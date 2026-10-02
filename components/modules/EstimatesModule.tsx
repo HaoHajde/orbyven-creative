@@ -141,7 +141,10 @@ export default function EstimatesModule({
         const taskEstimate = initialTaskId
           ? nextEstimates.find((item) => item.task_id === initialTaskId)
           : null;
-        return taskEstimate?.id ?? nextEstimates[0]?.id ?? null;
+        const clientEstimate = !taskEstimate && initialClientId
+          ? nextEstimates.find((item) => item.client_id === initialClientId)
+          : null;
+        return taskEstimate?.id ?? clientEstimate?.id ?? nextEstimates[0]?.id ?? null;
       });
     } catch (loadError) {
       console.error(loadError);
@@ -149,7 +152,7 @@ export default function EstimatesModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, initialCreate, initialTaskId]);
+  }, [organizationId, initialClientId, initialCreate, initialTaskId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
