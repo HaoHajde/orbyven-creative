@@ -36,6 +36,7 @@ test("root metadata registers PWA and Apple Home Screen behavior", () => {
 
   assert.match(layout, /ServiceWorkerRegistration/);
   assert.match(layout, /appleWebApp/);
+  assert.match(layout, /statusBarStyle:\s*"black-translucent"/);
   assert.match(layout, /orbyven-app-icon\.png/);
   assert.match(nextConfig, /source: "\/sw\.js"/);
   assert.match(nextConfig, /no-cache, no-store, must-revalidate/);
@@ -52,6 +53,9 @@ test("installed web app publishes standalone runtime mode without caching privat
   assert.match(runtime, /orbyven:app-resume/);
   assert.match(layout, /AppModeRuntime/);
   assert.match(css, /data-app-mode="standalone"/);
+  assert.match(css, /orbyven-workspace-header/);
+  assert.match(css, /safe-area-inset-top/);
+  assert.match(css, /--orbyven-workspace-chrome/);
 });
 
 test("Next generated manifest matches the canonical installed workspace experience", () => {
