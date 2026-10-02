@@ -26,6 +26,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -36,6 +37,7 @@ type TextScale = 0.9 | 1 | 1.1 | 1.2 | 1.3;
 
 const TEXT_SCALE_STEPS: TextScale[] = [0.9, 1, 1.1, 1.2, 1.3];
 const DEFAULT_TEXT_SCALE: TextScale = 1.1;
+const LAST_WORKSPACE_MODULE_KEY = "orbyven-workspace-last-module";
 const TEXT_SCALE_SIDEBAR_WIDTH: Record<TextScale, string> = {
   0.9: "206px",
   1: "206px",
@@ -81,6 +83,7 @@ export default function WorkspaceShell({
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
   const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
+  const restoredModuleRef = useRef(false);
 
 
   const loadWorkspace = useCallback(async () => {
@@ -169,6 +172,24 @@ export default function WorkspaceShell({
     [enabledModules]
   );
 
+  useEffect(() => {
+    if (!workspace || restoredModuleRef.current) return;
+    restoredModuleRef.current = true;
+
+    const savedModule = window.localStorage.getItem(
+      LAST_WORKSPACE_MODULE_KEY
+    ) as OrbyvenModuleId | null;
+
+    if (!savedModule || !enabledModules.includes(savedModule)) return;
+
+    const restoreTimer = window.setTimeout(() => {
+      setActiveModule(savedModule);
+      setNavigation({ module: savedModule, token: 1 });
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, [workspace, enabledModules]);
+
   const activeDefinition =
     ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ?? ORBYVEN_MODULES[0];
 
@@ -231,6 +252,7 @@ export default function WorkspaceShell({
 
   const openModule = useCallback((id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) => {
     if (!enabledModules.includes(id)) return;
+    window.localStorage.setItem(LAST_WORKSPACE_MODULE_KEY, id);
     setPanel("workspace");
     setActiveModule(id);
     setNavigation((current) => ({ module: id, token: current.token + 1, ...options }));
