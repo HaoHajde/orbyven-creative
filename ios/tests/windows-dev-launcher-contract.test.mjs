@@ -11,6 +11,9 @@ test("Windows iPhone launcher keeps Expo Go development one-command and local-fi
 
   assert.match(launcher, /Node\.js 22\.13\+/);
   assert.match(launcher, /npm install --no-audit --no-fund/);
+  assert.match(launcher, /npx expo whoami/);
+  assert.match(launcher, /npx expo login/);
+  assert.match(launcher, /ACELASI cont Expo/);
   assert.match(launcher, /npm run start:go/);
   assert.match(launcher, /npm run start:tunnel/);
   assert.match(launcher, /Expo Go/);
