@@ -23,10 +23,40 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.6.0";
+const APP_VERSION = "0.7.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
+type NativeTheme = "light" | "dark";
+
+const NATIVE_RUNTIME = {
+  platform: "ios",
+  version: APP_VERSION,
+  capabilities: [
+    "biometric-lock",
+    "deep-links",
+    "documents",
+    "haptics",
+    "local-notifications",
+    "network-recovery",
+    "push-registration",
+  ],
+} as const;
+
+const NATIVE_BOOTSTRAP_SCRIPT = `
+(function () {
+  var runtime = ${JSON.stringify(NATIVE_RUNTIME)};
+  window.__ORBYVEN_NATIVE__ = runtime;
+  var root = document.documentElement;
+  if (root) {
+    root.dataset.appMode = "native";
+    root.dataset.nativePlatform = runtime.platform;
+    root.dataset.nativeVersion = runtime.version;
+  }
+  window.dispatchEvent(new CustomEvent("orbyven:native-ready", { detail: runtime }));
+})();
+true;
+`;
 
 type CalendarReminderMessage = {
   eventId: string;
@@ -150,7 +180,8 @@ function nativeUrlToWebUrl(url: string) {
 export default function App() {
   const webRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
-  const dark = colorScheme !== "light";
+  const [webTheme, setWebTheme] = useState<NativeTheme | null>(null);
+  const dark = (webTheme ?? colorScheme) !== "light";
 
   const [connection, setConnection] = useState<ConnectionState>("loading");
   const [currentUrl, setCurrentUrl] = useState(WORKSPACE_URL);
@@ -251,7 +282,7 @@ export default function App() {
       }
 
       webRef.current?.injectJavaScript(
-        "window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); true;",
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); document.dispatchEvent(new Event('visibilitychange')); true;",
       );
 
       const backgroundAt = lastBackgroundAt.current;
@@ -417,9 +448,15 @@ export default function App() {
         startAt?: string;
         reminderMinutes?: number | null;
         location?: string | null;
+        theme?: NativeTheme;
       };
 
-      if (message.type === "orbyven:register-push") {
+      if (
+        message.type === "orbyven:theme" &&
+        (message.theme === "light" || message.theme === "dark")
+      ) {
+        setWebTheme(message.theme);
+      } else if (message.type === "orbyven:register-push") {
         void registerForRemotePush()
           .then((expoPushToken) => {
             const detail = JSON.stringify({
@@ -578,6 +615,7 @@ export default function App() {
           ref={webRef}
           source={{ uri: currentUrl }}
           style={{ backgroundColor: background }}
+          injectedJavaScriptBeforeContentLoaded={NATIVE_BOOTSTRAP_SCRIPT}
           originWhitelist={["https://*", "orbyven://*"]}
           onNavigationStateChange={onNavigationStateChange}
           onShouldStartLoadWithRequest={shouldStart}
