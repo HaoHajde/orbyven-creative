@@ -300,14 +300,29 @@ export default function WorkspaceShell({
         taskId,
       }));
     };
+    const handleNativeLeadRecord = (event: Event) => {
+      const leadId = (event as CustomEvent<{ leadId?: string }>).detail?.leadId;
+      if (!leadId) return;
+
+      openModule("leads", { recordId: leadId });
+      const bridge = (window as Window & {
+        ReactNativeWebView?: { postMessage: (message: string) => void };
+      }).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:native-lead-opened",
+        leadId,
+      }));
+    };
 
     window.addEventListener("orbyven:native-documents", handleNativeDocuments);
     window.addEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
     window.addEventListener("orbyven:native-task-record", handleNativeTaskRecord);
+    window.addEventListener("orbyven:native-lead-record", handleNativeLeadRecord);
     return () => {
       window.removeEventListener("orbyven:native-documents", handleNativeDocuments);
       window.removeEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
       window.removeEventListener("orbyven:native-task-record", handleNativeTaskRecord);
+      window.removeEventListener("orbyven:native-lead-record", handleNativeLeadRecord);
     };
   }, [openModule]);
 
