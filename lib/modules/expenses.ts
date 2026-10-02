@@ -311,6 +311,7 @@ export async function createExpense(
   let linkedPurchaseOrderId = input.purchaseOrderId || null;
   let linkedVendor = cleanOptional(input.vendor);
   let linkedCurrency = (input.currency?.trim() || "RON").toUpperCase();
+  let linkedCurrency = (input.currency?.trim() || "RON").toUpperCase();
   if (linkedTaskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
@@ -391,6 +392,7 @@ export async function createExpense(
       throw new Error("Lucrarea cheltuielii nu corespunde comenzii furnizor.");
     }
     linkedTaskId = order.task_id || linkedTaskId;
+    linkedCurrency = (order.currency || linkedCurrency).toUpperCase();
 
     const { data: supplier, error: supplierError } = await orbyvenSupabase
       .from("ops_suppliers")
