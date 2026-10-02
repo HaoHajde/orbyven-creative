@@ -1062,7 +1062,7 @@ export default function TasksModule({
             </div>
           </details>
         </div>
-      )}
+      ) : null}
       {selectedTask &&
         selectedTask.status === "done" &&
         selectedTask.kind !== "task" &&
