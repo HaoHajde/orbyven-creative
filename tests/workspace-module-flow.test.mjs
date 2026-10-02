@@ -601,3 +601,13 @@ test("inventory focuses open purchase orders for incoming work context", () => {
   assert.match(inventory, /data-inventory-procurement-scope="true"/);
   assert.match(inventory, /Toate comenzile/);
 });
+
+
+test("received procurement stock is reserved automatically for its linked work", () => {
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /await receivePurchaseOrderItem\(organizationId, item, remaining\)/);
+  assert.match(inventory, /await reserveAvailableInventoryForTask\([\s\S]*order\.task_id,[\s\S]*item\.material_id/);
+  assert.match(inventory, /Recepția a intrat în stoc și disponibilul a fost rezervat automat pentru lucrare/);
+  assert.match(inventory, /if \(ok && order\)/);
+  assert.match(inventory, /planTaskId === order\.task_id/);
+});
