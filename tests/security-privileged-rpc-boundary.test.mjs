@@ -7,6 +7,8 @@ const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf
 const bootstrap = read("supabase/migrations/20261002083742_harden_bootstrap_verified_authenticated_boundary.sql");
 const relock = read("supabase/migrations/20261002083824_ai_action_rpc_server_only_relock.sql");
 const intelligenceRoute = read("app/api/ai/intelligence/route.ts");
+const proposalServer = read("lib/ai/proposal-server.ts");
+const auditRelock = read("supabase/migrations/20261002081223_ai_audit_service_role_only.sql");
 
 test("organization bootstrap remains intentional but requires a verified non-anonymous identity", () => {
   assert.match(bootstrap, /security definer/i);
@@ -33,6 +35,10 @@ test("Agent Action privileged RPCs are service-role only", () => {
   }
   assert.doesNotMatch(relock, /grant execute[^\n]+to authenticated/i);
   assert.match(relock, /grant execute[^\n]+to service_role/i);
+  assert.doesNotMatch(proposalServer, /createBillingServiceClient\(actor\)/);
+  assert.match(proposalServer, /createBillingServiceClient\(\)/);
+  assert.match(auditRelock, /ai_action_audit_write/);
+  assert.doesNotMatch(auditRelock, /to authenticated/i);
 });
 
 test("Intelligence fails safe when privileged action mode is unavailable", () => {
