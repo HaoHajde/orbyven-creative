@@ -9,7 +9,8 @@ export type OperationalQueryKind =
   | "week"
   | "lead_followups"
   | "estimate_followups"
-  | "briefing";
+  | "briefing"
+  | "decision_support";
 
 function normalize(value: string) {
   return value
@@ -23,6 +24,9 @@ function normalize(value: string) {
 export function detectOperationalQuery(prompt: string): OperationalQueryKind | null {
   const value = normalize(prompt);
   if (!value || value.length > 1200) return null;
+
+  if (/\b(optiuni|variante|alternative)\b/.test(value) && /\b(focus|prioritat|rezolv|abord|acum|problema|am)\w*/.test(value)) return "decision_support";
+  if (/\b(compara|compara-mi|comparatie)\w*/.test(value) && /\b(optiuni|variante|alternative|focus|prioritat)\w*/.test(value)) return "decision_support";
 
   if (/\b(briefing\w*|focus|prioritatile mele|prioritatile de azi|cu ce incep|ce rezolv prima data|ce trebuie sa rezolv acum|ce e cel mai important acum)\b/.test(value)) return "briefing";
 
