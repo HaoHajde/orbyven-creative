@@ -36,8 +36,11 @@ function PaymentRedirectContent() {
   };
 
   useEffect(() => {
-    if (offerId) void openCheckout();
-    else setStatus("error");
+    const timer = window.setTimeout(() => {
+      if (offerId) void openCheckout();
+      else setStatus("error");
+    }, 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offerId]);
 
