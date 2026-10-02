@@ -77,10 +77,34 @@ export type IntelligenceAction =
       }>;
     };
 
+export type IntelligenceFocusReason =
+  | "blocked"
+  | "overdue"
+  | "priority"
+  | "unassigned"
+  | "unplanned"
+  | "lead_followup"
+  | "estimate_followup"
+  | "appointment";
+
 export type IntelligenceFocusInsight = {
+  reason: IntelligenceFocusReason;
   why: string;
   consequence: string;
   nextStep: string;
+  confidence: "high" | "medium";
+};
+
+export type IntelligenceDecisionOption = {
+  label: string;
+  impact: string;
+  tradeoff: string;
+  whenToUse: string;
+};
+
+export type IntelligenceDecisionSupport = {
+  subject: string;
+  options: IntelligenceDecisionOption[];
   confidence: "high" | "medium";
 };
 
@@ -90,5 +114,6 @@ export type IntelligenceResponse = {
   facts: Array<{ label: string; value: string }>;
   actions: IntelligenceAction[];
   focus?: IntelligenceFocusInsight;
+  decision?: IntelligenceDecisionSupport;
   generatedBy: "orbyven_core";
 };
