@@ -61,8 +61,8 @@ test("Document executor stores a tenant-scoped private text file and rolls back 
 
 test("Document executor revalidates exact tenant context before creating metadata", () => {
   const source = read("lib/ai/action-server.ts");
-  assert.match(source, /resolveClientId\(actor\.organizationId, input\.clientName\)/);
-  assert.match(source, /resolveWorkContext\(actor\.organizationId, input\.taskTitle, explicitClientId\)/);
+  assert.match(source, /resolveClientId\(actor, input\.clientName\)/);
+  assert.match(source, /resolveWorkContext\(actor, input\.taskTitle, explicitClientId\)/);
   assert.match(source, /TASK_CLIENT_MISMATCH/);
   assert.match(source, /organization_id: actor\.organizationId/);
   assert.match(source, /created_by: actor\.userId/);
