@@ -623,7 +623,12 @@ export async function generateWebDesignForActor(
     return {
       draft: nextDraft,
       summary: result.summary,
-      suggestions: result.suggestions,
+      suggestions: [
+        ...autonomousResult.refinement.remainingActions,
+        ...result.suggestions,
+      ]
+        .filter((item, index, items) => items.indexOf(item) === index)
+        .slice(0, 4),
       remainingToday: quota.remainingToday,
       quality: autonomousResult.quality,
       readiness: autonomousResult.readiness,
