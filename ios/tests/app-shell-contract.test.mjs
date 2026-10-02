@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.6 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.7 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.6.0");
+  assert.equal(pkg.version, "0.7.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -35,4 +35,19 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
   assert.match(app, /Haptics\.selectionAsync/);
   assert.match(app, /RELOCK_AFTER_MS = 30_000/);
   assert.doesNotMatch(app, /service[_-]?role/i);
+});
+
+
+test("Alpha 0.7 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+  const app = read("App.tsx");
+
+  assert.match(app, /const APP_VERSION = "0\.7\.0"/);
+  assert.match(app, /NATIVE_RUNTIME/);
+  assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
+  assert.match(app, /window\.__ORBYVEN_NATIVE__/);
+  assert.match(app, /dataset\.appMode = "native"/);
+  assert.match(app, /orbyven:native-ready/);
+  assert.match(app, /message\.type === "orbyven:theme"/);
+  assert.match(app, /setWebTheme\(message\.theme\)/);
+  assert.match(app, /orbyven:app-resume/);
 });
