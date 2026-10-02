@@ -326,6 +326,7 @@ export default function LeadsModule({
       setLeads((current) =>
         current.map((lead) => (lead.id === updated.id ? updated : lead))
       );
+      setLifecycleNowIso(new Date().toISOString());
       const activity = await createCrmLeadActivity(
         organizationId,
         selectedLead.id,
@@ -428,6 +429,16 @@ export default function LeadsModule({
         activityBody
       );
       setActivities((current) => [created, ...current]);
+      if (activityKind !== "note" && activityKind !== "status") {
+        setLeads((current) =>
+          current.map((lead) =>
+            lead.id === selectedLead.id
+              ? { ...lead, last_contact_at: created.occurred_at }
+              : lead
+          )
+        );
+        setLifecycleNowIso(new Date().toISOString());
+      }
       setActivityBody("");
     } catch (activityError) {
       console.error(activityError);
