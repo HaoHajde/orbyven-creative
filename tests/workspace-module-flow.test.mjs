@@ -635,3 +635,13 @@ test("rejected and expired estimates update CRM activity without forcing lost", 
   assert.match(estimates, /syncCrmAfterEstimateClosedWithoutAcceptance/);
   assert.match(estimates, /fără să schimbe automat stadiul clientului/);
 });
+
+
+test("calendar readiness ignores inactive team resources", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /activeResourceIdsByEvent/);
+  assert.match(calendar, /ids\.filter\(\(id\) => resourceById\.get\(id\)\?\.active\)/);
+  assert.match(calendar, /resourceCount=\{activeResourceIdsByEvent\.get\(calendarEvent\.id\)\?\.length \?\? 0\}/);
+  assert.match(calendar, /activeResourceIdsByEvent\.get\(selectedEvent\.id\)\?\.length/);
+  assert.match(calendar, /const baseline = activeResourceIdsByEvent\.get\(selectedEvent\.id\) \?\? \[\]/);
+});
