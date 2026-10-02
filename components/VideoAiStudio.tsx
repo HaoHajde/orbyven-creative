@@ -2,6 +2,7 @@
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import VideoJobHistory from "@/components/video-ai/VideoJobHistory";
 import {
   buildStoryboard,
   type VideoAspect,
@@ -591,6 +592,12 @@ export default function VideoAiStudio() {
               </button>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-16 sm:px-6 md:px-10 md:pb-24">
+        <div className="mx-auto max-w-[1500px]">
+          <VideoJobHistory accessToken={accessToken} refreshKey={renderJob?.id} />
         </div>
       </section>
 
