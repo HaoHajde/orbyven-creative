@@ -227,237 +227,303 @@ function ContactPageContent() {
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
-      <section className="relative z-10 px-5 pb-16 pt-28 sm:px-6 md:px-10 md:pb-20 md:pt-36">
-        <div className="mx-auto max-w-[1320px]">
-          <p className="orbyven-home-kicker">
-            <span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span>
-            <span>ORBYVEN · FAST CHECKOUT</span>
-            <span aria-hidden="true" className="orbyven-home-kicker-line" />
-          </p>
-
-          <div className="mt-7 grid gap-7 lg:grid-cols-[1.08fr_.92fr] lg:items-end">
-            <h1 className="max-w-[880px] text-[clamp(48px,6.7vw,96px)] font-semibold leading-[.89] tracking-[-.072em]">
-              Pornești în
-              <br />
-              <span className="text-[var(--home-violet)]">câteva minute.</span>
-            </h1>
-            <div className="lg:pb-2">
-              <p className="max-w-md text-[13px] leading-6 text-[var(--muted)] sm:text-[14px]">
-                Alegi abonamentul, creezi contul și finalizezi plata securizat. Detaliile de design le preia ORBYVEN AI după activare.
+      <section className="relative z-10 px-5 pb-10 pt-28 sm:px-6 md:px-10 md:pb-14 md:pt-36">
+        <div className="mx-auto max-w-[1540px]">
+          <div className="grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
+            <div>
+              <p className="orbyven-home-kicker">
+                <span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span>
+                <span>ORBYVEN · FAST CHECKOUT</span>
+                <span aria-hidden="true" className="orbyven-home-kicker-line" />
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[9px] font-semibold text-[var(--muted-2)]">
-                <span>01 · PLAN</span>
-                <span>02 · CONT</span>
-                <span>03 · PLATĂ</span>
+
+              <h1 className="mt-8 max-w-[960px] text-[clamp(58px,6.9vw,112px)] font-semibold leading-[.86] tracking-[-.075em]">
+                Simplu de ales.
+                <br />
+                <span className="text-[var(--home-violet)]">Rapid de pornit.</span>
+              </h1>
+            </div>
+
+            <div className="max-w-[520px] lg:justify-self-end lg:pb-3">
+              <p className="text-[15px] leading-7 text-[var(--muted)] sm:text-[16px]">
+                Alegi planul, intri în cont și continui direct către checkout-ul securizat. Fără formulare lungi și fără pași inutili.
+              </p>
+
+              <div className="mt-7 flex items-center gap-3">
+                {[
+                  ["01", "Plan"],
+                  ["02", "Cont"],
+                  ["03", "Plată"],
+                ].map(([number, label], index) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_62%,transparent)] px-3.5 py-2.5 text-[10px] font-semibold backdrop-blur-xl">
+                      <span className="text-[var(--home-violet)]">{number}</span>
+                      <span>{label}</span>
+                    </div>
+                    {index < 2 ? <span className="h-px w-4 bg-[var(--border-strong)]" /> : null}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 -mt-6 px-5 pb-20 sm:px-6 md:-mt-8 md:px-10 md:pb-28">
+      <section className="relative z-10 px-5 pb-24 sm:px-6 md:px-10 md:pb-32">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-24 h-56 opacity-80"
-          style={{
-            background: "linear-gradient(180deg, transparent 0%, rgba(121,91,255,.055) 48%, transparent 100%)",
-            filter: "blur(28px)",
-          }}
+          className="pointer-events-none absolute left-1/2 top-[-10rem] h-[34rem] w-[82vw] max-w-[1600px] -translate-x-1/2 rounded-[50%] opacity-70 blur-[120px]"
+          style={{ background: "radial-gradient(circle, rgba(126,93,255,.13) 0%, rgba(126,93,255,.035) 44%, transparent 72%)" }}
         />
-        <div className="relative mx-auto max-w-[1320px] overflow-hidden rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] shadow-[0_48px_140px_rgba(0,0,0,.22),inset_0_1px_0_rgba(255,255,255,.045)] backdrop-blur-2xl">
-          <div className="flex flex-col gap-5 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_42%,transparent)] px-6 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[14px] shadow-[0_8px_24px_rgba(0,0,0,.08)]">⌁</span>
+
+        <div className="relative mx-auto grid max-w-[1540px] gap-5 lg:grid-cols-[1.08fr_.92fr]">
+          <section className="rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-6 shadow-[0_34px_100px_rgba(0,0,0,.16),inset_0_1px_0_rgba(255,255,255,.045)] backdrop-blur-2xl sm:p-8 lg:p-10">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">Checkout securizat ORBYVEN</p>
-                <p className="mt-1.5 text-[13px] font-medium text-[var(--muted)]">Planul ales rămâne salvat până la finalul fluxului.</p>
+                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">01 · ALEGE PLANUL</p>
+                <h2 className="mt-3 text-[clamp(34px,3.4vw,52px)] font-semibold leading-[.95] tracking-[-.06em]">
+                  Planul potrivit,
+                  <br />
+                  fără comparații inutile.
+                </h2>
+              </div>
+              <div className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-[10px] font-semibold text-[var(--muted)]">
+                Lunar · poți schimba ulterior
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {[
-                ["01", "Plan", true],
-                ["02", "Cont", accountState === "ready" || accountState === "onboarding"],
-                ["03", "Plată", accountState === "ready"],
-              ].map(([number, label, active]) => (
-                <div key={String(label)} className={`flex items-center gap-2 rounded-full px-3.5 py-2.5 text-[10px] font-semibold ${active ? "bg-[var(--accent-soft)] text-[var(--text)]" : "bg-[var(--surface-2)] text-[var(--muted-2)]"}`}>
-                  <span>{number}</span>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="grid lg:grid-cols-[1.08fr_.92fr]">
-            <div className="p-6 sm:p-8 lg:border-r lg:border-[var(--border)] lg:p-9">
-              <div className="grid grid-cols-3 gap-2.5">
-                {(["start", "business", "pro"] as BillingPlanId[]).map((id) => {
-                  const plan = BILLING_PLANS[id];
-                  const meta = PLAN_META[id];
-                  const active = planId === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        setPlanId(id);
-                        setAccepted(false);
-                        setError("");
-                      }}
-                      className={`relative min-h-[148px] rounded-[22px] border p-5 text-left transition duration-300 sm:min-h-[158px] sm:p-6 ${active ? "border-[rgba(165,139,255,.52)] bg-[var(--accent-soft)] shadow-[0_18px_55px_rgba(75,70,238,.10)]" : "border-[var(--border)] bg-[var(--surface-2)] hover:-translate-y-0.5 hover:border-[var(--border-strong)]"}`}
-                    >
-                      {meta.badge ? (
-                        <span className="absolute right-4 top-4 rounded-full bg-[var(--button)] px-3 py-1.5 text-[9px] font-bold text-[var(--button-text)] shadow-[0_8px_24px_rgba(0,0,0,.12)]">{meta.badge}</span>
-                      ) : null}
-                      <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">{meta.eyebrow}</p>
-                      <p className="mt-7 text-[15px] font-semibold">{plan.name}</p>
-                      <div className="mt-2.5 flex items-baseline gap-1.5">
-                        <span className="text-[36px] font-semibold leading-none tracking-[-.065em] sm:text-[40px]">{plan.priceLei}</span>
-                        <span className="text-[10px] text-[var(--muted)]">lei/lună</span>
+            <div className="mt-9 space-y-3">
+              {(["start", "business", "pro"] as BillingPlanId[]).map((id) => {
+                const plan = BILLING_PLANS[id];
+                const meta = PLAN_META[id];
+                const active = planId === id;
+
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setPlanId(id);
+                      setAccepted(false);
+                      setError("");
+                    }}
+                    className={`group relative flex w-full items-center gap-5 rounded-[24px] border p-5 text-left transition duration-300 sm:p-6 ${active ? "border-[rgba(165,139,255,.58)] bg-[linear-gradient(120deg,rgba(126,93,255,.16),rgba(126,93,255,.055))] shadow-[0_20px_60px_rgba(75,70,238,.12),inset_0_1px_0_rgba(255,255,255,.05)]" : "border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_72%,transparent)] hover:-translate-y-0.5 hover:border-[var(--border-strong)]"}`}
+                  >
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition ${active ? "border-[rgba(165,139,255,.65)] bg-[var(--home-violet)] text-[#0b0912]" : "border-[var(--border-strong)] bg-transparent text-transparent"}`}>
+                      <span className="text-[10px] font-black">✓</span>
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <p className="text-[15px] font-semibold sm:text-[17px]">{plan.name}</p>
+                        {meta.badge ? (
+                          <span className="rounded-full bg-[var(--button)] px-2.5 py-1 text-[8px] font-bold text-[var(--button-text)]">
+                            {meta.badge}
+                          </span>
+                        ) : null}
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      <p className="mt-1.5 text-[12px] leading-5 text-[var(--muted)] sm:text-[13px]">{meta.note}</p>
+                    </div>
 
-              <div className="mt-7 flex flex-col gap-8 rounded-[26px] border border-[var(--border)] bg-[var(--surface-2)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,.035)] sm:flex-row sm:items-end sm:justify-between sm:p-7">
-                <div className="max-w-xl">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[.16em] text-[#9b83ff]">{PLAN_META[planId].eyebrow}</span>
-                    <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
-                    <span className="text-[10px] font-semibold text-[var(--muted-2)]">{selectedPlan.entitlements.length} module incluse</span>
-                  </div>
-                  <h2 className="mt-3 text-[40px] font-semibold leading-none tracking-[-.06em] sm:text-[48px]">{selectedPlan.name}</h2>
-                  <p className="mt-3 max-w-md text-[13px] leading-6 text-[var(--muted)]">{PLAN_META[planId].note}</p>
+                    <div className="shrink-0 text-right">
+                      <div className="flex items-baseline justify-end gap-1.5">
+                        <span className="text-[34px] font-semibold leading-none tracking-[-.065em] sm:text-[40px]">{plan.priceLei}</span>
+                        <span className="text-[10px] text-[var(--muted)]">lei</span>
+                      </div>
+                      <p className="mt-1 text-[9px] text-[var(--muted-2)]">pe lună</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {["Abonament lunar", "Stripe Checkout", "Acces ORBYVEN"].map((item) => (
-                      <span key={item} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-[10px] font-semibold text-[var(--muted)]">{item}</span>
+            <div className="mt-7 rounded-[26px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_58%,transparent)] p-6">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[.17em] text-[var(--home-violet)]">
+                    {PLAN_META[planId].eyebrow}
+                  </p>
+                  <p className="mt-2 text-[22px] font-semibold tracking-[-.04em] sm:text-[26px]">
+                    {selectedPlan.name} include {selectedPlan.entitlements.length} module
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {["Website", "ORBYVEN Workspace", "AI asistat", "Checkout Stripe"].map((item) => (
+                      <span key={item} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2 text-[10px] font-semibold text-[var(--muted)]">
+                        {item}
+                      </span>
                     ))}
                   </div>
                 </div>
 
                 <div className="shrink-0 sm:text-right">
-                  <p className="text-[60px] font-semibold leading-none tracking-[-.075em]">{selectedPlan.priceLei}</p>
-                  <p className="mt-2 text-[10px] text-[var(--muted-2)]">lei / lună · {PUBLIC_PRICE_TAX_LABEL}</p>
+                  <p className="text-[11px] font-semibold text-[var(--muted)]">Total lunar</p>
+                  <p className="mt-1 text-[44px] font-semibold leading-none tracking-[-.07em]">{selectedPlan.priceLei} lei</p>
                 </div>
               </div>
             </div>
+          </section>
 
-            <aside className="p-6 sm:p-8 lg:p-9">
-              <div className="flex h-full min-h-[500px] flex-col">
+          <aside className="relative overflow-hidden rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_95%,transparent)] p-6 shadow-[0_34px_100px_rgba(0,0,0,.22),inset_0_1px_0_rgba(255,255,255,.055)] backdrop-blur-2xl sm:p-8 lg:p-10">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[rgba(126,93,255,.12)] blur-[100px]"
+            />
+
+            <div className="relative flex min-h-[650px] flex-col">
+              <div className="flex items-start justify-between gap-6">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">CONTINUĂ ÎN ORBYVEN</p>
-                  <h2 className="mt-4 max-w-md text-[clamp(38px,4vw,56px)] font-semibold leading-[.96] tracking-[-.06em]">
-                    Un singur pas până la <span className="text-[var(--home-violet)]">checkout.</span>
-                  </h2>
-                  <p className="mt-4 max-w-md text-[13px] leading-6 text-[var(--muted)]">
-                    Creezi contul sau te autentifici. După aceea ajungi direct la plata securizată.
-                  </p>
-
-                  <div className="mt-6 flex items-center justify-between gap-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,.035)]">
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">Rezumat comandă</p>
-                      <p className="mt-1.5 truncate text-[13px] font-semibold">{selectedPlan.name} · abonament lunar</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-[22px] font-semibold tracking-[-.045em]">{selectedPlan.priceLei} lei</p>
-                      <p className="mt-1 text-[9px] text-[var(--muted-2)]">{PUBLIC_PRICE_TAX_LABEL}</p>
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-9 w-9 place-items-center rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)] text-[14px]">✦</span>
+                    <div>
+                      <p className="text-[12px] font-semibold">ORBYVEN Checkout</p>
+                      <p className="mt-0.5 text-[9px] text-[var(--muted-2)]">Plată securizată</p>
                     </div>
                   </div>
                 </div>
+                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[9px] font-semibold text-[var(--muted)]">02 · CONT</span>
+              </div>
 
-                <div className="mt-7 flex-1">
-                  {accountState === "checking" ? (
-                    <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-5 text-[13px] text-[var(--muted)]">Verificăm contul…</div>
-                  ) : null}
+              <div className="mt-10">
+                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">Rezumat comandă</p>
 
-                  {accountState === "guest" ? (
+                <div className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-5">
                     <div>
-                      <Link href={registerHref} className="group flex h-14 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)] shadow-[0_12px_34px_rgba(0,0,0,.14)] transition hover:-translate-y-0.5 hover:opacity-95">
-                        <span>Creează cont și continuă</span>
-                        <span className="transition group-hover:translate-x-1">→</span>
-                      </Link>
-                      <Link href={loginHref} className="mt-3 flex h-13 w-full items-center justify-center rounded-full border border-[var(--border-strong)] bg-transparent px-5 text-[13px] font-semibold transition hover:bg-[var(--surface-2)]">
-                        Am deja cont
-                      </Link>
-                      <div className="mt-5 flex items-start gap-3 rounded-[18px] bg-[var(--surface-2)] p-4">
-                        <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[9px] text-[#8f79ed]">✓</span>
-                        <p className="text-[11px] leading-5 text-[var(--muted)]">Planul rămâne păstrat în timpul creării contului. Nu te întorci la început.</p>
-                      </div>
+                      <p className="text-[18px] font-semibold">{selectedPlan.name}</p>
+                      <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">Abonament ORBYVEN · facturare lunară</p>
                     </div>
-                  ) : null}
-
-                  {accountState === "onboarding" ? (
-                    <div>
-                      <div className="rounded-[20px] bg-[var(--surface-2)] p-5">
-                        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--muted-2)]">Cont creat</p>
-                        <p className="mt-2 text-[13px] leading-6 text-[var(--muted)]">Mai avem nevoie doar de numele companiei pentru workspace.</p>
-                      </div>
-                      <Link href={onboardingHref} className="mt-3 flex h-14 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)] shadow-[0_12px_34px_rgba(0,0,0,.14)]">
-                        <span>Finalizează contul</span><span>→</span>
-                      </Link>
-                    </div>
-                  ) : null}
-
-                  {accountState === "restricted" ? (
-                    <div>
-                      <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/10 p-5 text-[12px] leading-6 text-amber-600">Contul necesită verificare înainte de o plată nouă.</div>
-                      <Link href="/workspace/access" className="mt-3 flex h-13 w-full items-center justify-center rounded-full border border-[var(--border-strong)] text-[13px] font-semibold">Verifică accesul</Link>
-                    </div>
-                  ) : null}
-
-                  {accountState === "ready" ? (
-                    <div>
-                      <div className="flex items-center justify-between rounded-[20px] bg-[var(--surface-2)] p-4">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--muted-2)]">Cont conectat</p>
-                          <p className="mt-2 truncate text-[14px] font-semibold">{workspace?.organization.name}</p>
-                          <p className="mt-1 truncate text-[11px] text-[var(--muted)]">{workspace?.user.email}</p>
-                        </div>
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-500/10 text-[11px] font-bold text-emerald-500">✓</span>
-                      </div>
-
-                      <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_55%,transparent)] p-4 text-[12px] leading-6 text-[var(--muted)]">
-                        <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-[#4b46ee]" />
-                        <span>
-                          Accept <Link href="/legal/terms" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii</Link> și <Link href="/legal/subscriptions" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii de abonament</Link>.
-                        </span>
-                      </label>
-
-                      <button
-                        type="button"
-                        disabled={!accepted || paying}
-                        onClick={startCheckout}
-                        className="mt-4 flex h-14 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)] shadow-[0_12px_34px_rgba(0,0,0,.14)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
-                      >
-                        <span>{paying ? "Se deschide checkout-ul…" : `Continuă la plată · ${selectedPlan.priceLei} lei`}</span>
-                        <span>→</span>
-                      </button>
-                    </div>
-                  ) : null}
-
-                  {error ? <p className="mt-4 rounded-[16px] border border-red-500/20 bg-red-500/10 px-4 py-3 text-[12px] leading-6 text-red-500">{error}</p> : null}
-                </div>
-
-                <div className="mt-7 border-t border-[var(--border)] pt-5">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">Plată securizată</p>
-                      <p className="mt-1 text-[12px] font-semibold">Procesată prin Stripe</p>
-                    </div>
-                    <PaymentBadges />
+                    <p className="text-[26px] font-semibold tracking-[-.055em]">{selectedPlan.priceLei} lei</p>
                   </div>
-                  <p className="mt-3 text-[10px] leading-5 text-[var(--muted-2)]">Apple Pay și Google Pay apar în Stripe Checkout când sunt disponibile pentru dispozitiv, browser și configurația comerciantului.</p>
+
+                  <div className="my-5 h-px bg-[var(--border)]" />
+
+                  <div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+                    <span>Subtotal</span>
+                    <span>{selectedPlan.priceLei} lei</span>
+                  </div>
+                  <div className="mt-2.5 flex items-center justify-between text-[11px] text-[var(--muted)]">
+                    <span>Taxe</span>
+                    <span>{PUBLIC_PRICE_TAX_LABEL}</span>
+                  </div>
+
+                  <div className="mt-5 flex items-end justify-between">
+                    <span className="text-[12px] font-semibold">Total astăzi</span>
+                    <div className="text-right">
+                      <span className="text-[38px] font-semibold leading-none tracking-[-.07em]">{selectedPlan.priceLei}</span>
+                      <span className="ml-1.5 text-[11px] text-[var(--muted)]">lei</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </aside>
-          </div>
 
-          <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_34%,transparent)] px-6 py-5 text-[11px] text-[var(--muted-2)] sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <span>Ai nevoie de ofertă custom în loc de abonament?</span>
-            <div className="flex items-center gap-4">
-              <Link href="/cerere?payment=custom_quote&source=contact" className="font-semibold text-[var(--text)]">Trimite o cerere →</Link>
-              <a href="mailto:contact@orbyven.ro" className="font-semibold text-[var(--muted)]">Email →</a>
+              <div className="mt-7 flex-1">
+                {accountState === "checking" ? (
+                  <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-5 text-[13px] text-[var(--muted)]">
+                    Verificăm starea contului…
+                  </div>
+                ) : null}
+
+                {accountState === "guest" ? (
+                  <div>
+                    <Link
+                      href={registerHref}
+                      className="group flex h-15 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)] shadow-[0_18px_42px_rgba(0,0,0,.18)] transition hover:-translate-y-0.5 hover:opacity-95"
+                    >
+                      <span>Creează cont și continuă</span>
+                      <span className="text-[18px] transition group-hover:translate-x-1">→</span>
+                    </Link>
+                    <Link
+                      href={loginHref}
+                      className="mt-3 flex h-14 w-full items-center justify-center rounded-[18px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface-2)_45%,transparent)] px-5 text-[13px] font-semibold transition hover:bg-[var(--surface-2)]"
+                    >
+                      Am deja cont
+                    </Link>
+
+                    <div className="mt-5 flex items-start gap-3 rounded-[18px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_55%,transparent)] p-4">
+                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--home-violet)]">✓</span>
+                      <div>
+                        <p className="text-[11px] font-semibold">Selecția ta rămâne salvată</p>
+                        <p className="mt-1 text-[10px] leading-5 text-[var(--muted)]">După autentificare revii direct aici, cu planul păstrat.</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {accountState === "onboarding" ? (
+                  <div>
+                    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-5">
+                      <p className="text-[10px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">Cont creat</p>
+                      <p className="mt-2 text-[14px] font-semibold">Finalizează workspace-ul</p>
+                      <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">Mai avem nevoie doar de numele companiei.</p>
+                    </div>
+                    <Link href={onboardingHref} className="mt-3 flex h-15 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)]">
+                      <span>Finalizează contul</span><span>→</span>
+                    </Link>
+                  </div>
+                ) : null}
+
+                {accountState === "restricted" ? (
+                  <div>
+                    <div className="rounded-[22px] border border-amber-500/20 bg-amber-500/10 p-5 text-[12px] leading-6 text-amber-500">Contul necesită verificare înainte de o plată nouă.</div>
+                    <Link href="/workspace/access" className="mt-3 flex h-14 w-full items-center justify-center rounded-[18px] border border-[var(--border-strong)] text-[13px] font-semibold">Verifică accesul</Link>
+                  </div>
+                ) : null}
+
+                {accountState === "ready" ? (
+                  <div>
+                    <div className="flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-5">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--muted-2)]">Cont conectat</p>
+                        <p className="mt-2 truncate text-[15px] font-semibold">{workspace?.organization.name}</p>
+                        <p className="mt-1 truncate text-[11px] text-[var(--muted)]">{workspace?.user.email}</p>
+                      </div>
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-emerald-500/10 text-[12px] font-bold text-emerald-500">✓</span>
+                    </div>
+
+                    <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-2)_55%,transparent)] p-4 text-[12px] leading-6 text-[var(--muted)]">
+                      <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-[#4b46ee]" />
+                      <span>
+                        Accept <Link href="/legal/terms" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii</Link> și <Link href="/legal/subscriptions" className="font-semibold text-[var(--text)] underline underline-offset-3">Termenii de abonament</Link>.
+                      </span>
+                    </label>
+
+                    <button
+                      type="button"
+                      disabled={!accepted || paying}
+                      onClick={startCheckout}
+                      className="mt-4 flex h-15 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)] shadow-[0_18px_42px_rgba(0,0,0,.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                    >
+                      <span>{paying ? "Se deschide checkout-ul…" : `Continuă la plată · ${selectedPlan.priceLei} lei`}</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                ) : null}
+
+                {error ? <p className="mt-4 rounded-[16px] border border-red-500/20 bg-red-500/10 px-4 py-3 text-[12px] leading-6 text-red-500">{error}</p> : null}
+              </div>
+
+              <div className="mt-8 border-t border-[var(--border)] pt-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">Plată securizată</p>
+                    <p className="mt-1 text-[12px] font-semibold">Procesată prin Stripe</p>
+                  </div>
+                  <PaymentBadges />
+                </div>
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] text-[var(--muted-2)]">
+                  <span>SSL securizat</span>
+                  <span>•</span>
+                  <span>Datele cardului nu ajung la ORBYVEN</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div className="lg:col-span-2 flex flex-col gap-4 rounded-[26px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] px-5 py-4 text-[11px] text-[var(--muted)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <span>Ai nevoie de o ofertă personalizată în locul unui abonament?</span>
+            <div className="flex items-center gap-5">
+              <Link href="/cerere?payment=custom_quote&source=contact" className="font-semibold text-[var(--text)] transition hover:opacity-70">Trimite o cerere →</Link>
+              <a href="mailto:contact@orbyven.ro" className="font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">contact@orbyven.ro</a>
             </div>
           </div>
         </div>
