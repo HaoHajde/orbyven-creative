@@ -3,6 +3,11 @@ import type { BillingActor } from "@/lib/billing/supabase-server";
 import { createBillingServiceClient } from "@/lib/billing/supabase-server";
 import { parseMutationPrompt, type ParsedMutation } from "@/lib/ai/action-parser";
 import { appendAssistantConversationMessage } from "@/lib/ai/conversation-server";
+import {
+  insertAiActionProposals,
+  listAiActionProposals,
+  supersedeAiActionProposals,
+} from "@/lib/ai/proposal-server";
 import { applyPlanBindings, splitPlanClauses, type PlanBindings } from "@/lib/ai/plan-core";
 import type {
   IntelligenceMutationType,
@@ -70,12 +75,12 @@ export type PlanRecoveryResult =
       plan: PlanAction;
     };
 
-async function organizationTimeZone(organizationId: string) {
-  const client = createBillingServiceClient();
+async function organizationTimeZone(actor: BillingActor) {
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("organization_profiles")
     .select("timezone")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
   if (error) throw error;
   return data?.timezone || "Europe/Bucharest";
@@ -259,17 +264,8 @@ function buildPlanAction(planRows: StoredPlanProposal[]): PlanAction {
 
 async function loadPlanRows(actor: BillingActor, planId: string) {
   if (!/^[a-f0-9-]{36}$/i.test(planId)) throw new Error("PLAN_ID_INVALID");
-  const client = createBillingServiceClient();
-  const { data, error } = await client
-    .from("ai_action_proposals")
-    .select("id,action_type,payload,summary,status,expires_at,created_at,failure_code,conversation_id")
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .order("created_at", { ascending: false })
-    .limit(128);
-
-  if (error) throw error;
-  const rows = ((data ?? []) as StoredPlanProposal[])
+  const data = await listAiActionProposals(actor, { limit: 128 });
+  const rows = (data as StoredPlanProposal[])
     .filter((row) => storedPlanMeta(row.payload)?.id === planId)
     .sort((a, b) => (storedPlanMeta(a.payload)?.step ?? 0) - (storedPlanMeta(b.payload)?.step ?? 0));
 
@@ -298,7 +294,7 @@ export async function createPlanIntelligenceResponse(
     };
   }
 
-  const timeZone = await organizationTimeZone(actor.organizationId);
+  const timeZone = await organizationTimeZone(actor);
   const bindings: PlanBindings = {};
   const compiled: Array<{ proposal: ParsedMutation; prompt: string }> = [];
 
@@ -348,8 +344,6 @@ export async function createPlanIntelligenceResponse(
   const planId = randomUUID();
   const proposalIds = compiled.map(() => randomUUID());
   const expiresAt = new Date(Date.now() + PLAN_TTL_MS).toISOString();
-  const client = createBillingServiceClient();
-
   const rows = compiled.map((step, index) => ({
     id: proposalIds[index],
     organization_id: actor.organizationId,
@@ -373,8 +367,17 @@ export async function createPlanIntelligenceResponse(
     expires_at: expiresAt,
   }));
 
-  const { error } = await client.from("ai_action_proposals").insert(rows);
-  if (error) throw error;
+  await insertAiActionProposals(
+    actor,
+    rows.map((row) => ({
+      id: row.id,
+      action_type: row.action_type,
+      payload: row.payload,
+      summary: row.summary,
+      conversation_id: row.conversation_id,
+      expires_at: row.expires_at,
+    }))
+  );
 
   return {
     specialist: "operations",
@@ -405,18 +408,11 @@ export async function loadLatestPlanAction(
   actor: BillingActor,
   conversationId: string
 ): Promise<PlanAction | null> {
-  const client = createBillingServiceClient();
-  const { data, error } = await client
-    .from("ai_action_proposals")
-    .select("id,action_type,payload,summary,status,expires_at,created_at,failure_code,conversation_id")
-    .eq("organization_id", actor.organizationId)
-    .eq("actor_id", actor.userId)
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: false })
-    .limit(64);
-
-  if (error) throw error;
-  const rows = (data ?? []) as StoredPlanProposal[];
+  const data = await listAiActionProposals(actor, {
+    conversationId,
+    limit: 64,
+  });
+  const rows = data as StoredPlanProposal[];
   const firstPlanRow = rows.find((row) => storedPlanMeta(row.payload));
   if (!firstPlanRow) return null;
   const firstMeta = storedPlanMeta(firstPlanRow.payload);
@@ -474,7 +470,6 @@ export async function recoverPlan(
   const newProposalIds = remainingRows.map(() => randomUUID());
   const expiresAt = new Date(Date.now() + PLAN_TTL_MS).toISOString();
   const conversationId = blockedRow.conversation_id || planRows[0].conversation_id;
-  const client = createBillingServiceClient();
   const nextAttempt = blockedMeta.recoveryAttempt + 1;
 
   const newRows = remainingRows.map((row, index) => {
@@ -507,28 +502,31 @@ export async function recoverPlan(
     };
   });
 
-  const { error: insertError } = await client.from("ai_action_proposals").insert(newRows);
-  if (insertError) throw insertError;
+  await insertAiActionProposals(
+    actor,
+    newRows.map((row) => ({
+      id: row.id,
+      action_type: row.action_type,
+      payload: row.payload,
+      summary: row.summary,
+      conversation_id: row.conversation_id,
+      expires_at: row.expires_at,
+    }))
+  );
 
   const obsoleteIds = remainingRows
     .filter((row) => row.status === "pending")
     .map((row) => row.id);
   if (obsoleteIds.length) {
-    const { error: obsoleteError } = await client
-      .from("ai_action_proposals")
-      .update({
-        status: "rejected",
-        failure_code: "PLAN_SUPERSEDED_BY_RECOVERY",
-        updated_at: new Date().toISOString(),
-      })
-      .in("id", obsoleteIds)
-      .eq("organization_id", actor.organizationId)
-      .eq("actor_id", actor.userId)
-      .eq("status", "pending");
-    if (obsoleteError) console.error("ORBYVEN plan supersede marker failed", obsoleteError.code);
+    try {
+      await supersedeAiActionProposals(actor, obsoleteIds);
+    } catch (obsoleteError) {
+      console.error("ORBYVEN plan supersede marker failed", obsoleteError);
+    }
   }
 
-  const { error: auditError } = await client.from("platform_audit_log").insert({
+  const auditClient = createBillingServiceClient(actor);
+  const { error: auditError } = await auditClient.from("platform_audit_log").insert({
     actor_user_id: actor.userId,
     actor_role: actor.role,
     organization_id: actor.organizationId,
