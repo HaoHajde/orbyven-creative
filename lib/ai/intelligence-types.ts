@@ -77,10 +77,18 @@ export type IntelligenceAction =
       }>;
     };
 
+export type IntelligenceFocusInsight = {
+  why: string;
+  consequence: string;
+  nextStep: string;
+  confidence: "high" | "medium";
+};
+
 export type IntelligenceResponse = {
   specialist: IntelligenceSpecialist;
   answer: string;
   facts: Array<{ label: string; value: string }>;
   actions: IntelligenceAction[];
+  focus?: IntelligenceFocusInsight;
   generatedBy: "orbyven_core";
 };
