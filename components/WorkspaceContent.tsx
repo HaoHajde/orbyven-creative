@@ -1,15 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 
+import WorkspaceModuleGuide from "@/components/WorkspaceModuleGuide";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 
 /**
- * Alpha 0.6: keep only the active workspace module in the initial client path.
+ * Alpha 0.6+: keep only the active workspace module in the initial client path.
  * next/dynamic must stay at module scope with literal import paths for chunk matching.
- * Preserve SSR of the currently selected module and the existing navigation/props.
+ * The shared guide adds navigation only; domain reads/writes stay inside each module.
  */
 function WorkspaceModuleLoading() {
   return (
@@ -77,9 +79,10 @@ export default function WorkspaceContent({
 }: Props) {
   const intent = navigation.module === activeModule ? navigation : null;
   const initialCreate = Boolean(intent?.create);
+  let content: ReactNode;
 
   if (activeModule === "overview") {
-    return (
+    content = (
       <OverviewModule
         key={navigation.token}
         organizationId={organizationId}
@@ -92,18 +95,12 @@ export default function WorkspaceContent({
         onOpenModule={onOpenModule}
       />
     );
-  }
-
-  if (activeModule === "leads") {
-    return <LeadsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} />;
-  }
-
-  if (activeModule === "tasks") {
-    return <TasksModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialEstimateId={intent?.estimateId} />;
-  }
-
-  if (activeModule === "calendar") {
-    return (
+  } else if (activeModule === "leads") {
+    content = <LeadsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} />;
+  } else if (activeModule === "tasks") {
+    content = <TasksModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialEstimateId={intent?.estimateId} />;
+  } else if (activeModule === "calendar") {
+    content = (
       <CalendarModule
         key={navigation.token}
         initialCreate={initialCreate}
@@ -118,30 +115,33 @@ export default function WorkspaceContent({
         onOpenModule={onOpenModule}
       />
     );
-  }
-
-  if (activeModule === "estimates") {
-    return <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
-  }
-
-  if (activeModule === "documents") {
-    return <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
-  }
-
-  if (activeModule === "inventory") {
-    return <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
-  }
-
-  if (activeModule === "expenses") {
+  } else if (activeModule === "estimates") {
+    content = <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
+  } else if (activeModule === "documents") {
+    content = <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
+  } else if (activeModule === "inventory") {
+    content = <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
+  } else if (activeModule === "expenses") {
     if (!["owner", "admin", "manager"].includes(role)) {
       return <div role="status" className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--muted)]">Finanțele firmei sunt disponibile doar administratorilor și managerilor.</div>;
     }
-    return <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
+    content = <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
+  } else if (activeModule === "thermal") {
+    content = <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialTaskId={intent?.taskId} />;
+  } else {
+    content = <TeamModule organizationId={organizationId} role={role} />;
   }
 
-  if (activeModule === "thermal") {
-    return <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialTaskId={intent?.taskId} />;
-  }
-
-  return <TeamModule organizationId={organizationId} role={role} />;
+  return (
+    <>
+      <WorkspaceModuleGuide
+        activeModule={activeModule}
+        navigation={navigation}
+        enabledModules={enabledModules}
+        role={role}
+        onOpenModule={onOpenModule}
+      />
+      {content}
+    </>
+  );
 }
