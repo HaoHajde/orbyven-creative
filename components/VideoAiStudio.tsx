@@ -472,25 +472,120 @@ export default function VideoAiStudio() {
 
             <div className="p-5 sm:p-6 lg:p-8">
               <div className="grid gap-3 md:grid-cols-3">
-                {engines.map((engine) => (
-                  <div key={engine.name} className="rounded-[22px] border border-[var(--border)] bg-[var(--bg)] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold">{engine.name}</span>
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                {engines.map((engine) => {
+                  const providerKey = engine.name === "Wan" ? "wan" : engine.name === "LTX" ? "ltx" : "webhook";
+                  const active = renderConfig?.provider === providerKey;
+                  return (
+                    <div
+                      key={engine.name}
+                      className={`rounded-[22px] border bg-[var(--bg)] p-4 transition ${
+                        active ? "border-[#786aff]/60 shadow-[0_0_0_1px_rgba(120,106,255,.10)]" : "border-[var(--border)]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold">{engine.name}</span>
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            active && renderConfig?.ready
+                              ? "bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,.6)]"
+                              : active
+                                ? "bg-amber-400"
+                                : "bg-[var(--muted-2)]"
+                          }`}
+                        />
+                      </div>
+                      <p className="mt-5 text-[11px] font-medium text-[var(--muted)]">{engine.note}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--muted-2)]">
+                        {active
+                          ? renderConfig?.ready
+                            ? "Connected"
+                            : "Selected · endpoint missing"
+                          : engine.status}
+                      </p>
                     </div>
-                    <p className="mt-5 text-[11px] font-medium text-[var(--muted)]">{engine.note}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--muted-2)]">{engine.status}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
+              <div className="mt-5 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
+                  Reference video URL · optional
+                </label>
+                <input
+                  type="url"
+                  value={referenceUrl}
+                  onChange={(event) => setReferenceUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="mt-3 h-11 w-full rounded-[15px] border border-[var(--border)] bg-[var(--bg)] px-4 text-[16px] text-[var(--text)] outline-none transition focus:border-[#7668ff]/70"
+                />
+                <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+                  Saved in the render contract as creative reference. The render worker decides whether it can inspect or use the source.
+                </p>
+              </div>
+
+              {renderJob ? (
+                <div className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--bg)] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
+                        Render job
+                      </p>
+                      <p className="mt-2 text-sm font-semibold">{renderJob.id}</p>
+                    </div>
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                      {renderJob.status.replace("_", " ")}
+                    </span>
+                  </div>
+                  {renderJob.outputUrl ? (
+                    <a
+                      href={renderJob.outputUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex h-10 items-center rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold"
+                    >
+                      Open generated video ↗
+                    </a>
+                  ) : null}
+                  {renderPackage ? (
+                    <button
+                      type="button"
+                      onClick={downloadRenderPackage}
+                      className="mt-4 inline-flex h-10 items-center rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold"
+                    >
+                      Download render package
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {renderError ? (
+                <p className="mt-4 rounded-[18px] border border-red-400/20 bg-red-400/5 px-4 py-3 text-xs leading-5 text-red-300">
+                  {renderError}
+                </p>
+              ) : null}
 
               <button
                 type="button"
-                disabled
-                className="mt-5 flex h-12 w-full cursor-not-allowed items-center justify-between rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-5 text-sm font-semibold text-[var(--muted-2)]"
+                onClick={startRender}
+                disabled={renderBusy}
+                className="mt-5 flex h-12 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
               >
-                <span>Generate final video</span>
-                <span>Engine required</span>
+                <span>
+                  {renderBusy
+                    ? "Preparing…"
+                    : !accessToken
+                      ? "Sign in to render"
+                      : renderConfig?.ready
+                        ? "Generate final video"
+                        : "Prepare render package"}
+                </span>
+                <span>
+                  {renderConfig?.ready
+                    ? renderConfig.provider?.toUpperCase()
+                    : accessToken
+                      ? "No GPU cost"
+                      : "Login required"}
+                </span>
               </button>
             </div>
           </div>
