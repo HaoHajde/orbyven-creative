@@ -436,9 +436,11 @@ export default function TasksModule({
         try {
           const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
           setSyncWarning(
-            sync.completedEvents > 0
-              ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
-              : ""
+            sync.futureScheduled > 0
+              ? `Lucrarea este finalizată, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
+              : sync.completedEvents > 0
+                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+                : ""
           );
         } catch (syncError) {
           console.error(syncError);
