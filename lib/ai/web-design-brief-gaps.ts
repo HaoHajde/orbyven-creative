@@ -1,10 +1,10 @@
-import type { EditableSite, SiteSectionId } from "@/lib/ai/site-editor";
-import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
-import type { WebDesignReadinessReport } from "@/lib/ai/web-design-readiness";
+import type { EditableSite, SiteSectionId } from "./site-editor.ts";
+import type { WebDesignStrategy } from "./web-design-intent.ts";
+import type { WebDesignReadinessReport } from "./web-design-readiness.ts";
 import type {
   WebDesignEvidenceConcept,
   WebDesignEvidenceGuardReport,
-} from "@/lib/ai/web-design-evidence";
+} from "./web-design-evidence.ts";
 
 export type WebDesignBriefGapId =
   | "brand_name"

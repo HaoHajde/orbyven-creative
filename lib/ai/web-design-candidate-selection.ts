@@ -1,15 +1,15 @@
-import type { EditableSite } from "@/lib/ai/site-editor";
-import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
+import type { EditableSite } from "./site-editor.ts";
+import type { WebDesignStrategy } from "./web-design-intent.ts";
 import {
   autonomouslyRefineWebDesign,
   type WebDesignAutonomousRefinementResult,
-} from "@/lib/ai/web-design-autorefine";
+} from "./web-design-autorefine.ts";
 import {
   applySpecificDesignDna,
   designDnaDistance,
   getAlternativeDesignDnaCandidates,
   type DesignDna,
-} from "@/lib/ai/web-design-variation";
+} from "./web-design-variation.ts";
 
 export type WebDesignCandidateSelectionReport = {
   evaluatedCandidates: number;

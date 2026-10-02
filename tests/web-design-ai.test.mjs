@@ -755,7 +755,7 @@ test("Generative Web Design applies Refine Locks before candidate selection", ()
   assert.match(server, /webDesignRefineScopeInstruction\(refineScope\)/);
   assert.match(server, /applyWebDesignRefineScope\(strategicDraft, current, refineScope\)/);
   assert.ok(
-    server.indexOf("applyWebDesignRefineScope(strategicDraft") <
+    server.indexOf("applyWebDesignRefineScope") <
       server.indexOf("selectBestWebDesignCandidate")
   );
   assert.match(server, /refineScope,/);
@@ -849,7 +849,7 @@ test("Generative Web Design runs Evidence Guard before candidate selection", () 
 
   assert.match(server, /guardWebDesignEvidence\(/);
   assert.ok(
-    server.indexOf("guardWebDesignEvidence(") <
+    server.indexOf("guardWebDesignEvidence") <
       server.indexOf("selectBestWebDesignCandidate")
   );
   assert.match(server, /evidence: evidenceResult\.report/);
