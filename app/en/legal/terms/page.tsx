@@ -50,13 +50,13 @@ export default function TermsPage() {
 
       <LegalSection title="5. Availability and changes">
         <p>
-          ORBYVEN aims to maintain service continuity but may perform maintenance, updates and changes required for security or product evolution. A guaranteed SLA applies only when expressly included in the client's contract.
+          ORBYVEN aims to maintain service continuity but may perform maintenance, updates and changes required for security or product evolution. A guaranteed SLA applies only when expressly included in the client’s contract.
         </p>
       </LegalSection>
 
       <LegalSection title="6. Liability">
         <p>
-          To the extent permitted by law and for B2B clients, ORBYVEN's total liability for direct damages related to the service is limited to the fees paid for the affected service during the 12 months preceding the event. This limitation does not apply where the law prohibits exclusion or limitation of liability.
+          To the extent permitted by law and for B2B clients, ORBYVEN’s total liability for direct damages related to the service is limited to the fees paid for the affected service during the 12 months preceding the event. This limitation does not apply where the law prohibits exclusion or limitation of liability.
         </p>
       </LegalSection>
 
