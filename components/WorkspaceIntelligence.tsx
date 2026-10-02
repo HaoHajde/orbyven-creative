@@ -663,7 +663,7 @@ export default function WorkspaceIntelligence({
             aria-controls="orbyven-intelligence-dialog"
             aria-expanded={open}
             onClick={() => setOpen((current) => !current)}
-            className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-14 w-14 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5"
+            className="fixed bottom-[calc(5.35rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-12 w-12 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14"
           >
             {!open ? (
               <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
@@ -694,7 +694,7 @@ export default function WorkspaceIntelligence({
                 role="dialog"
                 aria-modal="true"
                 aria-label="ORBYVEN Intelligence"
-                className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] top-3 z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px] text-[var(--text)]"
+                className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] top-[max(0.75rem,env(safe-area-inset-top))] z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px] text-[var(--text)]"
               >
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
