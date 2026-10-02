@@ -490,10 +490,7 @@ export default function WorkspaceShell({
                       <button
                         key={definition.id}
                         type="button"
-                        onClick={() => {
-                      requestNativeHaptic();
-                      openModule(definition.id);
-                    }}
+                        onClick={() => openModule(definition.id)}
                         aria-current={active ? "page" : undefined}
                         className={active
                           ? "flex w-full items-center gap-3 rounded-[9px] border border-[#7797ff]/20 bg-[linear-gradient(95deg,rgba(76,104,237,0.33),rgba(75,99,204,0.16))] px-3 py-2.5 text-left text-[12px] font-semibold text-[var(--text)]"
@@ -523,10 +520,7 @@ export default function WorkspaceShell({
                 <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    requestNativeHaptic();
-                    resetTextScale();
-                  }}
+                  onClick={resetTextScale}
                   title="Revino la 100%"
                   aria-label="Revino la dimensiunea textului 100%"
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
@@ -537,10 +531,7 @@ export default function WorkspaceShell({
               <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    requestNativeHaptic();
-                    changeTextScale(-1);
-                  }}
+                  onClick={() => changeTextScale(-1)}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
                   aria-label="Micșorează textul"
                   className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
@@ -549,10 +540,7 @@ export default function WorkspaceShell({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    requestNativeHaptic();
-                    changeTextScale(1);
-                  }}
+                  onClick={() => changeTextScale(1)}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
                   aria-label="Mărește textul"
                   className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
@@ -643,7 +631,10 @@ export default function WorkspaceShell({
                   <button
                     key={definition.id}
                     type="button"
-                    onClick={() => openModule(definition.id)}
+                    onClick={() => {
+                      requestNativeHaptic();
+                      openModule(definition.id);
+                    }}
                     className={`flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[20px] border px-1 text-center transition active:scale-[0.97] ${
                       active
                         ? "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]"
@@ -664,7 +655,10 @@ export default function WorkspaceShell({
                 <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
                 <button
                   type="button"
-                  onClick={resetTextScale}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    resetTextScale();
+                  }}
                   aria-label="Revino la dimensiunea textului 100%"
                   title="Revino la 100%"
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold text-[var(--muted-2)]"
@@ -675,7 +669,10 @@ export default function WorkspaceShell({
               <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => changeTextScale(-1)}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    changeTextScale(-1);
+                  }}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
                   aria-label="Micșorează textul"
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
@@ -684,7 +681,10 @@ export default function WorkspaceShell({
                 </button>
                 <button
                   type="button"
-                  onClick={() => changeTextScale(1)}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    changeTextScale(1);
+                  }}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
                   aria-label="Mărește textul"
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
