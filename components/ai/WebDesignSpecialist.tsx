@@ -296,6 +296,7 @@ export default function WebDesignSpecialist() {
     setDraft(previous);
     setHistory((current) => current.slice(0, -1));
     setSuggestions([]);
+    setQualityScore(null);
     setMessage("Am revenit la versiunea anterioară.");
     void saveRemote(previous, "local", "undo");
   };
