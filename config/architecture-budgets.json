@@ -2,10 +2,14 @@
   "version": 8,
   "capturedFrom": "current-main-2026-10-02",
   "source": {
-    "webRoots": ["app","components","lib"],
+    "webRoots": [
+      "app",
+      "components",
+      "lib"
+    ],
     "webMaxFileBytes": 65536,
     "webLargeFileThresholdBytes": 35840,
-    "webMaxLargeFiles": 11,
+    "webMaxLargeFiles": 12,
     "desktopRoot": "desktop/src",
     "desktopMaxFileBytes": 24576,
     "desktopLargeFileThresholdBytes": 35840,
@@ -13,10 +17,28 @@
     "desktopCssMaxFileBytes": 16384
   },
   "dependencies": {
-    "webRuntimeAllowlist": ["@supabase/supabase-js","framer-motion","next","react","react-dom"],
-    "desktopRuntimeAllowlist": ["@supabase/supabase-js","react","react-dom"],
-    "sharedVersions": ["@supabase/supabase-js","react","react-dom"],
-    "desktopForbidden": ["next","framer-motion","@supabase/ssr"]
+    "webRuntimeAllowlist": [
+      "@supabase/supabase-js",
+      "framer-motion",
+      "next",
+      "react",
+      "react-dom"
+    ],
+    "desktopRuntimeAllowlist": [
+      "@supabase/supabase-js",
+      "react",
+      "react-dom"
+    ],
+    "sharedVersions": [
+      "@supabase/supabase-js",
+      "react",
+      "react-dom"
+    ],
+    "desktopForbidden": [
+      "next",
+      "framer-motion",
+      "@supabase/ssr"
+    ]
   },
   "publicAssets": {
     "totalBytesMax": 14680064,
