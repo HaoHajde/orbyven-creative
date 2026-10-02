@@ -167,12 +167,30 @@ export async function persistAssistantResponse(
       ]
     : [];
 
-  const baseFacts = response.decision ? response.facts.slice(0, 4) : response.facts;
+  const outcomeFacts = response.outcome
+    ? [
+        { label: "Outcome · Plan", value: response.outcome.planId },
+        { label: "Outcome · Status", value: response.outcome.status },
+        ...(response.outcome.previousFocus
+          ? [{ label: "Outcome · Previous", value: response.outcome.previousFocus }]
+          : []),
+        ...(response.outcome.currentFocus
+          ? [{ label: "Outcome · Current", value: response.outcome.currentFocus }]
+          : []),
+        { label: "Outcome · Summary", value: response.outcome.summary },
+      ]
+    : [];
+
+  const baseFacts = response.decision
+    ? response.facts.slice(0, 4)
+    : response.outcome
+      ? response.facts.slice(0, 3)
+      : response.facts;
 
   await appendAssistantConversationMessage(actor, conversationId, {
     specialist: response.specialist,
     content: response.answer,
-    facts: [...baseFacts, ...focusFacts, ...decisionFacts].slice(0, 12),
+    facts: [...baseFacts, ...focusFacts, ...decisionFacts, ...outcomeFacts].slice(0, 12),
   });
 }
 
