@@ -12,7 +12,7 @@ type LegalDocumentProps = {
   locale?: "ro" | "en";
 };
 
-const legalLinks = [
+const legalLinksRo = [
   ["/legal/terms", "Termeni"],
   ["/legal/subscriptions", "Abonamente"],
   ["/legal/privacy", "Confidențialitate"],
@@ -23,6 +23,11 @@ const legalLinks = [
   ["/legal/ai", "AI"],
   ["/legal/data-rights", "Drepturi GDPR"],
   ["/legal/complaints", "Reclamații"],
+] as const;
+
+const legalLinksEn = [
+  ["/legal/terms", "Terms"],
+  ["/legal/privacy", "Privacy"],
 ] as const;
 
 export default function LegalDocument({
@@ -51,6 +56,8 @@ export default function LegalDocument({
         version: "Versiune",
         updated: "Actualizat",
       };
+  const legalLinks = locale === "en" ? legalLinksEn : legalLinksRo;
+
   return (
     <main className="min-h-screen bg-white text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">
       <header className="border-b border-black/[0.08] dark:border-white/[0.1]">
