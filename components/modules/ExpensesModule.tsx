@@ -171,7 +171,9 @@ export default function ExpensesModule({
   initialPurchaseOrderId,
 }: Props) {
   const canWrite = ["owner", "admin", "manager"].includes(role);
-  const [tab, setTab] = useState<Tab>(initialCreate ? "expenses" : "overview");
+  const [tab, setTab] = useState<Tab>(
+    initialCreate ? "expenses" : initialPurchaseOrderId ? "procurement" : "overview"
+  );
   const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
   const [income, setIncome] = useState<FinanceIncomeEntry[]>([]);
   const [invoices, setInvoices] = useState<FinanceInvoiceWithBalance[]>([]);
