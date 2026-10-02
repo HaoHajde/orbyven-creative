@@ -17,8 +17,10 @@ import { critiqueWebDesign } from "../lib/ai/web-design-quality.ts";
 import {
   applyDesignDna,
   designDnaDistance,
+  getAlternativeDesignDnaCandidates,
   selectAlternativeDesignDna,
 } from "../lib/ai/web-design-variation.ts";
+import { selectBestWebDesignCandidate } from "../lib/ai/web-design-candidate-selection.ts";
 import { evaluateWebDesignReadiness } from "../lib/ai/web-design-readiness.ts";
 import { autonomouslyRefineWebDesign } from "../lib/ai/web-design-autorefine.ts";
 
@@ -331,23 +333,25 @@ test("Web Design quality critic does not override an explicit CTA during refine"
   assert.equal(result.report.issues.some((issue) => issue.code === "GENERIC_CTA"), false);
 });
 
-test("Generative Web Design runs autonomous quality refinement before cloud persistence", () => {
+test("Generative Web Design runs candidate selection and autonomous refinement before cloud persistence", () => {
   const server = read("lib/ai/web-design-server.ts");
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
   const quality = read("lib/ai/web-design-quality.ts");
   const autorefine = read("lib/ai/web-design-autorefine.ts");
+  const selector = read("lib/ai/web-design-candidate-selection.ts");
 
-  assert.match(server, /autonomouslyRefineWebDesign/);
-  assert.match(server, /quality: autonomousResult\.quality/);
-  assert.match(server, /refinement: autonomousResult\.refinement/);
+  assert.match(server, /selectBestWebDesignCandidate/);
+  assert.match(server, /quality: selectedResult\.quality/);
+  assert.match(server, /refinement: selectedResult\.refinement/);
+  assert.match(server, /selection: selectedResult\.selection/);
   assert.match(server, /saveWebDesignDraft\(actor, nextDraft, "ai", prompt\)/);
   assert.match(specialist, /Quality \{qualityScore\}/);
   assert.match(specialist, /rafinată automat/);
+  assert.match(specialist, /selectată din/);
   assert.match(quality, /contrastRatio/);
-  assert.match(quality, /visibleSectionCount/);
-  assert.match(quality, /repeatedCopy/);
   assert.match(autorefine, /MAX_PASSES = 2/);
-  assert.doesNotMatch(autorefine, /fetch\(/);
+  assert.match(selector, /autonomouslyRefineWebDesign/);
+  assert.doesNotMatch(selector, /fetch\(/);
 });
 
 
@@ -393,19 +397,20 @@ test("Design DNA leaves compose and refine drafts untouched", () => {
   assert.deepEqual(result, SITE_PRESETS.instalatii);
 });
 
-test("Generative Web Design applies Design DNA before autonomous quality refinement", () => {
+test("Generative Web Design evaluates Design DNA candidates before persistence", () => {
   const server = read("lib/ai/web-design-server.ts");
   const variation = read("lib/ai/web-design-variation.ts");
+  const selector = read("lib/ai/web-design-candidate-selection.ts");
 
   assert.match(server, /designDnaInstruction\(current, strategy, prompt\)/);
-  assert.match(server, /applyDesignDna\(strategicDraft, current, strategy, prompt\)/);
-  assert.ok(
-    server.indexOf("applyDesignDna(strategicDraft") <
-      server.indexOf("autonomouslyRefineWebDesign")
-  );
+  assert.match(server, /selectBestWebDesignCandidate\(/);
+  assert.match(selector, /getAlternativeDesignDnaCandidates\(current, prompt, 3\)/);
+  assert.match(selector, /applySpecificDesignDna/);
+  assert.match(selector, /weightedScore/);
   assert.match(variation, /distanceFromCurrent/);
   assert.match(variation, /currentFingerprint/);
   assert.doesNotMatch(variation, /Math\.random/);
+  assert.doesNotMatch(selector, /Math\.random/);
 });
 
 
@@ -465,7 +470,7 @@ test("Generative Web Design returns publish readiness beside technical quality",
   const readiness = read("lib/ai/web-design-readiness.ts");
   const autorefine = read("lib/ai/web-design-autorefine.ts");
 
-  assert.match(server, /readiness: autonomousResult\.readiness/);
+  assert.match(server, /readiness: selectedResult\.readiness/);
   assert.match(autorefine, /evaluateWebDesignReadiness/);
   assert.match(specialist, /Ready \{readinessScore\}/);
   assert.match(specialist, /elemente de completat înainte de publicare/);
@@ -541,4 +546,56 @@ test("Autonomous refinement never fabricates facts to clear publish blockers", (
   assert.ok(result.readiness.blockers.some((item) => item.code === "PLACEHOLDER_COPY"));
   assert.ok(result.refinement.remainingActions.length > 0);
   assert.equal(result.draft.brand, SITE_PRESETS.studio.brand);
+});
+
+
+test("Alternative candidate selection evaluates three distant Design DNA families and is deterministic", () => {
+  const prompt = "Propune o altă variantă completă, premium și editorială.";
+  const strategy = buildWebDesignStrategy(prompt, SITE_PRESETS.florarie);
+  const candidates = getAlternativeDesignDnaCandidates(
+    SITE_PRESETS.florarie,
+    prompt,
+    3
+  );
+
+  assert.equal(strategy.mode, "alternative");
+  assert.equal(candidates.length, 3);
+  assert.equal(new Set(candidates.map((item) => item.id)).size, 3);
+
+  const first = selectBestWebDesignCandidate(
+    SITE_PRESETS.florarie,
+    SITE_PRESETS.florarie,
+    strategy,
+    prompt
+  );
+  const second = selectBestWebDesignCandidate(
+    SITE_PRESETS.florarie,
+    SITE_PRESETS.florarie,
+    strategy,
+    prompt
+  );
+
+  assert.equal(first.selection.evaluatedCandidates, 3);
+  assert.ok(first.selection.selectedDna);
+  assert.ok(first.selection.selectedDistance >= 6);
+  assert.equal(first.selection.selectedDna, second.selection.selectedDna);
+  assert.equal(first.selection.selectedScore, second.selection.selectedScore);
+  assert.deepEqual(first.draft, second.draft);
+});
+
+test("Candidate selection does not alter compose or refine through hidden style competition", () => {
+  const prompt = "Fă hero-ul mai premium și păstrează restul.";
+  const strategy = buildWebDesignStrategy(prompt, SITE_PRESETS.instalatii);
+  const result = selectBestWebDesignCandidate(
+    SITE_PRESETS.instalatii,
+    SITE_PRESETS.instalatii,
+    strategy,
+    prompt
+  );
+
+  assert.equal(strategy.mode, "refine");
+  assert.equal(result.selection.evaluatedCandidates, 1);
+  assert.equal(result.selection.selectedDna, null);
+  assert.equal(result.draft.layout, SITE_PRESETS.instalatii.layout);
+  assert.deepEqual(result.draft.variants, SITE_PRESETS.instalatii.variants);
 });
