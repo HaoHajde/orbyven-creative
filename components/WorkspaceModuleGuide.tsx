@@ -37,6 +37,7 @@ export default function WorkspaceModuleGuide({
           taskId: navigation.taskId,
           estimateId: navigation.estimateId,
           purchaseOrderId: navigation.purchaseOrderId,
+          documentId: navigation.documentId,
         }
       : {}
   ), [
@@ -46,6 +47,7 @@ export default function WorkspaceModuleGuide({
     navigation.taskId,
     navigation.estimateId,
     navigation.purchaseOrderId,
+    navigation.documentId,
   ]);
   const [liveState, setLiveState] = useState<{
     module: OrbyvenModuleId;
