@@ -1,4 +1,5 @@
 "use client";
+import AppDownloadSection from "@/components/AppDownloadSection";
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
@@ -458,10 +459,12 @@ export default function HomePage() {
           <p className="text-[10px] uppercase tracking-[0.18em] opacity-50">Start</p>
           <div className="mt-4 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
             <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[62px]">Tell us what you want to solve.</h2>
-            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Get started →</Link>
+            <Link href="/contact" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Get started →</Link>
           </div>
         </div>
       </section>
+
+      <AppDownloadSection locale="en" />
 
       <SiteFooter theme={theme} activePage="home" />
     </main>
