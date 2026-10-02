@@ -599,3 +599,57 @@ test("Candidate selection does not alter compose or refine through hidden style 
   assert.equal(result.draft.layout, SITE_PRESETS.instalatii.layout);
   assert.deepEqual(result.draft.variants, SITE_PRESETS.instalatii.variants);
 });
+
+
+test("Web Design Visual Memory is bounded, validated and sent only as recent drafts", () => {
+  const route = read("app/api/ai/web-design/generate/route.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+  const server = read("lib/ai/web-design-server.ts");
+
+  assert.match(route, /Array\.isArray\(body\.recentDrafts\)/);
+  assert.match(route, /\.slice\(-4\)/);
+  assert.match(route, /readSiteDraft\(item\)/);
+  assert.match(server, /recentDrafts: EditableSite\[\] = \[\]/);
+  assert.match(server, /recentDrafts\.slice\(-4\)/);
+  assert.match(specialist, /VISUAL_MEMORY_KEY/);
+  assert.match(specialist, /recentDrafts: visualMemory\.slice\(-4\)/);
+  assert.match(specialist, /setVisualMemory/);
+  assert.match(specialist, /removeItem\(VISUAL_MEMORY_KEY\)/);
+});
+
+test("Alternative candidate selection penalizes recently used visual directions", () => {
+  const prompt = "Propune o altă variantă completă și coerentă pentru același business.";
+  const strategy = buildWebDesignStrategy(prompt, SITE_PRESETS.florarie);
+
+  const first = selectBestWebDesignCandidate(
+    SITE_PRESETS.florarie,
+    SITE_PRESETS.florarie,
+    strategy,
+    prompt
+  );
+  const second = selectBestWebDesignCandidate(
+    SITE_PRESETS.florarie,
+    SITE_PRESETS.florarie,
+    strategy,
+    prompt,
+    [first.draft]
+  );
+
+  assert.equal(second.selection.visualMemoryCompared, 1);
+  assert.ok(second.selection.noveltyPenalty >= 0);
+  assert.ok(
+    second.selection.selectedDna !== first.selection.selectedDna ||
+      second.selection.noveltyPenalty > 0
+  );
+});
+
+test("Visual Memory novelty logic remains deterministic and network-free", () => {
+  const selector = read("lib/ai/web-design-candidate-selection.ts");
+
+  assert.match(selector, /function noveltyPenalty/);
+  assert.match(selector, /closest <= 2/);
+  assert.match(selector, /recentDrafts\.slice\(-4\)/);
+  assert.match(selector, /visualMemoryCompared/);
+  assert.doesNotMatch(selector, /fetch\(/);
+  assert.doesNotMatch(selector, /Math\.random/);
+});

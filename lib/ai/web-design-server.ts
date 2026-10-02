@@ -500,7 +500,8 @@ export async function saveWebDesignDraft(
 export async function generateWebDesignForActor(
   actor: BillingActor,
   prompt: string,
-  current: EditableSite
+  current: EditableSite,
+  recentDrafts: EditableSite[] = []
 ): Promise<WebDesignGenerationResult> {
   if (actor.role === "viewer") throw new Error("WEB_DESIGN_EDIT_REQUIRED");
 
@@ -602,7 +603,8 @@ export async function generateWebDesignForActor(
       strategicDraft,
       current,
       strategy,
-      prompt
+      prompt,
+      recentDrafts.slice(-4)
     );
     const nextDraft = readSiteDraft(selectedResult.draft);
     if (!nextDraft) {
