@@ -86,5 +86,5 @@ test("Workspace history restores transcript without restoring old confirm action
   assert.match(ui, /\+ Nou/);
   assert.match(ui, /Istoric/);
   assert.match(ui, /actions: \[\]/);
-  assert.match(ui, /nu va reapărea ca acțiune în istoricul salvat/i);
+  assert.match(ui, /Confirmă pentru execuție\. Propunerea expiră automat\./i);
 });

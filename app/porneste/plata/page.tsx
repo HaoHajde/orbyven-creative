@@ -17,13 +17,11 @@ function PaymentRedirectContent() {
   const rawOffer = searchParams.get("offer");
   const offerId: PublicOfferId | null = isPublicOfferId(rawOffer) ? rawOffer : null;
   const offer = offerId ? PUBLIC_OFFERS[offerId] : null;
-  const [status, setStatus] = useState<"loading" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "error">(() => offerId ? "loading" : "error");
   const [error, setError] = useState("");
 
   const openCheckout = async () => {
     if (!offerId) return;
-    setStatus("loading");
-    setError("");
     try {
       const response = await fetch("/api/public-checkout", {
         method: "POST",
@@ -54,8 +52,17 @@ function PaymentRedirectContent() {
   };
 
   useEffect(() => {
-    if (offerId) void openCheckout();
-    else setStatus("error");
+    let cancelled = false;
+    const start = async () => {
+      await Promise.resolve();
+      if (cancelled || !offerId) return;
+      void openCheckout();
+    };
+    void start();
+    return () => {
+      cancelled = true;
+    };
+    // openCheckout intentionally uses the current validated offer id.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offerId]);
 
@@ -83,7 +90,7 @@ function PaymentRedirectContent() {
           <>
             <p className="mt-5 text-[12px] leading-6 text-white/52">{error || "Oferta selectată nu este validă."}</p>
             {offerId ? (
-              <button onClick={() => void openCheckout()} className="mt-6 flex h-13 w-full items-center justify-center rounded-[17px] bg-white px-5 text-[13px] font-semibold text-[#09090d]">
+              <button onClick={() => { setStatus("loading"); setError(""); void openCheckout(); }} className="mt-6 flex h-13 w-full items-center justify-center rounded-[17px] bg-white px-5 text-[13px] font-semibold text-[#09090d]">
                 Încearcă din nou
               </button>
             ) : null}

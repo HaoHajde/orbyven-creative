@@ -91,13 +91,16 @@ test("Action proposals are server-only with RLS and explicit grants", () => {
 
 test("Action executor mirrors existing create permissions and claims proposals atomically", () => {
   const source = read("lib/ai/action-server.ts");
+  const proposalServer = read("lib/ai/proposal-server.ts");
+  const fallback = read("supabase/migrations/20261002074430_ai_action_authenticated_fallback_rpc.sql");
   assert.match(source, /MUTATION_ROLES = new Set\(\["owner", "admin", "manager", "member"\]\)/);
-  assert.match(source, /\.eq\("organization_id", actor\.organizationId\)/);
-  assert.match(source, /\.eq\("actor_id", actor\.userId\)/);
-  assert.match(source, /\.eq\("status", "pending"\)/);
-  assert.match(source, /status: "executing"/);
-  assert.match(source, /status: "executed"/);
-  assert.match(source, /platform_audit_log/);
+  assert.match(source, /claimAiActionProposal\(actor, proposalId\)/);
+  assert.match(source, /finishAiActionProposal\(actor, proposal\.id/);
+  assert.match(proposalServer, /p_organization_id: actor\.organizationId/);
+  assert.match(proposalServer, /p_actor_id: actor\.userId/);
+  assert.match(fallback, /status = 'executing'/);
+  assert.match(fallback, /status = 'executed'/);
+  assert.match(source, /ai_action_audit_write/);
   assert.match(source, /confirmation: "explicit_user_confirmation"/);
 });
 
@@ -108,7 +111,7 @@ test("Agent execution keeps Finance writes forbidden and estimate creation behin
   assert.match(source, /create_task/);
   assert.match(source, /create_calendar_event/);
   assert.match(source, /create_estimate/);
-  assert.match(source, /rpc\("ai_create_estimate_draft"/);
+  assert.match(source, /rpc\("ai_create_estimate_draft_actor"/);
   assert.doesNotMatch(source, /finance_expenses"\)\s*\.insert/);
   assert.doesNotMatch(source, /sales_estimates"\)\s*\.insert/);
 });
