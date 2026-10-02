@@ -278,7 +278,7 @@ export default function ExpensesModule({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, initialPurchaseOrderId, initialTaskId]);
+  }, [organizationId, initialDocumentId, initialPurchaseOrderId, initialTaskId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
