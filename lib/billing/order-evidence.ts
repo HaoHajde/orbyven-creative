@@ -37,6 +37,7 @@ export function createOrderOfferSnapshot(planId:BillingPlanId,price:CheckoutPric
     displayed_tax_label:PUBLIC_PRICE_TAX_LABEL,
     stripe_price_id:price.id,
     stripe_tax_behavior:price.tax_behavior,
+    stripe_livemode:price.livemode,
     legal_document_version:LEGAL_DOCUMENT_VERSION,
     legal_documents:["/legal/terms","/legal/subscriptions","/legal/privacy"],
     acknowledgement_text:BILLING_CHECKOUT_ACKNOWLEDGEMENT,
