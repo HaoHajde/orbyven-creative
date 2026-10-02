@@ -484,7 +484,7 @@ export default function EstimatesModule({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Titlu ofertă *"><input value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} className={moduleInputClass} placeholder="Ex. Înlocuire centrală + montaj" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(tasks.find((task) => task.id === form.taskId)?.client_id)} onChange={(e) => setForm((current) => ({ ...current, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.company ? ` · ${client.company}` : ""}</option>)}</select></Field>
-            <Field label="Lucrare" className="sm:col-span-2"><select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
+            <Field label="Lucrare" className="sm:col-span-2"><select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.filter((task) => revisionSource || !["done","cancelled"].includes(task.status)).map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
           </div>
           <ModuleAdvancedFields label="Condiții comerciale și costuri">
             <div className="grid gap-4 sm:grid-cols-2">
