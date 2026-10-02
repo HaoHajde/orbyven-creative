@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-import { PUBLIC_OFFERS, isPublicOfferId, type PublicOfferId } from "@/lib/commerce/public-offers";
+import { PUBLIC_CHECKOUT_IS_DEMO, PUBLIC_OFFERS, isPublicOfferId, type PublicOfferId } from "@/lib/commerce/public-offers";
 
 const SANDBOX_PAYMENT_LINKS: Record<PublicOfferId, string> = {
   invitation: "https://buy.stripe.com/test_28E3cwaT1h1tfgNab68EM00",
@@ -69,13 +69,27 @@ function PaymentRedirectContent() {
   return (
     <main className="grid min-h-screen place-items-center bg-[#09090d] px-5 text-[#f5f5f7]">
       <div className="w-full max-w-[560px] rounded-[30px] border border-white/10 bg-white/[.035] p-7 shadow-[0_36px_120px_rgba(0,0,0,.35)] sm:p-9">
-        <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#a58bff]">ORBYVEN · CHECKOUT</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#a58bff]">ORBYVEN · CHECKOUT</p>
+          {PUBLIC_CHECKOUT_IS_DEMO ? <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-[8px] font-bold text-amber-200">MOD TEST</span> : null}
+        </div>
         <h1 className="mt-4 text-[38px] font-semibold leading-[.94] tracking-[-.06em]">
-          {status === "loading" ? "Deschidem plata securizată." : "Checkout indisponibil momentan."}
+          {status === "loading"
+            ? PUBLIC_CHECKOUT_IS_DEMO
+              ? "Deschidem checkout-ul de test."
+              : "Deschidem plata securizată."
+            : "Checkout indisponibil momentan."}
         </h1>
 
+        {PUBLIC_CHECKOUT_IS_DEMO ? (
+          <div className="mt-6 rounded-[18px] border border-amber-300/18 bg-amber-300/[.055] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[.14em] text-amber-200">Fără încasare reală</p>
+            <p className="mt-2 text-[10px] leading-5 text-white/52">Acesta este Stripe Sandbox. Nu folosi datele cardului tău real. Folosește cardul de test 4242 4242 4242 4242.</p>
+          </div>
+        ) : null}
+
         {offer ? (
-          <div className="mt-7 rounded-[22px] border border-white/10 bg-white/[.045] p-5">
+          <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[.045] p-5">
             <p className="text-[12px] font-semibold">{offer.name}</p>
             <p className="mt-2 text-[28px] font-semibold tracking-[-.055em]">{offer.shortPrice}</p>
             <p className="mt-1 text-[10px] text-white/45">{offer.priceNote}</p>
