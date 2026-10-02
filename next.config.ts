@@ -16,10 +16,36 @@ const demoSeoRoutes = [
   "/orbyven-demos/:path*",
 ];
 
+const englishDomainHosts = ["orbyven.com", "www.orbyven.com"] as const;
+
+const englishPublicRoutes = [
+  { source: "/", destination: "/en" },
+  { source: "/templates", destination: "/en/templates" },
+  { source: "/services", destination: "/en/services" },
+  { source: "/servicii", destination: "/en/services" },
+  { source: "/contact", destination: "/en/contact" },
+  { source: "/cerere", destination: "/en/contact" },
+  { source: "/checkout", destination: "/en/checkout" },
+  { source: "/porneste/plata", destination: "/en/checkout" },
+] as const;
+
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  async rewrites() {
+    return {
+      beforeFiles: englishDomainHosts.flatMap((host) =>
+        englishPublicRoutes.map(({ source, destination }) => ({
+          source,
+          destination,
+          has: [{ type: "host" as const, value: host }],
+        }))
+      ),
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       {
