@@ -6,7 +6,7 @@ import {
 } from "../lib/compliance/exit-export.ts";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
-const migration=read("supabase/migrations/20260930210500_organization_offboarding_release.sql");
+const migration=read("supabase/migrations/20261002080659_organization_offboarding_release.sql");
 const ownerAPI=read("app/api/workspace/data-export/route.ts");
 const staffAPI=read("app/api/control-center/compliance/route.ts");
 const page=read("app/workspace/data-export/page.tsx");
