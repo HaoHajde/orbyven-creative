@@ -19,6 +19,7 @@ export type WorkReadinessContext = {
   expensesCount: number | null;
   expensesCents: number | null;
   inventoryMovementsCount: number | null;
+  openPurchaseOrdersCount: number | null;
   inventoryConsumedCents: number | null;
   inventoryRequiredLines: number | null;
   inventoryUntrackedLines: number | null;
@@ -27,7 +28,7 @@ export type WorkReadinessContext = {
 };
 
 export type WorkReadinessCheck = {
-  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "costs";
+  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "procurement" | "costs";
   label: string;
   state: WorkReadinessCheckState;
   message: string;
@@ -92,6 +93,8 @@ export function evaluateWorkReadiness(input: {
     });
   } else if (operation.status === "done") {
     checks.push({ key: "status", label: "Status", state: "good", message: "Operațiunea este finalizată." });
+  } else if (operation.status === "cancelled") {
+    checks.push({ key: "status", label: "Status", state: "info", message: "Operațiunea este anulată; istoricul rămâne disponibil." });
   } else {
     checks.push({ key: "status", label: "Status", state: "good", message: "Fluxul operațional este activ." });
   }
@@ -287,6 +290,21 @@ export function evaluateWorkReadiness(input: {
       message: enabled.inventory
         ? "Material readiness este disponibil pentru lucrări și comenzi."
         : "Modulul Stoc & achiziții nu este activ.",
+    });
+  }
+
+  if (enabled.inventory && operationalKind && context) {
+    const openPurchaseOrders = context.openPurchaseOrdersCount ?? 0;
+    const closedOperation = operation.status === "done" || operation.status === "cancelled";
+    checks.push({
+      key: "procurement",
+      label: "Achiziții",
+      state: closedOperation && openPurchaseOrders > 0 ? "attention" : openPurchaseOrders > 0 ? "info" : "good",
+      message: openPurchaseOrders > 0
+        ? closedOperation
+          ? openPurchaseOrders + " comenzi furnizor sunt încă deschise pentru o operațiune închisă."
+          : openPurchaseOrders + " comenzi furnizor sunt încă în circuit."
+        : "Nu există comenzi furnizor deschise pe această operațiune.",
     });
   }
 
