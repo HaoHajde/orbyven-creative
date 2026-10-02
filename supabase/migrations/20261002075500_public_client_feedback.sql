@@ -112,6 +112,114 @@ using (
 grant select, insert, update, delete on public.crm_feedback_links to authenticated;
 revoke all on public.crm_feedback_links from anon;
 
+create or replace function public.create_or_refresh_client_feedback_link(
+  p_organization_id uuid,
+  p_task_id uuid,
+  p_client_id uuid
+)
+returns table(
+  public_token uuid,
+  expires_at timestamptz,
+  submitted boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_existing public.crm_feedback_links%rowtype;
+  v_token uuid;
+  v_expires timestamptz;
+begin
+  if (select auth.uid()) is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+
+  if not private.is_billing_module_allowed(p_organization_id, 'leads') then
+    raise exception 'module unavailable' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organization_members m
+    where m.organization_id = p_organization_id
+      and m.user_id = (select auth.uid())
+      and m.role in ('owner','admin','manager','member')
+      and m.access_status = 'active'
+  ) then
+    raise exception 'insufficient role' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1
+    from public.ops_tasks t
+    join public.crm_leads c
+      on c.organization_id = t.organization_id
+     and c.id = t.client_id
+    where t.organization_id = p_organization_id
+      and t.id = p_task_id
+      and t.client_id = p_client_id
+      and t.kind in ('work','order')
+      and t.status = 'done'
+      and c.kind = 'client'
+  ) then
+    raise exception 'completed client work required' using errcode = '22023';
+  end if;
+
+  select *
+    into v_existing
+  from public.crm_feedback_links fl
+  where fl.organization_id = p_organization_id
+    and fl.task_id = p_task_id
+  for update;
+
+  if found and v_existing.submitted_at is not null then
+    return query
+      select v_existing.public_token, v_existing.expires_at, true;
+    return;
+  end if;
+
+  v_token := gen_random_uuid();
+  v_expires := now() + interval '30 days';
+
+  if found then
+    update public.crm_feedback_links
+    set
+      client_id = p_client_id,
+      public_token = v_token,
+      expires_at = v_expires,
+      revoked_at = null,
+      score = null,
+      feedback_note = null,
+      submitted_at = null
+    where id = v_existing.id;
+  else
+    insert into public.crm_feedback_links (
+      organization_id,
+      task_id,
+      client_id,
+      public_token,
+      expires_at,
+      created_by
+    )
+    values (
+      p_organization_id,
+      p_task_id,
+      p_client_id,
+      v_token,
+      v_expires,
+      (select auth.uid())
+    );
+  end if;
+
+  return query select v_token, v_expires, false;
+end;
+$function$;
+
+revoke all on function public.create_or_refresh_client_feedback_link(uuid, uuid, uuid) from public;
+grant execute on function public.create_or_refresh_client_feedback_link(uuid, uuid, uuid)
+  to authenticated, service_role;
+
 create or replace function public.get_public_client_feedback_context(p_token uuid)
 returns table(
   organization_name text,
@@ -251,3 +359,6 @@ comment on function public.get_public_client_feedback_context(uuid) is
   'Public feedback context gateway. Returns only organization name, task title and availability state.';
 comment on function public.submit_public_client_feedback(uuid, smallint, text) is
   'Single-use public feedback submission gateway. Writes the canonical ORBYVEN post-service CRM marker.';
+
+comment on function public.create_or_refresh_client_feedback_link(uuid, uuid, uuid) is
+  'Authenticated tenant-safe link generator for completed client work. Refreshes only unsubmitted links.';
