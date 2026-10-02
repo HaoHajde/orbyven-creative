@@ -38,6 +38,11 @@ type GenerationBody = {
   summary?: string;
   suggestions?: string[];
   remainingToday?: number | null;
+  quality?: {
+    score?: number;
+    status?: "strong" | "good" | "review";
+    fixesApplied?: number;
+  };
   error?: string;
   code?: string;
 };
@@ -64,6 +69,7 @@ export default function WebDesignSpecialist() {
   const [canEdit, setCanEdit] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [qualityScore, setQualityScore] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -183,6 +189,7 @@ export default function WebDesignSpecialist() {
     if (JSON.stringify(next) === JSON.stringify(draft)) return;
     setHistory((current) => [...current.slice(-29), draft]);
     setDraft(next);
+    setQualityScore(null);
     void saveRemote(next, source, lastPrompt);
   };
 
@@ -215,8 +222,16 @@ export default function WebDesignSpecialist() {
       setHistory((current) => [...current.slice(-29), draft]);
       setDraft(next);
       setSuggestions((body.suggestions ?? []).slice(0, 4));
+      const nextQualityScore =
+        typeof body.quality?.score === "number"
+          ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
+          : null;
+      setQualityScore(nextQualityScore);
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (typeof body.quality?.fixesApplied === "number" && body.quality.fixesApplied > 0
+            ? ` · ${body.quality.fixesApplied} corecții automate`
+            : "") +
           (typeof body.remainingToday === "number"
             ? ` · ${body.remainingToday} generări rămase astăzi`
             : "")
@@ -333,6 +348,14 @@ export default function WebDesignSpecialist() {
             <span className="text-[9px] text-white/35">
               {saveState === "saving" ? "Se salvează…" : saveState === "saved" ? "Salvat în cloud" : "Draft sincronizat"}
             </span>
+            {qualityScore !== null ? (
+              <span
+                title="Scor tehnic intern pentru structură, contrast, densitate și CTA"
+                className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/[0.08] px-2.5 py-1.5 text-[9px] font-semibold text-[#b9c5ff]"
+              >
+                Quality {qualityScore}
+              </span>
+            ) : null}
             <button
               type="button"
               disabled={!history.length || aiBusy}
