@@ -4,6 +4,7 @@ import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
 import { answerOperationalQuery } from "@/lib/ai/operational-query";
+import { answerEntityIntelligenceQuery } from "@/lib/ai/entity-intelligence";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -444,6 +445,9 @@ export async function answerIntelligenceForActor(
 
   const mutation = await createMutationIntelligenceResponse(actor, available, prompt, conversationId);
   if (mutation) return mutation;
+
+  const entityQuery = await answerEntityIntelligenceQuery(actor, available, prompt);
+  if (entityQuery) return entityQuery;
 
   const operationalQuery = await answerOperationalQuery(actor, available, prompt);
   if (operationalQuery) return operationalQuery;
