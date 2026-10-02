@@ -15,6 +15,7 @@ import {
   type CrmLeadStage,
 } from "@/lib/modules/leads";
 import { evaluateClientLifecycle, type ClientLifecycleSnapshot } from "@/lib/automation/client-lifecycle";
+import { displayPostServiceActivity } from "@/lib/automation/post-service-growth";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
@@ -768,7 +769,7 @@ export default function LeadsModule({
                           {dateFormatter.format(new Date(activity.occurred_at))}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-6">{activity.body}</p>
+                      <p className="mt-2 text-sm leading-6">{displayPostServiceActivity(activity.body)}</p>
                     </div>
                   ))
                 ) : (

@@ -9,6 +9,7 @@ export type BillingActor = {
   email: string | null;
   organizationId: string;
   role: OrganizationRole;
+  accessToken?: string;
 };
 
 function supabasePublicConfig() {
@@ -27,12 +28,25 @@ function bearerToken(request: Request) {
   return token;
 }
 
-export function createBillingServiceClient() {
-  const { url } = supabasePublicConfig();
+export function createBillingServiceClient(
+  actor?: Pick<BillingActor, "accessToken">
+) {
+  const { url, publishableKey } = supabasePublicConfig();
   const serviceRoleKey = billingServerConfig.supabaseServiceRoleKey;
-  if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
 
-  return createClient(url, serviceRoleKey, {
+  if (serviceRoleKey) {
+    return createClient(url, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+
+  const accessToken = actor?.accessToken?.trim();
+  if (!accessToken) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
+  }
+
+  return createClient(url, publishableKey, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -79,5 +93,6 @@ export async function authenticateBillingActor(
     email: userData.user.email ?? null,
     organizationId: membership.organization_id,
     role: membership.role,
+    accessToken: token,
   };
 }

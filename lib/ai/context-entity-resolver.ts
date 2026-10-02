@@ -17,7 +17,7 @@ async function validateClient(
   actor: BillingActor,
   candidate: string
 ): Promise<"valid" | "missing" | "ambiguous"> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const [nameResult, companyResult] = await Promise.all([
     client
       .from("crm_leads")
@@ -57,7 +57,7 @@ async function validateWork(
   actor: BillingActor,
   candidate: string
 ): Promise<"valid" | "missing" | "ambiguous"> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ops_tasks")
     .select("id,title,kind")

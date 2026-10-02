@@ -17,6 +17,20 @@ test("Conversation memory is server-only and scoped by organization plus actor",
   assert.match(migration, /grant select, insert, update, delete on table public\.ai_conversation_messages to service_role/);
 });
 
+
+test("Conversation fallback is actor-scoped while Agent Action proposals stay server-only", () => {
+  const fallback = read("supabase/migrations/20261002072800_ai_conversation_authenticated_fallback.sql");
+  const billing = read("lib/billing/supabase-server.ts");
+  assert.match(fallback, /grant select, insert, update on table public\.ai_conversations to authenticated/);
+  assert.match(fallback, /grant select, insert on table public\.ai_conversation_messages to authenticated/);
+  assert.match(fallback, /actor_id = \(select auth\.uid\(\)\)/);
+  assert.match(fallback, /private\.is_org_member\(organization_id\)/);
+  assert.doesNotMatch(fallback, /ai_action_proposals/);
+  assert.match(billing, /if \(serviceRoleKey\)/);
+  assert.match(billing, /actor\?\.accessToken/);
+  assert.match(billing, /Authorization: `Bearer \$\{accessToken\}`/);
+});
+
 test("Conversation memory foreign keys have covering indexes", () => {
   const indexes = read("supabase/migrations/20260929200335_ai_conversation_memory_fk_indexes.sql");
   assert.match(indexes, /ai_conversations_actor_id_idx/);
