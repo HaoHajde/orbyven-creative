@@ -409,3 +409,25 @@ test("estimate status synchronizes the existing commercial offer", () => {
   assert.match(estimates, /status === "sent" \|\| status === "accepted"/);
   assert.match(estimates, /documentul comercial asociat necesită verificare manuală/);
 });
+
+
+test("completed calendar work continues into the linked work dossier", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /Intervenția este închisă/);
+  assert.match(calendar, /Continuă lucrarea →/);
+  assert.match(calendar, /selectedEvent\.status === "completed"/);
+  assert.match(calendar, /recordId: selectedEvent\.task_id/);
+});
+
+test("work closeout is suggested only after deterministic readiness conditions", () => {
+  const summary = read("components/modules/tasks/WorkFileSummary.tsx");
+  assert.match(summary, /operationalCloseReady/);
+  assert.match(summary, /task\.status === "in_progress"/);
+  assert.match(summary, /context\.upcomingEventsCount === 0/);
+  assert.match(summary, /checklist\.every\(\(item\) => item\.done\)/);
+  assert.match(summary, /context\.documentsCount > 0/);
+  assert.match(summary, /Finalizează lucrarea →/);
+
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /onCompleteTask=\{\(\) => void changeStatus\(selectedTask, "done"\)\}/);
+});
