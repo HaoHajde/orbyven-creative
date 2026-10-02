@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import AiWebDesignEntry from "@/components/AiWebDesignEntry";
 
 export const metadata: Metadata = {
-  title: "AI Web Design ORBYVEN | Website generat și rafinat inteligent",
+  title: "ORBYVEN AI Web Design | Generate and refine websites intelligently",
   description:
-    "ORBYVEN AI Web Design transformă brief-ul unei afaceri într-o direcție de website coerentă, cu preview live, structură controlată și rafinare asistată de AI.",
+    "ORBYVEN AI Web Design turns a business brief into a coherent website direction with live preview, controlled structure and AI-assisted refinement.",
   alternates: {
     canonical: "/ai-web-design",
   },
