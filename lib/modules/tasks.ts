@@ -57,6 +57,10 @@ export type WorkTaskContext = {
   upcomingEventsCount: number;
   expensesCount: number | null;
   expensesCents: number | null;
+  financeDraftInvoicesCount: number | null;
+  financeOpenInvoicesCount: number | null;
+  financeOverdueInvoicesCount: number | null;
+  financeOutstandingCents: number | null;
   inventoryMovementsCount: number | null;
   openPurchaseOrdersCount: number | null;
   inventoryConsumedCents: number | null;
@@ -174,8 +178,17 @@ export async function loadWorkTaskContext(
   requireTaskId(taskId);
 
   const nowIso = new Date().toISOString();
-  const [estimatesResult, documentsResult, eventsResult, expenseRows, inventoryResult, purchaseOrdersResult, thermalResult] =
-    await Promise.all([
+  const [
+    estimatesResult,
+    documentsResult,
+    eventsResult,
+    expenseRows,
+    financeInvoiceRows,
+    financeIncomeRows,
+    inventoryResult,
+    purchaseOrdersResult,
+    thermalResult,
+  ] = await Promise.all([
       options.includeEstimates
         ? orbyvenSupabase
             .from("sales_estimates")
@@ -208,6 +221,40 @@ export async function loadWorkTaskContext(
               .eq("organization_id", organizationId)
               .eq("task_id", taskId)
               .is("purchase_order_id", null)
+              .order("occurred_on", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+          )
+        : Promise.resolve(null),
+      options.includeExpenses && options.canAccessFinances
+        ? readAllPages<{
+            id: string;
+            status: string;
+            total_cents: number;
+            due_on: string | null;
+          }>((from, to) =>
+            orbyvenSupabase
+              .from("sales_commercial_documents")
+              .select("id,status,total_cents,due_on")
+              .eq("organization_id", organizationId)
+              .eq("task_id", taskId)
+              .eq("document_type", "invoice_draft")
+              .order("created_at", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+          )
+        : Promise.resolve(null),
+      options.includeExpenses && options.canAccessFinances
+        ? readAllPages<{
+            commercial_document_id: string | null;
+            amount_cents: number;
+          }>((from, to) =>
+            orbyvenSupabase
+              .from("finance_income_entries")
+              .select("commercial_document_id,amount_cents")
+              .eq("organization_id", organizationId)
+              .eq("task_id", taskId)
+              .not("commercial_document_id", "is", null)
               .order("occurred_on", { ascending: true })
               .order("id", { ascending: true })
               .range(from, to)
@@ -246,6 +293,49 @@ export async function loadWorkTaskContext(
   const expensesCents = expenseRows
     ? expenseRows.reduce((sum, item) => sum + Number(item.amount_cents), 0)
     : null;
+  const paidByDocument = new Map<string, number>();
+  for (const row of financeIncomeRows ?? []) {
+    if (!row.commercial_document_id) continue;
+    paidByDocument.set(
+      row.commercial_document_id,
+      (paidByDocument.get(row.commercial_document_id) ?? 0) + Number(row.amount_cents || 0)
+    );
+  }
+  const financeInvoices = (financeInvoiceRows ?? []).map((invoice) => {
+    const paidCents = paidByDocument.get(invoice.id) ?? 0;
+    return {
+      ...invoice,
+      outstandingCents: Math.max(0, Number(invoice.total_cents || 0) - paidCents),
+    };
+  });
+  const todayKey = nowIso.slice(0, 10);
+  const financeDraftInvoicesCount = financeInvoiceRows
+    ? financeInvoices.filter((invoice) => invoice.status === "draft").length
+    : null;
+  const financeOpenInvoicesCount = financeInvoiceRows
+    ? financeInvoices.filter(
+        (invoice) => invoice.status === "issued" && invoice.outstandingCents > 0
+      ).length
+    : null;
+  const financeOverdueInvoicesCount = financeInvoiceRows
+    ? financeInvoices.filter(
+        (invoice) =>
+          invoice.status === "issued" &&
+          invoice.outstandingCents > 0 &&
+          Boolean(invoice.due_on && invoice.due_on < todayKey)
+      ).length
+    : null;
+  const financeOutstandingCents = financeInvoiceRows
+    ? financeInvoices.reduce(
+        (sum, invoice) =>
+          sum +
+          (invoice.status === "issued" || invoice.status === "paid"
+            ? invoice.outstandingCents
+            : 0),
+        0
+      )
+    : null;
+
   const inventoryConsumedCents = inventoryResult?.costCents ?? null;
   const realOperationalCostCents = options.canAccessFinances
     ? (expensesCents ?? 0) + (inventoryConsumedCents ?? 0)
@@ -261,6 +351,10 @@ export async function loadWorkTaskContext(
     upcomingEventsCount: events.filter((item) => item.start_at >= nowIso).length,
     expensesCount: expenseRows ? expenseRows.length : null,
     expensesCents,
+    financeDraftInvoicesCount,
+    financeOpenInvoicesCount,
+    financeOverdueInvoicesCount,
+    financeOutstandingCents,
     inventoryMovementsCount: inventoryResult?.count ?? null,
     openPurchaseOrdersCount: options.includeInventory ? (purchaseOrdersResult.count ?? 0) : null,
     inventoryConsumedCents,
