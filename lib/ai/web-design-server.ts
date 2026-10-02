@@ -406,7 +406,7 @@ async function claimQuota(
   actor: BillingActor,
   config: WebDesignConfig
 ): Promise<{ requestId: string; remainingToday: number | null } | null> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client.rpc("ai_web_design_claim", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -433,12 +433,13 @@ async function claimQuota(
 }
 
 async function finishQuota(
+  actor: BillingActor,
   requestId: string,
   success: boolean,
   usage: { input: number; output: number },
   failureCode?: string
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { error } = await client.rpc("ai_web_design_finish", {
     p_request_id: requestId,
     p_success: success,
@@ -450,7 +451,7 @@ async function finishQuota(
 }
 
 export async function loadWebDesignDraft(actor: BillingActor) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_web_design_drafts")
     .select("draft,revision,updated_at")
@@ -479,7 +480,7 @@ export async function saveWebDesignDraft(
   const valid = readSiteDraft(draft);
   if (!valid) throw new Error("WEB_DESIGN_DRAFT_INVALID");
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data: existing, error: existingError } = await client
     .from("ai_web_design_drafts")
     .select("revision")
@@ -534,7 +535,7 @@ export async function generateWebDesignForActor(
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data: organization } = await client
     .from("organizations")
     .select("name,legal_name")
@@ -581,7 +582,7 @@ export async function generateWebDesignForActor(
     });
 
     if (!upstream.ok) {
-      await finishQuota(quota.requestId, false, usage, `HTTP_${upstream.status}`);
+      await finishQuota(actor, quota.requestId, false, usage, `HTTP_${upstream.status}`);
       throw new Error("WEB_DESIGN_UPSTREAM");
     }
 
@@ -589,7 +590,7 @@ export async function generateWebDesignForActor(
     usage = usageFrom(payload);
     const output = extractOutputText(payload);
     if (!output) {
-      await finishQuota(quota.requestId, false, usage, "EMPTY_OUTPUT");
+      await finishQuota(actor, quota.requestId, false, usage, "EMPTY_OUTPUT");
       throw new Error("WEB_DESIGN_EMPTY_OUTPUT");
     }
 
@@ -597,13 +598,13 @@ export async function generateWebDesignForActor(
     try {
       parsed = JSON.parse(output);
     } catch {
-      await finishQuota(quota.requestId, false, usage, "INVALID_JSON");
+      await finishQuota(actor, quota.requestId, false, usage, "INVALID_JSON");
       throw new Error("WEB_DESIGN_INVALID_OUTPUT");
     }
 
     const result = parseModelResult(parsed, current, prompt);
     if (!result) {
-      await finishQuota(quota.requestId, false, usage, "OUTPUT_GUARD");
+      await finishQuota(actor, quota.requestId, false, usage, "OUTPUT_GUARD");
       throw new Error("WEB_DESIGN_OUTPUT_GUARD");
     }
 
@@ -615,7 +616,7 @@ export async function generateWebDesignForActor(
       ? readSiteDraft(applyWebDesignStrategy(parsedDraft, strategy))
       : null;
     if (!strategicDraft) {
-      await finishQuota(quota.requestId, false, usage, "DRAFT_INVALID");
+      await finishQuota(actor, quota.requestId, false, usage, "DRAFT_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
@@ -623,7 +624,7 @@ export async function generateWebDesignForActor(
       applyWebDesignRefineScope(strategicDraft, current, refineScope)
     );
     if (!scopedDraft) {
-      await finishQuota(quota.requestId, false, usage, "REFINE_SCOPE_INVALID");
+      await finishQuota(actor, quota.requestId, false, usage, "REFINE_SCOPE_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
@@ -634,7 +635,7 @@ export async function generateWebDesignForActor(
     );
     const evidenceDraft = readSiteDraft(evidenceResult.draft);
     if (!evidenceDraft) {
-      await finishQuota(quota.requestId, false, usage, "EVIDENCE_INVALID");
+      await finishQuota(actor, quota.requestId, false, usage, "EVIDENCE_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
@@ -647,7 +648,7 @@ export async function generateWebDesignForActor(
     );
     const nextDraft = readSiteDraft(selectedResult.draft);
     if (!nextDraft) {
-      await finishQuota(quota.requestId, false, usage, "AUTOREFINE_INVALID");
+      await finishQuota(actor, quota.requestId, false, usage, "AUTOREFINE_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
@@ -659,7 +660,7 @@ export async function generateWebDesignForActor(
     );
 
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
-    await finishQuota(quota.requestId, true, usage);
+    await finishQuota(actor, quota.requestId, true, usage);
 
     return {
       draft: nextDraft,
@@ -692,7 +693,7 @@ export async function generateWebDesignForActor(
       ].includes(error.message)
     ) {
       const code = error.name === "AbortError" ? "TIMEOUT" : "UPSTREAM_ERROR";
-      await finishQuota(quota.requestId, false, usage, code);
+      await finishQuota(actor, quota.requestId, false, usage, code);
     }
     throw error;
   } finally {
