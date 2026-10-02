@@ -159,3 +159,70 @@ export async function completeElapsedWorkEventsForTask(
     futureScheduled: futureScheduled ?? 0,
   };
 }
+
+
+export async function syncCrmAfterAcceptedEstimate(
+  organizationId: string,
+  clientId: string,
+  estimateReference?: string | null
+) {
+  requireOrganizationId(organizationId);
+  if (!clientId.trim()) {
+    return { converted: false as const, reason: "missing_client" as const };
+  }
+
+  const { data: lead, error: leadError } = await orbyvenSupabase
+    .from("crm_leads")
+    .select("id,kind,stage")
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .single();
+
+  if (leadError || !lead) {
+    throw leadError ?? new Error("Clientul devizului nu a putut fi încărcat.");
+  }
+  if (lead.kind === "client") {
+    return { converted: false as const, reason: "already_client" as const };
+  }
+  if (lead.stage === "lost") {
+    return { converted: false as const, reason: "lost_conflict" as const };
+  }
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateError } = await orbyvenSupabase
+    .from("crm_leads")
+    .update({
+      kind: "client",
+      stage: "won",
+      converted_at: now,
+    })
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .eq("kind", "lead")
+    .neq("stage", "lost")
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) {
+    return { converted: false as const, reason: "state_changed" as const };
+  }
+
+  const label = estimateReference?.trim()
+    ? ` după acceptarea ${estimateReference.trim()}`
+    : " după acceptarea devizului";
+  const { error: activityError } = await orbyvenSupabase
+    .from("crm_lead_activities")
+    .insert({
+      organization_id: organizationId,
+      lead_id: clientId,
+      kind: "status",
+      body: "Convertit automat în client" + label + ".",
+      occurred_at: now,
+    });
+
+  return {
+    converted: true as const,
+    activityLogged: !activityError,
+  };
+}
