@@ -179,6 +179,14 @@ begin
     return;
   end if;
 
+  if found
+     and v_existing.revoked_at is null
+     and v_existing.expires_at > now() then
+    return query
+      select v_existing.public_token, v_existing.expires_at, false;
+    return;
+  end if;
+
   v_token := gen_random_uuid();
   v_expires := now() + interval '30 days';
 
