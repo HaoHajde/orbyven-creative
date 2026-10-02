@@ -429,6 +429,13 @@ export default function WorkspaceShell({
                 <span className="sr-only sm:hidden">Creează o înregistrare</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => onOpenPath("/ai-web-design")}
+              className="hidden h-9 rounded-[10px] border border-[#7897ff]/25 bg-[#7897ff]/10 px-3 text-[11px] font-semibold text-[#aebcff] transition hover:border-[#7897ff]/45 hover:bg-[#7897ff]/15 xl:block"
+            >
+              AI Web Design
+            </button>
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
@@ -489,6 +496,14 @@ export default function WorkspaceShell({
           })}
 
           <div className="mt-auto space-y-2 pt-6">
+            <button
+              type="button"
+              onClick={() => onOpenPath("/ai-web-design")}
+              className="w-full rounded-[11px] border border-[#7897ff]/22 bg-[#7897ff]/[0.08] px-3.5 py-3 text-left transition hover:border-[#7897ff]/42 hover:bg-[#7897ff]/[0.12]"
+            >
+              <span className="block text-[11px] font-semibold text-[var(--text)]">✦ AI Web Design</span>
+              <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">Generează și rafinează website-ul →</span>
+            </button>
             <div data-workspace-text-scale-control="desktop" className="min-w-0 rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
               <div className="flex min-w-0 items-center justify-between gap-2">
                 <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
@@ -658,10 +673,22 @@ export default function WorkspaceShell({
             <button
               type="button"
               onClick={() => {
+                setMobileModuleMenuOpen(false);
+                onOpenPath("/ai-web-design");
+              }}
+              className="mt-3 flex min-h-11 w-full items-center justify-between rounded-[16px] border border-[#7897ff]/24 bg-[#7897ff]/[0.09] px-4 text-[11px] font-semibold text-[var(--text)]"
+            >
+              <span>✦ AI Web Design</span>
+              <span className="text-[#aebcff]">→</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
                 setPanel("modules");
                 setMobileModuleMenuOpen(false);
               }}
-              className="mt-3 flex h-10 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-[11px] font-semibold text-[var(--muted)]"
+              className="mt-2 flex h-10 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-[11px] font-semibold text-[var(--muted)]"
             >
               {canManageModules ? "Gestionează modulele" : "Vezi configurația modulelor"}
             </button>
