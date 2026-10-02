@@ -90,3 +90,11 @@ test("service and invitation hubs expose descriptive internal links", () => {
   assert.ok(invitations.includes("relatedInvitationCategories"));
 });
 
+
+test("SEO crawl freshness and optional Search Console verification stay wired", () => {
+  const sitemap = read("app/sitemap.ts");
+  const layout = read("app/layout.tsx");
+  assert.ok(sitemap.includes("lastModified: SEO_LAST_MODIFIED"));
+  assert.ok(layout.includes("NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION"));
+  assert.ok(layout.includes("verification:"));
+});
