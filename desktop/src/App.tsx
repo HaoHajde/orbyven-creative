@@ -11,6 +11,10 @@ import {
   type OrbyvenWorkspace,
 } from "@/lib/orbyven-workspace";
 import { CURRENT_DESKTOP_VERSION } from "@/lib/workspace-visual-system";
+import {
+  WORKSPACE_LANGUAGE_STORAGE_KEY,
+  type WorkspaceUiLanguage,
+} from "@/lib/workspace-i18n";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import { OrbyvenBrand } from "./Brand";
 
@@ -47,6 +51,17 @@ export default function App() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [company, setCompany] = useState("");
   const [latestDesktopVersion, setLatestDesktopVersion] = useState(CURRENT_DESKTOP_VERSION);
+  const [uiLanguage, setUiLanguage] = useState<WorkspaceUiLanguage>(() => {
+    const saved = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
+    return saved === "en" ? "en" : "ro";
+  });
+  const en = uiLanguage === "en";
+
+  const changeLanguage = (language: WorkspaceUiLanguage) => {
+    window.localStorage.setItem(WORKSPACE_LANGUAGE_STORAGE_KEY, language);
+    setUiLanguage(language);
+    document.documentElement.lang = language;
+  };
 
   const initializeWorkspace = useCallback(async () => {
     const state = await getWorkspaceAccessState();
@@ -70,7 +85,7 @@ export default function App() {
     }
 
     const current = await getCurrentWorkspace();
-    if (!current) throw new Error("Nu există un workspace activ pentru contul tău.");
+    if (!current) throw new Error(en ? "No active workspace exists for your account." : "Nu există un workspace activ pentru contul tău.");
     setWorkspace(current);
     setScreen("workspace");
   }, []);
@@ -94,7 +109,7 @@ export default function App() {
       } catch (cause) {
         if (cancelled) return;
         console.error("ORBYVEN Desktop initialization:", cause);
-        setError("Conexiunea ORBYVEN nu este disponibilă. Verifică internetul și reîncearcă.");
+        setError(en ? "ORBYVEN is unavailable. Check your internet connection and try again." : "Conexiunea ORBYVEN nu este disponibilă. Verifică internetul și reîncearcă.");
         setScreen("error");
       }
     };
@@ -127,7 +142,7 @@ export default function App() {
       await initializeWorkspace();
     } catch (cause) {
       console.error("Desktop sign in:", cause);
-      setError("Autentificarea a eșuat. Verifică emailul, parola și conexiunea.");
+      setError(en ? "Sign in failed. Check your email, password and connection." : "Autentificarea a eșuat. Verifică emailul, parola și conexiunea.");
     } finally {
       setBusy(false);
     }
@@ -142,7 +157,7 @@ export default function App() {
       setScreen("login");
     } catch (cause) {
       console.error("Desktop sign out:", cause);
-      setError("Delogarea a eșuat. Reîncearcă.");
+      setError(en ? "Sign out failed. Try again." : "Delogarea a eșuat. Reîncearcă.");
     } finally {
       setBusy(false);
     }
@@ -159,7 +174,7 @@ export default function App() {
       .slice(0, 48);
 
     if (company.trim().length < 2 || slug.length < 3) {
-      setError("Completează numele companiei.");
+      setError(en ? "Enter the company name." : "Completează numele companiei.");
       return;
     }
 
@@ -175,7 +190,7 @@ export default function App() {
       await initializeWorkspace();
     } catch (cause) {
       console.error("Desktop onboarding:", cause);
-      setError("Nu am putut crea compania. Verifică numele sau reîncearcă.");
+      setError(en ? "We could not create the company. Check the name or try again." : "Nu am putut crea compania. Verifică numele sau reîncearcă.");
     } finally {
       setBusy(false);
     }
@@ -210,18 +225,31 @@ export default function App() {
         <div className="auth-top">
           <OrbyvenBrand subtitle="CREATIVE" />
         </div>
+        <div className="auth-language" aria-label={en ? "Change language" : "Schimbă limba"}>
+          {(["ro", "en"] as const).map((language) => (
+            <button
+              key={language}
+              type="button"
+              aria-pressed={uiLanguage === language}
+              onClick={() => changeLanguage(language)}
+              className={uiLanguage === language ? "active" : ""}
+            >
+              {language.toUpperCase()}
+            </button>
+          ))}
+        </div>
 
         {screen === "loading" && (
           <section className="auth-card">
             <div className="spinner" />
-            <h1>Se pregătește ORBYVEN.</h1>
-            <p>Conectăm aplicația la spațiul tău de lucru.</p>
+            <h1>{en ? "Preparing ORBYVEN." : "Se pregătește ORBYVEN."}</h1>
+            <p>{en ? "Connecting the app to your workspace." : "Conectăm aplicația la spațiul tău de lucru."}</p>
           </section>
         )}
 
         {screen === "error" && (
           <section className="auth-card">
-            <h1>Conexiune indisponibilă.</h1>
+            <h1>{en ? "Connection unavailable." : "Conexiune indisponibilă."}</h1>
             <p>{error}</p>
             <button className="primary" onClick={() => window.location.reload()}>
               Reîncearcă
@@ -231,10 +259,10 @@ export default function App() {
 
         {screen === "access" && (
           <section className="auth-card">
-            <h1>Acces indisponibil.</h1>
+            <h1>{en ? "Access unavailable." : "Acces indisponibil."}</h1>
             <p>{ACCESS_MESSAGES[accessState] || "Contul nu poate accesa workspace-ul."}</p>
             <button className="secondary" onClick={() => void signOutToLogin()}>
-              Schimbă contul
+              {en ? "Switch account" : "Schimbă contul"}
             </button>
           </section>
         )}
@@ -242,8 +270,8 @@ export default function App() {
         {screen === "login" && (
           <section className="auth-card">
             <span className="eyebrow">WORKSPACE · WINDOWS</span>
-            <h1>Bine ai revenit.</h1>
-            <p>Același cont ORBYVEN și același workspace ca pe web.</p>
+            <h1>{en ? "Welcome back." : "Bine ai revenit."}</h1>
+            <p>{en ? "The same ORBYVEN account and workspace as on the web." : "Același cont ORBYVEN și același workspace ca pe web."}</p>
             <form onSubmit={(event) => void login(event)} className="form">
               <label className="field">
                 <span>Email</span>
@@ -258,7 +286,7 @@ export default function App() {
                 />
               </label>
               <label className="field">
-                <span>Parolă</span>
+                <span>{en ? "Password" : "Parolă"}</span>
                 <input
                   type="password"
                   required
@@ -271,7 +299,7 @@ export default function App() {
               </label>
               {error && <p role="alert" className="error">{error}</p>}
               <button type="submit" className="primary" disabled={busy}>
-                {busy ? "Se verifică..." : "Intră în ORBYVEN →"}
+                {busy ? (en ? "Checking..." : "Se verifică...") : (en ? "Enter ORBYVEN →" : "Intră în ORBYVEN →")}
               </button>
             </form>
           </section>
@@ -279,12 +307,12 @@ export default function App() {
 
         {screen === "onboarding" && (
           <section className="auth-card">
-            <span className="eyebrow">PRIMUL PAS</span>
-            <h1>Compania ta.</h1>
-            <p>Construiește primul spațiu de lucru și activează modulele de bază.</p>
+            <span className="eyebrow">{en ? "FIRST STEP" : "PRIMUL PAS"}</span>
+            <h1>{en ? "Your company." : "Compania ta."}</h1>
+            <p>{en ? "Create your first workspace and enable the core modules." : "Construiește primul spațiu de lucru și activează modulele de bază."}</p>
             <form className="form" onSubmit={(event) => void onboard(event)}>
               <label className="field">
-                <span>Nume companie</span>
+                <span>{en ? "Company name" : "Nume companie"}</span>
                 <input
                   required
                   minLength={2}
@@ -294,7 +322,7 @@ export default function App() {
               </label>
               {error && <p role="alert" className="error">{error}</p>}
               <button type="submit" disabled={busy} className="primary">
-                Creează workspace →
+                {en ? "Create workspace →" : "Creează workspace →"}
               </button>
             </form>
             <button className="text-button" onClick={() => void signOutToLogin()}>
