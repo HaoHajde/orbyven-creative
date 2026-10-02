@@ -25,7 +25,7 @@ import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
-import { ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
+import { ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -208,6 +208,13 @@ export default function InventoryModule({
       shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
     };
   }, [taskPlan]);
+
+  const firstTaskShortage = useMemo(() => {
+    const item = taskPlan.find((row) => row.outstanding_quantity > 0 && row.shortage_after_reservation > 0);
+    if (!item) return null;
+    const gap = stock.find((row) => row.materialId === item.material_id);
+    return gap?.suggestedOrder ? { item, gap } : null;
+  }, [taskPlan, stock]);
 
   const shoppingGroups = useMemo(() => {
     const grouped = new Map<string, InventoryGap[]>();
@@ -534,21 +541,29 @@ export default function InventoryModule({
             și consumul pe lucrare folosesc aceeași bibliotecă de materiale.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canWrite && trackedMaterials.length > 0 ? (
-            <button type="button" onClick={() => setMovementOpen((value) => !value)} className={button}>
-              {movementOpen ? "Închide mișcarea" : "+ Mișcare stoc"}
-            </button>
-          ) : null}
-          {canProcure ? (
-            <button type="button" onClick={() => setSupplierOpen((value) => !value)} className={button}>
-              + Furnizor
-            </button>
-          ) : null}
+        <div className="flex flex-wrap items-center gap-2">
           {canProcure && trackedMaterials.length > 0 && activeSuppliers.length > 0 ? (
             <button type="button" onClick={() => setPurchaseOpen((value) => !value)} className={primary}>
-              + Comandă furnizor
+              {purchaseOpen ? "Închide comanda" : "+ Comandă furnizor"}
             </button>
+          ) : canWrite && trackedMaterials.length > 0 ? (
+            <button type="button" onClick={() => setMovementOpen((value) => !value)} className={primary}>
+              {movementOpen ? "Închide mișcarea" : "+ Mișcare stoc"}
+            </button>
+          ) : canProcure ? (
+            <button type="button" onClick={() => setSupplierOpen((value) => !value)} className={primary}>
+              {supplierOpen ? "Închide furnizorul" : "+ Furnizor"}
+            </button>
+          ) : null}
+          {(canWrite || canProcure) ? (
+            <details className="relative">
+              <summary className={button + " flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"}>Alte acțiuni</summary>
+              <div className="absolute right-0 top-11 z-30 min-w-[190px] space-y-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                {canWrite && trackedMaterials.length > 0 ? <button type="button" onClick={() => setMovementOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Mișcare stoc</button> : null}
+                {canProcure ? <button type="button" onClick={() => setSupplierOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Furnizor nou</button> : null}
+                {canProcure && trackedMaterials.length > 0 && activeSuppliers.length > 0 ? <button type="button" onClick={() => setPurchaseOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Comandă furnizor</button> : null}
+              </div>
+            </details>
           ) : null}
         </div>
       </section>
@@ -687,12 +702,37 @@ export default function InventoryModule({
             <p className="mt-4 text-xs text-[var(--muted)]">Se calculează necesarul și disponibilul…</p>
           ) : taskPlan.length ? (
             <>
-              <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
-                <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
-                <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
-                <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+              <div className="mt-4">
+                {taskPlanSummary.shortages > 0 && firstTaskShortage && canProcure ? (
+                  <ModuleNextAction
+                    title="Cumpără materialele lipsă"
+                    description={`${taskPlanSummary.shortages} poziții rămân neacoperite după stocul disponibil.`}
+                    action={<button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(firstTaskShortage.item, firstTaskShortage.gap)} className={primary}>Pregătește cumpărarea →</button>}
+                  />
+                ) : taskPlanSummary.needsReservation > 0 && canWrite ? (
+                  <ModuleNextAction
+                    title="Rezervă stocul disponibil"
+                    description={`${taskPlanSummary.needsReservation} poziții pot fi acoperite acum fără cumpărare.`}
+                    action={<button type="button" disabled={busy || planLoading} onClick={() => void reserveTaskStock()} className={primary}>Rezervă tot →</button>}
+                  />
+                ) : (
+                  <ModuleNextAction
+                    title="Materialele sunt pregătite"
+                    description={taskPlanSummary.lines ? "Necesarul disponibil este rezervat sau deja consumat." : "Nu există necesar material confirmat pentru această lucrare."}
+                  />
+                )}
               </div>
+              <details className="group mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/40">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-[10px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+                  <span>Vezi calculele materialelor</span><span className="transition group-open:rotate-45">+</span>
+                </summary>
+                <div className="grid grid-cols-2 gap-2 border-t border-[var(--border)] p-3 lg:grid-cols-4">
+                  <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
+                  <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
+                  <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
+                  <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+                </div>
+              </details>
               <div className="mt-4 grid gap-2 lg:grid-cols-2">
                 {taskPlan.map((item) => {
                   const gap = stock.find((row) => row.materialId === item.material_id);
