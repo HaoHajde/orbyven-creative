@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.10
+# ORBYVEN iOS — Alpha 0.11
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.10:
+Native Alpha 0.11:
+- termenele din modulul Lucrări folosesc direct `due_at` pentru remindere locale iPhone, fără tabel sau câmp paralel;
+- o lucrare activă cu termen viitor poate programa notificarea locală exact la termen;
+- finalizarea, anularea sau ștergerea lucrării elimină reminderul local;
+- tap pe notificarea de termen intră direct în recordul exact din modulul Lucrări;
+- routing-ul notificării trece prin handshake-ul `workspace-ready`, inclusiv la cold start/login;
+- runtime-ul declară capabilitatea `work-deadline-reminders`;
+
+Păstrat din Alpha 0.10:
 - handshake explicit `orbyven:web-ready` după hidratarea runtime-ului web;
 - handshake `orbyven:workspace-ready` după ce Dashboard-ul și listener-ele native sunt montate;
 - intenturile Calendar și Documente rămân în coadă până când workspace-ul este pregătit;
@@ -245,3 +253,12 @@ Deep-link-urile ORBYVEN și navigarea pornită din notificări folosesc acum Web
 Versiunea 0.10.0 introduce un contract de readiness în două etape. Runtime-ul web confirmă către shell-ul iOS când pagina s-a hidratat, iar WorkspaceShell confirmă separat când workspace-ul autentificat și listener-ele pentru Calendar, Documente și celelalte bridge-uri sunt montate.
 
 Intenturile native care au nevoie de workspace — de exemplu deschiderea unei programări dintr-o notificare sau intrarea directă în Documente — sunt păstrate până la semnalul `orbyven:workspace-ready`. Astfel, un cold start, un login intermediar sau o încărcare mai lentă nu mai poate pierde acțiunea cerută de utilizator.
+
+
+## Alpha 0.11
+
+Versiunea 0.11.0 extinde notificările locale ORBYVEN de la Calendar către modulul Lucrări. Nu este introdus un sistem paralel de deadline-uri: sursa de adevăr rămâne câmpul existent `ops_tasks.due_at`.
+
+La crearea unei lucrări cu termen viitor, shell-ul iOS programează o notificare locală exact la termen. Dacă lucrarea este finalizată, anulată sau ștearsă înainte de termen, notificarea asociată este eliminată. Lucrările recurente folosesc același bridge atunci când rezultatul are un termen valid.
+
+La apăsarea notificării, intentul este păstrat până când workspace-ul autentificat semnalează `orbyven:workspace-ready`, apoi ORBYVEN deschide modulul Lucrări pe recordul exact. Notificarea este locală și nu necesită infrastructură push remote sau Apple Developer Program în etapa Expo Go.
