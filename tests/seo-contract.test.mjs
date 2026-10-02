@@ -120,3 +120,35 @@ test("RO and EN domains keep host-specific robots, sitemap and canonicals", () =
   assert.ok(read("app/en/templates/layout.tsx").includes("TemplateExperienceLayer"));
   assert.ok(read("app/en/contact/layout.tsx").includes("orbyven-start-cards"));
 });
+
+test(".com never serves Romanian-only public routes under English lang", () => {
+  const proxy = read("proxy.ts");
+  const locale = read("lib/domain-locale.ts");
+
+  assert.ok(proxy.includes("shouldRedirectEnglishHostToRomanian"));
+  assert.ok(proxy.includes('url.hostname = "orbyven.ro"'));
+  assert.ok(proxy.includes("NextResponse.redirect(url, 308)"));
+
+  for (const route of [
+    "/cerere",
+    "/creare-site",
+    "/site-prezentare",
+    "/redesign-site",
+    "/invitatii-nunta",
+    "/invitatii-botez",
+    "/invitatii-majorat",
+    "/despre",
+  ]) {
+    assert.ok(locale.includes(`"${route}"`), route);
+    assert.ok(proxy.includes(`"${route}"`), route);
+  }
+
+  for (const prefix of ["/porneste/", "/solutii/", "/studii-de-caz/", "/ghid/"]) {
+    assert.ok(locale.includes(`"${prefix}"`), prefix);
+  }
+
+  // Authenticated product surfaces stay domain-neutral and are never forced
+  // to the Romanian marketing host by this public-language fallback.
+  assert.ok(!proxy.includes('"/workspace/:path*"'));
+  assert.ok(!proxy.includes('"/api/:path*"'));
+});
