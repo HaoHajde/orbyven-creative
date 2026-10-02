@@ -105,6 +105,7 @@ export type IntelligenceDecisionOption = {
 export type IntelligenceDecisionSupport = {
   subject: string;
   options: IntelligenceDecisionOption[];
+  handoffAvailable?: boolean;
   confidence: "high" | "medium";
 };
 
