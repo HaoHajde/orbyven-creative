@@ -182,7 +182,9 @@ function WebDesignStartContent(){
                   <span className="w-fit rounded-full border border-[#a58bff]/30 bg-[var(--accent-soft)] px-4 py-2.5 text-[9px] font-bold text-[var(--home-violet)]">INCLUS LA PRIMA ACHIZIȚIE</span>
                   <p className="mt-8 text-[72px] font-semibold leading-none tracking-[-.08em]">30</p>
                   <p className="mt-2 text-[22px] font-semibold tracking-[-.045em]">zile ORBYVEN Dashboard</p>
-                  <p className="mt-2 text-[12px] text-[var(--muted)]">1 utilizator · fără abonament plătit pornit automat</p>
+                  <p className="mt-2 text-[12px] text-[var(--muted)]">
+                    399 lei acum · 1 utilizator · apoi 499 lei/lună după cele 30 de zile
+                  </p>
 
                   <div className="mt-8 grid gap-2">
                     {["Testezi clienți, task-uri și calendar în context real.","Vezi ce module chiar îți sunt utile.","După trial alegi dacă vrei să continui."].map((x,i)=>(
@@ -193,9 +195,22 @@ function WebDesignStartContent(){
                     ))}
                   </div>
 
+                  <div className="mt-7 rounded-[20px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_50%,transparent)] p-5">
+                    <div className="flex items-end justify-between gap-5">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">AZI</p>
+                        <p className="mt-2 text-[38px] font-semibold leading-none tracking-[-.07em]">{PUBLIC_OFFERS.web.priceLei} lei</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[var(--muted-2)]">DUPĂ 30 ZILE</p>
+                        <p className="mt-2 text-[24px] font-semibold leading-none tracking-[-.055em]">{PUBLIC_OFFERS.web.recurringLei} lei/lună</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="mt-auto pt-8">
                     <Link href="/porneste/plata?offer=web" className="flex h-14 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)]">
-                      <span>Pornește proiectul de web design</span><span>→</span>
+                      <span>Mergi direct la plată · {PUBLIC_OFFERS.web.priceLei} lei</span><span>→</span>
                     </Link>
                   </div>
                 </div>
