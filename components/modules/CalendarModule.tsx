@@ -672,11 +672,22 @@ export default function CalendarModule({
               description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
               action={<button type="button" onClick={() => document.querySelector('[data-calendar-resource-panel="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Alocă →</button>}
             />
+          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && selectedEvent.task_id && enabledModules.includes("tasks") ? (
+            <ModuleNextAction
+              title="Continuă în dosarul lucrării"
+              description="Programarea este fixată. Verifică materialele, documentele și checklist-ul înainte de execuție."
+              action={<button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide lucrarea →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" && snapshotIso && new Date(selectedEvent.start_at).getTime() <= new Date(snapshotIso).getTime() ? (
+            <ModuleNextAction
+              title="Evenimentul poate fi închis"
+              description="Ora de început a trecut. Marchează finalizat doar după ce activitatea a avut loc."
+              action={<button type="button" disabled={saving} onClick={() => void changeStatus(selectedEvent, "completed")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}
+            />
           ) : selectedEvent.status === "scheduled" ? (
             <ModuleNextAction
               title="Programarea este pregătită"
-              description="După execuție, marcheaz-o finalizată pentru a păstra istoricul curat."
-              action={<button type="button" disabled={saving} onClick={() => void changeStatus(selectedEvent, "completed")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}
+              description="Nu mai este necesară nicio acțiune în Calendar până la momentul programat."
             />
           ) : null}
           {(enabledModules.includes("leads") || enabledModules.includes("tasks")) && (
