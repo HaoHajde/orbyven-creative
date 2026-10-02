@@ -564,3 +564,16 @@ test("lead next action follows CRM pipeline instead of forcing premature convers
   assert.match(estimates, /clientEstimate = !taskEstimate && initialClientId/);
   assert.match(estimates, /item\.client_id === initialClientId/);
 });
+
+
+test("closing work releases inventory reservations atomically at the database layer", () => {
+  const migration = read("supabase/migrations/20261002093000_wave6_inventory_reservation_cleanup.sql");
+  assert.match(migration, /security definer/);
+  assert.match(migration, /new\.status in \('done', 'cancelled'\)/);
+  assert.match(migration, /delete from public\.ops_inventory_reservations/);
+  assert.match(migration, /r\.task_id = new\.id/);
+  assert.match(migration, /after update of status on public\.ops_tasks/);
+
+  const reservations = read("supabase/migrations/20261001232500_wave4_inventory_reservations.sql");
+  assert.match(reservations, /ops_inventory_reservations_task_fk[\s\S]*on delete cascade/);
+});
