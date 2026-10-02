@@ -1,4 +1,4 @@
-import { authenticateBillingActor, createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
+import { authenticateBillingActor, createBillingActorClient, type BillingActor } from "@/lib/billing/supabase-server";
 import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
@@ -56,7 +56,7 @@ async function count(query: PromiseLike<{ count: number | null; error: { message
 }
 
 async function loadAvailableModules(actor: BillingActor): Promise<Set<OrbyvenModuleId>> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const [modulesResult, entitlementsResult] = await Promise.all([
     client.from("organization_modules")
       .select("module_id,enabled")
@@ -87,7 +87,7 @@ async function loadAvailableModules(actor: BillingActor): Promise<Set<OrbyvenMod
 }
 
 async function operationsResponse(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const now = new Date();
   const nowIso = now.toISOString();
   const tomorrowIso = new Date(now.getTime() + DAY_MS).toISOString();
@@ -283,7 +283,7 @@ async function financeResponse(actor: BillingActor, available: Set<OrbyvenModule
     };
   }
 
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const [monthStart, nextMonthStart] = monthRange();
   const today = todayKey();
 
@@ -378,7 +378,7 @@ async function documentsResponse(actor: BillingActor, available: Set<OrbyvenModu
       facts: [], actions: [], generatedBy: "orbyven_core",
     };
   }
-  const client = createBillingServiceClient();
+  const client = createBillingActorClient(actor);
   const [documentCount, recent] = await Promise.all([
     count(client.from("ops_documents").select("id", { count: "exact", head: true })
       .eq("organization_id", actor.organizationId)),
