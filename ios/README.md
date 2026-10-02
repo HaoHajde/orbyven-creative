@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.8
+# ORBYVEN iOS — Alpha 0.9
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,14 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.8:
+Native Alpha 0.9:
+- ultimul modul activ din Dashboard este salvat local și restaurat la următoarea deschidere dacă modulul este încă activ pentru organizație;
+- deep-link-urile și tap-urile din notificări navighează în WebView-ul existent, fără remount inutil al aplicației;
+- loader-ul nativ complet este rezervat pornirii reale și recovery-ului hard, nu navigării interne;
+- revenirea pe aceeași destinație emite focus/resume fără reload;
+- runtime-ul declară capabilitățile `stateful-deep-links` și `workspace-continuity`;
+
+Păstrat din Alpha 0.8:
 - reconectarea la internet păstrează starea curentă a WebView-ului și evită reload-ul dacă pagina nu a eșuat efectiv;
 - indicator nativ discret pentru `Offline` / `Conexiune restabilită`;
 - bridge `orbyven:native-network-change` către Dashboard, cu `data-native-network` pentru diagnostic și UI contextual;
@@ -216,3 +223,10 @@ Tema aleasă în Dashboard este trimisă către shell-ul iOS prin bridge-ul Reac
 Versiunea 0.8.0 mută recovery-ul de rețea de la „reload la orice reconectare” la un model care păstrează starea utilizatorului. Dacă Wi‑Fi-ul sau datele mobile dispar temporar, shell-ul păstrează WebView-ul și afișează un status nativ discret. La revenirea internetului, pagina curentă rămâne deschisă și primește evenimentul `orbyven:native-network-change`; reload-ul este rezervat situațiilor în care WebView-ul a raportat efectiv o eroare.
 
 Această schimbare reduce riscul de a pierde text introdus, poziția în modul sau contextul unei lucrări în timpul unei întreruperi scurte de conexiune. Runtime-ul web expune starea prin `data-native-network="online|offline"`, fără să schimbe autentificarea, sesiunea Supabase sau politicile RLS.
+
+
+## Alpha 0.9
+
+Versiunea 0.9.0 adaugă continuitate între sesiuni. Dashboard-ul memorează ultimul modul folosit în storage-ul local al workspace-ului și îl restaurează doar dacă acel modul este încă permis pentru organizația curentă. Astfel, redeschiderea ORBYVEN nu te trimite automat în Overview dacă lucrai în Calendar, Documente, Clienți sau alt modul activ.
+
+Deep-link-urile ORBYVEN și navigarea pornită din notificări folosesc acum WebView-ul existent. Un remount complet rămâne rezervat recuperării după o eroare reală sau unei reîncercări explicite, ceea ce reduce flash-urile și păstrează mai bine starea UI.
