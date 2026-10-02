@@ -75,6 +75,17 @@ type GenerationBody = {
     revertedFields?: string[];
     unsupportedConcepts?: string[];
   };
+  briefGaps?: {
+    count?: number;
+    completionScore?: number;
+    labels?: string[];
+    gaps?: Array<{
+      id?: string;
+      label?: string;
+      question?: string;
+      priority?: number;
+    }>;
+  };
   error?: string;
   code?: string;
 };
@@ -315,8 +326,14 @@ export default function WebDesignSpecialist() {
       const revertedClaimCount = Array.isArray(body.evidence?.revertedFields)
         ? body.evidence.revertedFields.length
         : 0;
+      const briefGapLabels = Array.isArray(body.briefGaps?.labels)
+        ? body.briefGaps.labels.slice(0, 2)
+        : [];
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (briefGapLabels.length > 0
+            ? ` · lipsesc: ${briefGapLabels.join(", ")}`
+            : "") +
           (revertedClaimCount > 0
             ? ` · ${revertedClaimCount} afirmații neverificate retrase`
             : "") +
