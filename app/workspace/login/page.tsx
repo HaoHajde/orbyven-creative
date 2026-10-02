@@ -15,14 +15,19 @@ function WorkspaceLoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
+  const requestedNext = searchParams.get("next");
+  const nextAiWebDesign = requestedNext === "ai-web-design";
   const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
   const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
   const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
-    if (!checkoutPlan) return destination === "/workspace/login" ? "/workspace" : destination;
-    if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
-    if (destination === "/workspace") return `/contact${checkoutQuery}`;
-    return destination;
-  }, [checkoutPlan, checkoutQuery]);
+    if (checkoutPlan) {
+      if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
+      if (destination === "/workspace") return `/contact${checkoutQuery}`;
+      return destination;
+    }
+    if (nextAiWebDesign && destination === "/workspace") return "/ai-web-design";
+    return destination === "/workspace/login" ? "/workspace" : destination;
+  }, [checkoutPlan, checkoutQuery, nextAiWebDesign]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
