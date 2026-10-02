@@ -146,10 +146,18 @@ export async function persistAssistantResponse(
   conversationId: string,
   response: IntelligenceResponse
 ) {
+  const focusFacts = response.focus
+    ? [
+        { label: "Focus · De ce", value: response.focus.why },
+        { label: "Focus · Risc", value: response.focus.consequence },
+        { label: "Focus · Pas", value: response.focus.nextStep },
+      ]
+    : [];
+
   await appendAssistantConversationMessage(actor, conversationId, {
     specialist: response.specialist,
     content: response.answer,
-    facts: response.facts,
+    facts: [...response.facts, ...focusFacts].slice(0, 12),
   });
 }
 
