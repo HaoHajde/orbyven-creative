@@ -452,7 +452,15 @@ export default function TeamModule({ organizationId, role }: Props) {
         </div>
       </section>
 
-      <section className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+      <details className="group mt-5 rounded-[22px] border border-[var(--border)] bg-[var(--surface)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Resource Engine</p>
+            <p className="mt-1 text-sm font-semibold">Resurse operaționale · {activeResourceCount} active</p>
+          </div>
+          <span aria-hidden="true" className="text-lg text-[var(--muted)] transition group-open:rotate-45">+</span>
+        </summary>
+        <div className="border-t border-[var(--border)] p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Resource Engine</p>
@@ -542,7 +550,8 @@ export default function TeamModule({ organizationId, role }: Props) {
             <ModuleEmpty title="Nu există resurse" description="Oamenii activi vor apărea automat aici, iar resursele fizice pot fi adăugate manual." />
           )}
         </div>
-      </section>
+        </div>
+      </details>
     </div>
   );
 }
