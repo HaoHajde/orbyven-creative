@@ -6,6 +6,12 @@ import { Suspense, useEffect, useState } from "react";
 
 import { PUBLIC_OFFERS, isPublicOfferId, type PublicOfferId } from "@/lib/commerce/public-offers";
 
+const SANDBOX_PAYMENT_LINKS: Record<PublicOfferId, string> = {
+  invitation: "https://buy.stripe.com/test_28E3cwaT1h1tfgNab68EM00",
+  web: "https://buy.stripe.com/test_eVqbJ2aT126zfgNcje8EM01",
+  advanced: "https://buy.stripe.com/test_8x29AU8KT4eH1pX9728EM02",
+};
+
 function PaymentRedirectContent() {
   const searchParams = useSearchParams();
   const rawOffer = searchParams.get("offer");
@@ -24,11 +30,23 @@ function PaymentRedirectContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: offerId }),
       });
-      const payload = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !payload.url) {
-        throw new Error(payload.error || "Plata nu este disponibilă momentan.");
+      const payload = await response.json() as {
+        url?: string;
+        error?: string;
+        code?: "SANDBOX_FALLBACK" | "CHECKOUT_UNAVAILABLE";
+      };
+
+      if (response.ok && payload.url) {
+        window.location.assign(payload.url);
+        return;
       }
-      window.location.assign(payload.url);
+
+      if (payload.code === "SANDBOX_FALLBACK") {
+        window.location.assign(SANDBOX_PAYMENT_LINKS[offerId]);
+        return;
+      }
+
+      throw new Error(payload.error || "Plata nu este disponibilă momentan.");
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Plata nu este disponibilă momentan.");
       setStatus("error");
