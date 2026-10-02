@@ -18,6 +18,17 @@ import {
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { scheduleWorkspaceWarp } from "@/lib/workspace-warp";
 import {
+  WORKSPACE_LANGUAGE_STORAGE_KEY,
+  normalizeWorkspaceLanguage,
+  workspaceCreateLabel,
+  workspaceGroupLabel,
+  workspaceIntlLocale,
+  workspaceModuleShortName,
+  workspaceRoleLabel,
+  workspaceShellCopy,
+  type WorkspaceUiLanguage,
+} from "@/lib/workspace-i18n";
+import {
   getCurrentWorkspace,
   setOrganizationModuleEnabled,
   type OrbyvenWorkspace,
@@ -54,14 +65,6 @@ export type WorkspaceShellProps = {
   initialWorkspace?: OrbyvenWorkspace | null;
 };
 
-const roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string> = {
-  owner: "Owner",
-  admin: "Admin",
-  manager: "Manager",
-  member: "Membru",
-  viewer: "Viewer",
-};
-
 export default function WorkspaceShell({
   onUnauthenticated,
   onSignedOut,
@@ -81,6 +84,8 @@ export default function WorkspaceShell({
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
   const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
+  const [uiLanguage, setUiLanguage] = useState<WorkspaceUiLanguage>("ro");
+  const copy = workspaceShellCopy[uiLanguage];
 
 
   const loadWorkspace = useCallback(async () => {
@@ -124,6 +129,11 @@ export default function WorkspaceShell({
     const nextTextScale = TEXT_SCALE_STEPS.includes(savedTextScale as TextScale)
       ? savedTextScale as TextScale
       : DEFAULT_TEXT_SCALE;
+    const savedLanguage = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
+    const nextLanguage: WorkspaceUiLanguage =
+      savedLanguage === "en" || savedLanguage === "ro"
+        ? savedLanguage
+        : normalizeWorkspaceLanguage(initialWorkspace?.profile?.locale);
 
     document.documentElement.style.colorScheme = nextTheme;
     document.documentElement.style.setProperty(
@@ -132,6 +142,7 @@ export default function WorkspaceShell({
     );
     const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
     const textScaleTimer = window.setTimeout(() => setTextScale(nextTextScale), 0);
+    const languageTimer = window.setTimeout(() => setUiLanguage(nextLanguage), 0);
     const workspaceTimer = window.setTimeout(() => {
       if (!initialWorkspace) void loadWorkspace();
     }, 0);
@@ -139,11 +150,26 @@ export default function WorkspaceShell({
     return () => {
       window.clearTimeout(themeTimer);
       window.clearTimeout(textScaleTimer);
+      window.clearTimeout(languageTimer);
       window.clearTimeout(workspaceTimer);
       document.documentElement.style.removeProperty("--orbyven-workspace-chrome");
     };
   }, [initialWorkspace, loadWorkspace]);
 
+  useEffect(() => {
+    if (!workspace?.profile?.locale) return;
+    const savedLanguage = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
+    if (savedLanguage === "en" || savedLanguage === "ro") return;
+    setUiLanguage(normalizeWorkspaceLanguage(workspace.profile.locale));
+  }, [workspace?.profile?.locale]);
+
+  useEffect(() => {
+    document.documentElement.lang = uiLanguage;
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:locale", locale: uiLanguage }));
+  }, [uiLanguage]);
 
   useEffect(() => {
     const bridge = (window as Window & {
@@ -179,7 +205,7 @@ export default function WorkspaceShell({
     workspace?.profile?.display_name ?? workspace?.organization.name ?? "ORBYVEN";
   const greetingName =
     workspace?.profile?.greeting_name ?? workspace?.organization.name.split(" ")[0] ?? "";
-  const locale = workspace?.profile?.locale ?? "ro-RO";
+  const locale = workspaceIntlLocale(uiLanguage);
   const timeZone = workspace?.profile?.timezone ?? "Europe/Bucharest";
   const initials = organizationName
     .split(/\s+/)
@@ -197,6 +223,12 @@ export default function WorkspaceShell({
     }).format(new Date());
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }, [locale, timeZone]);
+
+  const changeLanguage = (nextLanguage: WorkspaceUiLanguage) => {
+    setUiLanguage(nextLanguage);
+    window.localStorage.setItem(WORKSPACE_LANGUAGE_STORAGE_KEY, nextLanguage);
+    requestNativeHaptic();
+  };
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -322,7 +354,7 @@ export default function WorkspaceShell({
 
     const currentlyEnabled = workspace.enabledModules.includes(id);
     if (!currentlyEnabled && !workspace.entitledModules.includes(id)) {
-      setActionError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      setActionError(copy.moduleRequiresPlan);
       return;
     }
     const previousModules = workspace.enabledModules;
@@ -348,7 +380,7 @@ export default function WorkspaceShell({
       setWorkspace((current) =>
         current ? { ...current, enabledModules: previousModules } : current
       );
-      setActionError("Modulul nu a putut fi actualizat. Modificarea a fost anulată.");
+      setActionError(copy.moduleUpdateError);
     } finally {
       setSavingModule(null);
     }
@@ -374,7 +406,7 @@ export default function WorkspaceShell({
   } as CSSProperties;
 
   if (loading) {
-    return <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />;
+    return <WorkspaceStateScreen vars={vars} theme={theme} title={copy.loading} />;
   }
 
   if (loadError || !workspace) {
@@ -382,11 +414,11 @@ export default function WorkspaceShell({
       <WorkspaceStateScreen
         vars={vars}
         theme={theme}
-        title="Workspace indisponibil"
+        title={copy.unavailable}
         description={loadError}
-        actionLabel="Încearcă din nou"
+        actionLabel={copy.retry}
         onAction={loadWorkspace}
-        secondaryLabel="Delogare"
+        secondaryLabel={copy.signOut}
         onSecondary={logout}
       />
     );
@@ -418,7 +450,7 @@ export default function WorkspaceShell({
             <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
             <div className="hidden min-w-0 lg:block">
               <span className="block max-w-[180px] truncate text-[11px] font-semibold">{organizationName}</span>
-              <span className="block text-[10px] text-[var(--muted-2)]">Business workspace</span>
+              <span className="block text-[10px] text-[var(--muted-2)]">{copy.businessWorkspace}</span>
             </div>
           </div>
 
@@ -436,8 +468,8 @@ export default function WorkspaceShell({
                 className="hidden h-9 items-center justify-center rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:flex"
               >
                 <span className="sm:hidden" aria-hidden="true">+</span>
-                <span className="hidden sm:inline">+ Creează</span>
-                <span className="sr-only sm:hidden">Creează o înregistrare</span>
+                <span className="hidden sm:inline">{copy.create}</span>
+                <span className="sr-only sm:hidden">{copy.createRecord}</span>
               </button>
             )}
             <button
@@ -447,7 +479,7 @@ export default function WorkspaceShell({
             >
               AI Web Design
             </button>
-            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
+            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? copy.back : copy.modules}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
               theme={theme}
@@ -465,8 +497,28 @@ export default function WorkspaceShell({
               enabledModules={enabledModules}
               onOpenModule={openModule}
             />
-            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9">{theme === "dark" ? "☀" : "☾"}</button>
-            <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm sm:h-9 sm:w-9">{initials || "OR"}</button>
+            <div
+              className="flex h-11 items-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 p-1 sm:h-9"
+              aria-label={uiLanguage === "ro" ? "Schimbă limba" : "Change language"}
+            >
+              {(["ro", "en"] as const).map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => changeLanguage(language)}
+                  aria-pressed={uiLanguage === language}
+                  className={`flex h-full min-w-[30px] items-center justify-center rounded-full px-2 text-[9px] font-bold tracking-[0.08em] transition ${
+                    uiLanguage === language
+                      ? "bg-[var(--button)] text-[var(--button-text)]"
+                      : "text-[var(--muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={toggleTheme} aria-label={copy.changeTheme} className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9">{theme === "dark" ? "☀" : "☾"}</button>
+            <button type="button" onClick={logout} aria-label={copy.signOut} title={copy.signOut} className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm sm:h-9 sm:w-9">{initials || "OR"}</button>
           </div>
         </div>
       </header>
@@ -475,7 +527,7 @@ export default function WorkspaceShell({
         <aside data-workspace-surface="sidebar" className="sticky top-[77px] hidden h-[calc(100dvh-90px)] min-w-0 overflow-y-auto overscroll-contain rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
-            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
+            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{workspaceRoleLabel(workspace.membership.role, uiLanguage)} · {copy.workspaceActive}</p>
           </div>
 
           {WORKSPACE_NAV_GROUPS.map((group) => {
@@ -483,8 +535,8 @@ export default function WorkspaceShell({
             if (!items.length) return null;
             return (
               <div key={group.label} className="mt-5 border-b border-[var(--border)] pb-4 last:border-b-0">
-                <p className="mb-2 px-3 text-[9px] font-bold tracking-[0.15em] text-[var(--muted-2)]">{group.label}</p>
-                <nav className="space-y-0.5" aria-label={group.label}>
+                <p className="mb-2 px-3 text-[9px] font-bold tracking-[0.15em] text-[var(--muted-2)]">{workspaceGroupLabel(group.label, uiLanguage)}</p>
+                <nav className="space-y-0.5" aria-label={workspaceGroupLabel(group.label, uiLanguage)}>
                   {items.map((definition) => {
                     const active = panel === "workspace" && activeModule === definition.id;
                     return (
@@ -498,7 +550,7 @@ export default function WorkspaceShell({
                           : "flex w-full items-center gap-3 rounded-[9px] border border-transparent px-3 py-2.5 text-left text-[12px] text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)]"}
                       >
                         <ModuleGlyph id={definition.id} />
-                        <span className="truncate">{definition.shortName}</span>
+                        <span className="truncate">{workspaceModuleShortName(definition.id, uiLanguage)}</span>
                       </button>
                     );
                   })}
@@ -514,16 +566,16 @@ export default function WorkspaceShell({
               className="w-full rounded-[11px] border border-[#7897ff]/22 bg-[#7897ff]/[0.08] px-3.5 py-3 text-left transition hover:border-[#7897ff]/42 hover:bg-[#7897ff]/[0.12]"
             >
               <span className="block text-[11px] font-semibold text-[var(--text)]">✦ AI Web Design</span>
-              <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">Generează și rafinează website-ul →</span>
+              <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">{copy.aiNote}</span>
             </button>
             <div data-workspace-text-scale-control="desktop" className="min-w-0 rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
               <div className="flex min-w-0 items-center justify-between gap-2">
-                <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
+                <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">{copy.textSize}</span>
                 <button
                   type="button"
                   onClick={resetTextScale}
-                  title="Revino la 100%"
-                  aria-label="Revino la dimensiunea textului 100%"
+                  title={copy.resetText}
+                  aria-label={copy.resetText}
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
                 >
                   {Math.round(textScale * 100)}%
@@ -534,7 +586,7 @@ export default function WorkspaceShell({
                   type="button"
                   onClick={() => changeTextScale(-1)}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
-                  aria-label="Micșorează textul"
+                  aria-label={copy.smallerText}
                   className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A−
@@ -543,7 +595,7 @@ export default function WorkspaceShell({
                   type="button"
                   onClick={() => changeTextScale(1)}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
-                  aria-label="Mărește textul"
+                  aria-label={copy.largerText}
                   className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A+
@@ -551,8 +603,8 @@ export default function WorkspaceShell({
               </div>
             </div>
             <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
-              <span className="block text-[var(--text)]">{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</span>
-              <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</span>
+              <span className="block text-[var(--text)]">{canManageModules ? copy.customizeWorkspace : copy.yourModules}</span>
+              <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? copy.addHideTools : copy.viewTools}</span>
             </button>
           </div>
         </aside>
@@ -593,17 +645,17 @@ export default function WorkspaceShell({
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:items-center">
           <button
             type="button"
-            aria-label="Închide meniul de creare"
+            aria-label={copy.close}
             onClick={() => setCreateMenuOpen(false)}
             className="absolute inset-0 bg-[#020814]/70"
           />
           <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Acțiune nouă</p>
-                <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Ce vrei să creezi?</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">{copy.newAction}</p>
+                <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">{copy.whatCreate}</h2>
               </div>
-              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label="Închide" className="h-11 w-11 shrink-0 rounded-full border border-[var(--border)] text-lg sm:h-9 sm:w-9">×</button>
+              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label={copy.close} className="h-11 w-11 shrink-0 rounded-full border border-[var(--border)] text-lg sm:h-9 sm:w-9">×</button>
             </div>
             <div className="mt-5 grid gap-2">
               {createOptions.map((definition) => (
@@ -644,7 +696,7 @@ export default function WorkspaceShell({
                   >
                     <ModuleGlyph id={definition.id} />
                     <span className="w-full truncate text-[10px] font-semibold leading-tight">
-                      {definition.shortName}
+                      {workspaceModuleShortName(definition.id, uiLanguage)}
                     </span>
                   </button>
                 );
@@ -717,7 +769,7 @@ export default function WorkspaceShell({
               }}
               className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)]"
             >
-              {canManageModules ? "Gestionează modulele" : "Vezi configurația modulelor"}
+              {canManageModules ? copy.manageModules : copy.viewModuleConfig}
             </button>
           </div>
         )}
@@ -763,7 +815,7 @@ export default function WorkspaceShell({
 
           <button
             type="button"
-            aria-label={canCreate ? "Creează o înregistrare" : "Deschide modulele"}
+            aria-label={canCreate ? copy.createRecord : copy.modules}
             onClick={() => {
               requestNativeHaptic();
               if (canCreate) {
