@@ -548,3 +548,19 @@ test("purchase order receipt status stays database-owned and completed receipt h
   assert.match(inventory, /purchaseOrderId: procurementHandoff\.purchaseOrderId/);
   assert.match(inventory, /Înregistrează costul →/);
 });
+
+
+test("lead next action follows CRM pipeline instead of forcing premature conversion", () => {
+  const leads = read("components/modules/LeadsModule.tsx");
+  assert.match(leads, /selectedLead\.stage === "won"/);
+  assert.match(leads, /Transformă în client →/);
+  assert.match(leads, /selectedLead\.stage === "lost"/);
+  assert.match(leads, /Cererea este închisă ca pierdută/);
+  assert.match(leads, /selectedLead\.stage === "proposal" && enabledModules\.includes\("estimates"\)/);
+  assert.match(leads, /Deschide oferta →/);
+  assert.match(leads, /Pregătește oferta/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /clientEstimate = !taskEstimate && initialClientId/);
+  assert.match(estimates, /item\.client_id === initialClientId/);
+});
