@@ -250,7 +250,7 @@ export function inferWebDesignRequestMode(prompt: string): WebDesignRequestMode 
   }
 
   if (
-    /\b(schimba|modifica|ajusteaza|rafineaza|rescrie|pastreaza|ascunde|arata|adauga|scoate|elimina|reduce|mareste|micsoreaza|fa mai)\b/.test(
+    /\b(schimba|modifica|ajusteaza|rafineaza|rescrie|pastreaza|ascunde|arata|adauga|scoate|elimina|reduce|mareste|micsoreaza|fa(?:-l|-o| l| o)? mai)\b/.test(
       value
     )
   ) {
