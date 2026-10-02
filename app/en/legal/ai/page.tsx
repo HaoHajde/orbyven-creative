@@ -28,7 +28,7 @@ export default function AiTransparencyPage() {
 
       <LegalSection title="Data and providers">
         <p>
-          Do not enter passwords, API keys, special-category personal data or confidential documents into chat. The deterministic ORBYVEN engine processes application data locally. If the Selective Language Layer is enabled, the user's request together with the canonical response and strictly necessary facts may be sent to the configured external provider for rewriting. The feature is disabled by default and is not enabled merely because an API key exists. Content entered on behalf of a company must be authorized.
+          Do not enter passwords, API keys, special-category personal data or confidential documents into chat. The deterministic ORBYVEN engine processes application data locally. If the Selective Language Layer is enabled, the user’s request together with the canonical response and strictly necessary facts may be sent to the configured external provider for rewriting. The feature is disabled by default and is not enabled merely because an API key exists. Content entered on behalf of a company must be authorized.
         </p>
       </LegalSection>
 
