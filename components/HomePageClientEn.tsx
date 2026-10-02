@@ -451,9 +451,9 @@ export default function HomePage() {
           <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Personal <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">moments.</span> One memorable link.</h2>
           <div className="orbyven-home-invite-grid mt-10">
             {[
-              { href: "/invitatii-nunta", title: "Wedding invitations", label: "A story for two", kind: "wedding" as const },
-              { href: "/invitatii-botez", title: "Celebration invitations", label: "A new beginning", kind: "baptism" as const },
-              { href: "/invitatii-majorat", title: "Birthday invitations", label: "A new chapter", kind: "birthday" as const },
+              { href: "/templates#events-invitations", title: "Wedding invitations", label: "A story for two", kind: "wedding" as const },
+              { href: "/templates#events-invitations", title: "Celebration invitations", label: "A new beginning", kind: "baptism" as const },
+              { href: "/templates#events-invitations", title: "Birthday invitations", label: "A new chapter", kind: "birthday" as const },
             ].map((item, index) => (
               <Link key={item.href} href={item.href} className="orbyven-home-invite-card group relative isolate block overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-2)] hover:border-[var(--home-violet)] focus-visible:border-[var(--home-violet)]">
                 <HomeInvitationPreview kind={item.kind} />
