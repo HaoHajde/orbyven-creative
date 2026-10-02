@@ -231,3 +231,35 @@ test("bootstrap allowlist stays synchronized with current selectable workspace m
   assert.match(bootstrapModuleAllowlistSync, /grant execute on function public\.bootstrap_organization\(text,text,text\[\]\)\s*to authenticated/);
   assert.match(bootstrapModuleAllowlistSync, /Commercial access is still enforced separately by entitlements and restrictive RLS/);
 });
+
+
+const controlCenterServer = read("lib/orbyven-control-center-server.ts");
+const controlCenterLogin = read("app/control-center/login/page.tsx");
+
+test("control center requires aal2 and provides a TOTP enrollment/challenge flow", () => {
+  assert.match(controlCenterServer, /getAuthenticatorAssuranceLevel\(token\)/);
+  assert.match(controlCenterServer, /data\.currentLevel !== "aal2"/);
+  assert.match(controlCenterServer, /"mfa_required"/);
+  assert.equal(
+    (controlCenterServer.match(/requireControlCenterAal2\(admin, token\)/g) ?? []).length,
+    2
+  );
+
+  assert.match(controlCenterLogin, /payload\.error/);
+  assert.match(controlCenterLogin, /code === "mfa_required"/);
+  assert.match(controlCenterLogin, /auth\.mfa\.listFactors\(\)/);
+  assert.match(controlCenterLogin, /auth\.mfa\.enroll\(/);
+  assert.match(controlCenterLogin, /auth\.mfa\.challengeAndVerify\(/);
+  assert.match(controlCenterLogin, /autoComplete="one-time-code"/);
+});
+
+
+const platformStaffMfaGuard = read("supabase/migrations/20261002075203_platform_staff_mfa_guard.sql");
+
+test("permanent platform staff cannot be enabled without verified MFA", () => {
+  assert.match(platformStaffMfaGuard, /auth\.mfa_factors/);
+  assert.match(platformStaffMfaGuard, /mf\.status = 'verified'/);
+  assert.match(platformStaffMfaGuard, /before insert or update of user_id, enabled/);
+  assert.match(platformStaffMfaGuard, /platform_staff_verified_mfa_guard/);
+  assert.match(platformStaffMfaGuard, /revoke all on function private\.require_verified_mfa_for_platform_staff\(\)/);
+});
