@@ -83,6 +83,8 @@ test("Operational Query Mode resolves concrete dashboard questions before generi
   assert.equal(detectOperationalQuery("Fă-mi briefingul zilei"), "briefing");
   assert.equal(detectOperationalQuery("Care sunt prioritățile mele acum?"), "briefing");
   assert.equal(detectOperationalQuery("Cu ce încep?"), "briefing");
+  assert.equal(detectOperationalQuery("Ce opțiuni am pentru Focus #1?"), "decision_support");
+  assert.equal(detectOperationalQuery("Compară variantele pentru prioritatea de acum"), "decision_support");
   assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
 
   const server = read("lib/ai/intelligence-server.ts");
@@ -199,4 +201,29 @@ test("Focus explainability is structured, compact and persisted without a schema
   assert.match(panel, />Risc</);
   assert.match(panel, />Următor</);
   assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.21/);
+});
+
+
+test("Decision Support compares options without choosing or mutating", () => {
+  const types = read("lib/ai/intelligence-types.ts");
+  const support = read("lib/ai/business-decision-support.ts");
+  const query = read("lib/ai/operational-query.ts");
+  const conversation = read("lib/ai/conversation-server.ts");
+  const panel = read("components/WorkspaceIntelligence.tsx");
+
+  assert.match(types, /export type IntelligenceDecisionOption/);
+  assert.match(types, /export type IntelligenceDecisionSupport/);
+  assert.match(types, /decision\?: IntelligenceDecisionSupport/);
+  assert.match(support, /const OPTIONS: Record<IntelligenceFocusReason, IntelligenceDecisionOption\[]>/);
+  assert.match(support, /alegerea rămâne la tine/);
+  assert.match(support, /options: OPTIONS\[focus\.reason\]/);
+  assert.doesNotMatch(support, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(query, /kind === "decision_support"/);
+  assert.match(query, /answerDecisionSupport\(actor, available\)/);
+  assert.match(conversation, /Decision · Context/);
+  assert.match(conversation, /Decision · \$\{index \+ 1\}/);
+  assert.match(panel, /data-orbyven-decision-support="true"/);
+  assert.match(panel, /Compromis:/);
+  assert.match(panel, /Potrivit când:/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.22/);
 });
