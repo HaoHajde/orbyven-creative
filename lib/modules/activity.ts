@@ -9,6 +9,12 @@ import {
   type AutomationOperation,
 } from "@/lib/automation/business-signals";
 import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
+import {
+  buildPostServiceGrowthState,
+  evaluatePostServiceGrowth,
+  parsePostServiceEvent,
+  POST_SERVICE_PREFIX,
+} from "@/lib/automation/post-service-growth";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 
 export type WorkspaceActivityLevel = "urgent" | "attention" | "upcoming";
@@ -62,10 +68,22 @@ export async function loadWorkspaceActivity(
   const nowIso = now.toISOString();
   const tomorrow = new Date(now.getTime() + DAY_MS).toISOString();
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
+  const growthSince = new Date(now.getTime() - 120 * DAY_MS).toISOString();
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, reactivationClientsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
-    await Promise.all([
+  const [
+    leadsResult,
+    reactivationClientsResult,
+    tasksResult,
+    completedGrowthTasksResult,
+    growthActivitiesResult,
+    eventsResult,
+    estimatesResult,
+    invoicesResult,
+    inventoryGapsResult,
+    purchaseOrdersResult,
+    teamResult,
+  ] = await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
             .from("crm_leads")
@@ -94,6 +112,28 @@ export async function loadWorkspaceActivity(
             .not("status", "in", '("done","cancelled")')
             .order("updated_at", { ascending: false })
             .limit(120)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("tasks") && enabledModules.includes("leads")
+        ? orbyvenSupabase
+            .from("ops_tasks")
+            .select("id,title,kind,status,completed_at,client_id")
+            .eq("organization_id", organizationId)
+            .eq("status", "done")
+            .not("client_id", "is", null)
+            .not("completed_at", "is", null)
+            .gte("completed_at", growthSince)
+            .order("completed_at", { ascending: false })
+            .limit(80)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("leads")
+        ? orbyvenSupabase
+            .from("crm_lead_activities")
+            .select("lead_id,body,occurred_at")
+            .eq("organization_id", organizationId)
+            .like("body", POST_SERVICE_PREFIX + "%")
+            .gte("occurred_at", growthSince)
+            .order("occurred_at", { ascending: true })
+            .limit(240)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("calendar")
         ? orbyvenSupabase
@@ -160,6 +200,8 @@ export async function loadWorkspaceActivity(
     leadsResult.error ??
     reactivationClientsResult.error ??
     tasksResult.error ??
+    completedGrowthTasksResult.error ??
+    growthActivitiesResult.error ??
     eventsResult.error ??
     estimatesResult.error ??
     invoicesResult.error ??
@@ -248,6 +290,63 @@ export async function loadWorkspaceActivity(
       sortAt: lifecycle.lastTouchAt,
       actionLabel: "Planifică revenire",
       rule: "client_reactivation",
+    });
+  }
+
+  const openClientIds = new Set(
+    (tasksResult.data ?? [])
+      .map((task) => task.client_id)
+      .filter((clientId): clientId is string => Boolean(clientId))
+  );
+  const growthEventsByTask = new Map<string, ReturnType<typeof parsePostServiceEvent>[]>();
+  for (const activity of growthActivitiesResult.data ?? []) {
+    const event = parsePostServiceEvent(activity.body, activity.occurred_at);
+    if (!event) continue;
+    const current = growthEventsByTask.get(event.taskId) ?? [];
+    current.push(event);
+    growthEventsByTask.set(event.taskId, current);
+  }
+
+  for (const task of completedGrowthTasksResult.data ?? []) {
+    if (!task.client_id || !task.completed_at || task.kind === "task") continue;
+    const state = buildPostServiceGrowthState(
+      (growthEventsByTask.get(task.id) ?? []).filter(
+        (event): event is NonNullable<typeof event> => Boolean(event)
+      )
+    );
+    const action = evaluatePostServiceGrowth({
+      taskTitle: task.title,
+      completedAt: task.completed_at,
+      state,
+      now,
+      hasOpenWorkForClient: openClientIds.has(task.client_id),
+    });
+    if (!action) continue;
+
+    const opensEstimate =
+      action.rule === "post_service_upsell" && enabledModules.includes("estimates");
+    items.push({
+      key: action.rule + ":" + task.id,
+      module: opensEstimate ? "estimates" : "tasks",
+      recordId: opensEstimate ? undefined : task.id,
+      clientId: task.client_id,
+      taskId: task.id,
+      create: opensEstimate ? true : undefined,
+      title: action.title,
+      meta: action.detail,
+      level: action.level,
+      sortAt: task.completed_at,
+      actionLabel:
+        action.rule === "post_service_recovery"
+          ? "Rezolvă"
+          : action.rule === "post_service_review"
+            ? "Review"
+            : action.rule === "post_service_referral"
+              ? "Recomandare"
+              : action.rule === "post_service_upsell"
+                ? "Ofertă nouă"
+                : "Feedback",
+      rule: action.rule,
     });
   }
 
