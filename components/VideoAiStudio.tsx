@@ -10,6 +10,7 @@ import {
   type VideoStyle,
 } from "@/lib/video-ai-director";
 import { motion } from "framer-motion";
+import type { VideoProviderId, VideoRenderManifest } from "@/lib/video-ai-render";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
@@ -26,10 +27,10 @@ const styleOptions: { value: VideoStyle; label: string; detail: string }[] = [
   { value: "social", label: "Social", detail: "Faster retention for Reels, TikTok and Shorts." },
 ];
 
-const engines = [
-  { name: "Wan", note: "Self-host / GPU", status: "Ready to connect" },
-  { name: "LTX", note: "Self-host / GPU", status: "Ready to connect" },
-  { name: "External API", note: "Fastest prototype", status: "Optional" },
+const engines: { id: VideoProviderId; name: string; note: string; status: string }[] = [
+  { id: "wan", name: "Wan", note: "Self-host / GPU", status: "Primary target" },
+  { id: "ltx", name: "LTX", note: "Self-host / GPU", status: "Secondary target" },
+  { id: "external", name: "External API", note: "Fastest prototype", status: "Optional" },
 ];
 
 function formatSeconds(value: number) {
@@ -46,6 +47,9 @@ export default function VideoAiStudio() {
     buildStoryboard({ brief: defaultBrief, duration: 30, aspect: "9:16", style: "product" }),
   );
   const [copied, setCopied] = useState<string | null>(null);
+  const [provider, setProvider] = useState<VideoProviderId>("wan");
+  const [renderManifest, setRenderManifest] = useState<VideoRenderManifest | null>(null);
+  const [renderState, setRenderState] = useState<"idle" | "planning" | "error">("idle");
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -100,6 +104,41 @@ export default function VideoAiStudio() {
     await navigator.clipboard.writeText(value);
     setCopied(id);
     window.setTimeout(() => setCopied((current) => (current === id ? null : current)), 1300);
+  };
+
+
+  const prepareRender = async () => {
+    setRenderState("planning");
+    setRenderManifest(null);
+
+    try {
+      const response = await fetch("/api/video-ai/render-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyboard, provider }),
+      });
+
+      const payload = (await response.json()) as { manifest?: VideoRenderManifest; error?: string };
+      if (!response.ok || !payload.manifest) throw new Error(payload.error || "Render planning failed.");
+
+      setRenderManifest(payload.manifest);
+      setRenderState("idle");
+    } catch {
+      setRenderState("error");
+    }
+  };
+
+  const downloadManifest = () => {
+    if (!renderManifest) return;
+    const blob = new Blob([JSON.stringify(renderManifest, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${renderManifest.id}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const allPrompts = storyboard.scenes
@@ -165,7 +204,7 @@ export default function VideoAiStudio() {
                     </div>
                     <h2 className="mt-5 text-sm font-semibold">{title}</h2>
                     <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{note}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -373,7 +412,13 @@ export default function VideoAiStudio() {
             <div className="p-5 sm:p-6 lg:p-8">
               <div className="grid gap-3 md:grid-cols-3">
                 {engines.map((engine) => (
-                  <div key={engine.name} className="rounded-[22px] border border-[var(--border)] bg-[var(--bg)] p-4">
+                  <button
+                    key={engine.id}
+                    type="button"
+                    aria-pressed={provider === engine.id}
+                    onClick={() => setProvider(engine.id)}
+                    className={`rounded-[22px] border p-4 text-left transition ${provider === engine.id ? "border-[#786aff]/60 bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-strong)]"}`}
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-semibold">{engine.name}</span>
                       <span className="h-2 w-2 rounded-full bg-amber-400" />
@@ -386,12 +431,48 @@ export default function VideoAiStudio() {
 
               <button
                 type="button"
-                disabled
-                className="mt-5 flex h-12 w-full cursor-not-allowed items-center justify-between rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-5 text-sm font-semibold text-[var(--muted-2)]"
+                onClick={prepareRender}
+                disabled={renderState === "planning"}
+                className="mt-5 flex h-12 w-full items-center justify-between rounded-full bg-[var(--button)] px-5 text-sm font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
               >
-                <span>Generate final video</span>
-                <span>Engine required</span>
+                <span>{renderState === "planning" ? "Preparing render package…" : "Prepare render package"}</span>
+                <span>{engines.find((engine) => engine.id === provider)?.name ?? provider}</span>
               </button>
+
+              {renderState === "error" ? (
+                <p className="mt-3 text-xs font-medium text-red-400">Could not prepare the render package.</p>
+              ) : null}
+
+              {renderManifest ? (
+                <div className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">
+                        Render package
+                      </p>
+                      <p className="mt-2 text-sm font-semibold">{renderManifest.id}</p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${renderManifest.status === "planned" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-300"}`}>
+                      {renderManifest.status}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
+                    {renderManifest.reason ?? `Ready for ${renderManifest.scenes.length} scene renders and final MP4 assembly.`}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold">
+                    <Badge>{renderManifest.output.fps} FPS</Badge>
+                    <Badge>{renderManifest.output.container.toUpperCase()}</Badge>
+                    <Badge>{renderManifest.scenes.length} scenes</Badge>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={downloadManifest}
+                    className="mt-4 text-xs font-semibold text-[#9c91ff] hover:text-[#b4acff]"
+                  >
+                    Download render manifest →
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
