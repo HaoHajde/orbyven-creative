@@ -15,6 +15,7 @@ import {
   shouldUseGenerativeWebDesign,
 } from "@/lib/ai/local-preview-commands";
 import {
+  applyWebDesignInterviewAnswerLocally,
   buildWebDesignInterviewPrompt,
   readWebDesignInterviewQuestions,
   type WebDesignInterviewQuestion,
@@ -31,6 +32,7 @@ import WebDesignPreview, {
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
 const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 const VISUAL_MEMORY_KEY = "orbyven-web-design-visual-memory-v01";
+const INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01";
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -164,6 +166,27 @@ export default function WebDesignSpecialist() {
         if (localDraft) setDraft(localDraft);
 
         try {
+          const savedInterview = window.localStorage.getItem(INTERVIEW_QUEUE_KEY);
+          if (savedInterview) {
+            const questions = readWebDesignInterviewQuestions(
+              JSON.parse(savedInterview)
+            );
+            setInterviewQuestions(questions);
+            if (questions.length) {
+              window.localStorage.setItem(
+                INTERVIEW_QUEUE_KEY,
+                JSON.stringify(questions)
+              );
+            } else {
+              window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design interview queue could not be restored", error);
+          window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+        }
+
+        try {
           const savedMemory = window.localStorage.getItem(VISUAL_MEMORY_KEY);
           if (savedMemory) {
             const parsedMemory = JSON.parse(savedMemory);
@@ -222,6 +245,18 @@ export default function WebDesignSpecialist() {
     if (!hydrated || !authorized) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   }, [draft, hydrated, authorized]);
+
+  useEffect(() => {
+    if (!hydrated || !authorized) return;
+    if (interviewQuestions.length) {
+      window.localStorage.setItem(
+        INTERVIEW_QUEUE_KEY,
+        JSON.stringify(interviewQuestions)
+      );
+    } else {
+      window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+    }
+  }, [interviewQuestions, hydrated, authorized]);
 
   const saveRemote = async (
     next: EditableSite,
@@ -423,6 +458,24 @@ export default function WebDesignSpecialist() {
     event.preventDefault();
     if (!activeInterviewQuestion || aiBusy || !canEdit) return;
 
+    const localResult = applyWebDesignInterviewAnswerLocally(
+      draft,
+      activeInterviewQuestion,
+      interviewAnswer
+    );
+    if (localResult) {
+      commitDraft(
+        localResult.draft,
+        "local",
+        `interview:${activeInterviewQuestion.id}`
+      );
+      setInterviewQuestions((current) => current.slice(1));
+      setInterviewAnswer("");
+      setSuggestions([]);
+      setMessage(localResult.message);
+      return;
+    }
+
     const interviewPrompt = buildWebDesignInterviewPrompt(
       activeInterviewQuestion,
       interviewAnswer
@@ -444,7 +497,10 @@ export default function WebDesignSpecialist() {
   const selectPreset = (preset: SitePresetId) => {
     const next = SITE_PRESETS[preset];
     setVisualMemory([]);
+    setInterviewQuestions([]);
+    setInterviewAnswer("");
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+    window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
@@ -467,7 +523,10 @@ export default function WebDesignSpecialist() {
   const reset = () => {
     const next = SITE_PRESETS[draft.preset];
     setVisualMemory([]);
+    setInterviewQuestions([]);
+    setInterviewAnswer("");
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+    window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
