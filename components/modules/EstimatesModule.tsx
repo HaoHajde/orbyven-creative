@@ -18,6 +18,7 @@ import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
@@ -26,7 +27,7 @@ import {
   loadMaterialLibrary,recipeEstimatePreview,
   type MaterialLibrary,
 } from "@/lib/modules/materials-catalog";
-import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
+import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleNextAction, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type Props = {
@@ -150,6 +151,7 @@ export default function EstimatesModule({
   }, [organizationId, selectedId]);
 
   const selected = useMemo(() => estimates.find((estimate) => estimate.id === selectedId) ?? null, [estimates, selectedId]);
+  useWorkspaceLiveContext({ estimateId: selected?.id, clientId: selected?.client_id ?? undefined, taskId: selected?.task_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
@@ -309,12 +311,15 @@ export default function EstimatesModule({
       />
       <div className="mt-8"><ModuleError message={error} /></div>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <ModuleMetric label="Total" value={String(metrics.total)} note="devize în workspace" />
-        <ModuleMetric label="Așteaptă răspuns" value={String(metrics.waiting)} note="status trimisă" />
-        <ModuleMetric label="Acceptate" value={String(metrics.accepted)} note="confirmate de client" />
-        <ModuleMetric label="Valoare acceptată" value={formatMoney(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <ModuleMetric label="Așteaptă răspuns" value={String(metrics.waiting)} note="status trimisă" />
+          <ModuleMetric label="Acceptate" value={String(metrics.accepted)} note="confirmate de client" />
+          <ModuleMetric label="Valoare acceptată" value={formatMoney(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
+        </>}
+        secondary={<ModuleMetric label="Total" value={String(metrics.total)} note="devize în workspace" />}
+      />
 
       <MaterialsLibraryPanel organizationId={organizationId} role={role} library={library} onChanged={refreshLibrary} />
 
@@ -325,13 +330,17 @@ export default function EstimatesModule({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Titlu ofertă *"><input value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} className={moduleInputClass} placeholder="Ex. Înlocuire centrală + montaj" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(tasks.find((task) => task.id === form.taskId)?.client_id)} onChange={(e) => setForm((current) => ({ ...current, clientId: e.target.value }))} className={`${moduleInputClass} disabled:opacity-60`}><option value="">Fără client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.company ? ` · ${client.company}` : ""}</option>)}</select></Field>
-            <Field label="Lucrare"><select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Valabil până la"><input type="date" value={form.validUntil} onChange={(e) => setForm((c) => ({ ...c, validUntil: e.target.value }))} className={moduleInputClass} /></Field>
-            <Field label="Discount (lei)"><input type="number" min="0" step="0.01" value={form.discount} onChange={(e) => setForm((c) => ({ ...c, discount: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
-            <Field label="Taxă / TVA (%) opțional"><input type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={(e) => setForm((c) => ({ ...c, taxRate: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
-            <Field label="Manoperă estimată (lei)"><input type="number" min="0" step="0.01" value={form.plannedLabor} onChange={(e) => setForm(c=>({...c,plannedLabor:e.target.value}))} className={moduleInputClass} placeholder="Din rețete dacă lași gol" /></Field>
-            <Field label="Alte costuri estimate (lei)"><input type="number" min="0" step="0.01" value={form.otherCosts} onChange={(e) => setForm(c=>({...c,otherCosts:e.target.value}))} className={moduleInputClass} placeholder="Transport, deplasare etc." /></Field>
+            <Field label="Lucrare" className="sm:col-span-2"><select value={form.taskId} onChange={(e) => chooseTask(e.target.value)} className={moduleInputClass}><option value="">Fără lucrare</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
           </div>
+          <ModuleAdvancedFields label="Condiții comerciale și costuri">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Valabil până la"><input type="date" value={form.validUntil} onChange={(e) => setForm((c) => ({ ...c, validUntil: e.target.value }))} className={moduleInputClass} /></Field>
+              <Field label="Discount (lei)"><input type="number" min="0" step="0.01" value={form.discount} onChange={(e) => setForm((c) => ({ ...c, discount: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
+              <Field label="Taxă / TVA (%) opțional"><input type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={(e) => setForm((c) => ({ ...c, taxRate: e.target.value }))} className={moduleInputClass} placeholder="0" /></Field>
+              <Field label="Manoperă estimată (lei)"><input type="number" min="0" step="0.01" value={form.plannedLabor} onChange={(e) => setForm(c=>({...c,plannedLabor:e.target.value}))} className={moduleInputClass} placeholder="Din rețete dacă lași gol" /></Field>
+              <Field label="Alte costuri estimate (lei)" className="sm:col-span-2"><input type="number" min="0" step="0.01" value={form.otherCosts} onChange={(e) => setForm(c=>({...c,otherCosts:e.target.value}))} className={moduleInputClass} placeholder="Transport, deplasare etc." /></Field>
+            </div>
+          </ModuleAdvancedFields>
 
           {library.recipes.length>0&&<section aria-label="Deviz din rețetă" className="mt-5 rounded-[16px] border border-[var(--border-strong)] bg-[var(--surface-2)]/70 p-4">
             <p className="text-xs font-semibold">Deviz inteligent · din biblioteca firmei</p>
@@ -378,7 +387,23 @@ export default function EstimatesModule({
           {selected ? <>
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
-            {selected.status === "accepted" && !selected.task_id ? <div className="mt-4 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-[11px] leading-5"><strong className="text-emerald-300">Oferta este acceptată.</strong> Creează lucrarea direct de aici; ORBYVEN va păstra automat legătura cu acest deviz.</div> : null}
+            {selected.status === "accepted" && !selected.task_id && canWrite && enabledModules.includes("tasks") ? (
+              <div className="mt-4">
+                <ModuleNextAction
+                  title="Pornește lucrarea din oferta acceptată"
+                  description="Clientul, devizul și contextul comercial sunt transferate automat."
+                  action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
+                />
+              </div>
+            ) : selected.status === "accepted" && selected.task_id && canWrite && enabledModules.includes("calendar") ? (
+              <div className="mt-4">
+                <ModuleNextAction
+                  title="Programează execuția"
+                  description="Lucrarea acceptată este gata să intre în calendar."
+                  action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+                />
+              </div>
+            ) : null}
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
             <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
             {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
@@ -402,7 +427,6 @@ export default function EstimatesModule({
             <div className="mt-5 flex flex-wrap gap-2">
               {enabledModules.includes("leads") && selected.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selected.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
               {enabledModules.includes("tasks") && selected.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selected.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
-              {canWrite && enabledModules.includes("tasks") && selected.status === "accepted" && !selected.task_id && <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
               {canWrite && enabledModules.includes("calendar") && (selected.client_id || selected.task_id) && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
               {canDelete && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
             </div>
