@@ -67,9 +67,9 @@ test("workspace light theme uses a low-glare violet visual system", () => {
   const shell = read("components/WorkspaceShell.tsx");
   const css = read("app/globals.css");
 
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.02\.2"/);
-  assert.match(visual, /bg: "#e9ecf5"/);
-  assert.match(visual, /surface: "#f7f7fb"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.02\.3"/);
+  assert.match(visual, /bg: "#e7e8f3"/);
+  assert.match(visual, /surface: "#f5f4fb"/);
   assert.match(visual, /violet: "#7458d7"/);
   assert.match(visual, /"--violet-line": t\.violetLine/);
 
@@ -82,4 +82,8 @@ test("workspace light theme uses a low-glare violet visual system", () => {
   assert.match(css, /radial-gradient\(ellipse 58% 46% at 8% 7%/);
   assert.match(css, /background-image: linear-gradient\(145deg, var\(--panel-highlight\), transparent 34%\)/);
   assert.match(css, /border-color: var\(--violet-line\)/);
+  assert.match(css, /rgba\(116, 88, 215, 0\.19\)/);
+  assert.match(css, /scrollbar-color: rgba\(104, 89, 214, 0\.42\)/);
+  assert.match(css, /caret-color: var\(--violet\)/);
+  assert.match(css, /background: rgba\(116, 88, 215, 0\.20\)/);
 });

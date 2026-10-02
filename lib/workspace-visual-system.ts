@@ -1,6 +1,6 @@
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
-export const WORKSPACE_UI_REVISION = "2026.10.02.2";
+export const WORKSPACE_UI_REVISION = "2026.10.02.3";
 export const CURRENT_DESKTOP_VERSION = "0.8.0";
 
 export const WORKSPACE_THEME = {
@@ -25,22 +25,22 @@ export const WORKSPACE_THEME = {
   light: {
     // Light mode is intentionally cool/lavender instead of paper-white:
     // less glare when switching from dark mode, while preserving contrast.
-    bg: "#e9ecf5",
-    surface: "#f7f7fb",
-    surface2: "#eeedf7",
+    bg: "#e7e8f3",
+    surface: "#f5f4fb",
+    surface2: "#ebe9f6",
     text: "#172038",
     muted: "#5d6680",
     muted2: "#737b96",
-    border: "rgba(89,75,154,0.14)",
-    borderStrong: "rgba(91,72,172,0.26)",
+    border: "rgba(96,76,168,0.18)",
+    borderStrong: "rgba(91,72,172,0.31)",
     button: "#5d55cf",
     buttonText: "#ffffff",
     accent: "#6859d6",
-    accentSoft: "rgba(104,89,214,0.12)",
+    accentSoft: "rgba(104,89,214,0.15)",
     violet: "#7458d7",
-    violetSoft: "rgba(116,88,215,0.09)",
-    violetLine: "rgba(116,88,215,0.19)",
-    panelHighlight: "rgba(116,88,215,0.055)",
+    violetSoft: "rgba(116,88,215,0.12)",
+    violetLine: "rgba(116,88,215,0.24)",
+    panelHighlight: "rgba(116,88,215,0.075)",
   },
 } as const;
 
