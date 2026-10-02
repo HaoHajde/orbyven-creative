@@ -1,4 +1,5 @@
 "use client";
+import AppDownloadSection from "@/components/AppDownloadSection";
 
 import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
@@ -590,6 +591,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <AppDownloadSection locale="ro" />
 
       <SiteFooter theme={theme} activePage="home" />
     </main>
