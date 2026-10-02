@@ -5,7 +5,7 @@ import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type SitePage = "home" | "templates" | "services" | "contact";
+export type SitePage = "home" | "templates" | "webDesignAi" | "services" | "contact";
 
 type Theme = "light" | "dark";
 
@@ -16,6 +16,7 @@ const navItems: {
 }[] = [
   { key: "home", href: "/", label: "Acasă" },
   { key: "templates", href: "/templates", label: "Templates" },
+  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
   { key: "services", href: "/servicii", label: "Servicii" },
   { key: "contact", href: "/contact", label: "Pornește" },
 ];
