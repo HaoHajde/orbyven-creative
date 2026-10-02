@@ -69,9 +69,9 @@ export async function recheckActionOutcome(
   );
   const currentFocus = fact(current.facts, "Focus #1");
 
-  let status: "resolved" | "shifted" | "still_priority";
+  let status: "no_longer_primary" | "shifted" | "still_priority";
   if (!currentFocus) {
-    status = "resolved";
+    status = "no_longer_primary";
   } else if (previousFocus && normalize(previousFocus) === normalize(currentFocus)) {
     status = "still_priority";
   } else {
@@ -79,8 +79,8 @@ export async function recheckActionOutcome(
   }
 
   const summary =
-    status === "resolved"
-      ? "Focus-ul urmărit nu mai apare ca prioritate principală după executarea planului."
+    status === "no_longer_primary"
+      ? "Focus-ul urmărit nu mai apare ca prioritate principală după pregătirea acțiunilor. Acest re-check nu confirmă finalizarea lucrării din teren."
       : status === "still_priority"
         ? "Focus-ul anterior este încă prioritatea principală și merită reevaluat înainte de o nouă acțiune."
         : previousFocus
@@ -88,8 +88,8 @@ export async function recheckActionOutcome(
           : "Planul este finalizat, iar ORBYVEN a recalculat noua prioritate principală.";
 
   const answer =
-    status === "resolved"
-      ? "Plan finalizat. Re-check-ul ORBYVEN nu mai vede problema urmărită ca Focus #1."
+    status === "no_longer_primary"
+      ? "Planul ORBYVEN a fost pregătit și confirmat. Re-check-ul nu mai vede problema urmărită ca Focus #1, dar asta nu înseamnă automat că execuția din teren este finalizată."
       : status === "still_priority"
         ? `Plan finalizat, dar „${currentFocus}” rămâne Focus #1. Nu pornesc automat o nouă acțiune; poți cere o nouă comparație dacă vrei să continui.`
         : `Plan finalizat. Focus-ul s-a mutat${previousFocus ? ` de la „${previousFocus}”` : ""}${currentFocus ? ` la „${currentFocus}”` : ""}.`;
@@ -99,7 +99,7 @@ export async function recheckActionOutcome(
     answer,
     facts: [
       { label: "Plan", value: "Finalizat" },
-      { label: "Rezultat", value: status === "resolved" ? "Rezolvat" : status === "shifted" ? "Focus mutat" : "Încă prioritar" },
+      { label: "Rezultat", value: status === "no_longer_primary" ? "Nu mai este Focus #1" : status === "shifted" ? "Focus mutat" : "Încă prioritar" },
       ...(currentFocus ? [{ label: "Focus curent", value: currentFocus.slice(0, 160) }] : []),
     ],
     actions: current.actions.slice(0, 2),
