@@ -856,7 +856,7 @@ export default function WorkspaceIntelligence({
                                 <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN</span>
                               </div>
                               <p className="mt-2.5 text-[13px] leading-5 text-[var(--text)]">{displayContent}</p>
-                              {message.focus ? (
+                              {message.focus && !message.decision ? (
                                 <div
                                   data-orbyven-focus-explanation="true"
                                   className="mt-3 overflow-hidden rounded-[13px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055]"
@@ -892,6 +892,9 @@ export default function WorkspaceIntelligence({
                                     <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">VARIANTE</span>
                                     <span className="truncate text-[9px] text-[var(--muted-2)]">{message.decision.subject}</span>
                                   </div>
+                                  {message.focus?.why ? (
+                                    <p className="px-1 pb-2 text-[10px] leading-4 text-[var(--muted)]">{message.focus.why}</p>
+                                  ) : null}
                                   <div className="grid gap-2">
                                     {message.decision.options.slice(0, 3).map((option, index) => (
                                       <div key={`${option.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-2.5">
