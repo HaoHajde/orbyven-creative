@@ -171,12 +171,24 @@ export default function WebDesignSpecialist() {
           workspaceId
         );
 
+        // Unscoped legacy keys have no trustworthy owner metadata. Never
+        // auto-import them into the current organization: a shared browser or
+        // a different signed-in account could otherwise inherit another
+        // workspace's draft/interview context. Cloud sync + scoped keys are
+        // the only restore sources after the organization is known.
+        for (const legacyKey of [
+          STORAGE_KEY,
+          LEGACY_STORAGE_KEY,
+          VISUAL_MEMORY_KEY,
+          INTERVIEW_QUEUE_KEY,
+          INTERVIEW_FACTS_KEY,
+        ]) {
+          window.localStorage.removeItem(legacyKey);
+        }
+
         let localDraft: EditableSite | null = null;
         try {
-          const saved =
-            window.localStorage.getItem(draftStorageKey) ??
-            window.localStorage.getItem(STORAGE_KEY) ??
-            window.localStorage.getItem(LEGACY_STORAGE_KEY);
+          const saved = window.localStorage.getItem(draftStorageKey);
           if (saved) {
             localDraft = readSiteDraft(JSON.parse(saved));
             if (localDraft) {
@@ -184,8 +196,6 @@ export default function WebDesignSpecialist() {
                 draftStorageKey,
                 JSON.stringify(localDraft)
               );
-              window.localStorage.removeItem(STORAGE_KEY);
-              window.localStorage.removeItem(LEGACY_STORAGE_KEY);
             }
           }
         } catch (error) {
@@ -195,8 +205,7 @@ export default function WebDesignSpecialist() {
 
         try {
           const savedFacts =
-            window.localStorage.getItem(interviewFactsStorageKey) ??
-            window.localStorage.getItem(INTERVIEW_FACTS_KEY);
+            window.localStorage.getItem(interviewFactsStorageKey);
           if (savedFacts) {
             const facts = readWebDesignInterviewFacts(JSON.parse(savedFacts));
             setInterviewFacts(facts);
@@ -208,7 +217,6 @@ export default function WebDesignSpecialist() {
             } else {
               window.localStorage.removeItem(interviewFactsStorageKey);
             }
-            window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design interview facts could not be restored", error);
@@ -218,8 +226,7 @@ export default function WebDesignSpecialist() {
 
         try {
           const savedInterview =
-            window.localStorage.getItem(interviewQueueStorageKey) ??
-            window.localStorage.getItem(INTERVIEW_QUEUE_KEY);
+            window.localStorage.getItem(interviewQueueStorageKey);
           if (savedInterview) {
             const questions = readWebDesignInterviewQuestions(
               JSON.parse(savedInterview)
@@ -233,7 +240,6 @@ export default function WebDesignSpecialist() {
             } else {
               window.localStorage.removeItem(interviewQueueStorageKey);
             }
-            window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design interview queue could not be restored", error);
@@ -243,8 +249,7 @@ export default function WebDesignSpecialist() {
 
         try {
           const savedMemory =
-            window.localStorage.getItem(visualMemoryStorageKey) ??
-            window.localStorage.getItem(VISUAL_MEMORY_KEY);
+            window.localStorage.getItem(visualMemoryStorageKey);
           if (savedMemory) {
             const parsedMemory = JSON.parse(savedMemory);
             if (Array.isArray(parsedMemory)) {
@@ -258,7 +263,6 @@ export default function WebDesignSpecialist() {
                 JSON.stringify(validMemory)
               );
             }
-            window.localStorage.removeItem(VISUAL_MEMORY_KEY);
           }
         } catch (error) {
           console.warn("ORBYVEN Web Design visual memory could not be restored", error);
