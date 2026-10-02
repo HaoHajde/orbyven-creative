@@ -290,7 +290,10 @@ export default function WorkspaceIntelligence({
         };
       });
       const plan = await loadPlanForConversation(body.conversation.id, token);
-      if (plan) {
+      const hasStoredOutcome = Boolean(
+        plan && restored.some((message) => message.outcome?.planId === plan.planId)
+      );
+      if (plan && !hasStoredOutcome) {
         for (let index = restored.length - 1; index >= 0; index -= 1) {
           if (restored[index].role === "assistant") {
             restored[index].actions = [plan];
