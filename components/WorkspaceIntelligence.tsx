@@ -6,6 +6,7 @@ import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { IntelligenceResponse, IntelligenceSpecialist } from "@/lib/ai/intelligence-types";
+import IntelligenceMessageList, { type UiMessage } from "@/components/intelligence/IntelligenceMessageList";
 
 type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
@@ -28,34 +29,86 @@ type ConversationSummary = {
 type PlanAction = Extract<IntelligenceResponse["actions"][number], { kind: "review_plan" }>;
 type ConfirmAction = Extract<IntelligenceResponse["actions"][number], { kind: "confirm_proposal" }>;
 
-type UiMessage = {
-  key: string;
-  role: "user" | "assistant";
-  content: string;
-  specialist: IntelligenceSpecialist | null;
-  facts: Array<{ label: string; value: string }>;
-  actions: IntelligenceResponse["actions"];
-};
-
 const QUICK_PROMPTS = [
+  "Fă-mi briefingul zilei",
+  "Compară opțiunile pentru Focus #1",
   "Ce am de făcut azi?",
   "Ce am de încasat?",
-  "Creează lead Ana Popescu; telefon: 0712345678",
-  "Creează lucrare Revizie centrală; prioritate: urgent",
-  "Programează o programare Revizie tehnică mâine la 10:30",
-  "Creează deviz Renovare baie; poziție: Montaj, 1 x 1500 lei",
-  "Creează document Raport intervenție; conținut: Verificare finalizată fără probleme.",
-  "Creează client Ana Popescu; apoi creează lucrare Revizie centrală pentru el; apoi programeaz-o mâine la 10:30",
+  "Creează o lucrare nouă",
   "Vreau să modific site-ul.",
 ];
 
-const specialistLabels: Record<IntelligenceSpecialist, string> = {
-  operations: "Operations",
-  finance: "Finance",
-  web_design: "Web Design",
-  documents: "Documents",
-  general: "ORBYVEN Core",
-};
+const focusFactLabels = ["Focus · Motiv", "Focus · De ce", "Focus · Risc", "Focus · Pas"];
+
+function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
+  const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  const reason = value("Focus · Motiv");
+  const why = value("Focus · De ce");
+  const consequence = value("Focus · Risc");
+  const nextStep = value("Focus · Pas");
+
+  return {
+    facts: facts.filter((fact) => !focusFactLabels.includes(fact.label)),
+    focus: why && consequence && nextStep
+      ? {
+          ...(reason ? { reason: reason as NonNullable<IntelligenceResponse["focus"]>["reason"] } : {}),
+          why,
+          consequence,
+          nextStep,
+          confidence: "high" as const,
+        }
+      : undefined,
+  };
+}
+
+function splitStoredOutcome(facts: Array<{ label: string; value: string }>) {
+  const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  const planId = value("Outcome · Plan");
+  const rawStatus = value("Outcome · Status");
+  const status: NonNullable<IntelligenceResponse["outcome"]>["status"] | undefined =
+    rawStatus === "no_longer_primary" || rawStatus === "shifted" || rawStatus === "still_priority"
+      ? rawStatus
+      : undefined;
+  const summary = value("Outcome · Summary");
+  const previousFocus = value("Outcome · Previous");
+  const currentFocus = value("Outcome · Current");
+
+  return {
+    facts: facts.filter((fact) => !fact.label.startsWith("Outcome · ")),
+    outcome: planId && status && summary
+      ? {
+          planId,
+          status,
+          previousFocus,
+          currentFocus,
+          summary,
+          confidence: "high" as const,
+        }
+      : undefined,
+  };
+}
+
+function splitStoredDecision(facts: Array<{ label: string; value: string }>) {
+  const subject = facts.find((fact) => fact.label === "Decision · Context")?.value;
+  const handoffAvailable = facts.find((fact) => fact.label === "Decision · Handoff")?.value === "yes";
+  const optionFacts = facts
+    .filter((fact) => /^Decision · [1-3]$/.test(fact.label))
+    .sort((left, right) => left.label.localeCompare(right.label));
+
+  const options = optionFacts.flatMap((fact) => {
+    const [label, impact, tradeoff, whenToUse] = fact.value.split("¦");
+    return label && impact && tradeoff && whenToUse
+      ? [{ label, impact, tradeoff, whenToUse }]
+      : [];
+  });
+
+  return {
+    facts: facts.filter((fact) => !fact.label.startsWith("Decision · ")),
+    decision: subject && options.length
+      ? { subject, options, handoffAvailable, confidence: "high" as const }
+      : undefined,
+  };
+}
 
 export default function WorkspaceIntelligence({
   organizationId,
@@ -75,6 +128,7 @@ export default function WorkspaceIntelligence({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proposalBusy, setProposalBusy] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(false);
   const [error, setError] = useState("");
   const messageSequence = useRef(0);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -202,16 +256,27 @@ export default function WorkspaceIntelligence({
       if (!response.ok || !body.conversation) {
         throw new Error(body.error || "Conversația nu a putut fi încărcată.");
       }
-      const restored = (body.messages ?? []).map((item) => ({
-        key: item.id,
-        role: item.role,
-        content: item.content,
-        specialist: item.specialist,
-        facts: item.facts ?? [],
-        actions: [] as IntelligenceResponse["actions"],
-      }));
+      const restored = (body.messages ?? []).map((item) => {
+        const storedFocus = splitStoredFocus(item.facts ?? []);
+        const storedDecision = splitStoredDecision(storedFocus.facts);
+        const storedOutcome = splitStoredOutcome(storedDecision.facts);
+        return {
+          key: item.id,
+          role: item.role,
+          content: item.content,
+          specialist: item.specialist,
+          facts: storedOutcome.facts,
+          actions: [] as IntelligenceResponse["actions"],
+          focus: storedFocus.focus,
+          decision: storedDecision.decision,
+          outcome: storedOutcome.outcome,
+        };
+      });
       const plan = await loadPlanForConversation(body.conversation.id, token);
-      if (plan) {
+      const hasStoredOutcome = Boolean(
+        plan && restored.some((message) => message.outcome?.planId === plan.planId)
+      );
+      if (plan && !hasStoredOutcome) {
         for (let index = restored.length - 1; index >= 0; index -= 1) {
           if (restored[index].role === "assistant") {
             restored[index].actions = [plan];
@@ -276,6 +341,9 @@ export default function WorkspaceIntelligence({
         specialist: body.specialist,
         facts: body.facts,
         actions: body.actions,
+        focus: body.focus,
+        decision: body.decision,
+        outcome: body.outcome,
       }]);
       void loadConversations();
     } catch (reason) {
@@ -289,6 +357,46 @@ export default function WorkspaceIntelligence({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void ask();
+  };
+
+  const recheckOutcome = async (planId: string, token: string) => {
+    if (!conversationId) return;
+    const response = await requestApi("/api/ai/outcomes/recheck", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        organizationId,
+        conversationId,
+        planId,
+      }),
+    });
+    const body = (await response.json()) as IntelligenceResponse & {
+      conversationId?: string;
+      error?: string;
+    };
+    if (!response.ok || !body.outcome) {
+      throw new Error(body.error || "Outcome Loop nu a putut recalcula rezultatul.");
+    }
+
+    setMessages((current) => {
+      if (current.some((message) => message.outcome?.planId === body.outcome?.planId)) {
+        return current;
+      }
+      return [...current, {
+        key: nextLocalKey("outcome"),
+        role: "assistant",
+        content: body.answer,
+        specialist: body.specialist,
+        facts: body.facts,
+        actions: body.actions,
+        focus: body.focus,
+        decision: body.decision,
+        outcome: body.outcome,
+      }];
+    });
   };
 
   const clearProposalAction = (proposalId: string) => {
@@ -379,7 +487,20 @@ export default function WorkspaceIntelligence({
       if (body.plan && conversationId) {
         try {
           const latestPlan = await loadPlanForConversation(conversationId, token);
-          if (latestPlan) putPlanInMessages(latestPlan);
+          if (latestPlan) {
+            putPlanInMessages(latestPlan);
+            if (
+              body.status === "executed" &&
+              latestPlan.steps.length > 0 &&
+              latestPlan.steps.every((step) => step.status === "executed")
+            ) {
+              try {
+                await recheckOutcome(latestPlan.planId, token);
+              } catch (outcomeError) {
+                console.error("ORBYVEN outcome recheck failed", outcomeError);
+              }
+            }
+          }
         } catch (planRefreshError) {
           console.error("ORBYVEN plan refresh failed", planRefreshError);
         }
@@ -485,6 +606,78 @@ export default function WorkspaceIntelligence({
     }
   };
 
+  const chooseDecision = async (
+    decision: NonNullable<IntelligenceResponse["decision"]>,
+    optionIndex: number
+  ) => {
+    if (decisionBusy || !conversationId) {
+      if (!conversationId) setError("Deschide comparația într-o conversație activă înainte de handoff.");
+      return;
+    }
+
+    setDecisionBusy(true);
+    setError("");
+    try {
+      const token = await accessToken();
+      const response = await requestApi("/api/ai/decisions/handoff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          organizationId,
+          conversationId,
+          optionIndex,
+          expectedSubject: decision.subject,
+          expectedOptionLabel: decision.options[optionIndex]?.label,
+        }),
+      });
+      const body = (await response.json()) as IntelligenceResponse & {
+        conversationId?: string;
+        handoff?: {
+          subject: string;
+          optionLabel: string;
+          optionIndex: number;
+        };
+        error?: string;
+      };
+      if (!response.ok || !body.handoff) {
+        throw new Error(body.error || "Planul nu a putut fi pregătit.");
+      }
+
+      const choiceText =
+        "Aleg varianta „" + body.handoff.optionLabel + "” pentru „" + body.handoff.subject + "”.";
+      setMessages((current) => [
+        ...current,
+        {
+          key: nextLocalKey("decision-choice"),
+          role: "user",
+          content: choiceText,
+          specialist: null,
+          facts: [],
+          actions: [],
+        },
+        {
+          key: nextLocalKey("decision-plan"),
+          role: "assistant",
+          content: body.answer,
+          specialist: body.specialist,
+          facts: body.facts,
+          actions: body.actions,
+          focus: body.focus,
+          decision: body.decision,
+        },
+      ]);
+      void loadConversations();
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Planul nu a putut fi pregătit.");
+    } finally {
+      setDecisionBusy(false);
+    }
+  };
+
   const runAction = (action: IntelligenceResponse["actions"][number]) => {
     if (action.kind === "confirm_proposal") {
       void decideProposal(action, "confirm");
@@ -508,146 +701,6 @@ export default function WorkspaceIntelligence({
     });
   };
 
-  const renderAssistantActions = (actions: IntelligenceResponse["actions"]) => {
-    if (!actions.length) return null;
-    return (
-      <div className="mt-3 grid gap-2">
-        {actions.map((action, index) => action.kind === "confirm_proposal" ? (
-          <div key={action.proposalId} className="rounded-[14px] border border-amber-400/20 bg-amber-400/[0.06] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-300">CONFIRMARE NECESARĂ</p>
-            <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">
-              Confirmă pentru execuție. Propunerea expiră automat.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                disabled={proposalBusy}
-                onClick={() => void decideProposal(action, "confirm")}
-                className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40"
-              >
-                {proposalBusy ? "Se execută…" : action.label}
-              </button>
-              <button
-                type="button"
-                disabled={proposalBusy}
-                onClick={() => void decideProposal(action, "reject")}
-                className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[11px] font-semibold disabled:opacity-40"
-              >
-                Renunță
-              </button>
-            </div>
-          </div>
-        ) : action.kind === "review_plan" ? (
-          <div key={action.planId} className="rounded-[15px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055] p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN</p>
-                <p className="mt-1 text-[10px] text-[var(--muted)]">
-                  Confirmare pas cu pas.
-                </p>
-              </div>
-              <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[9px] font-semibold text-[var(--muted)]">
-                {action.steps.filter((step) => step.status === "executed").length}/{action.steps.length}
-              </span>
-            </div>
-            <div className="mt-3 grid gap-2">
-              {action.steps.map((step) => {
-                const statusLabel =
-                  step.status === "executed" ? "Executat" :
-                  step.status === "ready" ? "Pregătit" :
-                  step.status === "rejected" ? "Oprit" :
-                  step.status === "expired" ? "Expirat" :
-                  step.status === "failed" ? "Eșuat" :
-                  "Blocat";
-                return (
-                  <div key={step.proposalId} className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/55 px-3 py-2.5">
-                    <div className="flex items-start gap-2.5">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] text-[9px] font-bold">
-                        {step.status === "executed" ? "✓" : step.index}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-semibold leading-5">{step.summary}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{statusLabel}</p>
-                        {step.status === "ready" ? (
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              type="button"
-                              disabled={proposalBusy}
-                              onClick={() => decidePlanStep(action, step, "confirm")}
-                              className="rounded-full bg-[var(--button)] px-3.5 py-2 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40"
-                            >
-                              {proposalBusy ? "Se execută…" : "Confirmă"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={proposalBusy}
-                              onClick={() => decidePlanStep(action, step, "reject")}
-                              className="rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[11px] font-semibold disabled:opacity-40"
-                            >
-                              Oprește
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {action.recovery ? (
-              <div className="mt-3 rounded-[13px] border border-[#7897ff]/25 bg-[#7897ff]/[0.08] p-3">
-                <div className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 text-[11px] text-[#b9c5ff]">↻</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
-                    <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">{action.recovery.message}</p>
-                    <button
-                      type="button"
-                      disabled={proposalBusy}
-                      onClick={() => {
-                        if (action.recovery?.mode === "needs_input") {
-                          preparePromptRepair(action.recovery.suggestedPrompt || "");
-                        } else {
-                          void recoverPlanAction(action);
-                        }
-                      }}
-                      className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[10px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
-                    >
-                      {proposalBusy ? "Se pregătește…" : action.recovery.label}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : action.kind === "repair_plan" ? (
-          <div key={`repair-${action.blockedStep}-${index}`} className="rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.06] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">PLAN RECOVERY</p>
-            <p className="mt-1 text-[11px] leading-4 text-[var(--muted)]">{action.message}</p>
-            <button
-              type="button"
-              onClick={() => preparePromptRepair(action.suggestedPrompt)}
-              className="mt-2.5 rounded-full border border-[#7897ff]/30 bg-[#7897ff]/10 px-3 py-1.5 text-[10px] font-semibold text-[#c7d0ff]"
-            >
-              {action.label}
-            </button>
-          </div>
-        ) : (
-          <button
-            key={`${action.kind}-${index}`}
-            type="button"
-            onClick={() => runAction(action)}
-            className={index === 0
-              ? "w-fit rounded-full bg-[var(--button)] px-3.5 py-2 text-[10px] font-semibold text-[var(--button-text)]"
-              : "w-fit rounded-full border border-[var(--border-strong)] px-3.5 py-2 text-[10px] font-semibold"}
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
-    );
-  };
-
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -660,7 +713,6 @@ export default function WorkspaceIntelligence({
         >
           <>
           <button
-            data-workspace-mobile-float="true"
             type="button"
             aria-label={open ? "Închide ORBYVEN Intelligence" : "Deschide ORBYVEN Intelligence"}
             aria-haspopup="dialog"
@@ -703,7 +755,7 @@ export default function WorkspaceIntelligence({
                 <header className="orbyven-intelligence-header relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.25</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -783,47 +835,19 @@ export default function WorkspaceIntelligence({
                       ) : null}
     
                       <div className="grid gap-3">
-                        {messages.map((message) => {
-                          if (message.role === "user") {
-                            return (
-                              <div key={message.key} className="ml-10 rounded-[15px] bg-[var(--button)] px-3.5 py-3 text-[12px] leading-5 text-[var(--button-text)]">
-                                {message.content}
-                              </div>
-                            );
-                          }
-
-                          const plan = message.actions.find(
-                            (action): action is PlanAction => action.kind === "review_plan"
-                          );
-                          const displayContent = plan
-                            ? `Plan pregătit · ${plan.steps.length} pași`
-                            : message.content;
-                          const displayFacts = plan ? [] : message.facts;
-
-                          return (
-                            <article key={message.key} className="mr-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-3.5">
-                              <div className="flex items-center gap-2">
-                                <span className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/10 px-2.5 py-1 text-[9px] font-bold text-[#aab9ff]">
-                                  {specialistLabels[message.specialist || "general"]}
-                                </span>
-                                <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN</span>
-                              </div>
-                              <p className="mt-2.5 text-[13px] leading-5 text-[var(--text)]">{displayContent}</p>
-                              {displayFacts.length ? (
-                                <div className="mt-3 grid grid-cols-2 gap-2">
-                                  {displayFacts.map((fact, index) => (
-                                    <div key={`${fact.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)]/60 px-3 py-2.5">
-                                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">{fact.label}</p>
-                                      <p className="mt-1 text-[11px] font-semibold">{fact.value}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : null}
-                              {renderAssistantActions(message.actions)}
-                            </article>
-                          );
-                        })}
-
+                        <IntelligenceMessageList
+                          messages={messages}
+                          loading={loading}
+                          proposalBusy={proposalBusy}
+                          decisionBusy={decisionBusy}
+                          onAsk={ask}
+                          onChooseDecision={chooseDecision}
+                          onDecideProposal={decideProposal}
+                          onDecidePlanStep={decidePlanStep}
+                          onRecoverPlanAction={recoverPlanAction}
+                          onPreparePromptRepair={preparePromptRepair}
+                          onRunAction={runAction}
+                        />
                         {loading ? (
                           <div role="status" className="mr-16 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-4 py-5 text-center">
                             <div className="mx-auto h-5 w-5 animate-pulse rounded-full border border-[#7897ff]/45 bg-[#7897ff]/10" />
@@ -859,7 +883,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.13 · Acțiunile sunt verificate înainte de execuție.
+                      0.8.25 · Adaptive Follow-up · Re-check → următorul pas controlat.
                     </p>
                   </form>
                 ) : null}
