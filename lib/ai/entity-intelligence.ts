@@ -1,7 +1,16 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import type { IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
-import { detectEntityIntelligenceQuery, detectEntityQuestionScope, type EntityQuestionScope } from "@/lib/ai/entity-intelligence-core";
+import {
+  detectEntityIntelligenceQuery,
+  detectEntityQuestionScope,
+  type EntityQuestionScope,
+} from "@/lib/ai/entity-intelligence-core";
+import {
+  clientScopedResponse,
+  workScopedResponse,
+  type EntityFinanceSummary,
+} from "@/lib/ai/entity-intelligence-scopes";
 
 type ClientRow = {
   id: string;
@@ -122,16 +131,6 @@ function ron(cents: number) {
     currency: "RON",
     maximumFractionDigits: 0,
   }).format(cents / 100);
-}
-
-function activityLabel(kind: string) {
-  return ({
-    note: "notă",
-    call: "apel",
-    email: "email",
-    meeting: "întâlnire",
-    status: "status",
-  } as Record<string, string>)[kind] || kind;
 }
 
 async function findClientCandidates(actor: BillingActor, value: string): Promise<ClientRow[]> {
@@ -414,178 +413,27 @@ async function clientOverview(
     financeSentence = outstandingCents > 0 ? ` Financiar, mai sunt ${ron(outstandingCents)} de încasat.` : "";
   }
 
-  if (scope === "finance") {
-    if (!available.has("expenses")) {
-      return {
-        specialist: "finance",
-        answer: `Modulul Finanțe nu este activ pentru ${name}.`,
-        facts: [{ label: "Client", value: name }],
-        actions: [{ kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    if (!FINANCE_ROLES.has(actor.role)) {
-      return {
-        specialist: "finance",
-        answer: "Rolul tău nu are acces la contextul financiar al acestui client.",
-        facts: [{ label: "Client", value: name }],
-        actions: [{ kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    return {
-      specialist: "finance",
-      answer: `${name}: încasat ${ron(incomeCents)}, costuri înregistrate ${ron(expensesCents)}, de încasat ${ron(outstandingCents)}.`,
-      facts: [
-        { label: "Client", value: name },
-        { label: "Încasat", value: ron(incomeCents) },
-        { label: "Costuri", value: ron(expensesCents) },
-        { label: "De încasat", value: ron(outstandingCents) },
-      ],
-      actions: [
-        { kind: "open_module", label: "Deschide Finanțe", moduleId: "expenses", clientId: entity.id },
-        { kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "estimates") {
-    if (!available.has("estimates")) {
-      return {
-        specialist: "operations",
-        answer: "Modulul Oferte & devize nu este activ în acest workspace.",
-        facts: [{ label: "Client", value: name }],
-        actions: [{ kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    const latest = estimates[0] ?? null;
-    return {
-      specialist: "operations",
-      answer: latest
-        ? `${name} are ${estimates.length} devize în context; cel mai recent este ${latest.reference}, status ${latest.status}, valoare ${latest.currency === "RON" ? ron(latest.total_cents) : latest.total_cents / 100 + " " + latest.currency}.`
-        : `${name} nu are încă devize înregistrate.`,
-      facts: [
-        { label: "Client", value: name },
-        { label: "Devize", value: String(estimates.length) },
-        { label: "Active", value: String(activeEstimates.length) },
-        ...(latest ? [{ label: "Ultimul", value: latest.reference }, { label: "Status", value: latest.status }] : []),
-      ],
-      actions: [
-        ...(latest ? [{
-          kind: "open_module" as const,
-          label: latest.reference,
-          moduleId: "estimates" as const,
-          recordId: latest.id,
-          clientId: entity.id,
-          taskId: latest.task_id ?? undefined,
-          estimateId: latest.id,
-        }] : []),
-        { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "calendar") {
-    if (!available.has("calendar")) {
-      return {
-        specialist: "operations",
-        answer: "Modulul Calendar nu este activ în acest workspace.",
-        facts: [{ label: "Client", value: name }],
-        actions: [{ kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    return {
-      specialist: "operations",
-      answer: nextEvent
-        ? `Următoarea programare pentru ${name} este „${nextEvent.title}”, ${formatDateTime(nextEvent.start_at)}.`
-        : `${name} nu are programări viitoare în calendar.`,
-      facts: [
-        { label: "Client", value: name },
-        { label: "Programări viitoare", value: String(events.length) },
-        ...(nextEvent ? [{ label: "Următoarea", value: formatDateTime(nextEvent.start_at) }] : []),
-      ],
-      actions: [
-        ...(nextEvent ? [{
-          kind: "open_module" as const,
-          label: "Deschide programarea",
-          moduleId: "calendar" as const,
-          recordId: nextEvent.id,
-          clientId: entity.id,
-          taskId: nextEvent.task_id ?? undefined,
-        }] : []),
-        { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "documents") {
-    if (!available.has("documents")) {
-      return {
-        specialist: "documents",
-        answer: "Modulul Documente nu este activ în acest workspace.",
-        facts: [{ label: "Client", value: name }],
-        actions: [{ kind: "open_module", label: "Deschide clientul", moduleId: "leads", recordId: entity.id }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    const latest = documents[0] ?? null;
-    return {
-      specialist: "documents",
-      answer: latest
-        ? `${name} are ${documents.length} documente în context; cel mai recent este „${latest.name}”.`
-        : `${name} nu are documente legate în workspace.`,
-      facts: [
-        { label: "Client", value: name },
-        { label: "Documente", value: String(documents.length) },
-        ...(latest ? [{ label: "Cel mai recent", value: latest.name }] : []),
-      ],
-      actions: [
-        ...(latest ? [{
-          kind: "open_module" as const,
-          label: latest.name,
-          moduleId: "documents" as const,
-          recordId: latest.id,
-          taskId: latest.task_id ?? undefined,
-        }] : []),
-        { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "history") {
-    const last = activities[0] ?? null;
-    const completed = tasks.filter((row) => row.status === "done");
-    return {
-      specialist: "operations",
-      answer: last
-        ? `Ultima activitate pentru ${name}: ${activityLabel(last.kind)}, ${formatDateTime(last.occurred_at)}. În context sunt ${completed.length} lucrări finalizate.`
-        : `Nu există activități CRM recente pentru ${name}. În context sunt ${completed.length} lucrări finalizate.`,
-      facts: [
-        { label: "Client", value: name },
-        { label: "Activități recente", value: String(activities.length) },
-        { label: "Lucrări finalizate", value: String(completed.length) },
-        ...(last ? [{ label: "Ultima activitate", value: activityLabel(last.kind) + " · " + formatDateTime(last.occurred_at) }] : []),
-      ],
-      actions: [
-        { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
-        ...(completed[0] ? [{
-          kind: "open_module" as const,
-          label: completed[0].title,
-          moduleId: "tasks" as const,
-          recordId: completed[0].id,
-          clientId: entity.id,
-          taskId: completed[0].id,
-        }] : []),
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
+  const finance: EntityFinanceSummary = {
+    moduleEnabled: available.has("expenses"),
+    roleAllowed: FINANCE_ROLES.has(actor.role),
+    incomeCents,
+    expensesCents,
+    outstandingCents,
+  };
+  const scoped = clientScopedResponse({
+    scope,
+    available,
+    clientId: entity.id,
+    name,
+    tasks,
+    estimates,
+    activeEstimateCount: activeEstimates.length,
+    events,
+    documents,
+    activities,
+    finance,
+  });
+  if (scoped) return scoped;
 
   const actions = [
     { kind: "open_module" as const, label: "Deschide clientul", moduleId: "leads" as const, recordId: entity.id },
@@ -747,7 +595,7 @@ async function workOverview(
   ];
 
   let financeSentence = "";
-  let costs = 0;
+  let expensesCents = 0;
   let incomeCents = 0;
   let outstandingCents = 0;
   if (canFinance) {
@@ -755,7 +603,6 @@ async function workOverview(
     const incomeRows = (incomeResult.data ?? []) as Array<{ amount_cents: number; currency: string; commercial_document_id: string | null }>;
     const invoices = (invoicesResult.data ?? []) as InvoiceRow[];
     const paidByInvoice = new Map<string, number>();
-
     for (const row of incomeRows) {
       if (!row.commercial_document_id || row.currency !== "RON") continue;
       paidByInvoice.set(
@@ -763,8 +610,7 @@ async function workOverview(
         (paidByInvoice.get(row.commercial_document_id) ?? 0) + Number(row.amount_cents || 0)
       );
     }
-
-    costs = expenseRows
+    expensesCents = expenseRows
       .filter((row) => row.currency === "RON")
       .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
     incomeCents = incomeRows
@@ -777,250 +623,36 @@ async function workOverview(
           sum + Math.max(0, Number(row.total_cents || 0) - (paidByInvoice.get(row.id) ?? 0)),
         0
       );
-
     facts.push(
       { label: "Încasat", value: ron(incomeCents) },
-      { label: "Costuri înregistrate", value: ron(costs) },
+      { label: "Costuri înregistrate", value: ron(expensesCents) },
       { label: "De încasat", value: ron(outstandingCents) }
     );
-    financeSentence = costs > 0 ? ` Costurile financiare înregistrate sunt ${ron(costs)}.` : "";
+    financeSentence = expensesCents > 0 ? ` Costurile financiare înregistrate sunt ${ron(expensesCents)}.` : "";
   }
 
-  if (scope === "finance") {
-    if (!available.has("expenses")) {
-      return {
-        specialist: "finance",
-        answer: "Modulul Finanțe nu este activ în acest workspace.",
-        facts: [{ label: "Lucrare", value: entity.title }],
-        actions: [{
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    if (!FINANCE_ROLES.has(actor.role)) {
-      return {
-        specialist: "finance",
-        answer: "Rolul tău nu are acces la contextul financiar al acestei lucrări.",
-        facts: [{ label: "Lucrare", value: entity.title }],
-        actions: [{
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    return {
-      specialist: "finance",
-      answer: `„${entity.title}”: încasat ${ron(incomeCents)}, costuri înregistrate ${ron(costs)}, de încasat ${ron(outstandingCents)}.`,
-      facts: [
-        { label: "Lucrare", value: entity.title },
-        { label: "Încasat", value: ron(incomeCents) },
-        { label: "Costuri", value: ron(costs) },
-        { label: "De încasat", value: ron(outstandingCents) },
-      ],
-      actions: [
-        {
-          kind: "open_module",
-          label: "Deschide Finanțe",
-          moduleId: "expenses",
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        },
-        {
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "estimates") {
-    if (!available.has("estimates")) {
-      return {
-        specialist: "operations",
-        answer: "Modulul Oferte & devize nu este activ în acest workspace.",
-        facts: [{ label: "Lucrare", value: entity.title }],
-        actions: [{
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          taskId: entity.id,
-        }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    return {
-      specialist: "operations",
-      answer: latestEstimate
-        ? `„${entity.title}” are ${estimates.length} devize în context; cel mai recent este ${latestEstimate.reference}, status ${latestEstimate.status}, valoare ${latestEstimate.currency === "RON" ? ron(latestEstimate.total_cents) : latestEstimate.total_cents / 100 + " " + latestEstimate.currency}.`
-        : `„${entity.title}” nu are încă devize înregistrate.`,
-      facts: [
-        { label: "Lucrare", value: entity.title },
-        { label: "Devize", value: String(estimates.length) },
-        ...(latestEstimate ? [
-          { label: "Ultimul", value: latestEstimate.reference },
-          { label: "Status", value: latestEstimate.status },
-        ] : []),
-      ],
-      actions: [
-        ...(latestEstimate ? [{
-          kind: "open_module" as const,
-          label: latestEstimate.reference,
-          moduleId: "estimates" as const,
-          recordId: latestEstimate.id,
-          clientId: latestEstimate.client_id ?? undefined,
-          taskId: entity.id,
-          estimateId: latestEstimate.id,
-        }] : []),
-        {
-          kind: "open_module" as const,
-          label: "Deschide lucrarea",
-          moduleId: "tasks" as const,
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "calendar") {
-    if (!available.has("calendar")) {
-      return {
-        specialist: "operations",
-        answer: "Modulul Calendar nu este activ în acest workspace.",
-        facts: [{ label: "Lucrare", value: entity.title }],
-        actions: [{
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          taskId: entity.id,
-        }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    return {
-      specialist: "operations",
-      answer: nextEvent
-        ? `Următoarea programare pentru „${entity.title}” este „${nextEvent.title}”, ${formatDateTime(nextEvent.start_at)}.`
-        : `„${entity.title}” nu are programări viitoare în calendar.`,
-      facts: [
-        { label: "Lucrare", value: entity.title },
-        { label: "Programări viitoare", value: String(events.length) },
-        ...(nextEvent ? [{ label: "Următoarea", value: formatDateTime(nextEvent.start_at) }] : []),
-      ],
-      actions: [
-        ...(nextEvent ? [{
-          kind: "open_module" as const,
-          label: "Deschide programarea",
-          moduleId: "calendar" as const,
-          recordId: nextEvent.id,
-          clientId: nextEvent.client_id ?? undefined,
-          taskId: entity.id,
-        }] : []),
-        {
-          kind: "open_module" as const,
-          label: "Deschide lucrarea",
-          moduleId: "tasks" as const,
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "documents") {
-    if (!available.has("documents")) {
-      return {
-        specialist: "documents",
-        answer: "Modulul Documente nu este activ în acest workspace.",
-        facts: [{ label: "Lucrare", value: entity.title }],
-        actions: [{
-          kind: "open_module",
-          label: "Deschide lucrarea",
-          moduleId: "tasks",
-          recordId: entity.id,
-          taskId: entity.id,
-        }],
-        generatedBy: "orbyven_core",
-      };
-    }
-    const latestDocument = documents[0] ?? null;
-    return {
-      specialist: "documents",
-      answer: latestDocument
-        ? `„${entity.title}” are ${documents.length} documente în context; cel mai recent este „${latestDocument.name}”.`
-        : `„${entity.title}” nu are documente legate.`,
-      facts: [
-        { label: "Lucrare", value: entity.title },
-        { label: "Documente", value: String(documents.length) },
-        ...(latestDocument ? [{ label: "Cel mai recent", value: latestDocument.name }] : []),
-      ],
-      actions: [
-        ...(latestDocument ? [{
-          kind: "open_module" as const,
-          label: latestDocument.name,
-          moduleId: "documents" as const,
-          recordId: latestDocument.id,
-          taskId: entity.id,
-        }] : []),
-        {
-          kind: "open_module" as const,
-          label: "Deschide lucrarea",
-          moduleId: "tasks" as const,
-          recordId: entity.id,
-          clientId: entity.client_id ?? undefined,
-          taskId: entity.id,
-        },
-      ],
-      generatedBy: "orbyven_core",
-    };
-  }
-
-  if (scope === "history") {
-    return {
-      specialist: "operations",
-      answer:
-        `„${entity.title}” este ${entity.status}, la ${Number(entity.progress || 0)}% progres. Ultima actualizare a fost ${formatDateTime(entity.updated_at)}; sunt ${events.length} programări viitoare și ${documents.length} documente legate.`,
-      facts: [
-        { label: "Lucrare", value: entity.title },
-        { label: "Ultima actualizare", value: formatDateTime(entity.updated_at) },
-        { label: "Status", value: entity.status },
-        { label: "Progres", value: `${Number(entity.progress || 0)}%` },
-        { label: "Programări viitoare", value: String(events.length) },
-        { label: "Documente", value: String(documents.length) },
-      ],
-      actions: [{
-        kind: "open_module",
-        label: "Deschide lucrarea",
-        moduleId: "tasks",
-        recordId: entity.id,
-        clientId: entity.client_id ?? undefined,
-        taskId: entity.id,
-      }],
-      generatedBy: "orbyven_core",
-    };
-  }
+  const finance: EntityFinanceSummary = {
+    moduleEnabled: available.has("expenses"),
+    roleAllowed: FINANCE_ROLES.has(actor.role),
+    incomeCents,
+    expensesCents,
+    outstandingCents,
+  };
+  const scoped = workScopedResponse({
+    scope,
+    available,
+    taskId: entity.id,
+    clientId: entity.client_id,
+    title: entity.title,
+    status: entity.status,
+    progress: Number(entity.progress || 0),
+    updatedAt: entity.updated_at,
+    estimates,
+    events,
+    documents,
+    finance,
+  });
+  if (scoped) return scoped;
 
   const actions = [
     {
