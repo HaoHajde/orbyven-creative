@@ -148,7 +148,7 @@ function CheckoutPanel({
 }) {
   return (
     <div className="grid gap-3 rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3 text-white shadow-[0_28px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.07)] ring-1 ring-white/[.02] lg:grid-cols-[1.08fr_.92fr]">
-      <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none]">
+      <div className="flex min-w-0 items-center gap-1 overflow-hidden sm:gap-2 sm:overflow-x-auto sm:[scrollbar-width:none]">
         {[
           ["1", "Alegi", "Devize"],
           ["2", "Confirmi", "Task-uri"],
@@ -159,23 +159,23 @@ function CheckoutPanel({
           const ready = confirmed && index === 2;
 
           return (
-            <div key={step} className="flex shrink-0 items-center">
+            <div key={step} className="flex min-w-0 flex-1 items-center sm:flex-none sm:shrink-0">
               <div
-                className={`relative flex h-[82px] w-[168px] items-center gap-3 rounded-[18px] border px-4 shadow-[0_14px_34px_rgba(0,0,0,.24)] transition-all duration-300 ${active ? "border-[#a88bff]/48 bg-[#8f6cff]/10 shadow-[0_0_28px_rgba(126,93,255,.12)]" : completed ? "border-emerald-400/14 bg-emerald-400/[.035]" : "border-white/9 bg-[#0f1017]"}`}
+                className={`relative flex h-[70px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[14px] border px-2 sm:h-[82px] sm:w-[168px] sm:flex-none sm:justify-start sm:gap-3 sm:rounded-[18px] sm:px-4 shadow-[0_14px_34px_rgba(0,0,0,.24)] transition-all duration-300 ${active ? "border-[#a88bff]/48 bg-[#8f6cff]/10 shadow-[0_0_28px_rgba(126,93,255,.12)]" : completed ? "border-emerald-400/14 bg-emerald-400/[.035]" : "border-white/9 bg-[#0f1017]"}`}
               >
                 <span
-                  className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold transition-all duration-300 ${completed ? "border-emerald-400/35 bg-emerald-400/12 text-emerald-300" : active ? "border-[#a98dff] bg-[#8f6cff] text-white shadow-[0_0_26px_rgba(143,108,255,.52)]" : "border-white/12 bg-[#16101f] text-white/25"}`}
+                  className={`absolute -top-2.5 left-1/2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border text-[10px] sm:-top-3 sm:h-8 sm:w-8 sm:text-[11px] font-bold transition-all duration-300 ${completed ? "border-emerald-400/35 bg-emerald-400/12 text-emerald-300" : active ? "border-[#a98dff] bg-[#8f6cff] text-white shadow-[0_0_26px_rgba(143,108,255,.52)]" : "border-white/12 bg-[#16101f] text-white/25"}`}
                 >
                   {completed ? "✓" : step}
                 </span>
-                <span className={`mt-2 transition ${active ? "text-white" : completed ? "text-emerald-300/80" : "text-[#8f849f]"}`}><Glyph kind={icon} /></span>
-                <div className="mt-2">
-                  <span className={`block text-[11px] font-medium ${active ? "text-white" : completed ? "text-white/74" : "text-white/35"}`}>{label}</span>
+                <span className={`mt-2 hidden transition sm:inline-flex ${active ? "text-white" : completed ? "text-emerald-300/80" : "text-[#8f849f]"}`}><Glyph kind={icon} /></span>
+                <div className="mt-2 min-w-0 text-center sm:text-left">
+                  <span className={`block truncate text-[9px] font-medium sm:text-[11px] ${active ? "text-white" : completed ? "text-white/74" : "text-white/35"}`}>{label}</span>
                   {ready ? <span className="mt-0.5 block text-[6px] font-bold uppercase tracking-[.12em] text-[#b8a4ff]">READY</span> : null}
                 </div>
               </div>
               {index < 2 ? (
-                <span className={`mx-3 text-[14px] transition-all duration-300 ${index === 0 || confirmed ? "text-[#9f7cff] drop-shadow-[0_0_8px_rgba(143,108,255,.7)]" : "text-white/14"}`}>→</span>
+                <span className={`mx-1 shrink-0 text-[10px] transition-all duration-300 sm:mx-3 sm:text-[14px] ${index === 0 || confirmed ? "text-[#9f7cff] drop-shadow-[0_0_8px_rgba(143,108,255,.7)]" : "text-white/14"}`}>→</span>
               ) : null}
             </div>
           );
@@ -186,13 +186,13 @@ function CheckoutPanel({
         <button
           type="button"
           onClick={onToggle}
-          className={`flex w-full items-center justify-between rounded-[18px] border px-4 py-4 text-left transition ${confirmed ? "border-[#a98dff]/70 bg-[#8f6cff]/16 shadow-[0_0_28px_rgba(126,93,255,.12)]" : "border-white/9 bg-[#0f1017] hover:border-[#a98dff]/30 hover:bg-[#15111f]"}`}
+          className={`flex w-full min-w-0 items-center justify-between gap-2 rounded-[18px] border px-3 py-4 text-left transition sm:px-4 ${confirmed ? "border-[#a98dff]/70 bg-[#8f6cff]/16 shadow-[0_0_28px_rgba(126,93,255,.12)]" : "border-white/9 bg-[#0f1017] hover:border-[#a98dff]/30 hover:bg-[#15111f]"}`}
         >
-          <div className="flex items-center gap-3">
-            <span className={`grid h-9 w-9 place-items-center rounded-full border text-[13px] font-bold ${confirmed ? "border-[#9d7aff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.45)]" : "border-white/12 text-transparent"}`}>✓</span>
-            <span className="text-[13px] font-semibold">Confirmă selecția</span>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border text-[13px] font-bold ${confirmed ? "border-[#9d7aff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.45)]" : "border-white/12 text-transparent"}`}>✓</span>
+            <span className="min-w-0 truncate text-[12px] font-semibold sm:text-[13px]">Confirmă selecția</span>
           </div>
-          {PUBLIC_CHECKOUT_IS_DEMO ? <span className="rounded-full border border-white/8 bg-white/[.025] px-3 py-2 text-[7px] font-bold text-white/45">MOD TEST / DEMO</span> : null}
+          {PUBLIC_CHECKOUT_IS_DEMO ? <span className="hidden shrink-0 rounded-full border border-white/8 bg-white/[.025] px-3 py-2 text-[7px] font-bold text-white/45 sm:inline-flex">MOD TEST / DEMO</span> : null}
         </button>
 
         <Link
