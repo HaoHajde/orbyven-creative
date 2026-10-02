@@ -16,11 +16,13 @@ function targetOrigin(locale: Locale) {
 export default function LanguageSwitch({
   variant = "public",
   compact = false,
+  initialLocale = "ro",
 }: {
   variant?: "public" | "light";
   compact?: boolean;
+  initialLocale?: Locale;
 }) {
-  const [locale, setLocale] = useState<Locale>("ro");
+  const [locale, setLocale] = useState<Locale>(initialLocale);
   const [suffix, setSuffix] = useState("/");
 
   useEffect(() => {
