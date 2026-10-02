@@ -1,13 +1,13 @@
-import type { EditableSite, SiteSectionId } from "@/lib/ai/site-editor";
-import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
+import type { EditableSite, SiteSectionId } from "./site-editor.ts";
+import type { WebDesignStrategy } from "./web-design-intent.ts";
 import {
   critiqueWebDesign,
   type WebDesignQualityReport,
-} from "@/lib/ai/web-design-quality";
+} from "./web-design-quality.ts";
 import {
   evaluateWebDesignReadiness,
   type WebDesignReadinessReport,
-} from "@/lib/ai/web-design-readiness";
+} from "./web-design-readiness.ts";
 
 export type WebDesignAutonomousChange =
   | "rechecked_quality"
