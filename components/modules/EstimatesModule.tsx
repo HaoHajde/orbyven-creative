@@ -591,7 +591,17 @@ export default function EstimatesModule({
               </div>
             ) : null}
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
-            <CommercialWorkflowPanel key={selected.id} organizationId={organizationId} estimate={selected} items={items} locale={locale} role={role} onChanged={()=>setProfitRefresh(current=>current+1)} />
+            <CommercialWorkflowPanel
+              key={selected.id}
+              organizationId={organizationId}
+              estimate={selected}
+              items={items}
+              locale={locale}
+              role={role}
+              inventoryEnabled={enabledModules.includes("inventory")}
+              onOpenInventory={selected.task_id ? () => onOpenModule("inventory", { taskId: selected.task_id! }) : undefined}
+              onChanged={()=>setProfitRefresh(current=>current+1)}
+            />
             {canDelete&&<EstimateProfitabilityPanel organizationId={organizationId} estimate={selected} locale={locale} refresh={profitRefresh} />}
             {canWrite&&items.length>0&&<button type="button" onClick={startRevision} className="mt-4 h-9 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 text-xs font-semibold">+ Creează revizie fără a modifica oferta anterioară</button>}
             <div className="mt-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface)]/65 px-3 py-3">
