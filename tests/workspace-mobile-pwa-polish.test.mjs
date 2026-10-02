@@ -47,3 +47,13 @@ test("native iOS wrapper preserves the approved web workspace chrome", () => {
   assert.match(nativeIos, /const webAppOwnsChrome = isTrustedOrbyvenUrl\(currentUrl\)/);
   assert.match(nativeIos, /!webAppOwnsChrome \? \(/);
 });
+
+
+test("workspace restores the last enabled module across app sessions", () => {
+  assert.match(shell, /LAST_WORKSPACE_MODULE_KEY/);
+  assert.match(shell, /orbyven-workspace-last-module/);
+  assert.match(shell, /localStorage\.setItem\(LAST_WORKSPACE_MODULE_KEY, id\)/);
+  assert.match(shell, /localStorage\.getItem\([\s\S]*LAST_WORKSPACE_MODULE_KEY/);
+  assert.match(shell, /enabledModules\.includes\(savedModule\)/);
+  assert.match(shell, /setActiveModule\(savedModule\)/);
+});
