@@ -5,7 +5,7 @@ import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type SitePage = "home" | "templates" | "services" | "contact";
+export type SitePage = "home" | "templates" | "webDesignAi" | "services" | "contact";
 
 type Theme = "light" | "dark";
 
@@ -16,6 +16,7 @@ const navItems: {
 }[] = [
   { key: "home", href: "/", label: "Acasă" },
   { key: "templates", href: "/templates", label: "Templates" },
+  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
   { key: "services", href: "/servicii", label: "Servicii" },
   { key: "contact", href: "/contact", label: "Pornește" },
 ];
@@ -89,7 +90,7 @@ export default function SiteHeader({
               <BrandLogo compact theme={theme} />
             </div>
 
-            <nav className="hidden items-center gap-8 text-[13px] font-medium text-[var(--muted)] md:flex">
+            <nav className="hidden items-center gap-5 text-[13px] font-medium text-[var(--muted)] md:flex lg:gap-7 xl:gap-8">
               {navItems.map((item) => {
                 const active = activePage === item.key;
                 return (

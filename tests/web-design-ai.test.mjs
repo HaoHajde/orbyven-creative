@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   readSiteDraft,
-  SITE_PRESETS,
   SECTION_IDS,
 } from "../lib/ai/site-editor.ts";
 
@@ -122,4 +121,40 @@ test("Web Design UI uses cloud drafts, generative route, alternatives and respon
   assert.match(preview, /gallery/);
   assert.match(preview, /process/);
   assert.match(preview, /faq/);
+});
+
+
+test("AI Web Design has a public route and authenticated editor handoff", () => {
+  const page = read("app/ai-web-design/page.tsx");
+  const entry = read("components/AiWebDesignEntry.tsx");
+  const login = read("app/workspace/login/page.tsx");
+
+  assert.match(page, /AiWebDesignEntry/);
+  assert.match(page, /canonical: "\/ai-web-design"/);
+  assert.match(entry, /WebDesignSpecialist/);
+  assert.match(entry, /WebDesignPreview/);
+  assert.match(entry, /activePage="webDesignAi"/);
+  assert.match(entry, /\/workspace\/login\?next=ai-web-design/);
+  assert.match(login, /requestedNext === "ai-web-design"/);
+  assert.match(login, /return "\/ai-web-design"/);
+});
+
+test("AI Web Design is discoverable from primary navigation, Services and Dashboard", () => {
+  const header = read("components/SiteHeader.tsx");
+  const services = read("app/servicii/page.tsx");
+  const workspace = read("components/WorkspaceShell.tsx");
+  const sitemap = read("app/sitemap.ts");
+
+  const templatesIndex = header.indexOf('label: "Templates"');
+  const aiIndex = header.indexOf('label: "AI Web Design"');
+  const servicesIndex = header.indexOf('label: "Servicii"');
+  assert.ok(templatesIndex >= 0 && aiIndex > templatesIndex && servicesIndex > aiIndex);
+
+  assert.match(header, /href: "\/ai-web-design"/);
+  assert.match(services, /title: "AI Web Design"/);
+  assert.match(services, /href: "\/ai-web-design"/);
+  assert.match(services, /Deschide AI Web Design/);
+  assert.match(workspace, /onOpenPath\("\/ai-web-design"\)/);
+  assert.match(workspace, /AI Web Design/);
+  assert.match(sitemap, /path: "\/ai-web-design"/);
 });
