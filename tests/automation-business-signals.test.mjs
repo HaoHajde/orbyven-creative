@@ -516,3 +516,51 @@ test("Operations AI, Activity and Overview consume the shared Next Best Action e
   assert.match(activity, /rankNextBestActions/);
   assert.match(overview, /rankNextBestActions/);
 });
+
+
+test("Work Readiness flags open procurement on closed work without calling cancelled work active", () => {
+  const readiness = evaluateWorkReadiness({
+    operation: {
+      kind: "work",
+      status: "cancelled",
+      assignee: "Andrei",
+      scheduledAt: null,
+      dueAt: null,
+      progress: 20,
+    },
+    context: {
+      estimatesCount: 1,
+      sentEstimatesCount: 0,
+      acceptedEstimatesCount: 1,
+      documentsCount: 1,
+      upcomingEventsCount: 0,
+      expensesCount: 0,
+      expensesCents: 0,
+      inventoryMovementsCount: 0,
+      openPurchaseOrdersCount: 2,
+      inventoryConsumedCents: 0,
+      inventoryRequiredLines: 0,
+      inventoryUntrackedLines: 0,
+      inventoryUnreadyLines: 0,
+      inventoryShortageLines: 0,
+    },
+    checklist: { total: 1, done: 1 },
+    inactiveAssigneeNames: [],
+    enabled: {
+      estimates: true,
+      documents: true,
+      calendar: true,
+      expenses: true,
+      inventory: true,
+      team: true,
+    },
+    canAccessFinances: true,
+    now,
+  });
+
+  assert.equal(readiness.level, "attention");
+  assert.equal(readiness.checks.find((item) => item.key === "status")?.state, "info");
+  assert.match(readiness.checks.find((item) => item.key === "status")?.message ?? "", /anulată/);
+  assert.equal(readiness.checks.find((item) => item.key === "procurement")?.state, "attention");
+  assert.match(readiness.checks.find((item) => item.key === "procurement")?.message ?? "", /2 comenzi furnizor/);
+});
