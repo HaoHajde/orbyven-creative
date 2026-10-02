@@ -1,5 +1,5 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
-import type { IntelligenceAction, IntelligenceResponse } from "@/lib/ai/intelligence-types";
+import type { IntelligenceAction, IntelligenceIntelligenceFocusReason, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 type TaskRow = {
@@ -42,8 +42,6 @@ type CalendarRow = {
 };
 
 type FocusLevel = "urgent" | "attention" | "upcoming";
-type FocusReason = "blocked" | "overdue" | "priority" | "unassigned" | "unplanned" | "lead_followup" | "estimate_followup" | "appointment";
-
 type FocusCandidate = {
   key: string;
   level: FocusLevel;
@@ -51,7 +49,7 @@ type FocusCandidate = {
   sortAt: string;
   title: string;
   meta: string;
-  reason: FocusReason;
+  reason: IntelligenceFocusReason;
   action: IntelligenceAction;
 };
 
@@ -100,7 +98,7 @@ function candidateActionLabel(candidate: FocusCandidate) {
 }
 
 function focusInsight(candidate: FocusCandidate) {
-  const explanations: Record<FocusReason, { why: string; consequence: string; nextStep: string }> = {
+  const explanations: Record<IntelligenceFocusReason, { why: string; consequence: string; nextStep: string }> = {
     blocked: {
       why: "Lucrarea este oprită și nu poate avansa fără o decizie.",
       consequence: "Amânarea poate împinge termenul și bloca pașii dependenți.",
@@ -143,7 +141,7 @@ function focusInsight(candidate: FocusCandidate) {
     },
   };
   const insight = explanations[candidate.reason];
-  return { ...insight, confidence: "high" as const };
+  return { reason: candidate.reason, ...insight, confidence: "high" as const };
 }
 
 function rankCandidates(candidates: FocusCandidate[]) {
