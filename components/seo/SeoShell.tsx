@@ -61,7 +61,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
             >
               Începe un proiect
             </Link>
-            <LanguageSwitch variant="light" />
+            <LanguageSwitch variant="light" initialLocale="ro" />
           </div>
         </div>
       </header>
