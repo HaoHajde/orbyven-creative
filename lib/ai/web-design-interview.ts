@@ -78,6 +78,23 @@ export function readWebDesignInterviewQuestions(
     .slice(0, 6);
 }
 
+export function prioritizeWebDesignInterviewQuestions(
+  questions: WebDesignInterviewQuestion[],
+  answeredIds: WebDesignBriefGapId[]
+) {
+  const answered = new Set(
+    answeredIds.filter((id) => GAP_IDS.has(id))
+  );
+
+  return [...questions].sort((left, right) => {
+    const leftAnswered = answered.has(left.id);
+    const rightAnswered = answered.has(right.id);
+    if (leftAnswered !== rightAnswered) return leftAnswered ? 1 : -1;
+    if (left.priority !== right.priority) return left.priority - right.priority;
+    return left.label.localeCompare(right.label, "ro");
+  });
+}
+
 function normalize(value: string) {
   return value
     .toLowerCase()
