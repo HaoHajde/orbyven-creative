@@ -174,11 +174,11 @@ function BrowserShell({ children }: { children: ReactNode }) {
 
 function InvitationVisual() {
   return (
-    <div className="relative min-h-[590px] sm:min-h-[680px]">
+    <div className="relative min-h-[630px] sm:min-h-[720px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_68%_16%,rgba(176,118,255,.40),transparent_28%),radial-gradient(circle_at_12%_58%,rgba(84,64,205,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.055] shadow-[0_0_100px_rgba(111,75,255,.08)]" />
       <div className="absolute inset-x-[8%] bottom-[7%] h-16 rounded-full bg-[#704cff]/20 blur-[36px]" />
-      <div className="absolute left-[2%] right-[5%] top-[4%] scale-[1.015]">
+      <div className="absolute left-[1%] right-[3%] top-[3%] scale-[1.04] [transform:perspective(1400px)_rotateY(-2deg)_rotateX(.6deg)]">
         <BrowserShell>
           <div className="relative min-h-[390px] overflow-hidden bg-[radial-gradient(circle_at_20%_80%,rgba(255,230,211,.18),transparent_26%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,.08),transparent_24%),linear-gradient(145deg,#17141d,#0f0d14_62%,#09090d)]">
             <div className="absolute -left-10 bottom-[-30px] h-44 w-44 rounded-full border-[24px] border-[#d2b9ff]/[.06]" />
@@ -230,11 +230,11 @@ function InvitationVisual() {
 
 function WebVisual() {
   return (
-    <div className="relative min-h-[590px] sm:min-h-[680px]">
+    <div className="relative min-h-[630px] sm:min-h-[720px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_16%,rgba(95,110,255,.40),transparent_28%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.055] shadow-[0_0_100px_rgba(111,75,255,.08)]" />
       <div className="absolute inset-x-[7%] bottom-[7%] h-16 rounded-full bg-[#5b55ff]/20 blur-[38px]" />
-      <div className="absolute left-[0%] right-[9%] top-[5%] scale-[1.025]">
+      <div className="absolute left-[-1%] right-[6%] top-[3%] scale-[1.05] [transform:perspective(1400px)_rotateY(-2.5deg)_rotateX(.6deg)]">
         <BrowserShell>
           <div className="relative min-h-[390px] overflow-hidden bg-[radial-gradient(circle_at_78%_20%,rgba(112,95,255,.18),transparent_26%),linear-gradient(145deg,#111522,#0b0d14_62%,#09090d)] p-6 text-white">
             <div className="flex items-center justify-between text-[7px] text-white/45">
@@ -284,11 +284,11 @@ function WebVisual() {
 
 function AdvancedVisual() {
   return (
-    <div className="relative min-h-[610px] sm:min-h-[700px]">
+    <div className="relative min-h-[650px] sm:min-h-[740px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_74%_16%,rgba(155,103,255,.44),transparent_28%),radial-gradient(circle_at_15%_64%,rgba(83,68,190,.23),transparent_35%),linear-gradient(180deg,rgba(81,52,160,.05),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.06] shadow-[0_0_110px_rgba(111,75,255,.10)]" />
       <div className="absolute inset-x-[6%] bottom-[7%] h-16 rounded-full bg-[#704cff]/24 blur-[40px]" />
-      <div className="absolute left-[2%] right-[2%] top-[3%] scale-[1.025]">
+      <div className="absolute left-[0%] right-[0%] top-[2%] scale-[1.05] [transform:perspective(1500px)_rotateY(-2deg)_rotateX(.7deg)]">
         <BrowserShell>
           <div className="min-h-[400px] bg-[#0c0d13] p-4 text-white">
             <div className="grid h-full grid-cols-[.23fr_.77fr] gap-3">
@@ -351,14 +351,14 @@ function QuickModules({ offerId }: { offerId: PublicOfferId }) {
         : ["CRM", "Task-uri", "Calendar", "AI", "Custom"];
 
   return (
-    <div className="mt-8 flex flex-wrap gap-2.5">
+    <div className="mt-9 flex max-w-[620px] flex-wrap gap-3">
       {items.map((item) => (
         <div
           key={item}
-          className="group flex h-12 items-center gap-2.5 rounded-[15px] border border-[#9c78ff]/24 bg-[#0e0c16]/92 px-3.5 text-white shadow-[0_10px_28px_rgba(0,0,0,.20)] transition hover:-translate-y-0.5 hover:border-[#a98dff]/55 hover:bg-[#151024]"
+          className="group flex h-[58px] items-center gap-3 rounded-[17px] border border-[#9c78ff]/36 bg-[#0b0c12]/96 px-4 text-white shadow-[0_14px_36px_rgba(0,0,0,.30),0_0_18px_rgba(126,93,255,.04)] transition hover:-translate-y-0.5 hover:border-[#b39cff]/70 hover:bg-[#161126] hover:shadow-[0_18px_42px_rgba(0,0,0,.32),0_0_24px_rgba(126,93,255,.12)]"
         >
           <span className="text-[#b9a6ff] transition group-hover:text-white"><Glyph kind={item} /></span>
-          <span className="text-[9px] font-semibold text-white/68">{item}</span>
+          <span className="text-[10px] font-semibold text-white/78">{item}</span>
         </div>
       ))}
     </div>
@@ -368,16 +368,16 @@ function QuickModules({ offerId }: { offerId: PublicOfferId }) {
 function ModulesStrip({ offerId }: { offerId: PublicOfferId }) {
   const modules = VISUAL_META[offerId].modules;
   return (
-    <div className="relative overflow-x-auto rounded-[28px] border border-[#9d7aff]/22 bg-[#090a10]/96 p-3 text-white shadow-[0_26px_80px_rgba(0,0,0,.34),0_0_34px_rgba(126,93,255,.055)] ring-1 ring-white/[.018] [scrollbar-width:none]">
+    <div className="relative overflow-x-auto rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3.5 text-white shadow-[0_30px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.08)] ring-1 ring-white/[.02] [scrollbar-width:none]">
       <div className="relative flex min-w-max items-center gap-2">
-        <div className="flex h-[74px] w-[210px] shrink-0 items-center gap-3 px-4">
+        <div className="flex h-[86px] w-[220px] shrink-0 items-center gap-3 px-4">
           <span className="grid h-10 w-10 place-items-center rounded-full bg-[#8d68ff]/12 text-[#b9a6ff]"><Glyph kind={offerId === "invitation" ? "RSVP" : offerId === "web" ? "Website" : "Dashboard"} /></span>
           <span className="text-[13px] font-semibold">Module incluse</span>
         </div>
         {modules.map((module, index) => (
           <div key={module} className="flex items-center">
-            <span className="mx-1 h-px w-5 bg-[linear-gradient(90deg,transparent,#8f6cff,transparent)]" />
-            <div className={`flex h-[74px] min-w-[136px] items-center justify-center gap-3 rounded-[20px] border px-5 transition ${offerId === "web" && module === "Dashboard" ? "border-[#9e7aff]/78 bg-[#8f6cff]/17 shadow-[0_0_38px_rgba(128,89,255,.24)]" : "border-white/10 bg-[#11121a] hover:border-[#9d7aff]/36 hover:bg-[#151221]"}`}>
+            <span className="mx-1 h-[2px] w-6 bg-[linear-gradient(90deg,transparent,#9e7aff,#6c5cff,#9e7aff,transparent)] shadow-[0_0_10px_rgba(143,108,255,.65)]" />
+            <div className={`flex h-[86px] min-w-[145px] items-center justify-center gap-3 rounded-[20px] border px-5 transition ${offerId === "web" && module === "Dashboard" ? "border-[#a789ff]/90 bg-[#8f6cff]/20 shadow-[0_0_46px_rgba(128,89,255,.28)]" : "border-white/11 bg-[#0e0f16] hover:border-[#aa8dff]/55 hover:bg-[#171224] hover:shadow-[0_0_28px_rgba(126,93,255,.10)]"}`}>
               <span className="text-[#a78dff]"><Glyph kind={module} /></span>
               <span className="text-[11px] font-medium">{module}</span>
             </div>
@@ -399,7 +399,7 @@ function CheckoutPanel({
   onToggle: () => void;
 }) {
   return (
-    <div className="grid gap-3 rounded-[30px] border border-[#9d7aff]/24 bg-[#090a10]/96 p-4 text-white shadow-[0_30px_90px_rgba(0,0,0,.38),0_0_38px_rgba(126,93,255,.06)] ring-1 ring-white/[.018] lg:grid-cols-[1.05fr_.95fr]">
+    <div className="grid gap-4 rounded-[32px] border border-[#a183ff]/30 bg-[#07080d]/98 p-4.5 text-white shadow-[0_34px_110px_rgba(0,0,0,.46),0_0_48px_rgba(126,93,255,.075)] ring-1 ring-white/[.02] lg:grid-cols-[1.08fr_.92fr]">
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none]">
         {[
           ["1", "Alegi", "Devize"],
@@ -407,7 +407,7 @@ function CheckoutPanel({
           ["3", "Stripe Checkout", "Website"],
         ].map(([step, label, icon], index) => (
           <div key={step} className="flex shrink-0 items-center">
-            <div className="relative flex h-[104px] w-[180px] items-center gap-3 rounded-[20px] border border-white/10 bg-[#11121a] px-5 shadow-[0_14px_34px_rgba(0,0,0,.18)]">
+            <div className="relative flex h-[118px] w-[194px] items-center gap-3 rounded-[21px] border border-white/11 bg-[#0f1017] px-5 shadow-[0_18px_44px_rgba(0,0,0,.26)]">
               <span className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold ${index === 0 ? "border-[#8f6cff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.5)]" : "border-[#8f6cff]/50 bg-[#16101f] text-[#bdaaff]"}`}>{step}</span>
               <span className="mt-2 text-[#b39aff]"><Glyph kind={icon} /></span>
               <span className="mt-2 text-[11px] font-medium">{label}</span>
@@ -421,7 +421,7 @@ function CheckoutPanel({
         <button
           type="button"
           onClick={onToggle}
-          className={`flex w-full items-center justify-between rounded-[18px] border px-4 py-3.5 text-left transition ${confirmed ? "border-[#9d7aff]/45 bg-[#8f6cff]/12" : "border-white/8 bg-white/[.025] hover:bg-white/[.04]"}`}
+          className={`flex w-full items-center justify-between rounded-[18px] border px-4 py-4 text-left transition ${confirmed ? "border-[#a98dff]/70 bg-[#8f6cff]/16 shadow-[0_0_28px_rgba(126,93,255,.12)]" : "border-white/9 bg-[#0f1017] hover:border-[#a98dff]/30 hover:bg-[#15111f]"}`}
         >
           <div className="flex items-center gap-3">
             <span className={`grid h-9 w-9 place-items-center rounded-full border text-[13px] font-bold ${confirmed ? "border-[#9d7aff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.45)]" : "border-white/12 text-transparent"}`}>✓</span>
@@ -436,7 +436,7 @@ function CheckoutPanel({
           onClick={(event) => {
             if (!confirmed) event.preventDefault();
           }}
-          className={`mt-3 flex h-14 w-full items-center justify-center gap-4 rounded-[17px] text-[14px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#aa6dff,#6f52ff_52%,#5987ff)] text-white shadow-[0_0_44px_rgba(122,76,255,.42)] hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
+          className={`mt-3 flex h-[62px] w-full items-center justify-center gap-4 rounded-[18px] text-[15px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#b66fff_0%,#7b54ff_52%,#5b8dff_100%)] text-white shadow-[0_0_52px_rgba(122,76,255,.50)] ring-1 ring-white/15 hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
         >
           <span>Confirmă și continuă</span><span>→</span>
         </Link>
@@ -507,16 +507,16 @@ function OfferPageContent() {
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
-            ? "radial-gradient(circle at 74% 8%,rgba(102,65,235,.18),transparent 28%),radial-gradient(circle at 20% 24%,rgba(71,48,160,.10),transparent 24%),linear-gradient(180deg,#05060a 0%,#07070b 48%,#05060a 100%)"
+            ? "radial-gradient(circle at 72% 7%,rgba(113,68,255,.24),transparent 28%),radial-gradient(circle at 14% 30%,rgba(72,49,178,.13),transparent 26%),linear-gradient(180deg,#030408 0%,#05060a 46%,#030408 100%)"
             : "radial-gradient(circle at 78% 12%,rgba(112,78,255,.10),transparent 28%),linear-gradient(180deg,#fbfaff 0%,#f5f5f8 100%)",
       }}
       className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[940px] overflow-hidden">
-        <div className="absolute left-[-14rem] top-[-14rem] h-[44rem] w-[44rem] rounded-full border-[72px] border-[#7c5cff]/[.085] shadow-[0_0_80px_rgba(126,93,255,.08)]" />
-        <div className="absolute right-[-3%] top-[2rem] h-[39rem] w-[39rem] rounded-full bg-[#704cff]/[.12] blur-[125px]" />
-        <div className="absolute left-[41%] top-[7rem] h-[34rem] w-[34rem] rounded-full border border-[#8f6cff]/[.08] shadow-[0_0_90px_rgba(126,93,255,.08)]" />
-        <div className="absolute left-[43%] top-[10rem] h-px w-[48%] bg-[linear-gradient(90deg,transparent,rgba(170,133,255,.60),transparent)] shadow-[0_0_30px_rgba(126,93,255,.34)]" />
+        <div className="absolute left-[-14rem] top-[-13rem] h-[46rem] w-[46rem] rounded-full border-[76px] border-[#7c5cff]/[.095] shadow-[0_0_90px_rgba(126,93,255,.10)]" />
+        <div className="absolute right-[-5%] top-[1rem] h-[42rem] w-[42rem] rounded-full bg-[#704cff]/[.15] blur-[130px]" />
+        <div className="absolute left-[39%] top-[5rem] h-[38rem] w-[38rem] rounded-full border border-[#8f6cff]/[.10] shadow-[0_0_110px_rgba(126,93,255,.10)]" />
+        <div className="absolute left-[41%] top-[9rem] h-[2px] w-[52%] bg-[linear-gradient(90deg,transparent,rgba(183,146,255,.72),transparent)] shadow-[0_0_36px_rgba(126,93,255,.44)]" />
       </div>
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
@@ -525,37 +525,42 @@ function OfferPageContent() {
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
-          <div className="mt-6 grid items-center gap-8 lg:grid-cols-[.66fr_1.34fr] xl:gap-12">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-[#8f6cff]/45 bg-[#8f6cff]/10 px-5 py-2.5 text-[9px] font-bold tracking-[.18em] text-[#b9a6ff] shadow-[0_0_28px_rgba(126,93,255,.12)]">{meta.eyebrow}</span>
+          <div className="mt-6 overflow-visible rounded-[36px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-4 shadow-[0_50px_160px_rgba(0,0,0,.42),0_0_90px_rgba(100,62,220,.07)] ring-1 ring-white/[.018] sm:p-6 lg:p-7">
+            <div className="grid min-h-[700px] items-center gap-5 lg:grid-cols-[.56fr_1.44fr] xl:min-h-[760px] xl:gap-7">
+              <div className="relative z-20 min-w-0 self-center py-8 lg:-mr-10 xl:py-10">
+                <span className="inline-flex rounded-full border border-[#9f7cff]/65 bg-[#8f6cff]/14 px-5 py-2.5 text-[9px] font-bold tracking-[.20em] text-[#d1c5ff] shadow-[0_0_34px_rgba(137,94,255,.16)]">{meta.eyebrow}</span>
 
-              <h1 className="mt-7 max-w-[720px] text-[clamp(52px,5.8vw,94px)] font-semibold leading-[.88] tracking-[-.075em] drop-shadow-[0_8px_28px_rgba(0,0,0,.22)]">
-                {meta.titleTop}
-                <br />
-                <span className="bg-[linear-gradient(90deg,#9b73ff,#c084ff)] bg-clip-text text-transparent">{meta.titleAccent}</span>
-              </h1>
+                <h1 className="mt-7 max-w-[760px] text-[clamp(56px,6.2vw,104px)] font-semibold leading-[.86] tracking-[-.08em] text-white drop-shadow-[0_12px_34px_rgba(0,0,0,.36)]">
+                  {meta.titleTop}
+                  <br />
+                  <span className="bg-[linear-gradient(90deg,#a876ff_0%,#c783ff_48%,#8d7dff_100%)] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(157,105,255,.12)]">{meta.titleAccent}</span>
+                </h1>
 
-              <div className="mt-8">
-                <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-                  <span className="text-[clamp(46px,4.8vw,74px)] font-semibold leading-none tracking-[-.075em] text-white drop-shadow-[0_6px_20px_rgba(0,0,0,.28)]">{offer.priceLei}</span>
-                  <span className="pb-1.5 text-[clamp(17px,1.7vw,28px)] font-medium text-[var(--home-violet)]">{meta.priceSuffix}</span>
+                <div className="mt-9">
+                  <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                    <span className="text-[clamp(50px,5vw,80px)] font-semibold leading-none tracking-[-.08em] text-white">{offer.priceLei}</span>
+                    <span className="pb-1.5 text-[clamp(18px,1.8vw,30px)] font-medium text-[#b7a2ff]">{meta.priceSuffix}</span>
+                  </div>
+                  {meta.priceDetail ? <p className="mt-3 text-[15px] font-medium text-white/42">{meta.priceDetail}</p> : null}
                 </div>
-                {meta.priceDetail ? <p className="mt-3 text-[14px] font-medium text-[var(--muted)]">{meta.priceDetail}</p> : null}
+
+                <QuickModules offerId={offerId} />
               </div>
 
-              <QuickModules offerId={offerId} />
+              <div className="relative min-w-0 lg:-mr-8 xl:-mr-12">
+                <div className="pointer-events-none absolute left-[10%] right-[2%] top-[8%] h-[70%] rounded-full bg-[#6d4cff]/12 blur-[70px]" />
+                <div className="relative origin-center lg:scale-[1.08] xl:scale-[1.12]">
+                  <HeroVisual offerId={offerId} />
+                </div>
+              </div>
             </div>
 
-            <div className="min-w-0">
-              <HeroVisual offerId={offerId} />
+            <div className="relative z-20 mt-1">
+              <ModulesStrip offerId={offerId} />
             </div>
           </div>
 
-          <div className="mt-7">
-            <ModulesStrip offerId={offerId} />
-          </div>
-
-          <div className="mt-5">
+          <div className="relative z-30 -mt-1 pt-5">
             <CheckoutPanel offerId={offerId} confirmed={confirmed} onToggle={() => setConfirmed((current) => !current)} />
           </div>
         </div>
