@@ -128,7 +128,7 @@ export default function SiteHeader({
               </Link>
 
               <div className="hidden md:block">
-                <LanguageSwitch compact={compact} />
+                <LanguageSwitch compact={compact} initialLocale="ro" />
               </div>
 
               <button
@@ -182,7 +182,7 @@ export default function SiteHeader({
                   Începe un proiect
                 </Link>
                 <div className="flex justify-end pt-1">
-                  <LanguageSwitch />
+                  <LanguageSwitch initialLocale="ro" />
                 </div>
               </div>
             </div>
