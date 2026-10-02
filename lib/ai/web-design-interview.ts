@@ -6,6 +6,63 @@ import type {
 
 export type WebDesignInterviewQuestion = WebDesignBriefGap;
 
+const GAP_IDS = new Set<WebDesignBriefGapId>([
+  "brand_name",
+  "hero_offer",
+  "services_real",
+  "gallery_real",
+  "about_real",
+  "process_real",
+  "faq_real",
+  "contact_real",
+  "conversion_goal",
+  "claim_evidence",
+]);
+
+export function readWebDesignInterviewQuestions(
+  value: unknown
+): WebDesignInterviewQuestion[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const id = typeof record.id === "string" ? record.id : "";
+      const label = typeof record.label === "string" ? record.label.trim() : "";
+      const question =
+        typeof record.question === "string" ? record.question.trim() : "";
+      const priority =
+        record.priority === 1 || record.priority === 2 || record.priority === 3
+          ? record.priority
+          : null;
+      const sections = Array.isArray(record.sections)
+        ? record.sections.filter((section): section is WebDesignBriefGap["sections"][number] =>
+            typeof section === "string"
+          )
+        : [];
+
+      if (
+        !GAP_IDS.has(id as WebDesignBriefGapId) ||
+        !label ||
+        !question ||
+        !priority
+      ) {
+        return null;
+      }
+
+      return {
+        id: id as WebDesignBriefGapId,
+        label: label.slice(0, 80),
+        question: question.slice(0, 220),
+        priority,
+        sections,
+      } satisfies WebDesignInterviewQuestion;
+    })
+    .filter((item): item is WebDesignInterviewQuestion => item !== null)
+    .slice(0, 6);
+}
+
 function normalize(value: string) {
   return value
     .toLowerCase()
