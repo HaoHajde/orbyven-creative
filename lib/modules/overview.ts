@@ -1,5 +1,10 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { readAllPages } from "@/lib/modules/paged-read";
+import { buildClientGrowthSignals, type ClientGrowthSignal } from "@/lib/automation/client-growth-signals";
+import {
+  listClientGrowthStates,
+  listLatestCompletedClientWorks,
+} from "@/lib/modules/client-growth";
 
 export type OverviewLead = {
   id: string;
@@ -56,6 +61,7 @@ export type OverviewSnapshot = {
   tasks: OverviewTask[];
   events: OverviewEvent[];
   estimates: OverviewEstimate[];
+  growthSignals: ClientGrowthSignal[];
   activeLeadsCount: number;
   openTasksCount: number;
   sentEstimatesCount: number;
@@ -139,6 +145,7 @@ export async function loadOverviewSnapshot(
     blockedTasks, scheduledNearTasks, dueNearTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
     events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount, inactiveTeamResult,
+    growthClientsResult, growthStates, completedGrowthWorks,
   ] = await Promise.all([
     countRows(orbyvenSupabase.from("crm_leads").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)),
@@ -256,14 +263,29 @@ export async function loadOverviewSnapshot(
           .order("display_name")
           .limit(120)
       : Promise.resolve({ data: [], error: null }),
+    orbyvenSupabase.from("crm_leads")
+      .select("id,name")
+      .eq("organization_id", organizationId)
+      .eq("kind", "client")
+      .order("updated_at", { ascending: false })
+      .limit(200),
+    listClientGrowthStates(organizationId, 200),
+    listLatestCompletedClientWorks(organizationId, 180),
   ]);
 
   const [planned, inProgress, blocked, done, cancelled] = stageCounts;
   for (const result of [recentLeads, overdueLeads, staleContactClients, neverContactedClients,
     recentTasks, overdueTasks, urgentTasks, blockedTasks, scheduledNearTasks, dueNearTasks,
-    recentEstimates, staleEstimates, inactiveTeamResult]) {
+    recentEstimates, staleEstimates, inactiveTeamResult, growthClientsResult]) {
     if (result.error) throw result.error;
   }
+
+  const growthSignals = buildClientGrowthSignals({
+    clients: growthClientsResult.data ?? [],
+    growthStates,
+    completedWorks: completedGrowthWorks,
+    now,
+  });
 
   return {
     leads: uniqueRecords(
@@ -282,6 +304,7 @@ export async function loadOverviewSnapshot(
     ),
     events,
     estimates: uniqueRecords(recentEstimates.data ?? [], (staleEstimates.data ?? []).slice(0, ATTENTION_LIMIT)),
+    growthSignals,
     activeLeadsCount,
     openTasksCount,
     sentEstimatesCount,
