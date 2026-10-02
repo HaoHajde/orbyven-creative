@@ -80,6 +80,9 @@ test("Operational Query Mode resolves concrete dashboard questions before generi
   assert.equal(detectOperationalQuery("Ce am programat în următoarele 7 zile?"), "week");
   assert.equal(detectOperationalQuery("Ce lucrări sunt urgente?"), "urgent_tasks");
   assert.equal(detectOperationalQuery("Ce lucrări sunt neprogramate?"), "unscheduled_tasks");
+  assert.equal(detectOperationalQuery("Fă-mi briefingul zilei"), "briefing");
+  assert.equal(detectOperationalQuery("Care sunt prioritățile mele acum?"), "briefing");
+  assert.equal(detectOperationalQuery("Cu ce încep?"), "briefing");
   assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
 
   const server = read("lib/ai/intelligence-server.ts");
@@ -155,4 +158,20 @@ test("Operational time and priority queries stay bounded and tenant-scoped", () 
   assert.match(query, /\.limit\(kind === "week" \? 80 : 40\)/);
   assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
   assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
+});
+
+
+test("Business Brief Focus Mode stays bounded, tenant-scoped and read-only", () => {
+  const query = read("lib/ai/operational-query.ts");
+  const brief = read("lib/ai/business-briefing.ts");
+
+  assert.match(query, /kind === "briefing"/);
+  assert.match(query, /answerBusinessBriefing\(actor, available\)/);
+  assert.match(brief, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(brief, /\.limit\(120\)/);
+  assert.match(brief, /\.limit\(80\)/);
+  assert.match(brief, /\.limit\(40\)/);
+  assert.match(brief, /Focus #1/);
+  assert.match(brief, /rankCandidates/);
+  assert.doesNotMatch(brief, /\.(insert|update|delete|upsert)\s*\(/);
 });
