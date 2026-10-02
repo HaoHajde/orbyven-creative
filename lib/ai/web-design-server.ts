@@ -13,6 +13,10 @@ import {
   buildWebDesignStrategy,
   webDesignStrategyInstruction,
 } from "@/lib/ai/web-design-intent";
+import {
+  critiqueWebDesign,
+  type WebDesignQualityReport,
+} from "@/lib/ai/web-design-quality";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -45,6 +49,7 @@ export type WebDesignGenerationResult = {
   summary: string;
   suggestions: string[];
   remainingToday: number | null;
+  quality: WebDesignQualityReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -576,11 +581,18 @@ export async function generateWebDesignForActor(
       preset: current.preset,
       ...result.draft,
     });
-    const nextDraft = parsedDraft
+    const strategicDraft = parsedDraft
       ? readSiteDraft(applyWebDesignStrategy(parsedDraft, strategy))
       : null;
-    if (!nextDraft) {
+    if (!strategicDraft) {
       await finishQuota(quota.requestId, false, usage, "DRAFT_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const qualityResult = critiqueWebDesign(strategicDraft, strategy);
+    const nextDraft = readSiteDraft(qualityResult.draft);
+    if (!nextDraft) {
+      await finishQuota(quota.requestId, false, usage, "QUALITY_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
@@ -592,6 +604,7 @@ export async function generateWebDesignForActor(
       summary: result.summary,
       suggestions: result.suggestions,
       remainingToday: quota.remainingToday,
+      quality: qualityResult.report,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
