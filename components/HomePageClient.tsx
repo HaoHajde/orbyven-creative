@@ -308,7 +308,7 @@ export default function HomePage() {
           <div className="grid gap-9 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:gap-16">
             <div>
               <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>One workspace. Everything connected.</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
-              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Enable <span className="relative z-10 -mx-[0.03em] text-[var(--home-violet)]">doar</span> what you use.</h2>
+              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Enable <span className="relative z-10 -mx-[0.03em] text-[var(--home-violet)]">only</span> what you use.</h2>
               <p className="mt-5 max-w-md text-[15px] font-medium leading-7 text-[var(--home-violet)]">Modules are not disconnected pages. They share context and work together.</p>
               <Link href="/workspace" className="mt-7 inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60">Dashboard →</Link>
             </div>
@@ -410,7 +410,7 @@ export default function HomePage() {
               <h2 className="mt-3 text-[38px] font-semibold tracking-[-0.055em] sm:text-[52px]">See it. <span className="relative z-10 -mx-[0.045em] inline-block text-[var(--home-violet)]">Explore it.</span> Choose it.</h2>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={previousTemplate} aria-label="Template anterior" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
+              <button type="button" onClick={previousTemplate} aria-label="Previous template" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
               <button type="button" onClick={nextTemplate} aria-label="Next template" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">→</button>
             </div>
           </div>
@@ -453,7 +453,7 @@ export default function HomePage() {
             {[
               { href: "/invitatii-nunta", title: "Wedding invitations", label: "A story for two", kind: "wedding" as const },
               { href: "/invitatii-botez", title: "Christening invitations", label: "A new beginning", kind: "baptism" as const },
-              { href: "/invitatii-majorat", title: "Celebration invitations", label: "Un nou capitol", kind: "birthday" as const },
+              { href: "/invitatii-majorat", title: "Celebration invitations", label: "A new chapter", kind: "birthday" as const },
             ].map((item, index) => (
               <Link key={item.href} href={item.href} className="orbyven-home-invite-card group relative isolate block overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-2)] hover:border-[var(--home-violet)] focus-visible:border-[var(--home-violet)]">
                 <HomeInvitationPreview kind={item.kind} />
