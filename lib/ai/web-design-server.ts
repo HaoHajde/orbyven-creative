@@ -21,6 +21,12 @@ import {
   selectBestWebDesignCandidate,
   type WebDesignCandidateSelectionReport,
 } from "@/lib/ai/web-design-candidate-selection";
+import {
+  applyWebDesignRefineScope,
+  resolveWebDesignRefineScope,
+  webDesignRefineScopeInstruction,
+  type WebDesignRefineScope,
+} from "@/lib/ai/web-design-refine-locks";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -57,6 +63,7 @@ export type WebDesignGenerationResult = {
   readiness: WebDesignReadinessReport;
   refinement: WebDesignAutonomousRefinementReport;
   selection: WebDesignCandidateSelectionReport;
+  refineScope: WebDesignRefineScope;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -511,6 +518,8 @@ export async function generateWebDesignForActor(
   const strategy = buildWebDesignStrategy(prompt, current);
   const strategyInstruction = webDesignStrategyInstruction(strategy);
   const variationInstruction = designDnaInstruction(current, strategy, prompt);
+  const refineScope = resolveWebDesignRefineScope(prompt, strategy);
+  const refineInstruction = webDesignRefineScopeInstruction(refineScope);
 
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
@@ -547,7 +556,8 @@ export async function generateWebDesignForActor(
           "Folosește Site Strategy ca arhitectură de conversie: respectă obiectivul principal, evită secțiunile redundante și nu transforma automat toate site-urile în aceeași structură. " +
           "Dacă request_mode este refine, modifică doar ce cere utilizatorul și păstrează structura neschimbată dacă nu este cerută explicit.\n\n" +
           strategyInstruction +
-          (variationInstruction ? "\n\n" + variationInstruction : ""),
+          (variationInstruction ? "\n\n" + variationInstruction : "") +
+          (refineInstruction ? "\n\n" + refineInstruction : ""),
         input: JSON.stringify({
           user_request: prompt.slice(0, 2000),
           organization_name: organization?.name ?? null,
@@ -599,8 +609,16 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
+    const scopedDraft = readSiteDraft(
+      applyWebDesignRefineScope(strategicDraft, current, refineScope)
+    );
+    if (!scopedDraft) {
+      await finishQuota(quota.requestId, false, usage, "REFINE_SCOPE_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
     const selectedResult = selectBestWebDesignCandidate(
-      strategicDraft,
+      scopedDraft,
       current,
       strategy,
       prompt,
@@ -629,6 +647,7 @@ export async function generateWebDesignForActor(
       readiness: selectedResult.readiness,
       refinement: selectedResult.refinement,
       selection: selectedResult.selection,
+      refineScope,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
