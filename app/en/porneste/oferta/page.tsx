@@ -515,7 +515,7 @@ function AdvancedVisual({
         onClick={() => onSelect("CRM")}
         className="orbyven-float-a absolute left-[-3%] top-[22%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
       >
-        <div className="text-[#bcaaff]"><Glyph kind="CRM"/></div><p className="mt-3 text-[10px] font-semibold">CRM</p><p className="mt-1 text-[6px] text-white/35">Clients & lead-uri</p>
+        <div className="text-[#bcaaff]"><Glyph kind="CRM"/></div><p className="mt-3 text-[10px] font-semibold">CRM</p><p className="mt-1 text-[6px] text-white/35">Clients & leads</p>
       </button>
       <button
         type="button"
