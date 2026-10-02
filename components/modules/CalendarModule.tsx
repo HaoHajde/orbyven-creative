@@ -755,6 +755,12 @@ export default function CalendarModule({
               title="Programarea este pregătită"
               description="Nu mai este necesară nicio acțiune în Calendar până la momentul programat."
             />
+          ) : selectedEvent.status === "completed" && selectedEvent.event_type === "work" && selectedEvent.task_id && enabledModules.includes("tasks") ? (
+            <ModuleNextAction
+              title="Intervenția este închisă"
+              description="Continuă în dosarul lucrării pentru checklist, documente, costuri și confirmarea finalizării operaționale."
+              action={<button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Continuă lucrarea →</button>}
+            />
           ) : null}
           {(enabledModules.includes("leads") || enabledModules.includes("tasks")) && (
             <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45">
