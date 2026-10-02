@@ -123,6 +123,51 @@ const boardStatuses: WorkTaskStatus[] = [
 const AFTERCARE_WINDOWS = [7, 30, 90, 180] as const;
 const RECURRING_WORK_WINDOWS = [30, 90, 180, 365] as const;
 
+type NativeWorkReminderMessage =
+  | {
+      type: "orbyven:schedule-work-reminder";
+      taskId: string;
+      title: string;
+      dueAt: string;
+      location?: string | null;
+    }
+  | {
+      type: "orbyven:cancel-work-reminder";
+      taskId: string;
+    };
+
+function postWorkReminderBridge(message: NativeWorkReminderMessage) {
+  const bridge = (
+    window as Window & {
+      ReactNativeWebView?: { postMessage: (payload: string) => void };
+    }
+  ).ReactNativeWebView;
+
+  bridge?.postMessage(JSON.stringify(message));
+}
+
+function syncNativeWorkReminder(task: WorkTask) {
+  if (
+    task.status === "done" ||
+    task.status === "cancelled" ||
+    !task.due_at
+  ) {
+    postWorkReminderBridge({
+      type: "orbyven:cancel-work-reminder",
+      taskId: task.id,
+    });
+    return;
+  }
+
+  postWorkReminderBridge({
+    type: "orbyven:schedule-work-reminder",
+    taskId: task.id,
+    title: task.title,
+    dueAt: task.due_at,
+    location: task.location,
+  });
+}
+
 function toIso(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
@@ -400,6 +445,7 @@ export default function TasksModule({
           throw linkError;
         }
       }
+      syncNativeWorkReminder(created);
       setTasks((current) => [created, ...current]);
       setSelectedId(created.id);
       setForm(emptyForm);
@@ -419,7 +465,9 @@ export default function TasksModule({
     setSaving(true);
     setError("");
     try {
-      replaceTask(await setWorkTaskStatus(organizationId, task.id, status));
+      const updated = await setWorkTaskStatus(organizationId, task.id, status);
+      replaceTask(updated);
+      syncNativeWorkReminder(updated);
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul nu a putut fi actualizat.");
@@ -495,6 +543,7 @@ export default function TasksModule({
         selectedTask.id,
         when
       );
+      syncNativeWorkReminder(created);
       setTasks((current) => [created, ...current]);
       setSelectedId(created.id);
       setViewMode("list");
@@ -623,6 +672,10 @@ export default function TasksModule({
     setError("");
     try {
       await deleteWorkTask(organizationId, task.id);
+      postWorkReminderBridge({
+        type: "orbyven:cancel-work-reminder",
+        taskId: task.id,
+      });
       setTasks((current) => current.filter((entry) => entry.id !== task.id));
       setSelectedId(null);
       setChecklist([]);

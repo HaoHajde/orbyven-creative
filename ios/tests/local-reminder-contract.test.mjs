@@ -5,11 +5,11 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.10 preserves Expo local notifications and config plugin", () => {
+test("Alpha 0.11 preserves Expo local notifications and config plugin", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
 
-  assert.equal(pkg.version, "0.10.0");
+  assert.equal(pkg.version, "0.11.0");
   assert.equal(pkg.dependencies["expo-notifications"], "~57.0.21");
   assert.ok(
     config.expo.plugins.some((entry) =>
@@ -51,4 +51,28 @@ test("workspace opens the exact calendar record and acknowledges native routing"
   assert.match(workspace, /orbyven:native-calendar-record/);
   assert.match(workspace, /openModule\("calendar", \{ recordId: eventId \}\)/);
   assert.match(workspace, /orbyven:native-calendar-opened/);
+});
+
+
+test("work deadlines schedule local iPhone reminders and cancel when work closes", () => {
+  const app = read("../App.tsx");
+  const tasks = read("../../components/modules/TasksModule.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
+
+  assert.match(app, /request\.content\.data\?\.kind === "work-task"/);
+  assert.match(app, /request\.content\.data\?\.taskId === taskId/);
+  assert.match(app, /title: "ORBYVEN · Termen lucrare"/);
+  assert.match(app, /date: new Date\(dueAt\)/);
+  assert.match(app, /message\.type === "orbyven:schedule-work-reminder"/);
+  assert.match(app, /message\.type === "orbyven:cancel-work-reminder"/);
+
+  assert.match(tasks, /task\.status === "done"/);
+  assert.match(tasks, /task\.status === "cancelled"/);
+  assert.match(tasks, /!task\.due_at/);
+  assert.match(tasks, /syncNativeWorkReminder\(created\)/);
+  assert.match(tasks, /syncNativeWorkReminder\(updated\)/);
+  assert.match(tasks, /type: "orbyven:cancel-work-reminder"/);
+
+  assert.match(workspace, /orbyven:native-task-record/);
+  assert.match(workspace, /recordId: taskId/);
 });
