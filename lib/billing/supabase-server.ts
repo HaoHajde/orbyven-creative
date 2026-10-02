@@ -9,7 +9,7 @@ export type BillingActor = {
   email: string | null;
   organizationId: string;
   role: OrganizationRole;
-  accessToken: string;
+  accessToken?: string;
 };
 
 function supabasePublicConfig() {
