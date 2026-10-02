@@ -52,11 +52,18 @@ function WorkspaceRegisterPageContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
   const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
-  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
+  const checkoutProduct = searchParams.get("product") === "web-design-dashboard" ? "web-design-dashboard" : null;
+  const checkoutMode = searchParams.get("mode") === "web" ? "web" : "ecosystem";
+  const checkoutQuery = checkoutPlan
+    ? `?plan=${checkoutPlan}&checkout=1${checkoutProduct ? `&product=${checkoutProduct}&mode=${checkoutMode}` : ""}`
+    : "";
+  const checkoutDestination = checkoutProduct
+    ? `/porneste/web-design${checkoutQuery}`
+    : checkoutDestination;
   const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
     if (!checkoutPlan) return destination === "/workspace/login" ? "/workspace/onboarding" : destination;
     if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
-    if (destination === "/workspace") return `/contact${checkoutQuery}`;
+    if (destination === "/workspace") return checkoutDestination;
     return destination;
   }, [checkoutPlan, checkoutQuery]);
   const [name, setName] = useState("");
