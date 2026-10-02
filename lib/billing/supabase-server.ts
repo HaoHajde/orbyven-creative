@@ -9,6 +9,12 @@ export type BillingActor = {
   email: string | null;
   organizationId: string;
   role: OrganizationRole;
+  /**
+   * Request-scoped Supabase access token.
+   * Kept server-side and used by ORBYVEN Intelligence for RLS-protected reads
+   * so read-only AI does not depend on the service-role secret.
+   */
+  accessToken?: string;
 };
 
 function supabasePublicConfig() {
@@ -33,6 +39,25 @@ export function createBillingServiceClient() {
   if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
 
   return createClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/**
+ * Creates a Supabase client bound to the authenticated ORBYVEN actor.
+ *
+ * Intelligence read paths should prefer this client: database RLS remains the
+ * authority for organization/module access and the route keeps working even
+ * when the deployment intentionally has no service-role secret configured.
+ */
+export function createBillingActorClient(actor: BillingActor) {
+  if (!actor.accessToken) {
+    throw new Error("AUTH_REQUIRED");
+  }
+
+  const { url, publishableKey } = supabasePublicConfig();
+  return createClient(url, publishableKey, {
+    global: { headers: { Authorization: `Bearer ${actor.accessToken}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -79,5 +104,6 @@ export async function authenticateBillingActor(
     email: userData.user.email ?? null,
     organizationId: membership.organization_id,
     role: membership.role,
+    accessToken: token,
   };
 }
