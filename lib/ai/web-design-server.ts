@@ -35,6 +35,10 @@ import {
   deriveWebDesignBriefGaps,
   type WebDesignBriefGapReport,
 } from "@/lib/ai/web-design-brief-gaps";
+import {
+  interviewFactsToEvidence,
+  type WebDesignInterviewFact,
+} from "@/lib/ai/web-design-interview";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -519,7 +523,8 @@ export async function generateWebDesignForActor(
   actor: BillingActor,
   prompt: string,
   current: EditableSite,
-  recentDrafts: EditableSite[] = []
+  recentDrafts: EditableSite[] = [],
+  interviewFacts: WebDesignInterviewFact[] = []
 ): Promise<WebDesignGenerationResult> {
   if (actor.role === "viewer") throw new Error("WEB_DESIGN_EDIT_REQUIRED");
 
@@ -531,6 +536,10 @@ export async function generateWebDesignForActor(
   const variationInstruction = designDnaInstruction(current, strategy, prompt);
   const refineScope = resolveWebDesignRefineScope(prompt, strategy);
   const refineInstruction = webDesignRefineScopeInstruction(refineScope);
+  const interviewEvidence = interviewFactsToEvidence(interviewFacts.slice(-8));
+  const verifiedEvidence = [prompt, interviewEvidence]
+    .filter(Boolean)
+    .join("\n\n");
 
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
@@ -575,6 +584,7 @@ export async function generateWebDesignForActor(
           legal_name: organization?.legal_name ?? null,
           current_site: current,
           site_strategy: strategy,
+          verified_interview_facts: interviewFacts.slice(-8),
         }),
         max_output_tokens: 3600,
         text: { format: WEB_DESIGN_FORMAT },
@@ -602,7 +612,7 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_INVALID_OUTPUT");
     }
 
-    const result = parseModelResult(parsed, current, prompt);
+    const result = parseModelResult(parsed, current, verifiedEvidence);
     if (!result) {
       await finishQuota(actor, quota.requestId, false, usage, "OUTPUT_GUARD");
       throw new Error("WEB_DESIGN_OUTPUT_GUARD");
@@ -631,7 +641,7 @@ export async function generateWebDesignForActor(
     const evidenceResult = guardWebDesignEvidence(
       scopedDraft,
       current,
-      prompt
+      verifiedEvidence
     );
     const evidenceDraft = readSiteDraft(evidenceResult.draft);
     if (!evidenceDraft) {
