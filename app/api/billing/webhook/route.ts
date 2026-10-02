@@ -15,6 +15,30 @@ import type { StripeEvent } from "@/lib/billing/stripe-webhook";
 export const runtime = "nodejs";
 const STALE_AFTER_MS = 15 * 60_000;
 
+function objectValue(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function metadataPublicOffer(object: Record<string, unknown>) {
+  const metadata = objectValue(object.metadata);
+  const direct = typeof metadata?.public_offer === "string" ? metadata.public_offer : null;
+  if (direct) return direct;
+
+  const subscriptionDetails = objectValue(object.subscription_details);
+  const subscriptionMetadata = objectValue(subscriptionDetails?.metadata);
+  const legacyNested = typeof subscriptionMetadata?.public_offer === "string"
+    ? subscriptionMetadata.public_offer
+    : null;
+  if (legacyNested) return legacyNested;
+
+  const parent = objectValue(object.parent);
+  const parentSubscription = objectValue(parent?.subscription_details);
+  const parentMetadata = objectValue(parentSubscription?.metadata);
+  return typeof parentMetadata?.public_offer === "string" ? parentMetadata.public_offer : null;
+}
+
 export async function POST(request: Request) {
   if (!billingServerConfig.supabaseServiceRoleKey) {
     return NextResponse.json({ error: "Billing webhook is not configured." }, { status: 503 });
@@ -106,6 +130,22 @@ export async function POST(request: Request) {
   }
 
   try {
+    const publicOffer = metadataPublicOffer(event.data.object);
+    if (publicOffer) {
+      const { data: completed, error: completionError } = await client
+        .from("billing_webhook_events")
+        .update({ processed_at: new Date().toISOString(), processing_error: null })
+        .eq("provider_event_id", event.id)
+        .eq("processing_token", leaseToken)
+        .is("processed_at", null)
+        .select("provider_event_id")
+        .maybeSingle();
+      if (completionError || !completed) {
+        throw new Error("Webhook completion lease expired or persistence failed.");
+      }
+      return NextResponse.json({ received: true, publicOffer });
+    }
+
     if (event.type === "checkout.session.completed") {
       await syncStripeCheckoutCompleted(client, event.data.object, verifiedMerchantKey, event.id);
     }
