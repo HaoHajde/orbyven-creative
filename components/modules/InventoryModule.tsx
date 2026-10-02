@@ -204,8 +204,13 @@ export default function InventoryModule({
           item.outstanding_quantity <= 0 ||
           item.reserved_quantity >= item.outstanding_quantity
       ).length,
-      needsReservation: active.filter((item) => item.available_to_reserve > 0).length,
-      shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
+      untracked: active.filter((item) => !item.stock_tracked).length,
+      needsReservation: active.filter(
+        (item) => item.stock_tracked && item.available_to_reserve > 0
+      ).length,
+      shortages: active.filter(
+        (item) => item.stock_tracked && item.shortage_after_reservation > 0
+      ).length,
     };
   }, [taskPlan]);
 
@@ -717,8 +722,10 @@ export default function InventoryModule({
                   />
                 ) : (
                   <ModuleNextAction
-                    title="Materialele sunt pregătite"
-                    description="Necesarul disponibil este rezervat sau deja consumat. Lucrarea poate trece la programare."
+                    title={taskPlanSummary.untracked > 0 ? "Stocul urmărit nu are blocaje" : "Materialele sunt pregătite"}
+                    description={taskPlanSummary.untracked > 0
+                      ? `${taskPlanSummary.untracked} poziții nu folosesc stoc tracking și rămân de verificat manual. ORBYVEN nu le blochează automat; poți continua cu programarea.`
+                      : "Necesarul urmărit este rezervat sau deja consumat. Lucrarea poate trece la programare."}
                     action={canWrite && enabledModules.includes("calendar") ? (
                       <button
                         type="button"
@@ -746,6 +753,11 @@ export default function InventoryModule({
                   <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
                 </div>
               </details>
+              {taskPlanSummary.untracked > 0 ? (
+                <p className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45 px-3 py-2 text-[10px] leading-4 text-[var(--muted)]">
+                  {taskPlanSummary.untracked} poziții au stoc tracking oprit. Ele rămân vizibile în necesar, dar ORBYVEN nu presupune automat că sunt disponibile sau lipsă.
+                </p>
+              ) : null}
               <div className="mt-4 grid gap-2 lg:grid-cols-2">
                 {taskPlan.map((item) => {
                   const gap = stock.find((row) => row.materialId === item.material_id);
