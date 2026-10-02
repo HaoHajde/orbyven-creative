@@ -7,6 +7,8 @@ import type {
 } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
+const HANDOFF_ROLES = new Set(["owner", "admin", "manager", "member"]);
+
 const OPTIONS: Record<IntelligenceFocusReason, IntelligenceDecisionOption[]> = {
   blocked: [
     {
@@ -231,6 +233,8 @@ export async function answerDecisionSupport(
     };
   }
 
+  const handoffAvailable = available.has("tasks") && HANDOFF_ROLES.has(actor.role);
+
   return {
     specialist: "operations",
     answer: `Pentru „${subject}” ai 3 abordări valide, cu compromisuri diferite. ORBYVEN îți arată efectele; alegerea rămâne la tine.`,
@@ -239,10 +243,10 @@ export async function answerDecisionSupport(
     focus,
     decision: {
       subject,
-      handoffAvailable: available.has("tasks"),
+      handoffAvailable,
       options: OPTIONS[focus.reason].map((option) => ({
         ...option,
-        ...(available.has("tasks")
+        ...(handoffAvailable
           ? { handoffPrompt: handoffPlanPrompt(focus.reason!, option, subject) }
           : {}),
       })),
