@@ -194,7 +194,7 @@ async function taskQuery(
   };
 }
 
-async function todayQuery(actor: BillingActor): Promise<IntelligenceResponse> {
+async function todayQuery(actor: BillingActor, available: Set<OrbyvenModuleId>): Promise<IntelligenceResponse> {
   const client = createBillingServiceClient(actor);
   const today = localDateKey(new Date(), TIME_ZONE);
   const tomorrow = nextDateKey(today);
@@ -202,23 +202,27 @@ async function todayQuery(actor: BillingActor): Promise<IntelligenceResponse> {
   const endIso = localMidnightIso(tomorrow, TIME_ZONE);
 
   const [taskResult, calendarResult] = await Promise.all([
-    client
-      .from("ops_tasks")
-      .select("id,title,status,priority,assignee,client_id,scheduled_at,due_at")
-      .eq("organization_id", actor.organizationId)
-      .gte("scheduled_at", startIso)
-      .lt("scheduled_at", endIso)
-      .order("scheduled_at")
-      .limit(40),
-    client
-      .from("calendar_events")
-      .select("id,title,start_at,client_id,task_id")
-      .eq("organization_id", actor.organizationId)
-      .neq("status", "cancelled")
-      .gte("start_at", startIso)
-      .lt("start_at", endIso)
-      .order("start_at")
-      .limit(40),
+    available.has("tasks")
+      ? client
+          .from("ops_tasks")
+          .select("id,title,status,priority,assignee,client_id,scheduled_at,due_at")
+          .eq("organization_id", actor.organizationId)
+          .gte("scheduled_at", startIso)
+          .lt("scheduled_at", endIso)
+          .order("scheduled_at")
+          .limit(40)
+      : Promise.resolve({ data: [], error: null }),
+    available.has("calendar")
+      ? client
+          .from("calendar_events")
+          .select("id,title,start_at,client_id,task_id")
+          .eq("organization_id", actor.organizationId)
+          .neq("status", "cancelled")
+          .gte("start_at", startIso)
+          .lt("start_at", endIso)
+          .order("start_at")
+          .limit(40)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (taskResult.error) throw taskResult.error;
   if (calendarResult.error) throw calendarResult.error;
@@ -364,10 +368,7 @@ export async function answerOperationalQuery(
     if (!available.has("tasks") && !available.has("calendar")) {
       return unavailable("Lucrări / Calendar");
     }
-    if (!available.has("tasks") || !available.has("calendar")) {
-      return unavailable("Lucrări / Calendar");
-    }
-    return todayQuery(actor);
+    return todayQuery(actor, available);
   }
 
   if (!available.has("tasks")) return unavailable("Lucrări");
