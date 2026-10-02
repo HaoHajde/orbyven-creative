@@ -5,6 +5,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
 
 type Theme = "light" | "dark";
 
@@ -96,7 +97,7 @@ export default function ContactPage() {
 
           <div className="orbyven-start-cards mt-12">
             <Link
-              href="/porneste/invitatie"
+              href="/porneste/plata?offer=invitation"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#120d17] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_10%,rgba(234,201,255,.22),transparent_28%),radial-gradient(circle_at_86%_22%,rgba(137,93,255,.18),transparent_30%),linear-gradient(155deg,#201322_0%,#100c16_48%,#09090d_100%)]" />
@@ -125,6 +126,10 @@ export default function ContactPage() {
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/18 px-3 py-2 text-[8px] font-semibold text-white/58 backdrop-blur-xl">
                     RSVP · LOCATIONS · STORY
                   </div>
+                  <div className="mb-5 flex items-end gap-2">
+                    <span className="text-[54px] font-semibold leading-none tracking-[-.075em]">{PUBLIC_OFFERS.invitation.priceLei}</span>
+                    <span className="pb-1 text-[11px] font-semibold text-white/55">lei · o singură dată</span>
+                  </div>
                   <h2 className="text-[34px] font-semibold leading-[.94] tracking-[-.06em] sm:text-[42px]">
                     Invitație online
                     <br />
@@ -134,14 +139,14 @@ export default function ContactPage() {
                     Design, RSVP, locații și experiență construită în jurul evenimentului.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Explorează experiența <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/porneste/web-design?mode=web"
+              href="/porneste/plata?offer=web"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#0b0d14] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_8%,rgba(70,112,255,.25),transparent_30%),radial-gradient(circle_at_15%_52%,rgba(71,70,238,.12),transparent_35%),linear-gradient(155deg,#0d1322_0%,#0a0c13_56%,#08090d_100%)]" />
@@ -172,6 +177,13 @@ export default function ContactPage() {
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#a58bff]/20 bg-[#a58bff]/10 px-3 py-2 text-[8px] font-semibold text-[#d4caff] backdrop-blur-xl">
                     WEBSITE + 30 DAYS DASHBOARD
                   </div>
+                  <div className="mb-5">
+                    <div className="flex items-end gap-2">
+                      <span className="text-[58px] font-semibold leading-none tracking-[-.08em]">{PUBLIC_OFFERS.web.priceLei}</span>
+                      <span className="pb-1 text-[11px] font-semibold text-white/55">lei acum</span>
+                    </div>
+                    <p className="mt-2 text-[10px] font-semibold text-[#c9bbff]">apoi {PUBLIC_OFFERS.web.recurringLei} lei/lună după 30 zile</p>
+                  </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Website-ul tău.
                     <br />
@@ -181,14 +193,14 @@ export default function ContactPage() {
                     La prima achiziție de web design, primul utilizator testează ORBYVEN Dashboard timp de 30 de zile.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Construiește website-ul <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/porneste/web-design?mode=ecosystem"
+              href="/porneste/plata?offer=advanced"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-[#a58bff]/26 bg-[#0d0a17] text-white shadow-[0_30px_110px_rgba(71,48,160,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.30),transparent_30%),radial-gradient(circle_at_20%_64%,rgba(75,70,238,.18),transparent_36%),linear-gradient(155deg,#17102b_0%,#0e0b18_54%,#09090d_100%)]" />
@@ -224,6 +236,10 @@ export default function ContactPage() {
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#a58bff]/24 bg-[#a58bff]/12 px-3 py-2 text-[8px] font-semibold text-[#d8ceff] backdrop-blur-xl">
                     CUSTOM MODULES · AUTOMATIONS · AI
                   </div>
+                  <div className="mb-5 flex items-end gap-2">
+                    <span className="text-[58px] font-semibold leading-none tracking-[-.08em]">{PUBLIC_OFFERS.advanced.priceLei}</span>
+                    <span className="pb-1 text-[11px] font-semibold text-white/55">lei/lună</span>
+                  </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Web design +
                     <br />
@@ -233,7 +249,7 @@ export default function ContactPage() {
                     Conectăm site-ul cu operațiunile firmei și personalizăm modulele în jurul fluxurilor tale.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Configurează ecosistemul <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
