@@ -730,7 +730,7 @@ function OfferPageContent() {
       document.body.style.backgroundColor = next === "dark" ? "#08080c" : "#f8f8fb";
     });
     return () => cancelAnimationFrame(frame);
-  }, [offerId]);
+  }, []);
 
   const selectFeature = (feature: string) => {
     setFeatureState((current) =>
@@ -748,7 +748,7 @@ function OfferPageContent() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [offerId]);
 
   const toggleTheme = () => {
     setTheme((current) => {
