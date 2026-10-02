@@ -15,7 +15,7 @@ export const PUBLIC_THEME = {
     borderStrong: "rgba(255,255,255,.15)",
     button: "#f5f5f7",
     buttonText: "#09090d",
-    accent: "#8b7cff",
+    accent: "#4b46ee",
     accentSoft: "rgba(126,93,255,.14)",
     accentSoft2: "rgba(111,66,255,.10)",
     panel: "rgba(14,14,19,.90)",
