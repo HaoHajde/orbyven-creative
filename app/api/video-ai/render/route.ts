@@ -103,13 +103,14 @@ export async function POST(request: Request) {
       clearTimeout(timeout);
     }
   } catch (error) {
-    const code = error instanceof Error ? error.message : "UNKNOWN";
+    const aborted = error instanceof DOMException && error.name === "AbortError";
+    const code = aborted ? "VIDEO_PROVIDER_TIMEOUT" : error instanceof Error ? error.message : "UNKNOWN";
     const status =
       code === "AUTH_REQUIRED" ? 401 :
       code === "ORG_ACCESS_REQUIRED" ? 403 :
       code === "VIDEO_PROVIDER_NOT_CONFIGURED" ? 503 :
       code.startsWith("VIDEO_PROVIDER_HTTP_") ? 502 :
-      code === "AbortError" ? 504 :
+      code === "VIDEO_PROVIDER_TIMEOUT" ? 504 :
       500;
 
     if (status >= 500) console.error("ORBYVEN Video AI render failure", error);
