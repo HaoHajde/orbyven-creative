@@ -196,6 +196,21 @@ export default function OverviewModule({
       });
     }
 
+    for (const signal of snapshot.growthSignals) {
+      attention.push({
+        key: signal.key,
+        module: "leads",
+        recordId: signal.clientId,
+        clientId: signal.clientId,
+        taskId: signal.taskId,
+        title: signal.title,
+        meta: signal.meta,
+        level: signal.level === "urgent" ? "urgent" : "attention",
+        sortAt: signal.sortAt,
+        rule: signal.rule,
+      });
+    }
+
     const operations: AutomationOperation[] = openTasks.map((task) => ({
       id: task.id,
       title: task.title,
