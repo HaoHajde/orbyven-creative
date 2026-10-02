@@ -1,3 +1,4 @@
+import { syncCrmAfterInvoicePaid } from "@/lib/automation/status-sync";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 
 export type ExpensePaymentMethod = "cash" | "card" | "bank" | "other";
@@ -69,7 +70,14 @@ export type FinanceInvoiceWithBalance = FinanceInvoice & {
 
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string; client_id: string | null };
-export type ExpenseDocumentLink = { id: string; name: string; purchase_order_id: string | null };
+export type ExpenseDocumentLink = {
+  id: string;
+  name: string;
+  client_id: string | null;
+  task_id: string | null;
+  estimate_id: string | null;
+  purchase_order_id: string | null;
+};
 export type ExpensePurchaseOrderLink = {
   organization_id: string;
   purchase_order_id: string;
@@ -168,12 +176,16 @@ async function syncInvoicePaidStatus(
   invoice: FinanceInvoice,
   paidCents?: number
 ) {
-  if (!["issued", "paid"].includes(invoice.status)) return;
+  if (!["issued", "paid"].includes(invoice.status)) {
+    return { becamePaid: false as const, statusChanged: false as const };
+  }
   const paid = paidCents ?? await paidForInvoice(organizationId, invoice.id);
   const isPaid = invoice.total_cents > 0 && paid >= invoice.total_cents;
   const nextStatus = isPaid ? "paid" : "issued";
   const nextPaidAt = isPaid ? invoice.paid_at || new Date().toISOString() : null;
-  if (invoice.status === nextStatus && invoice.paid_at === nextPaidAt) return;
+  if (invoice.status === nextStatus && invoice.paid_at === nextPaidAt) {
+    return { becamePaid: false as const, statusChanged: false as const };
+  }
 
   const { error } = await orbyvenSupabase
     .from("sales_commercial_documents")
@@ -182,6 +194,9 @@ async function syncInvoicePaidStatus(
     .eq("id", invoice.id)
     .eq("document_type", "invoice_draft");
   if (error) throw error;
+
+  const becamePaid = invoice.status !== "paid" && nextStatus === "paid";
+  return { becamePaid, statusChanged: true as const };
 }
 
 export async function listExpenses(organizationId: string): Promise<BusinessExpense[]> {
@@ -262,7 +277,7 @@ export async function listExpenseContexts(organizationId: string) {
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
       .from("ops_documents")
-      .select("id,name,purchase_order_id")
+      .select("id,name,client_id,task_id,estimate_id,purchase_order_id")
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false }),
     orbyvenSupabase
@@ -577,13 +592,100 @@ export async function createIncome(
   if (error) throw error;
 
   if (invoice) {
-    await syncInvoicePaidStatus(
+    const paymentSync = await syncInvoicePaidStatus(
       organizationId,
       invoice,
       (await paidForInvoice(organizationId, invoice.id))
     );
+    if (paymentSync.becamePaid && invoice.client_id) {
+      try {
+        await syncCrmAfterInvoicePaid(
+          organizationId,
+          invoice.client_id,
+          invoice.external_reference || invoice.reference
+        );
+      } catch (crmError) {
+        console.error("CRM invoice payment sync failed", crmError);
+      }
+    }
   }
   return data as FinanceIncomeEntry;
+}
+
+export async function attachExpenseDocument(
+  organizationId: string,
+  expenseId: string,
+  documentId: string
+): Promise<BusinessExpense> {
+  requireOrganizationId(organizationId);
+  if (!expenseId.trim() || !documentId.trim()) {
+    throw new Error("Cheltuiala și documentul sunt obligatorii.");
+  }
+
+  const [expenseResult, documentResult, duplicateResult] = await Promise.all([
+    orbyvenSupabase
+      .from("finance_expenses")
+      .select(EXPENSE_FIELDS)
+      .eq("organization_id", organizationId)
+      .eq("id", expenseId)
+      .single(),
+    orbyvenSupabase
+      .from("ops_documents")
+      .select("id,client_id,task_id,estimate_id,purchase_order_id")
+      .eq("organization_id", organizationId)
+      .eq("id", documentId)
+      .single(),
+    orbyvenSupabase
+      .from("finance_expenses")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("document_id", documentId)
+      .neq("id", expenseId)
+      .limit(1),
+  ]);
+
+  if (expenseResult.error || !expenseResult.data) {
+    throw new Error("Cheltuiala nu există în această firmă.");
+  }
+  if (documentResult.error || !documentResult.data) {
+    throw new Error("Documentul nu există în această firmă.");
+  }
+  if (duplicateResult.error) throw duplicateResult.error;
+  if ((duplicateResult.data ?? []).length > 0) {
+    throw new Error("Documentul este deja folosit ca dovadă pentru altă cheltuială.");
+  }
+
+  const expense = expenseResult.data as BusinessExpense;
+  const document = documentResult.data;
+  if (expense.client_id && document.client_id && expense.client_id !== document.client_id) {
+    throw new Error("Documentul aparține altui client.");
+  }
+  if (expense.task_id && document.task_id && expense.task_id !== document.task_id) {
+    throw new Error("Documentul aparține altei lucrări.");
+  }
+  if (expense.estimate_id && document.estimate_id && expense.estimate_id !== document.estimate_id) {
+    throw new Error("Documentul aparține altui deviz.");
+  }
+  if (
+    expense.purchase_order_id &&
+    document.purchase_order_id &&
+    expense.purchase_order_id !== document.purchase_order_id
+  ) {
+    throw new Error("Documentul aparține altei comenzi furnizor.");
+  }
+
+  const { data, error } = await orbyvenSupabase
+    .from("finance_expenses")
+    .update({ document_id: documentId })
+    .eq("organization_id", organizationId)
+    .eq("id", expenseId)
+    .select(EXPENSE_FIELDS)
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("Dovada nu a putut fi atașată cheltuielii.");
+  }
+  return data as BusinessExpense;
 }
 
 export async function deleteExpense(organizationId: string, expenseId: string) {

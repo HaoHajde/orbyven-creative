@@ -25,6 +25,13 @@ import {
 } from "@/lib/modules/resources";
 import { RESOURCE_TYPE_LABELS, schedulerErrorMessage } from "@/lib/modules/resource-core";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import {
+  syncTaskAfterWorkEventCompleted,
+  syncTaskAfterWorkScheduled,
+  syncTaskCalendarSchedule,
+} from "@/lib/automation/status-sync";
+import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -285,6 +292,7 @@ export default function CalendarModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
@@ -393,14 +401,24 @@ export default function CalendarModule({
     }
     return next;
   }, [resourceAssignments]);
+  const activeResourceIdsByEvent = useMemo(() => {
+    const next = new Map<string, string[]>();
+    for (const [eventId, ids] of resourceIdsByEvent) {
+      next.set(
+        eventId,
+        ids.filter((id) => resourceById.get(id)?.active)
+      );
+    }
+    return next;
+  }, [resourceById, resourceIdsByEvent]);
   const resourceLabelForEvent = useCallback(
     (eventId: string) => {
-      const names = (resourceIdsByEvent.get(eventId) ?? [])
+      const names = (activeResourceIdsByEvent.get(eventId) ?? [])
         .map((id) => resourceById.get(id)?.name)
         .filter((name): name is string => Boolean(name));
       return names.join(", ");
     },
-    [resourceById, resourceIdsByEvent]
+    [activeResourceIdsByEvent, resourceById]
   );
   const activeResources = useMemo(
     () => resources.filter((resource) => resource.active),
@@ -410,6 +428,12 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  const selectedEventCanComplete = Boolean(
+    selectedEvent &&
+    snapshotIso &&
+    new Date(selectedEvent.start_at).getTime() <= new Date(snapshotIso).getTime()
+  );
+  useWorkspaceLiveContext({ clientId: selectedEvent?.client_id ?? undefined, taskId: selectedEvent?.task_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
   useWorkspaceCreateFocus(createOpen);
@@ -436,10 +460,10 @@ export default function CalendarModule({
       (calendarEvent) =>
         calendarEvent.status === "scheduled" &&
         calendarEvent.event_type === "work" &&
-        (resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
+        (activeResourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
     ).length;
     return { scheduled, today, completed, linked, needsResources };
-  }, [events, timeZone, todayKey, resourceIdsByEvent]);
+  }, [activeResourceIdsByEvent, events, timeZone, todayKey]);
 
   const openCreate = (dateKey?: string) => {
     setForm({
@@ -506,6 +530,13 @@ export default function CalendarModule({
       setEvents((current) =>
         [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
       );
+      try {
+        await syncTaskAfterWorkScheduled(organizationId, created);
+        setSyncWarning("");
+      } catch (syncError) {
+        console.error(syncError);
+        setSyncWarning("Programarea a fost creată, dar data planificată a lucrării nu a putut fi sincronizată automat.");
+      }
       const createdAssignments = await listCalendarResourceAssignments(
         organizationId,
         [created.id]
@@ -547,6 +578,34 @@ export default function CalendarModule({
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
       syncNativeCalendarReminder(updated);
+      if (updated.event_type === "work" && updated.task_id) {
+        try {
+          if (status === "completed") {
+            const sync = await syncTaskAfterWorkEventCompleted(organizationId, updated);
+            setSyncWarning(
+              sync.taskUpdated
+                ? "Programarea a fost finalizată, iar lucrarea a trecut automat din «De făcut» în «În lucru»."
+                : sync.scheduleUpdated
+                  ? "Programarea a fost finalizată, iar următoarea dată activă a lucrării a fost sincronizată."
+                  : ""
+            );
+          } else {
+            const sync = await syncTaskCalendarSchedule(organizationId, updated.task_id);
+            setSyncWarning(
+              sync.taskUpdated
+                ? status === "cancelled"
+                  ? "Programarea a fost anulată, iar următoarea dată activă a lucrării a fost recalculată."
+                  : "Programarea a fost reactivată, iar data lucrării a fost sincronizată."
+                : ""
+            );
+          }
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Programarea a fost actualizată, dar data/statusul lucrării nu au putut fi sincronizate automat.");
+        }
+      } else {
+        setSyncWarning("");
+      }
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
@@ -559,7 +618,7 @@ export default function CalendarModule({
     if (!canWrite || saving) return;
     const desired =
       resourceDrafts[calendarEvent.id] ??
-      resourceIdsByEvent.get(calendarEvent.id) ??
+      activeResourceIdsByEvent.get(calendarEvent.id) ??
       [];
     setSaving(true);
     setError("");
@@ -598,6 +657,19 @@ export default function CalendarModule({
       });
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
+      if (calendarEvent.event_type === "work" && calendarEvent.task_id) {
+        try {
+          const sync = await syncTaskCalendarSchedule(organizationId, calendarEvent.task_id);
+          setSyncWarning(
+            sync.taskUpdated
+              ? "Programarea a fost ștearsă, iar următoarea dată activă a lucrării a fost recalculată."
+              : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Programarea a fost ștearsă, dar data lucrării nu a putut fi recalculată automat.");
+        }
+      }
     } catch (deleteError) {
       console.error(deleteError);
       setError("Evenimentul nu a putut fi șters.");
@@ -621,14 +693,18 @@ export default function CalendarModule({
         </div>
       </section>
 
-      <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
-        <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
-        <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
-        <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-9"
+        primary={<>
+          <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
+          <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
+          <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
+        </>}
+        secondary={<Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />}
+      />
 
       {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
+      {syncWarning ? <div className="mt-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-[11px] leading-5 text-amber-300">{syncWarning}</div> : null}
 
       <section className="mt-4 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-2)] p-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
@@ -652,44 +728,29 @@ export default function CalendarModule({
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
-            <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
             <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
-            <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
-            <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Resurse" className="md:col-span-2 xl:col-span-2">
-              <div className="grid min-h-11 gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-2 sm:grid-cols-2">
-                {activeResources.length ? activeResources.map((resource) => {
-                  const checked = form.resourceIds.includes(resource.id);
-                  return (
-                    <label key={resource.id} className={`flex cursor-pointer items-center gap-2 rounded-[10px] px-2 py-2 text-xs ${checked ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"}`}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) => setForm((current) => ({
-                          ...current,
-                          resourceIds: event.target.checked
-                            ? [...current.resourceIds, resource.id]
-                            : current.resourceIds.filter((id) => id !== resource.id),
-                        }))}
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate font-semibold">{resource.name}</span>
-                        <span className="block truncate text-[10px] opacity-70">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
-                      </span>
-                    </label>
-                  );
-                }) : (
-                  <span className="px-2 py-2 text-xs text-[var(--muted)]">Nicio resursă activă. Adaugă oameni/resurse în modulul Echipă.</span>
-                )}
-              </div>
-            </Field>
-            <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
+            <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
             <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
             <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
-            <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
-            <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
-            <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
           </div>
+          <ModuleAdvancedFields label="Context, resurse și reminder">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
+              <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
+              <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
+              <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
+              <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
+              <Field label="Resurse" className="md:col-span-2 xl:col-span-3">
+                <div className="grid min-h-11 gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-2 sm:grid-cols-2">
+                  {activeResources.length ? activeResources.map((resource) => {
+                    const checked = form.resourceIds.includes(resource.id);
+                    return <label key={resource.id} className={`flex cursor-pointer items-center gap-2 rounded-[10px] px-2 py-2 text-xs ${checked ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"}`}><input type="checkbox" checked={checked} onChange={(event) => setForm((current) => ({ ...current, resourceIds: event.target.checked ? [...current.resourceIds, resource.id] : current.resourceIds.filter((id) => id !== resource.id) }))} /><span className="min-w-0"><span className="block truncate font-semibold">{resource.name}</span><span className="block truncate text-[10px] opacity-70">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span></span></label>;
+                  }) : <span className="px-2 py-2 text-xs text-[var(--muted)]">Nicio resursă activă. Adaugă oameni/resurse în modulul Echipă.</span>}
+                </div>
+              </Field>
+              <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Adaugă în calendar"}</button></div>
         </form>
       )}
@@ -707,7 +768,7 @@ export default function CalendarModule({
                   <div><p className="text-xs font-semibold">{formatDayKey(dayKey, locale)}</p>{isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}</div>
                   {canWrite && <button type="button" onClick={() => openCreate(dayKey)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
                 </div>
-                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
+                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={activeResourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
               </article>
             );
           })}
@@ -725,14 +786,57 @@ export default function CalendarModule({
         </div>
       )}
 
-      {selectedEvent && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
-          {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+      {selectedEvent && canWrite ? (
+        <div className="mt-4">
+          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 && activeResources.length === 0 && enabledModules.includes("team") ? (
+            <ModuleNextAction
+              title="Adaugă resurse înainte de execuție"
+              description="Lucrarea este programată, dar firma nu are încă oameni sau resurse active disponibile în scheduler."
+              action={<button type="button" onClick={() => onOpenModule("team")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide Echipă →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Alocă resurse înainte de execuție"
+              description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
+              action={<button type="button" onClick={() => document.querySelector('[data-calendar-resource-panel="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Alocă →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && selectedEvent.task_id && enabledModules.includes("tasks") ? (
+            <ModuleNextAction
+              title="Continuă în dosarul lucrării"
+              description="Programarea este fixată. Verifică materialele, documentele și checklist-ul înainte de execuție."
+              action={<button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide lucrarea →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" && selectedEventCanComplete ? (
+            <ModuleNextAction
+              title="Evenimentul poate fi închis"
+              description="Ora de început a trecut. Marchează finalizat doar după ce activitatea a avut loc."
+              action={<button type="button" disabled={saving} onClick={() => void changeStatus(selectedEvent, "completed")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}
+            />
+          ) : selectedEvent.status === "scheduled" ? (
+            <ModuleNextAction
+              title="Programarea este pregătită"
+              description="Nu mai este necesară nicio acțiune în Calendar până la momentul programat."
+            />
+          ) : selectedEvent.status === "completed" && selectedEvent.event_type === "work" && selectedEvent.task_id && enabledModules.includes("tasks") ? (
+            <ModuleNextAction
+              title="Intervenția este închisă"
+              description="Continuă în dosarul lucrării pentru checklist, documente, costuri și confirmarea finalizării operaționale."
+              action={<button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Continuă lucrarea →</button>}
+            />
+          ) : null}
+          {(enabledModules.includes("leads") || enabledModules.includes("tasks")) && (
+            <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+              <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Context asociat</summary>
+              <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+                {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Client ↗</button>}
+                {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Lucrare ↗</button>}
+              </div>
+            </details>
+          )}
         </div>
-      )}
+      ) : null}
       {selectedEvent && (
-        <section className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
+        <section data-calendar-resource-panel="true" className="mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Scheduler · Resurse</p>
@@ -751,7 +855,7 @@ export default function CalendarModule({
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {activeResources.length ? activeResources.map((resource) => {
-              const baseline = resourceIdsByEvent.get(selectedEvent.id) ?? [];
+              const baseline = activeResourceIdsByEvent.get(selectedEvent.id) ?? [];
               const selected = (resourceDrafts[selectedEvent.id] ?? baseline).includes(resource.id);
               return (
                 <label key={resource.id} className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs ${selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
@@ -782,7 +886,7 @@ export default function CalendarModule({
           data-workspace-record-focus={selectedEvent ? "true" : undefined}
           className="scroll-mt-28"
         >
-          <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />
+          <EventDetail event={selectedEvent} client={selectedEvent.client_id ? clientById.get(selectedEvent.client_id) : undefined} task={selectedEvent.task_id ? taskById.get(selectedEvent.task_id) : undefined} locale={locale} timeZone={timeZone} canWrite={canWrite} canDelete={canDelete} canComplete={selectedEventCanComplete} saving={saving} onStatus={(status) => void changeStatus(selectedEvent, status)} onDelete={() => void removeEvent(selectedEvent)} />
         </div>
       )}
 
@@ -796,8 +900,8 @@ function EventCard({ event, locale, timeZone, resourceCount, active, onSelect }:
   return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{missingResources ? <p className="mt-2 text-[10px] font-semibold text-amber-400">Necesită alocare resurse</p> : resourceCount > 0 ? <p className="mt-2 text-[10px] text-emerald-400">{resourceCount} {resourceCount === 1 ? "resursă alocată" : "resurse alocate"}</p> : null}{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
 }
 
-function EventDetail({ event, client, task, locale, timeZone, canWrite, canDelete, saving, onStatus, onDelete }: { event: CalendarEvent; client?: CalendarClient; task?: CalendarTask; locale: string; timeZone: string; canWrite: boolean; canDelete: boolean; saving: boolean; onStatus: (status: CalendarEventStatus) => void; onDelete: () => void }) {
-  return <section className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{event.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{statusLabels[event.status]}</p></div>{canWrite && <div className="flex flex-wrap gap-2">{event.status !== "completed" && <button type="button" disabled={saving} onClick={() => onStatus("completed")} className="h-9 rounded-full bg-[var(--button)] px-3 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}{event.status !== "scheduled" && <button type="button" disabled={saving} onClick={() => onStatus("scheduled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold disabled:opacity-50">Reactivează</button>}{event.status !== "cancelled" && <button type="button" disabled={saving} onClick={() => onStatus("cancelled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold text-red-500 disabled:opacity-50">Anulează</button>}</div>}</div>{event.notes && <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{event.notes}</p>}<div className="mt-7 grid gap-3 sm:grid-cols-2"><DetailValue label="Început" value={event.all_day ? `${formatDayKey(dateKeyInTimeZone(event.start_at, timeZone), locale)} · toată ziua` : formatDateTime(event.start_at, locale, timeZone)} /><DetailValue label="Final" value={event.all_day ? "Sfârșitul zilei" : formatDateTime(event.end_at, locale, timeZone)} /><DetailValue label="Responsabil" value={event.assignee || "Nealocat"} /><DetailValue label="Locație" value={event.location || "—"} /></div>{canDelete && <div className="mt-8 border-t border-[var(--border)] pt-5"><button type="button" disabled={saving} onClick={onDelete} className="text-xs font-semibold text-red-500 disabled:opacity-50">Șterge evenimentul</button></div>}</article><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7"><p className="text-xs font-medium text-[var(--muted)]">Context</p><h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">Totul legat.</h2><div className="mt-6 space-y-3"><ContextItem label="Client" value={client?.company || client?.name || "Fără client asociat"} /><ContextItem label="Lucrare" value={task?.title || "Fără lucrare asociată"} /><ContextItem label="Reminder" value={event.reminder_minutes === null ? "Oprit" : event.reminder_minutes >= 1440 ? `${Math.round(event.reminder_minutes / 1440)} zi înainte` : event.reminder_minutes >= 60 ? `${Math.round(event.reminder_minutes / 60)}h înainte` : `${event.reminder_minutes} min înainte`} /></div></article></section>;
+function EventDetail({ event, client, task, locale, timeZone, canWrite, canDelete, canComplete, saving, onStatus, onDelete }: { event: CalendarEvent; client?: CalendarClient; task?: CalendarTask; locale: string; timeZone: string; canWrite: boolean; canDelete: boolean; canComplete: boolean; saving: boolean; onStatus: (status: CalendarEventStatus) => void; onDelete: () => void }) {
+  return <section className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{event.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{statusLabels[event.status]}</p></div>{canWrite && <div className="flex flex-wrap gap-2">{event.status !== "completed" && canComplete && <button type="button" disabled={saving} onClick={() => onStatus("completed")} className="h-9 rounded-full bg-[var(--button)] px-3 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}{event.status !== "scheduled" && <button type="button" disabled={saving} onClick={() => onStatus("scheduled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold disabled:opacity-50">Reactivează</button>}{event.status !== "cancelled" && <button type="button" disabled={saving} onClick={() => onStatus("cancelled")} className="h-9 rounded-full border border-[var(--border)] px-3 text-xs font-semibold text-red-500 disabled:opacity-50">Anulează</button>}</div>}</div>{event.notes && <p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{event.notes}</p>}<div className="mt-7 grid gap-3 sm:grid-cols-2"><DetailValue label="Început" value={event.all_day ? `${formatDayKey(dateKeyInTimeZone(event.start_at, timeZone), locale)} · toată ziua` : formatDateTime(event.start_at, locale, timeZone)} /><DetailValue label="Final" value={event.all_day ? "Sfârșitul zilei" : formatDateTime(event.end_at, locale, timeZone)} /><DetailValue label="Responsabil" value={event.assignee || "Nealocat"} /><DetailValue label="Locație" value={event.location || "—"} /></div>{canDelete && <div className="mt-8 border-t border-[var(--border)] pt-5"><button type="button" disabled={saving} onClick={onDelete} className="text-xs font-semibold text-red-500 disabled:opacity-50">Șterge evenimentul</button></div>}</article><article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7"><p className="text-xs font-medium text-[var(--muted)]">Context</p><h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">Totul legat.</h2><div className="mt-6 space-y-3"><ContextItem label="Client" value={client?.company || client?.name || "Fără client asociat"} /><ContextItem label="Lucrare" value={task?.title || "Fără lucrare asociată"} /><ContextItem label="Reminder" value={event.reminder_minutes === null ? "Oprit" : event.reminder_minutes >= 1440 ? `${Math.round(event.reminder_minutes / 1440)} zi înainte` : event.reminder_minutes >= 60 ? `${Math.round(event.reminder_minutes / 60)}h înainte` : `${event.reminder_minutes} min înainte`} /></div></article></section>;
 }
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {

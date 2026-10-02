@@ -43,11 +43,13 @@ function Step({index,title,status,tone}:{index:string;title:string;status:string
 
 /** Fits directly inside the current EstimatesModule detail card. */
 export default function CommercialWorkflowPanel({
-  organizationId,estimate,items,locale,role,onChanged,
+  organizationId,estimate,items,locale,role,onChanged,inventoryEnabled=false,onOpenInventory,
 }:{
   organizationId:string;estimate:Estimate;items:EstimateItem[];locale:string;
   role:OrbyvenWorkspace["membership"]["role"];
   onChanged?:()=>void;
+  inventoryEnabled?:boolean;
+  onOpenInventory?:()=>void;
 }){
   const [materials,setMaterials]=useState<MaterialRow[]>([]);
   const [documents,setDocuments]=useState<DocumentRow[]>([]);
@@ -68,6 +70,7 @@ export default function CommercialWorkflowPanel({
   const [recipeId,setRecipeId]=useState("");
   const canWrite=role!=="viewer";
   const financeVisible=["owner","admin","manager"].includes(role);
+  const inventoryOwnsProcurement=inventoryEnabled&&Boolean(estimate.task_id);
 
   const load=useCallback(async()=>{
     setLoading(true);setError("");
@@ -125,7 +128,7 @@ export default function CommercialWorkflowPanel({
 
   const steps:Array<{title:string;status:string;tone:Tone}>=[
     {title:"Deviz",status:"Salvat · "+estimate.reference,tone:"ready"},
-    {title:"Materiale",status:materials.length?materials.length+" poziții":"Necesar gol",tone:materials.length?"ready":"waiting"},
+    {title:"Materiale",status:materials.length?(inventoryOwnsProcurement?materials.length+" poziții · Stoc":materials.length+" poziții"):"Necesar gol",tone:materials.length?"ready":"waiting"},
     {title:"Ofertă client",status:offer?(staleOffer?"De revizuit":offer.status):"Negenerată",tone:offer?(staleOffer?"progress":"ready"):"waiting"},
     {title:"Factură",status:invoice?"Doar ciornă":"Inexistentă",tone:invoice?"progress":"waiting"},
     {title:"ANAF",status:"Neconectat",tone:"future"},
@@ -155,10 +158,11 @@ export default function CommercialWorkflowPanel({
             <p className="mt-1 text-[10px] text-[var(--muted)]">{materials.length?materials.length+" poziții legate de deviz":"Nu există încă o listă asociată."}</p>
             {materials.length>0&&<div className="mt-3 space-y-2">{materials.map(row=><div key={row.id} className="border-t border-[var(--border)] pt-2 text-[11px]">
               <div className="flex justify-between gap-3"><span className="min-w-0 truncate text-[var(--muted)]">{row.description} · {row.quantity} {row.unit}</span><strong className="shrink-0">{money(Math.round(row.quantity*row.unit_cost_cents),estimate.currency,locale)}</strong></div>
-              <div className="mt-1 flex items-center justify-between gap-2"><span className="text-[10px] text-[var(--muted-2)]">{statuses[row.status]}{row.vendor?" · "+row.vendor:""}</span>
-                {canWrite&&row.status!=="bought"&&<button type="button" disabled={busy} onClick={()=>void run(()=>advanceMaterialStatus(organizationId,estimate.id,row.id,row.status), "Status actualizat.")} className="text-[10px] font-semibold text-[var(--accent)] disabled:opacity-40">{row.status==="planned"?"Comandă →":"Cumpărat →"}</button>}
+              <div className="mt-1 flex items-center justify-between gap-2"><span className="text-[10px] text-[var(--muted-2)]">{inventoryOwnsProcurement?"Gestionat în Stoc & achiziții":statuses[row.status]}{row.vendor?" · "+row.vendor:""}</span>
+                {canWrite&&!inventoryOwnsProcurement&&row.status!=="bought"&&<button type="button" disabled={busy} onClick={()=>void run(()=>advanceMaterialStatus(organizationId,estimate.id,row.id,row.status), "Status actualizat.")} className="text-[10px] font-semibold text-[var(--accent)] disabled:opacity-40">{row.status==="planned"?"Comandă →":"Cumpărat →"}</button>}
               </div>
             </div>)}</div>}
+            {inventoryOwnsProcurement&&onOpenInventory?<div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--bg)]/45 px-3 py-2.5"><p className="text-[10px] leading-4 text-[var(--muted)]">PO, recepțiile, rezervările și consumul real sunt urmărite într-un singur loc.</p><button type="button" onClick={onOpenInventory} className="text-[10px] font-semibold text-[var(--accent)]">Deschide Stoc & achiziții →</button></div>:null}
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3 text-[11px]"><span className="text-[var(--muted)]">Cost estimat materiale</span><strong>{money(totalCost,estimate.currency,locale)}</strong></div>
             {financeVisible&&plannedBudget>0&&<p className="mt-1 text-[10px] text-[var(--muted-2)]">Buget materiale existent: {money(plannedBudget,estimate.currency,locale)} · afișat separat, fără dublare.</p>}
             {materialOpen&&canWrite&&<form onSubmit={(event)=>void addManualMaterial(event)} className="mt-3 grid gap-2 rounded-[12px] border border-[var(--border-strong)] bg-[var(--surface)] p-3">

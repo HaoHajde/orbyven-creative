@@ -7,6 +7,7 @@ import {orbyvenSupabase} from "@/lib/orbyven-supabase";
 import type {OrbyvenWorkspace} from "@/lib/orbyven-workspace";
 import type {OrbyvenModuleId} from "@/lib/orbyven-modules";
 import type {WorkspaceOpenOptions} from "@/lib/workspace-navigation";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 
 const ThermalSketchPanel=dynamic(()=>import("@/components/modules/ThermalSketchPanel"),{
   loading:()=> <div role="status" className="flex min-h-[260px] items-center justify-center text-sm text-[var(--muted)]">Se încarcă planșa…</div>,
@@ -73,6 +74,7 @@ export default function ThermalPlannerModule({organizationId,locale,role,enabled
     });
   },[works,query,locale,clientById]);
   const selected=works.find(work=>work.id===selectedTaskId)??null;
+  useWorkspaceLiveContext({taskId:selected?.id,clientId:selected?.client_id??undefined});
   const openTask=works.find(work=>work.id===openTaskId)??null;
   const lastUpdated=sketches[0]?.updated_at??null;
 

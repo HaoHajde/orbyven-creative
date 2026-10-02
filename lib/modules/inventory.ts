@@ -661,14 +661,21 @@ export async function loadTaskInventoryConsumption(
       0
     ),
     requiredLines: plan.length,
+    untrackedLines: plan.filter(
+      (item) =>
+        item.outstanding_quantity > 0 &&
+        !item.stock_tracked
+    ).length,
     unreadyLines: plan.filter(
       (item) =>
         item.outstanding_quantity > 0 &&
+        item.stock_tracked &&
         item.reserved_quantity < item.outstanding_quantity
     ).length,
     shortageLines: plan.filter(
       (item) =>
         item.outstanding_quantity > 0 &&
+        item.stock_tracked &&
         item.shortage_after_reservation > 0
     ).length,
   };

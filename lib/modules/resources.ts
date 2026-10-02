@@ -171,7 +171,12 @@ export async function updateOperationalResource(
     .select(RESOURCE_FIELDS)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes("resource_has_future_bookings")) {
+      throw new Error("Resursa are programări viitoare. Realocă sau anulează acele programări din Calendar înainte de dezactivare.");
+    }
+    throw error;
+  }
   return { ...data, capacity: Number(data.capacity || 1) } as OperationalResource;
 }
 

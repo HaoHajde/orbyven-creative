@@ -18,15 +18,21 @@ export type WorkReadinessContext = {
   upcomingEventsCount: number;
   expensesCount: number | null;
   expensesCents: number | null;
+  financeDraftInvoicesCount: number | null;
+  financeOpenInvoicesCount: number | null;
+  financeOverdueInvoicesCount: number | null;
+  financeOutstandingCents: number | null;
   inventoryMovementsCount: number | null;
+  openPurchaseOrdersCount: number | null;
   inventoryConsumedCents: number | null;
   inventoryRequiredLines: number | null;
+  inventoryUntrackedLines: number | null;
   inventoryUnreadyLines: number | null;
   inventoryShortageLines: number | null;
 };
 
 export type WorkReadinessCheck = {
-  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "costs";
+  key: "status" | "ownership" | "commercial" | "schedule" | "checklist" | "documents" | "materials" | "procurement" | "costs" | "financial";
   label: string;
   state: WorkReadinessCheckState;
   message: string;
@@ -78,9 +84,12 @@ export function evaluateWorkReadiness(input: {
   const assignee = normalized(operation.assignee);
   const operationalKind = operation.kind === "work" || operation.kind === "order";
   const executionSoon =
-    operation.status === "in_progress" ||
-    within(operation.scheduledAt, now, 7 * DAY_MS) ||
-    within(operation.dueAt, now, 7 * DAY_MS);
+    !["done", "cancelled"].includes(operation.status) &&
+    (
+      operation.status === "in_progress" ||
+      within(operation.scheduledAt, now, 7 * DAY_MS) ||
+      within(operation.dueAt, now, 7 * DAY_MS)
+    );
 
   if (operation.status === "blocked") {
     checks.push({
@@ -91,6 +100,8 @@ export function evaluateWorkReadiness(input: {
     });
   } else if (operation.status === "done") {
     checks.push({ key: "status", label: "Status", state: "good", message: "Operațiunea este finalizată." });
+  } else if (operation.status === "cancelled") {
+    checks.push({ key: "status", label: "Status", state: "info", message: "Operațiunea este anulată; istoricul rămâne disponibil." });
   } else {
     checks.push({ key: "status", label: "Status", state: "good", message: "Fluxul operațional este activ." });
   }
@@ -201,7 +212,10 @@ export function evaluateWorkReadiness(input: {
     checks.push({ key: "checklist", label: "Checklist", state: "info", message: "Nu există pași de checklist definiți." });
   } else if (!pendingChecklist) {
     checks.push({ key: "checklist", label: "Checklist", state: "good", message: "Checklist complet." });
-  } else if (operation.status === "done" || within(operation.dueAt, now, DAY_MS)) {
+  } else if (
+    operation.status === "done" ||
+    (operation.status !== "cancelled" && within(operation.dueAt, now, DAY_MS))
+  ) {
     checks.push({
       key: "checklist",
       label: "Checklist",
@@ -218,13 +232,19 @@ export function evaluateWorkReadiness(input: {
   }
 
   if (enabled.documents && context) {
+    const completedWithoutEvidence =
+      operationalKind &&
+      operation.status === "done" &&
+      context.documentsCount === 0;
     checks.push({
       key: "documents",
       label: "Documente",
-      state: context.documentsCount > 0 ? "good" : "info",
+      state: context.documentsCount > 0 ? "good" : completedWithoutEvidence ? "attention" : "info",
       message: context.documentsCount
         ? context.documentsCount + " documente legate de dosar."
-        : "Dosarul nu are încă documente asociate.",
+        : completedWithoutEvidence
+          ? "Lucrarea este finalizată, dar dosarul nu are încă nicio dovadă sau document."
+          : "Dosarul nu are încă documente asociate.",
     });
   } else {
     checks.push({
@@ -237,6 +257,7 @@ export function evaluateWorkReadiness(input: {
 
   if (enabled.inventory && operationalKind && context) {
     const requiredLines = context.inventoryRequiredLines ?? 0;
+    const untrackedLines = context.inventoryUntrackedLines ?? 0;
     const unreadyLines = context.inventoryUnreadyLines ?? 0;
     const shortageLines = context.inventoryShortageLines ?? 0;
 
@@ -258,8 +279,10 @@ export function evaluateWorkReadiness(input: {
       checks.push({
         key: "materials",
         label: "Materiale",
-        state: "good",
-        message: "Necesarul material este consumat sau rezervat integral.",
+        state: untrackedLines > 0 ? "info" : "good",
+        message: untrackedLines > 0
+          ? untrackedLines + " poziții materiale nu folosesc stoc tracking; verificarea lor rămâne manuală."
+          : "Necesarul material este consumat sau rezervat integral.",
       });
     } else {
       checks.push({
@@ -277,6 +300,21 @@ export function evaluateWorkReadiness(input: {
       message: enabled.inventory
         ? "Material readiness este disponibil pentru lucrări și comenzi."
         : "Modulul Stoc & achiziții nu este activ.",
+    });
+  }
+
+  if (enabled.inventory && operationalKind && context) {
+    const openPurchaseOrders = context.openPurchaseOrdersCount ?? 0;
+    const closedOperation = operation.status === "done" || operation.status === "cancelled";
+    checks.push({
+      key: "procurement",
+      label: "Achiziții",
+      state: closedOperation && openPurchaseOrders > 0 ? "attention" : openPurchaseOrders > 0 ? "info" : "good",
+      message: openPurchaseOrders > 0
+        ? closedOperation
+          ? openPurchaseOrders + " comenzi furnizor sunt încă deschise pentru o operațiune închisă."
+          : openPurchaseOrders + " comenzi furnizor sunt încă în circuit."
+        : "Nu există comenzi furnizor deschise pe această operațiune.",
     });
   }
 
@@ -298,6 +336,36 @@ export function evaluateWorkReadiness(input: {
       label: "Costuri",
       state: "unavailable",
       message: canAccessFinances ? "Contextul financiar nu este disponibil." : "Vizibil doar pentru rolurile financiare.",
+    });
+  }
+
+  if (
+    canAccessFinances &&
+    enabled.expenses &&
+    context &&
+    operation.status === "done" &&
+    operationalKind
+  ) {
+    const draftInvoices = context.financeDraftInvoicesCount ?? 0;
+    const openInvoices = context.financeOpenInvoicesCount ?? 0;
+    const overdueInvoices = context.financeOverdueInvoicesCount ?? 0;
+    const outstandingCents = context.financeOutstandingCents ?? 0;
+
+    checks.push({
+      key: "financial",
+      label: "Închidere financiară",
+      state:
+        overdueInvoices > 0 || draftInvoices > 0 || openInvoices > 0
+          ? "attention"
+          : "good",
+      message:
+        overdueInvoices > 0
+          ? overdueInvoices + " facturi au scadența depășită pentru această lucrare."
+          : draftInvoices > 0
+            ? draftInvoices + " facturi sunt încă în ciornă."
+            : openInvoices > 0
+              ? "Mai sunt de încasat " + (outstandingCents / 100).toFixed(2) + " RON."
+              : "Nu sunt detectate facturi sau încasări deschise pentru această lucrare.",
     });
   }
 

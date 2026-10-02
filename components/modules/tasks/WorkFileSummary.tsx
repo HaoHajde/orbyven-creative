@@ -2,6 +2,7 @@ import type { WorkTask, WorkTaskChecklistItem, WorkTaskContext } from "@/lib/mod
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
+import { ModuleNextAction } from "@/components/modules/ModuleKit";
 
 export default function WorkFileSummary({
   task,
@@ -15,6 +16,7 @@ export default function WorkFileSummary({
   enabledModules,
   canAccessFinances,
   onOpenModule,
+  onCompleteTask,
 }: {
   task: WorkTask;
   context: WorkTaskContext | null;
@@ -27,6 +29,7 @@ export default function WorkFileSummary({
   enabledModules: OrbyvenModuleId[];
   canAccessFinances: boolean;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  onCompleteTask?: () => void;
 }) {
   const money = (cents: number) =>
     new Intl.NumberFormat(locale, {
@@ -62,6 +65,49 @@ export default function WorkFileSummary({
         canAccessFinances,
         now: snapshotIso ? new Date(snapshotIso) : new Date(0),
       })
+    : null;
+
+  const attention = readiness?.checks.find((check) => check.state === "attention") ?? null;
+  const operationalCloseReady = Boolean(
+    !attention &&
+    task.status === "in_progress" &&
+    context &&
+    context.upcomingEventsCount === 0 &&
+    checklist.length > 0 &&
+    checklist.every((item) => item.done) &&
+    (!enabledModules.includes("documents") || context.documentsCount > 0)
+  );
+  const completionFinanceAction =
+    !attention &&
+    task.status === "done" &&
+    enabledModules.includes("expenses") &&
+    canAccessFinances
+      ? {
+          label: "Închide financiar",
+          module: "expenses" as OrbyvenModuleId,
+          options: {
+            taskId: task.id,
+            clientId: task.client_id ?? undefined,
+          } as WorkspaceOpenOptions,
+        }
+      : null;
+
+  const nextAction = attention
+    ? attention.key === "commercial" && enabledModules.includes("estimates")
+      ? { label: "Deschide ofertele", module: "estimates" as OrbyvenModuleId, options: { create: context?.estimatesCount === 0, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+      : attention.key === "schedule" && enabledModules.includes("calendar")
+        ? { label: "Programează", module: "calendar" as OrbyvenModuleId, options: { create: true, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+        : attention.key === "documents" && enabledModules.includes("documents")
+          ? { label: "Adaugă document", module: "documents" as OrbyvenModuleId, options: { create: true, taskId: task.id } as WorkspaceOpenOptions }
+          : attention.key === "materials" && enabledModules.includes("inventory")
+            ? { label: "Rezolvă materialele", module: "inventory" as OrbyvenModuleId, options: { taskId: task.id } as WorkspaceOpenOptions }
+            : attention.key === "costs" && enabledModules.includes("expenses") && canAccessFinances
+              ? { label: "Înregistrează cost", module: "expenses" as OrbyvenModuleId, options: { create: true, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+              : attention.key === "financial" && enabledModules.includes("expenses") && canAccessFinances
+                ? { label: "Închide financiar", module: "expenses" as OrbyvenModuleId, options: { taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+                : attention.key === "ownership" && enabledModules.includes("team")
+                ? { label: "Deschide echipa", module: "team" as OrbyvenModuleId, options: undefined }
+                : null
     : null;
 
   const cards = [
@@ -106,13 +152,15 @@ export default function WorkFileSummary({
             ? money(context.inventoryConsumedCents)
             : "—",
           note: context
-            ? (context.inventoryShortageLines ?? 0) > 0
-              ? context.inventoryShortageLines + " poziții cu lipsă"
-              : (context.inventoryUnreadyLines ?? 0) > 0
-                ? context.inventoryUnreadyLines + " poziții de rezervat"
-                : (context.inventoryRequiredLines ?? 0) > 0
-                  ? "necesar acoperit"
-                  : (context.inventoryMovementsCount ?? 0) + " mișcări"
+            ? (context.openPurchaseOrdersCount ?? 0) > 0
+              ? context.openPurchaseOrdersCount + " PO deschise"
+              : (context.inventoryShortageLines ?? 0) > 0
+                ? context.inventoryShortageLines + " poziții cu lipsă"
+                : (context.inventoryUnreadyLines ?? 0) > 0
+                  ? context.inventoryUnreadyLines + " poziții de rezervat"
+                  : (context.inventoryRequiredLines ?? 0) > 0
+                    ? "necesar acoperit"
+                    : (context.inventoryMovementsCount ?? 0) + " mișcări"
             : "se încarcă",
           options: { taskId: task.id },
         }
@@ -178,20 +226,94 @@ export default function WorkFileSummary({
           </span>
         </div>
       ) : null}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
-        {cards.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            onClick={() => onOpenModule(card.id, card.options)}
-            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/70 p-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-          >
-            <span className="block text-[9px] font-semibold uppercase tracking-[0.11em] text-[var(--muted-2)]">{card.label}</span>
-            <span className="mt-1.5 block truncate text-[17px] font-semibold tracking-[-0.03em]">{card.value}</span>
-            <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{card.note}</span>
-          </button>
-        ))}
-      </div>
+      {attention ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Acum"
+            title={attention.label + " · " + readiness!.headline}
+            description="ORBYVEN a ales primul punct care poate bloca sau întârzia lucrarea."
+            action={nextAction ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule(nextAction.module, nextAction.options)}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                {nextAction.label} →
+              </button>
+            ) : attention.key === "checklist" ? (
+              <button
+                type="button"
+                onClick={() => document.querySelector('[data-task-checklist="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                Deschide checklist →
+              </button>
+            ) : undefined}
+          />
+        </div>
+      ) : readiness ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Acum"
+            title={
+              task.status === "done"
+                ? "Dosarul operațional este coerent"
+                : task.status === "cancelled"
+                  ? "Operațiunea este anulată"
+                  : operationalCloseReady
+                    ? "Lucrarea este pregătită pentru închidere"
+                    : "Poți continua execuția"
+            }
+            description={
+              task.status === "done"
+                ? "Lucrarea este finalizată. Următorul pas este verificarea încasării, facturii și costurilor asociate."
+                : task.status === "cancelled"
+                  ? "Contextul rămâne disponibil pentru istoric. Nu există nicio acțiune de execuție recomandată."
+                  : operationalCloseReady
+                    ? "Nu mai există programări viitoare, checklist-ul este complet și dosarul are documentație asociată."
+                    : "Nu există un blocaj operațional detectat în datele disponibile."
+            }
+            action={completionFinanceAction ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule(completionFinanceAction.module, completionFinanceAction.options)}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                {completionFinanceAction.label} →
+              </button>
+            ) : operationalCloseReady && onCompleteTask ? (
+              <button
+                type="button"
+                onClick={onCompleteTask}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                Finalizează lucrarea →
+              </button>
+            ) : undefined}
+          />
+        </div>
+      ) : null}
+
+      <details className="group mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/45">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+          <span>Dosar complet · {cards.length} legături</span>
+          <span aria-hidden="true" className="transition group-open:rotate-45">+</span>
+        </summary>
+        <div className="grid gap-2 border-t border-[var(--border)] p-3 sm:grid-cols-2 xl:grid-cols-3">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onOpenModule(card.id, card.options)}
+              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/70 p-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+            >
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.11em] text-[var(--muted-2)]">{card.label}</span>
+              <span className="mt-1.5 block truncate text-[17px] font-semibold tracking-[-0.03em]">{card.value}</span>
+              <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{card.note}</span>
+            </button>
+          ))}
+        </div>
+      </details>
     </section>
   );
 }

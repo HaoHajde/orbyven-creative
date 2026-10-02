@@ -24,6 +24,8 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import { ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -94,6 +96,13 @@ export default function InventoryModule({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [procurementHandoff, setProcurementHandoff] = useState<{
+    purchaseOrderId: string;
+    taskId: string | null;
+    reference: string;
+  } | null>(null);
+  const [purchaseOrderTaskScope, setPurchaseOrderTaskScope] = useState(initialTaskId ?? "");
+  const [procurementScopeWarped, setProcurementScopeWarped] = useState(false);
   const [planTaskId, setPlanTaskId] = useState(initialTaskId ?? "");
   const [taskPlan, setTaskPlan] = useState<InventoryTaskMaterialPlan[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
@@ -120,6 +129,9 @@ export default function InventoryModule({
   const [movementTaskId, setMovementTaskId] = useState(initialTaskId ?? "");
   const [movementQuantity, setMovementQuantity] = useState("1");
   const [movementNote, setMovementNote] = useState("");
+  useWorkspaceLiveContext({
+    taskId: planTaskId || purchaseTaskId || movementTaskId || undefined,
+  });
 
   const canWrite = role !== "viewer";
   const canProcure = ["owner", "admin", "manager"].includes(role);
@@ -168,10 +180,33 @@ export default function InventoryModule({
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
   const stock = useMemo(() => snapshot?.stock ?? [], [snapshot]);
-  const purchaseOrders = snapshot?.purchaseOrders ?? [];
+  const purchaseOrders = useMemo(() => snapshot?.purchaseOrders ?? [], [snapshot]);
+  const visiblePurchaseOrders = useMemo(
+    () =>
+      purchaseOrderTaskScope
+        ? purchaseOrders.filter((order) => order.task_id === purchaseOrderTaskScope)
+        : purchaseOrders,
+    [purchaseOrderTaskScope, purchaseOrders]
+  );
   const purchaseItems = snapshot?.purchaseItems ?? [];
   const recentMovements = snapshot?.recentMovements ?? [];
   const tasks = useMemo(() => snapshot?.tasks ?? [], [snapshot]);
+
+  useEffect(() => {
+    if (
+      !initialTaskId ||
+      loading ||
+      procurementScopeWarped ||
+      visiblePurchaseOrders.length === 0
+    ) return;
+    const timer = window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-procurement-scope="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setProcurementScopeWarped(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialTaskId, loading, procurementScopeWarped, visiblePurchaseOrders.length]);
 
   const supplierById = useMemo(
     () => new Map((snapshot?.suppliers ?? []).map((item) => [item.id, item])),
@@ -199,10 +234,22 @@ export default function InventoryModule({
           item.outstanding_quantity <= 0 ||
           item.reserved_quantity >= item.outstanding_quantity
       ).length,
-      needsReservation: active.filter((item) => item.available_to_reserve > 0).length,
-      shortages: active.filter((item) => item.shortage_after_reservation > 0).length,
+      untracked: active.filter((item) => !item.stock_tracked).length,
+      needsReservation: active.filter(
+        (item) => item.stock_tracked && item.available_to_reserve > 0
+      ).length,
+      shortages: active.filter(
+        (item) => item.stock_tracked && item.shortage_after_reservation > 0
+      ).length,
     };
   }, [taskPlan]);
+
+  const firstTaskShortage = useMemo(() => {
+    const item = taskPlan.find((row) => row.outstanding_quantity > 0 && row.shortage_after_reservation > 0);
+    if (!item) return null;
+    const gap = stock.find((row) => row.materialId === item.material_id);
+    return gap?.suggestedOrder ? { item, gap } : null;
+  }, [taskPlan, stock]);
 
   const shoppingGroups = useMemo(() => {
     const grouped = new Map<string, InventoryGap[]>();
@@ -236,6 +283,7 @@ export default function InventoryModule({
     setBusy(true);
     setError("");
     setNotice("");
+    setProcurementHandoff(null);
     try {
       await operation();
       setNotice(success);
@@ -468,10 +516,52 @@ export default function InventoryModule({
       item.received_quantity
     );
     if (remaining <= 0) return;
-    await run(
-      () => receivePurchaseOrderItem(organizationId, item, remaining),
-      "Recepția a fost înregistrată în stoc."
+
+    const order = purchaseOrders.find((entry) => entry.id === item.purchase_order_id);
+    const orderItems = purchaseItems.filter(
+      (entry) => entry.purchase_order_id === item.purchase_order_id
     );
+    const completesOrder =
+      orderItems.length > 0 &&
+      orderItems.every(
+        (entry) =>
+          entry.id === item.id ||
+          remainingPurchaseQuantity(entry.ordered_quantity, entry.received_quantity) <= 0
+      );
+
+    const autoReserveForTask = Boolean(order?.task_id);
+    const ok = await run(
+      async () => {
+        await receivePurchaseOrderItem(organizationId, item, remaining);
+        if (order?.task_id) {
+          await reserveAvailableInventoryForTask(
+            organizationId,
+            order.task_id,
+            item.material_id
+          );
+        }
+      },
+      completesOrder
+        ? autoReserveForTask
+          ? "Recepția este completă. PO-ul s-a închis, iar stocul disponibil a fost rezervat automat pentru lucrare."
+          : "Recepția este completă. Comanda furnizor a fost închisă automat de sistem."
+        : autoReserveForTask
+          ? "Recepția a intrat în stoc și disponibilul a fost rezervat automat pentru lucrare."
+          : "Recepția a fost înregistrată în stoc."
+    );
+
+    if (ok && order) {
+      if (completesOrder) {
+        setProcurementHandoff({
+          purchaseOrderId: order.id,
+          taskId: order.task_id,
+          reference: order.reference,
+        });
+      }
+      if (order.task_id && planTaskId === order.task_id) {
+        await loadTaskPlan();
+      }
+    }
   };
 
   const submitMovement = async (event: FormEvent<HTMLFormElement>) => {
@@ -529,32 +619,45 @@ export default function InventoryModule({
             și consumul pe lucrare folosesc aceeași bibliotecă de materiale.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canWrite && trackedMaterials.length > 0 ? (
-            <button type="button" onClick={() => setMovementOpen((value) => !value)} className={button}>
-              {movementOpen ? "Închide mișcarea" : "+ Mișcare stoc"}
-            </button>
-          ) : null}
-          {canProcure ? (
-            <button type="button" onClick={() => setSupplierOpen((value) => !value)} className={button}>
-              + Furnizor
-            </button>
-          ) : null}
+        <div className="flex flex-wrap items-center gap-2">
           {canProcure && trackedMaterials.length > 0 && activeSuppliers.length > 0 ? (
             <button type="button" onClick={() => setPurchaseOpen((value) => !value)} className={primary}>
-              + Comandă furnizor
+              {purchaseOpen ? "Închide comanda" : "+ Comandă furnizor"}
             </button>
+          ) : canWrite && trackedMaterials.length > 0 ? (
+            <button type="button" onClick={() => setMovementOpen((value) => !value)} className={primary}>
+              {movementOpen ? "Închide mișcarea" : "+ Mișcare stoc"}
+            </button>
+          ) : canProcure ? (
+            <button type="button" onClick={() => setSupplierOpen((value) => !value)} className={primary}>
+              {supplierOpen ? "Închide furnizorul" : "+ Furnizor"}
+            </button>
+          ) : null}
+          {(canWrite || canProcure) ? (
+            <details className="relative">
+              <summary className={button + " flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"}>Alte acțiuni</summary>
+              <div className="absolute right-0 top-11 z-30 min-w-[190px] space-y-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                {canWrite && trackedMaterials.length > 0 ? <button type="button" onClick={() => setMovementOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Mișcare stoc</button> : null}
+                {canProcure ? <button type="button" onClick={() => setSupplierOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Furnizor nou</button> : null}
+                {canProcure && trackedMaterials.length > 0 && activeSuppliers.length > 0 ? <button type="button" onClick={() => setPurchaseOpen((value) => !value)} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Comandă furnizor</button> : null}
+              </div>
+            </details>
           ) : null}
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <Metric label="Materiale urmărite" value={String(summary.trackedMaterials)} note="stoc activ" />
-        <Metric label="Atenție" value={String(summary.lowOrShort)} note="sub prag / lipsă" />
-        <Metric label="Lipsuri reale" value={String(summary.shortageMaterials)} note="cerere confirmată" />
-        <Metric label="PO deschise" value={String(summary.openPurchaseOrders)} note="furnizori" />
-        <Metric label="Valoare stoc" value={money(summary.stockValueCents, locale)} note="estimare operațională" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <Metric label="Atenție" value={String(summary.lowOrShort)} note="sub prag / lipsă" />
+          <Metric label="Lipsuri reale" value={String(summary.shortageMaterials)} note="cerere confirmată" />
+          <Metric label="PO deschise" value={String(summary.openPurchaseOrders)} note="furnizori" />
+        </>}
+        secondary={<>
+          <Metric label="Materiale urmărite" value={String(summary.trackedMaterials)} note="stoc activ" />
+          <Metric label="Valoare stoc" value={money(summary.stockValueCents, locale)} note="estimare operațională" />
+        </>}
+      />
 
       {error ? (
         <p role="alert" className="mt-4 rounded-[15px] border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3 text-xs text-rose-300">
@@ -565,6 +668,42 @@ export default function InventoryModule({
         <p role="status" className="mt-4 rounded-[15px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-3 text-xs text-emerald-300">
           {notice}
         </p>
+      ) : null}
+      {procurementHandoff ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Recepție completă"
+            title={procurementHandoff.reference + " este gata pentru documentare"}
+            description={enabledModules.includes("documents")
+              ? "Atașează bonul, factura furnizorului sau altă dovadă. Contextul PO și al lucrării este transferat automat."
+              : "Continuă în Finanțe cu PO-ul și lucrarea deja asociate."}
+            action={enabledModules.includes("documents") ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule("documents", {
+                  create: true,
+                  taskId: procurementHandoff.taskId ?? undefined,
+                  purchaseOrderId: procurementHandoff.purchaseOrderId,
+                })}
+                className={primary}
+              >
+                + Dovadă furnizor →
+              </button>
+            ) : enabledModules.includes("expenses") && canProcure ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule("expenses", {
+                  create: true,
+                  taskId: procurementHandoff.taskId ?? undefined,
+                  purchaseOrderId: procurementHandoff.purchaseOrderId,
+                })}
+                className={primary}
+              >
+                Înregistrează costul →
+              </button>
+            ) : undefined}
+          />
+        </div>
       ) : null}
 
       {supplierOpen && canProcure ? (
@@ -677,12 +816,61 @@ export default function InventoryModule({
             <p className="mt-4 text-xs text-[var(--muted)]">Se calculează necesarul și disponibilul…</p>
           ) : taskPlan.length ? (
             <>
-              <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
-                <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
-                <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
-                <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+              <div className="mt-4">
+                {taskPlanSummary.shortages > 0 ? (
+                  <ModuleNextAction
+                    title={canProcure ? "Cumpără materialele lipsă" : "Există materiale lipsă"}
+                    description={canProcure
+                      ? `${taskPlanSummary.shortages} poziții rămân neacoperite după stocul disponibil.`
+                      : `${taskPlanSummary.shortages} poziții rămân neacoperite. Achiziția trebuie continuată de un Owner, Admin sau Manager.`}
+                    action={canProcure && firstTaskShortage ? (
+                      <button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(firstTaskShortage.item, firstTaskShortage.gap)} className={primary}>Pregătește cumpărarea →</button>
+                    ) : undefined}
+                  />
+                ) : taskPlanSummary.needsReservation > 0 && canWrite ? (
+                  <ModuleNextAction
+                    title="Rezervă stocul disponibil"
+                    description={`${taskPlanSummary.needsReservation} poziții pot fi acoperite acum fără cumpărare.`}
+                    action={<button type="button" disabled={busy || planLoading} onClick={() => void reserveTaskStock()} className={primary}>Rezervă tot →</button>}
+                  />
+                ) : (
+                  <ModuleNextAction
+                    title={taskPlanSummary.untracked > 0 ? "Stocul urmărit nu are blocaje" : "Materialele sunt pregătite"}
+                    description={taskPlanSummary.untracked > 0
+                      ? `${taskPlanSummary.untracked} poziții nu folosesc stoc tracking și rămân de verificat manual. ORBYVEN nu le blochează automat; poți continua cu programarea.`
+                      : "Necesarul urmărit este rezervat sau deja consumat. Lucrarea poate trece la programare."}
+                    action={canWrite && enabledModules.includes("calendar") ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenModule("calendar", {
+                          create: true,
+                          taskId: planTaskId,
+                          clientId: taskById.get(planTaskId)?.client_id ?? undefined,
+                        })}
+                        className={primary}
+                      >
+                        Programează execuția →
+                      </button>
+                    ) : undefined}
+                  />
+                )}
               </div>
+              <details className="group mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/40">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-[10px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+                  <span>Vezi calculele materialelor</span><span className="transition group-open:rotate-45">+</span>
+                </summary>
+                <div className="grid grid-cols-2 gap-2 border-t border-[var(--border)] p-3 lg:grid-cols-4">
+                  <MiniMetric label="Poziții necesar" value={String(taskPlanSummary.lines)} />
+                  <MiniMetric label="Acoperite" value={String(taskPlanSummary.ready)} />
+                  <MiniMetric label="De rezervat" value={String(taskPlanSummary.needsReservation)} />
+                  <MiniMetric label="Cu lipsă" value={String(taskPlanSummary.shortages)} />
+                </div>
+              </details>
+              {taskPlanSummary.untracked > 0 ? (
+                <p className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45 px-3 py-2 text-[10px] leading-4 text-[var(--muted)]">
+                  {taskPlanSummary.untracked} poziții au stoc tracking oprit. Ele rămân vizibile în necesar, dar ORBYVEN nu presupune automat că sunt disponibile sau lipsă.
+                </p>
+              ) : null}
               <div className="mt-4 grid gap-2 lg:grid-cols-2">
                 {taskPlan.map((item) => {
                   const gap = stock.find((row) => row.materialId === item.material_id);
@@ -731,9 +919,24 @@ export default function InventoryModule({
               </div>
             </>
           ) : (
-            <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
-              <p className="text-sm font-semibold">Nu există necesar confirmat pentru această lucrare.</p>
-              <p className="mt-1 text-[10px] text-[var(--muted)]">Materialele apar aici după ce o ofertă cu poziții materiale este acceptată și legată de lucrare.</p>
+            <div className="mt-4">
+              <ModuleNextAction
+                title="Nu există necesar material confirmat"
+                description="Nu există un blocaj material în acest moment. Dacă lucrarea este pregătită operațional, poți continua cu programarea."
+                action={canWrite && enabledModules.includes("calendar") ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenModule("calendar", {
+                      create: true,
+                      taskId: planTaskId,
+                      clientId: taskById.get(planTaskId)?.client_id ?? undefined,
+                    })}
+                    className={primary}
+                  >
+                    Programează →
+                  </button>
+                ) : undefined}
+              />
             </div>
           )
         ) : (
@@ -893,16 +1096,20 @@ export default function InventoryModule({
         </article>
       </section>
 
-      <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-        <div className="flex items-end justify-between gap-3">
+      <section data-inventory-procurement-scope="true" className="mt-4 scroll-mt-28 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Procurement</p>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Comenzi furnizor</h2>
+            {purchaseOrderTaskScope ? <p className="mt-1 text-[10px] text-[var(--muted)]">Context lucrare · sunt afișate doar comenzile ei deschise.</p> : null}
           </div>
-          <span className="text-[10px] text-[var(--muted)]">{purchaseOrders.length} deschise</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[var(--muted)]">{visiblePurchaseOrders.length}{purchaseOrderTaskScope ? " în context" : " deschise"}</span>
+            {purchaseOrderTaskScope ? <button type="button" onClick={() => setPurchaseOrderTaskScope("")} className="h-8 rounded-full border border-[var(--border)] px-3 text-[9px] font-semibold text-[var(--muted)]">Toate comenzile</button> : null}
+          </div>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {purchaseOrders.map((order) => {
+          {visiblePurchaseOrders.map((order) => {
             const items = purchaseItems.filter((item) => item.purchase_order_id === order.id);
             const supplier = supplierById.get(order.supplier_id);
             return <article key={order.id} className="rounded-[17px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-4">
@@ -919,17 +1126,30 @@ export default function InventoryModule({
                   </div>;
                 })}
               </div>
-              <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-3">
-                {enabledModules.includes("documents") ? <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>+ Dovadă</button> : null}
-                {canProcure && enabledModules.includes("expenses") && ["ordered","partially_received","received"].includes(order.status) ? <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>Finanțe ↗</button> : null}
-                {canProcure && order.status === "draft" ? <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată</button> : null}
-                {canProcure && ["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
-                  if (window.confirm("Anulezi această comandă furnizor?")) void run(() => setPurchaseOrderStatus(organizationId, order.id, "cancelled"), "Comanda a fost anulată.");
-                }} className={button}>Anulează</button> : null}
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
+                {canProcure && order.status === "draft" ? (
+                  <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată →</button>
+                ) : order.status === "received" && enabledModules.includes("documents") ? (
+                  <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={primary}>+ Dovadă</button>
+                ) : order.status === "received" && canProcure && enabledModules.includes("expenses") ? (
+                  <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={primary}>Finanțe →</button>
+                ) : null}
+                {(enabledModules.includes("documents") || (canProcure && enabledModules.includes("expenses")) || (canProcure && ["draft", "ordered"].includes(order.status))) ? (
+                  <details className="relative">
+                    <summary className={button + " flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"}>Alte acțiuni</summary>
+                    <div className="absolute bottom-11 right-0 z-30 min-w-[180px] space-y-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                      {enabledModules.includes("documents") && order.status !== "received" ? <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">+ Dovadă</button> : null}
+                      {canProcure && enabledModules.includes("expenses") && ["ordered","partially_received","received"].includes(order.status) && !(order.status === "received" && !enabledModules.includes("documents")) ? <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Finanțe ↗</button> : null}
+                      {canProcure && ["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
+                        if (window.confirm("Anulezi această comandă furnizor?")) void run(() => setPurchaseOrderStatus(organizationId, order.id, "cancelled"), "Comanda a fost anulată.");
+                      }} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold text-rose-400 hover:bg-[var(--surface-2)] disabled:opacity-40">Anulează</button> : null}
+                    </div>
+                  </details>
+                ) : null}
               </div>
             </article>;
           })}
-          {!purchaseOrders.length ? <div className="lg:col-span-2 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-8 text-center"><p className="text-sm font-semibold">Nu există comenzi furnizor deschise.</p><p className="mt-1 text-[10px] text-[var(--muted)]">Creează una manual sau pornește dintr-un semnal de lipsă.</p></div> : null}
+          {!visiblePurchaseOrders.length ? <div className="lg:col-span-2 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-8 text-center"><p className="text-sm font-semibold">{purchaseOrderTaskScope ? "Nu există PO deschise pe această lucrare." : "Nu există comenzi furnizor deschise."}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{purchaseOrderTaskScope ? "Poți reveni la toate comenzile sau continua cu material readiness." : "Creează una manual sau pornește dintr-un semnal de lipsă."}</p></div> : null}
         </div>
       </section>
 

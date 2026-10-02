@@ -31,13 +31,20 @@ import {
   recordPostServiceEvent,
 } from "@/lib/modules/client-growth";
 import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
-import {
-  evaluatePostServiceGrowth,
-  type PostServiceEventType,
-  type PostServiceGrowthState,
+import type {
+  PostServiceEventType,
+  PostServiceGrowthState,
 } from "@/lib/automation/post-service-growth";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import WorkFileSummary from "@/components/modules/tasks/WorkFileSummary";
+import TaskChecklistPanel from "@/components/modules/tasks/TaskChecklistPanel";
+import {
+  AftercarePanel,
+  PostServiceGrowthPanel,
+} from "@/components/modules/tasks/TaskLifecyclePanels";
+import { completeElapsedWorkEventsForTask } from "@/lib/automation/status-sync";
+import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -57,6 +64,7 @@ type Props = {
   initialRecordId?: string;
   initialClientId?: string;
   initialEstimateId?: string;
+  initialTitle?: string;
 };
 
 type ViewMode = "board" | "list";
@@ -120,9 +128,6 @@ const boardStatuses: WorkTaskStatus[] = [
   "done",
 ];
 
-const AFTERCARE_WINDOWS = [7, 30, 90, 180] as const;
-const RECURRING_WORK_WINDOWS = [30, 90, 180, 365] as const;
-
 function toIso(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
@@ -151,7 +156,7 @@ function dayKey(value: string | null) {
 
 export default function TasksModule({
   organizationId, locale, role, enabledModules, onOpenModule,
-  initialCreate = false, initialRecordId, initialClientId, initialEstimateId,
+  initialCreate = false, initialRecordId, initialClientId, initialEstimateId, initialTitle,
 }: Props) {
   const [tasks, setTasks] = useState<WorkTask[]>([]);
   const [clients, setClients] = useState<WorkTaskClient[]>([]);
@@ -161,11 +166,17 @@ export default function TasksModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
+  const [syncCalendarReview, setSyncCalendarReview] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(initialRecordId ? "list" : "board");
   const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
-  const [form, setForm] = useState<CreateForm>(() => ({ ...emptyForm, clientId: initialClientId ?? "" }));
+  const [form, setForm] = useState<CreateForm>(() => ({
+    ...emptyForm,
+    clientId: initialClientId ?? "",
+    title: initialTitle?.trim() || "",
+  }));
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
   const [workContext, setWorkContext] = useState<WorkTaskContext | null>(null);
@@ -220,6 +231,7 @@ export default function TasksModule({
     () => tasks.find((task) => task.id === selectedId) ?? null,
     [selectedId, tasks]
   );
+  useWorkspaceLiveContext({ taskId: selectedTask?.id, clientId: selectedTask?.client_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
 
@@ -419,7 +431,28 @@ export default function TasksModule({
     setSaving(true);
     setError("");
     try {
-      replaceTask(await setWorkTaskStatus(organizationId, task.id, status));
+      const updated = await setWorkTaskStatus(organizationId, task.id, status);
+      replaceTask(updated);
+      if (status === "done" && enabledModules.includes("calendar")) {
+        try {
+          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncCalendarReview(sync.futureScheduled > 0);
+          setSyncWarning(
+            sync.futureScheduled > 0
+              ? `Lucrarea este finalizată, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
+              : sync.completedEvents > 0
+                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+                : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncCalendarReview(true);
+          setSyncWarning("Lucrarea este finalizată, dar programările trecute nu au putut fi sincronizate automat.");
+        }
+      } else {
+        setSyncCalendarReview(false);
+        setSyncWarning("");
+      }
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul nu a putut fi actualizat.");
@@ -433,7 +466,28 @@ export default function TasksModule({
     setSaving(true);
     setError("");
     try {
-      replaceTask(await setWorkTaskProgress(organizationId, task.id, progress));
+      const updated = await setWorkTaskProgress(organizationId, task.id, progress);
+      replaceTask(updated);
+      if (progress === 100 && enabledModules.includes("calendar")) {
+        try {
+          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncCalendarReview(sync.futureScheduled > 0);
+          setSyncWarning(
+            sync.futureScheduled > 0
+              ? `Lucrarea este la 100%, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
+              : sync.completedEvents > 0
+                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+                : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncCalendarReview(true);
+          setSyncWarning("Lucrarea este la 100%, dar programările trecute nu au putut fi sincronizate automat.");
+        }
+      } else {
+        setSyncCalendarReview(false);
+        setSyncWarning("");
+      }
     } catch (progressError) {
       console.error(progressError);
       setError("Progresul nu a putut fi actualizat.");
@@ -684,18 +738,31 @@ export default function TasksModule({
         </div>
       </section>
 
-      <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Active" value={String(metrics.active)} note="de făcut sau în lucru" />
-        <Metric label="Astăzi" value={String(metrics.today)} note="programate sau scadente" />
-        <Metric label="Atenție" value={String(metrics.urgent)} note="urgente sau întârziate" />
-        <Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-9"
+        primary={<>
+          <Metric label="Active" value={String(metrics.active)} note="de făcut sau în lucru" />
+          <Metric label="Astăzi" value={String(metrics.today)} note="programate sau scadente" />
+          <Metric label="Atenție" value={String(metrics.urgent)} note="urgente sau întârziate" />
+        </>}
+        secondary={<Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />}
+      />
 
       {error && (
         <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">
           {error}
         </div>
       )}
+      {syncWarning ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[11px] leading-5 text-amber-300">{syncWarning}</p>
+          {syncCalendarReview && enabledModules.includes("calendar") ? (
+            <button type="button" onClick={() => onOpenModule("calendar")} className="h-9 shrink-0 rounded-full border border-amber-300/30 px-3 text-[10px] font-semibold text-amber-200">
+              Deschide Calendar →
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {createOpen && canWrite && (
         <form
@@ -746,6 +813,25 @@ export default function TasksModule({
                 <option value="task">Task</option>
               </select>
             </Field>
+            <Field label="Client">
+              <select
+                value={form.clientId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, clientId: event.target.value }))
+                }
+                className="input"
+              >
+                <option value="">Fără client asociat</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company || client.name} · {client.kind === "client" ? "client" : "lead"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <ModuleAdvancedFields label="Planificare și responsabilitate">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Prioritate">
               <select
                 value={form.priority}
@@ -761,22 +847,6 @@ export default function TasksModule({
                 <option value="normal">Normală</option>
                 <option value="high">Ridicată</option>
                 <option value="urgent">Urgentă</option>
-              </select>
-            </Field>
-            <Field label="Client">
-              <select
-                value={form.clientId}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, clientId: event.target.value }))
-                }
-                className="input"
-              >
-                <option value="">Fără client asociat</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.company || client.name} · {client.kind === "client" ? "client" : "lead"}
-                  </option>
-                ))}
               </select>
             </Field>
             <Field label="Responsabil">
@@ -852,7 +922,8 @@ export default function TasksModule({
                 className="input min-h-[98px] py-3"
               />
             </Field>
-          </div>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex justify-end">
             <button
               disabled={saving}
@@ -960,22 +1031,38 @@ export default function TasksModule({
         </div>
       )}
 
-      {selectedTask && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {enabledModules.includes("leads") && selectedTask.client_id && (
-            <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
-          )}
-          {canDelete && enabledModules.includes("expenses") && (
-            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială asociată</button>
-          )}
-          {canWrite && selectedTask.kind !== "task" && enabledModules.includes("estimates") && (
-            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă asociată</button>
-          )}
-          {canWrite && enabledModules.includes("calendar") && (
-            <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare asociată</button>
-          )}
+      {selectedTask && canWrite ? (
+        <div className="mt-4">
+          {selectedTask.kind !== "task" && enabledModules.includes("estimates") && (workContext?.acceptedEstimatesCount ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Pregătește sau validează oferta"
+              description="Execuția rămâne legată de o ofertă acceptată."
+              action={<button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă</button>}
+            />
+          ) : enabledModules.includes("inventory") && (workContext?.inventoryUnreadyLines ?? 0) > 0 ? (
+            <ModuleNextAction
+              title="Rezolvă materialele înainte de execuție"
+              description={`${workContext?.inventoryUnreadyLines ?? 0} poziții necesită rezervare sau aprovizionare.`}
+              action={<button type="button" onClick={() => onOpenModule("inventory", { taskId: selectedTask.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide stocul →</button>}
+            />
+          ) : enabledModules.includes("calendar") && selectedTask.status !== "done" && selectedTask.status !== "cancelled" && (workContext?.upcomingEventsCount ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Programează lucrarea"
+              description="Clientul și lucrarea sunt completate automat în calendar."
+              action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+            />
+          ) : null}
+          <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+            <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Alte acțiuni</summary>
+            <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+              {enabledModules.includes("leads") && selectedTask.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Client ↗</button>}
+              {canAccessFinances && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
+              {selectedTask.kind !== "task" && enabledModules.includes("estimates") && <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
+              {enabledModules.includes("calendar") && <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
+            </div>
+          </details>
         </div>
-      )}
+      ) : null}
       {selectedTask &&
         selectedTask.status === "done" &&
         selectedTask.kind !== "task" &&
@@ -1027,6 +1114,7 @@ export default function TasksModule({
           enabledModules={enabledModules}
           canAccessFinances={canAccessFinances}
           onOpenModule={onOpenModule}
+          onCompleteTask={() => void changeStatus(selectedTask, "done")}
         />
       )}
       {selectedTask && (
@@ -1067,299 +1155,6 @@ export default function TasksModule({
         }
       `}</style>
     </div>
-  );
-}
-
-function PostServiceGrowthPanel({
-  task,
-  state,
-  loading,
-  nowIso,
-  saving,
-  canWrite,
-  estimatesEnabled,
-  onEvent,
-  onOpenClient,
-  onCreateRecovery,
-  onCreateEstimate,
-}: {
-  task: WorkTask;
-  state: PostServiceGrowthState | null;
-  loading: boolean;
-  nowIso: string;
-  saving: boolean;
-  canWrite: boolean;
-  estimatesEnabled: boolean;
-  onEvent: (type: PostServiceEventType, score?: number) => void;
-  onOpenClient: () => void;
-  onCreateRecovery: () => void;
-  onCreateEstimate: () => void;
-}) {
-  if (loading) {
-    return (
-      <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]">
-        Se încarcă bucla post-serviciu…
-      </section>
-    );
-  }
-  if (!state) return null;
-
-  const action = evaluatePostServiceGrowth({
-    taskTitle: task.title,
-    completedAt: task.completed_at,
-    state,
-    now: nowIso ? new Date(nowIso) : new Date(0),
-  });
-  const reviewResolved = Boolean(state.reviewCompletedAt || state.reviewDeclinedAt);
-  const referralResolved = Boolean(state.referralReceivedAt || state.referralDeclinedAt);
-
-  return (
-    <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
-            ORBYVEN · POST-SERVICE GROWTH
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-[15px] font-semibold">
-              Feedback → review → recomandare → oportunitate nouă.
-            </h2>
-            {state.feedbackScore !== null && (
-              <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold">
-                {state.feedbackScore}/5
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
-            {action?.detail ?? "Fluxul este în regulă; ORBYVEN va ridica următorul pas când devine relevant."}
-          </p>
-        </div>
-        {action && (
-          <span className="self-start rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--muted)]">
-            {action.level === "urgent" ? "Prioritar" : action.level === "attention" ? "Recomandat" : "Următorul pas"}
-          </span>
-        )}
-      </div>
-
-      {canWrite && (
-        <div className="mt-4 space-y-4 border-t border-[var(--border)] pt-4">
-          {(state.feedback === "none" || state.feedback === "requested") && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">
-                Feedback client
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {state.feedback === "none" && (
-                  <button type="button" disabled={saving} onClick={() => onEvent("feedback_requested")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-                    Marchează feedback cerut
-                  </button>
-                )}
-                {[1, 2, 3, 4, 5].map((score) => (
-                  <button
-                    key={score}
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onEvent("feedback_scored", score)}
-                    className="h-9 min-w-10 rounded-full bg-[var(--accent-soft)] px-3 text-xs font-semibold text-[var(--accent)] disabled:opacity-50"
-                  >
-                    {score}★
-                  </button>
-                ))}
-                <button type="button" disabled={saving} onClick={() => onEvent("feedback_issue")} className="h-9 rounded-full border border-rose-400/30 px-3.5 text-xs font-semibold text-rose-500 disabled:opacity-50">
-                  Problemă raportată
-                </button>
-              </div>
-            </div>
-          )}
-
-          {state.feedback === "issue" && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-rose-500">
-                Recovery
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={onOpenClient} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold">
-                  Deschide clientul
-                </button>
-                <button type="button" onClick={onCreateRecovery} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
-                  + Lucrare de remediere
-                </button>
-                <button type="button" disabled={saving} onClick={() => onEvent("recovery_resolved")} className="h-9 rounded-full border border-emerald-500/30 px-3.5 text-xs font-semibold text-emerald-600 disabled:opacity-50">
-                  Remediere rezolvată ✓
-                </button>
-              </div>
-            </div>
-          )}
-
-          {state.feedback === "positive" &&
-            !state.reviewRequestedAt &&
-            !reviewResolved && (
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Review</p>
-                <button type="button" disabled={saving} onClick={() => onEvent("review_requested")} className="mt-2 h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
-                  Marchează review cerut
-                </button>
-              </div>
-            )}
-
-          {state.feedback === "positive" &&
-            state.reviewRequestedAt &&
-            !reviewResolved && (
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Rezultat review</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" disabled={saving} onClick={() => onEvent("review_completed")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
-                    Review primit ✓
-                  </button>
-                  <button type="button" disabled={saving} onClick={() => onEvent("review_declined")} className="h-9 rounded-full border border-[var(--border)] px-3.5 text-xs font-semibold text-[var(--muted)] disabled:opacity-50">
-                    Nu dorește
-                  </button>
-                </div>
-              </div>
-            )}
-
-          {state.feedback === "positive" &&
-            state.reviewCompletedAt &&
-            !state.referralRequestedAt &&
-            !referralResolved && (
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Recomandare</p>
-                <button type="button" disabled={saving} onClick={() => onEvent("referral_requested")} className="mt-2 h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-                  Marchează recomandare cerută
-                </button>
-              </div>
-            )}
-
-          {state.feedback === "positive" &&
-            state.reviewCompletedAt &&
-            state.referralRequestedAt &&
-            !referralResolved && (
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Rezultat recomandare</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" disabled={saving} onClick={() => onEvent("referral_received")} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
-                    Recomandare primită ✓
-                  </button>
-                  <button type="button" disabled={saving} onClick={() => onEvent("referral_declined")} className="h-9 rounded-full border border-[var(--border)] px-3.5 text-xs font-semibold text-[var(--muted)] disabled:opacity-50">
-                    Nu acum
-                  </button>
-                </div>
-              </div>
-            )}
-
-          {action?.rule === "post_service_upsell" && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Oportunitate nouă</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {estimatesEnabled && (
-                  <button type="button" disabled={saving} onClick={onCreateEstimate} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">
-                    + Ofertă nouă
-                  </button>
-                )}
-                <button type="button" disabled={saving} onClick={() => onEvent("upsell_scheduled")} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">
-                  Amintește-mi peste 30 zile
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function AftercarePanel({
-  client,
-  locale,
-  nowIso,
-  saving,
-  canWrite,
-  onSchedule,
-  onRepeat,
-  onOpenClient,
-}: {
-  client: WorkTaskClient;
-  locale: string;
-  nowIso: string;
-  saving: boolean;
-  canWrite: boolean;
-  onSchedule: (days: number) => void;
-  onRepeat: (days: number) => void;
-  onOpenClient: () => void;
-}) {
-  const followUp = client.next_follow_up_at;
-  const followUpIsFuture = followUp
-    ? new Date(followUp).getTime() > new Date(nowIso || "1970-01-01T00:00:00.000Z").getTime()
-    : false;
-
-  return (
-    <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
-            ORBYVEN · AFTERCARE
-          </p>
-          <h2 className="mt-1 text-[15px] font-semibold">
-            Nu lăsa relația cu clientul să se închidă odată cu lucrarea.
-          </h2>
-          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
-            {followUp
-              ? `Revenire ${followUpIsFuture ? "programată" : "restantă"}: ${formatDateTime(followUp, locale)}`
-              : "Programează următorul contact pentru mentenanță, feedback sau o comandă repetată."}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onOpenClient}
-          className="h-9 self-start rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold"
-        >
-          Fișa clientului ↗
-        </button>
-      </div>
-      {canWrite && (
-        <>
-          <div className="mt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">
-              Revenire client
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {AFTERCARE_WINDOWS.map((days) => (
-                <button
-                  key={days}
-                  type="button"
-                  disabled={saving}
-                  onClick={() => onSchedule(days)}
-                  className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50"
-                >
-                  În {days} zile
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 border-t border-[var(--border)] pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">
-              Lucrare recurentă
-            </p>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">
-              Creează următoarea lucrare cu același client, locație, durată și checklist. Responsabilul rămâne nealocat.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {RECURRING_WORK_WINDOWS.map((days) => (
-                <button
-                  key={days}
-                  type="button"
-                  disabled={saving}
-                  onClick={() => onRepeat(days)}
-                  className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50"
-                >
-                  Repetă în {days === 365 ? "1 an" : days + " zile"}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </section>
   );
 }
 
@@ -1455,7 +1250,6 @@ function TaskDetail({
   onProgress: (progress: number) => void;
   onDelete: () => void;
 }) {
-  const completedItems = checklist.filter((item) => item.done).length;
   return (
     <section className="mt-4 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
       <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
@@ -1493,25 +1287,41 @@ function TaskDetail({
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
               Status rapid
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map(
-                (status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={saving || task.status === status}
-                    onClick={() => onStatus(status)}
-                    className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
-                      task.status === status
-                        ? "bg-[var(--button)] text-[var(--button-text)]"
-                        : "border border-[var(--border)]"
-                    }`}
-                  >
-                    {statusLabels[status]}
-                  </button>
-                )
-              )}
-            </div>
+            {task.status === "done" ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onProgress(0)}
+                  className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-xs font-semibold disabled:opacity-50"
+                >
+                  Reactivează lucrarea
+                </button>
+                <span className="text-[10px] text-[var(--muted)]">
+                  Reactivarea revine la „De făcut” și resetează progresul pentru o nouă execuție.
+                </span>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map(
+                  (status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={saving || task.status === status}
+                      onClick={() => onStatus(status)}
+                      className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
+                        task.status === status
+                          ? "bg-[var(--button)] text-[var(--button-text)]"
+                          : "border border-[var(--border)]"
+                      }`}
+                    >
+                      {statusLabels[status]}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
           </div>
         )}
         {canWrite && (
@@ -1552,79 +1362,17 @@ function TaskDetail({
         )}
       </article>
 
-      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium text-[var(--muted)]">Checklist</p>
-            <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em]">
-              Pașii operațiunii
-            </h2>
-          </div>
-          <span className="rounded-full bg-[var(--bg)] px-3 py-1.5 text-[11px] font-semibold">
-            {completedItems}/{checklist.length}
-          </span>
-        </div>
-        <div className="mt-6 space-y-2">
-          {checklist.length ? (
-            checklist.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 rounded-[18px] bg-[var(--bg)] p-3"
-              >
-                <button
-                  type="button"
-                  disabled={!canWrite || saving}
-                  onClick={() => onToggleChecklist(item)}
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] ${
-                    item.done
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                      : "border-[var(--border-strong)]"
-                  }`}
-                >
-                  {item.done ? "✓" : ""}
-                </button>
-                <span
-                  className={`min-w-0 flex-1 text-sm ${
-                    item.done ? "text-[var(--muted)] line-through" : ""
-                  }`}
-                >
-                  {item.title}
-                </span>
-                {canDelete && (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onRemoveChecklist(item)}
-                    className="text-xs text-[var(--muted)]"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="rounded-[18px] border border-dashed border-[var(--border)] p-5 text-center text-xs text-[var(--muted)]">
-              Adaugă pașii esențiali ai lucrării.
-            </p>
-          )}
-        </div>
-        {canWrite && (
-          <form onSubmit={onAddChecklist} className="mt-4 flex gap-2">
-            <input
-              value={newChecklistTitle}
-              onChange={(event) => onChecklistTitle(event.target.value)}
-              placeholder="Ex. Verifică presiunea instalației"
-              className="h-11 min-w-0 flex-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 text-sm outline-none"
-            />
-            <button
-              disabled={saving || !newChecklistTitle.trim()}
-              className="h-11 rounded-[14px] bg-[var(--button)] px-4 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50"
-            >
-              Adaugă
-            </button>
-          </form>
-        )}
-      </article>
+      <TaskChecklistPanel
+        checklist={checklist}
+        canWrite={canWrite}
+        canDelete={canDelete}
+        saving={saving}
+        newChecklistTitle={newChecklistTitle}
+        onChecklistTitle={onChecklistTitle}
+        onAddChecklist={onAddChecklist}
+        onToggleChecklist={onToggleChecklist}
+        onRemoveChecklist={onRemoveChecklist}
+      />
     </section>
   );
 }

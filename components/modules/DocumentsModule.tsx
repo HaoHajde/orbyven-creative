@@ -14,14 +14,19 @@ import {
   type DocumentTaskLink,
 } from "@/lib/modules/documents";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
-import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleNextAction, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialRecordId?: string;
   initialTaskId?: string;
@@ -59,7 +64,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -87,6 +92,13 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
     initialRecordId && documents.some((document) => document.id === initialRecordId)
       ? initialRecordId
       : null;
+  useWorkspaceLiveContext({
+    clientId: clientId || undefined,
+    taskId: taskId || scopeTaskId || undefined,
+    estimateId: estimateId || undefined,
+    purchaseOrderId: purchaseOrderId || undefined,
+    documentId: focusedDocumentId || undefined,
+  });
   useWorkspaceRecordFocus(initialRecordId, focusedDocumentId, loading);
   useWorkspaceCreateFocus(uploadOpen);
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -291,86 +303,74 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
 
       <div className="mt-8"><ModuleError message={error} /></div>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <ModuleMetric label="Fișiere" value={String(metrics.total)} note="storage privat" />
-        <ModuleMetric label="Nelegate" value={String(metrics.unlinked)} note="de organizat" />
-        <ModuleMetric label="Fotografii" value={String(metrics.photos)} note="poze din teren" />
-        <ModuleMetric label="Bonuri" value={String(metrics.receipts)} note="pentru cheltuieli" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <ModuleMetric label="Nelegate" value={String(metrics.unlinked)} note="de organizat" />
+          <ModuleMetric label="Bonuri" value={String(metrics.receipts)} note="pentru cheltuieli" />
+          <ModuleMetric label="Fișiere" value={String(metrics.total)} note="storage privat" />
+        </>}
+        secondary={<ModuleMetric label="Fotografii" value={String(metrics.photos)} note="poze din teren" />}
+      />
 
       {uploadOpen && canWrite ? (
         <form data-workspace-create-focus={uploadOpen ? "true" : undefined} onSubmit={handleUpload} className="mt-5 scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Fișier *">
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => filePickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
-                  Files / iCloud
-                </button>
-                <button type="button" onClick={() => cameraPickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">
-                  Fotografiază
-                </button>
+                <button type="button" onClick={() => filePickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">Files / iCloud</button>
+                <button type="button" onClick={() => cameraPickerRef.current?.click()} className="h-11 rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 text-xs font-semibold">Fotografiază</button>
               </div>
-              <input
-                key={"files-" + fileInputKey}
-                ref={filePickerRef}
-                type="file"
-                accept={DOCUMENT_ACCEPT}
-                data-orbyven-document-picker="true"
-                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "files")}
-                className="sr-only"
-              />
-              <input
-                key={"camera-" + fileInputKey}
-                ref={cameraPickerRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                data-orbyven-camera-picker="true"
-                onChange={(event) => selectFile(event.target.files?.[0] ?? null, "camera")}
-                className="sr-only"
-              />
-              <p className="mt-2 truncate text-[11px] text-[var(--muted)]">
-                {file ? file.name + " · " + formatSize(file.size) : "Alege un fișier sau fotografiază un document."}
-              </p>
+              <input key={"files-" + fileInputKey} ref={filePickerRef} type="file" accept={DOCUMENT_ACCEPT} data-orbyven-document-picker="true" onChange={(event) => selectFile(event.target.files?.[0] ?? null, "files")} className="sr-only" />
+              <input key={"camera-" + fileInputKey} ref={cameraPickerRef} type="file" accept="image/*" capture="environment" data-orbyven-camera-picker="true" onChange={(event) => selectFile(event.target.files?.[0] ?? null, "camera")} className="sr-only" />
+              <p className="mt-2 truncate text-[11px] text-[var(--muted)]">{file ? file.name + " · " + formatSize(file.size) : "Alege un fișier sau fotografiază un document."}</p>
             </Field>
             <Field label="Categorie">
               <select value={category} onChange={(event) => setCategory(event.target.value as DocumentCategory)} className={moduleInputClass}>
                 {(Object.keys(categoryLabels) as DocumentCategory[]).map((key) => <option key={key} value={key}>{categoryLabels[key]}</option>)}
               </select>
             </Field>
-            <Field label="Client">
-              <select value={clientId} disabled={Boolean(taskContextById.get(taskId)?.client_id || estimateContextById.get(estimateId)?.client_id)} onChange={(event) => setClientId(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
-                <option value="">Fără client</option>
-                {clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Lucrare">
-              <select value={taskId} disabled={Boolean(estimateContextById.get(estimateId)?.task_id || purchaseOrderById.get(purchaseOrderId)?.task_id)} onChange={(event) => selectTaskContext(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
-                <option value="">Fără lucrare</option>
-                {tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-              </select>
-            </Field>
-            <Field label="Ofertă / deviz">
-              <select value={estimateId} onChange={(event) => selectEstimateContext(event.target.value)} className={moduleInputClass}>
-                <option value="">Fără ofertă</option>
-                {estimates.filter((item) => !purchaseOrderId || !purchaseOrderById.get(purchaseOrderId)?.task_id || !item.task_id || item.task_id === purchaseOrderById.get(purchaseOrderId)?.task_id).map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
-              </select>
-            </Field>
-            <Field label="Comandă furnizor">
-              <select value={purchaseOrderId} onChange={(event) => selectPurchaseOrderContext(event.target.value)} className={moduleInputClass}>
-                <option value="">Fără comandă furnizor</option>
-                {purchaseOrders.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.status}</option>)}
-              </select>
-            </Field>
-            <Field label="Notă">
-              <input value={note} onChange={(event) => setNote(event.target.value)} className={moduleInputClass} placeholder="Ex. poze înainte de intervenție" />
-            </Field>
           </div>
+          <ModuleAdvancedFields label="Leagă documentul de context">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Client">
+                <select value={clientId} disabled={Boolean(taskContextById.get(taskId)?.client_id || estimateContextById.get(estimateId)?.client_id)} onChange={(event) => setClientId(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
+                  <option value="">Fără client</option>{clients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Lucrare">
+                <select value={taskId} disabled={Boolean(estimateContextById.get(estimateId)?.task_id || purchaseOrderById.get(purchaseOrderId)?.task_id)} onChange={(event) => selectTaskContext(event.target.value)} className={`${moduleInputClass} disabled:opacity-60`}>
+                  <option value="">Fără lucrare</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </Field>
+              <Field label="Ofertă / deviz">
+                <select value={estimateId} onChange={(event) => selectEstimateContext(event.target.value)} className={moduleInputClass}>
+                  <option value="">Fără ofertă</option>{estimates.filter((item) => !purchaseOrderId || !purchaseOrderById.get(purchaseOrderId)?.task_id || !item.task_id || item.task_id === purchaseOrderById.get(purchaseOrderId)?.task_id).map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}
+                </select>
+              </Field>
+              <Field label="Comandă furnizor">
+                <select value={purchaseOrderId} onChange={(event) => selectPurchaseOrderContext(event.target.value)} className={moduleInputClass}>
+                  <option value="">Fără comandă furnizor</option>{purchaseOrders.map((item) => <option key={item.id} value={item.id}>{item.reference} · {item.status}</option>)}
+                </select>
+              </Field>
+              <Field label="Notă" className="sm:col-span-2"><input value={note} onChange={(event) => setNote(event.target.value)} className={moduleInputClass} placeholder="Ex. poze înainte de intervenție" /></Field>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <p className="text-xs text-[var(--muted)]">{taskId || estimateId || purchaseOrderId ? "Contextul este sincronizat automat între client, lucrare, deviz și achiziție." : "Maxim 20 MB. Descărcarea se face prin link temporar securizat."}</p>
             <button disabled={!file || saving} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se încarcă…" : "Salvează documentul"}</button>
           </div>
         </form>
+      ) : null}
+
+      {scopeTaskId && canWrite && filtered.length === 0 ? (
+        <div className="mt-5">
+          <ModuleNextAction
+            title="Dosarul acestei lucrări este gol"
+            description="Adaugă prima fotografie, dovadă, bon sau document; lucrarea rămâne asociată automat."
+            action={<button type="button" onClick={() => { setTaskId(scopeTaskId); setUploadOpen(true); window.setTimeout(() => document.querySelector('[data-workspace-create-focus="true"]')?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Document</button>}
+          />
+        </div>
       ) : null}
 
       <section className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
@@ -410,9 +410,32 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
                 </div>
                 {document.note ? <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{document.note}</p> : null}
 
-                <div className="mt-5 flex gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {document.category === "receipt" && canDelete && enabledModules.includes("expenses") ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenModule("expenses", {
+                        create: true,
+                        clientId: document.client_id ?? undefined,
+                        taskId: document.task_id ?? undefined,
+                        estimateId: document.estimate_id ?? undefined,
+                        purchaseOrderId: document.purchase_order_id ?? undefined,
+                        documentId: document.id,
+                      })}
+                      className="h-10 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]"
+                    >
+                      Înregistrează cheltuiala →
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => void openDocument(document)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide</button>
-                  {canDelete ? <button type="button" disabled={saving} onClick={() => void removeDocument(document)} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-40">Șterge</button> : null}
+                  {canDelete ? (
+                    <details className="relative">
+                      <summary className="flex h-10 cursor-pointer list-none items-center rounded-full border border-[var(--border)] px-4 text-xs font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Mai multe</summary>
+                      <div className="absolute bottom-12 right-0 z-20 min-w-[150px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                        <button type="button" disabled={saving} onClick={() => void removeDocument(document)} className="w-full rounded-[9px] px-3 py-2 text-left text-[11px] font-semibold text-red-500 hover:bg-[var(--surface-2)] disabled:opacity-40">Șterge</button>
+                      </div>
+                    </details>
+                  ) : null}
                 </div>
               </article>
             ))}
