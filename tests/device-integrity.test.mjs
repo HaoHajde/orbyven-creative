@@ -93,3 +93,35 @@ test("workspace light theme uses a low-glare violet visual system", () => {
   assert.match(css, /caret-color: var\(--violet\)/);
   assert.match(css, /background: rgba\(116, 88, 215, 0\.20\)/);
 });
+
+
+test("Intelligence and public pages follow the active light theme", () => {
+  const shell = read("components/WorkspaceShell.tsx");
+  const intelligence = read("components/WorkspaceIntelligence.tsx");
+  const home = read("components/HomePageClient.tsx");
+  const services = read("app/servicii/page.tsx");
+  const contact = read("app/contact/page.tsx");
+  const templates = read("app/templates/page.tsx");
+  const aiWeb = read("components/AiWebDesignEntry.tsx");
+  const header = read("components/SiteHeader.tsx");
+  const css = read("app/globals.css");
+
+  assert.match(shell, /theme=\{theme\}/);
+  assert.match(intelligence, /theme: "light" \| "dark"/);
+  assert.match(intelligence, /data-orbyven-theme=\{theme\}/);
+  assert.match(intelligence, /orbyven-intelligence-panel/);
+  assert.match(intelligence, /orbyven-intelligence-composer-field/);
+
+  for (const source of [home, services, contact, templates, aiWeb]) {
+    assert.match(source, /data-orbyven-public-theme=\{theme\}/);
+    assert.match(source, /orbyven-public-shell/);
+    assert.match(source, /#e7e8f3/);
+  }
+
+  assert.match(header, /orbyven-public-header-surface/);
+  assert.match(header, /orbyven-public-mobile-menu/);
+  assert.match(css, /ORBYVEN INTELLIGENCE LIGHT THEME/);
+  assert.match(css, /orbyven-intelligence-shell\[data-orbyven-theme="light"\]/);
+  assert.match(css, /ORBYVEN PUBLIC LIGHT THEME/);
+  assert.match(css, /orbyven-public-shell\[data-orbyven-public-theme="light"\]/);
+});
