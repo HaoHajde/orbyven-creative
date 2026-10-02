@@ -708,11 +708,15 @@ export default function InventoryModule({
           ) : taskPlan.length ? (
             <>
               <div className="mt-4">
-                {taskPlanSummary.shortages > 0 && firstTaskShortage && canProcure ? (
+                {taskPlanSummary.shortages > 0 ? (
                   <ModuleNextAction
-                    title="Cumpără materialele lipsă"
-                    description={`${taskPlanSummary.shortages} poziții rămân neacoperite după stocul disponibil.`}
-                    action={<button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(firstTaskShortage.item, firstTaskShortage.gap)} className={primary}>Pregătește cumpărarea →</button>}
+                    title={canProcure ? "Cumpără materialele lipsă" : "Există materiale lipsă"}
+                    description={canProcure
+                      ? `${taskPlanSummary.shortages} poziții rămân neacoperite după stocul disponibil.`
+                      : `${taskPlanSummary.shortages} poziții rămân neacoperite. Achiziția trebuie continuată de un Owner, Admin sau Manager.`}
+                    action={canProcure && firstTaskShortage ? (
+                      <button type="button" disabled={busy} onClick={() => prepareTaskShortagePurchase(firstTaskShortage.item, firstTaskShortage.gap)} className={primary}>Pregătește cumpărarea →</button>
+                    ) : undefined}
                   />
                 ) : taskPlanSummary.needsReservation > 0 && canWrite ? (
                   <ModuleNextAction
