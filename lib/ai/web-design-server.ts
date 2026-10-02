@@ -21,6 +21,10 @@ import {
   applyDesignDna,
   designDnaInstruction,
 } from "@/lib/ai/web-design-variation";
+import {
+  evaluateWebDesignReadiness,
+  type WebDesignReadinessReport,
+} from "@/lib/ai/web-design-readiness";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -54,6 +58,7 @@ export type WebDesignGenerationResult = {
   suggestions: string[];
   remainingToday: number | null;
   quality: WebDesignQualityReport;
+  readiness: WebDesignReadinessReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -610,6 +615,12 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
+    const readiness = evaluateWebDesignReadiness(
+      nextDraft,
+      strategy,
+      qualityResult.report
+    );
+
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
     await finishQuota(quota.requestId, true, usage);
 
@@ -619,6 +630,7 @@ export async function generateWebDesignForActor(
       suggestions: result.suggestions,
       remainingToday: quota.remainingToday,
       quality: qualityResult.report,
+      readiness,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
