@@ -1,8 +1,8 @@
-import type { EditableSite } from "@/lib/ai/site-editor";
+import type { EditableSite } from "./site-editor.ts";
 import type {
   WebDesignPrimaryAction,
   WebDesignStrategy,
-} from "@/lib/ai/web-design-intent";
+} from "./web-design-intent.ts";
 
 export type WebDesignQualityIssueCode =
   | "LOW_TEXT_CONTRAST"
