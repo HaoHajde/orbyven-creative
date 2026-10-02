@@ -611,3 +611,12 @@ test("received procurement stock is reserved automatically for its linked work",
   assert.match(inventory, /if \(ok && order\)/);
   assert.match(inventory, /planTaskId === order\.task_id/);
 });
+
+
+test("completed work reactivation cannot leave a 100 percent in-progress state", () => {
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /task\.status === "done"/);
+  assert.match(tasks, /Reactivează lucrarea/);
+  assert.match(tasks, /onClick=\{\(\) => onProgress\(0\)\}/);
+  assert.match(tasks, /revine la „De făcut” și resetează progresul/);
+});
