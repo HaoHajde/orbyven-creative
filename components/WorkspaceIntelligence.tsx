@@ -34,9 +34,11 @@ type UiMessage = {
   specialist: IntelligenceSpecialist | null;
   facts: Array<{ label: string; value: string }>;
   actions: IntelligenceResponse["actions"];
+  focus?: IntelligenceResponse["focus"];
 };
 
 const QUICK_PROMPTS = [
+  "Fă-mi briefingul zilei",
   "Ce am de făcut azi?",
   "Ce am de încasat?",
   "Creează lead Ana Popescu; telefon: 0712345678",
@@ -55,6 +57,22 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
   documents: "Documents",
   general: "ORBYVEN Core",
 };
+
+const focusFactLabels = ["Focus · De ce", "Focus · Risc", "Focus · Pas"];
+
+function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
+  const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  const why = value("Focus · De ce");
+  const consequence = value("Focus · Risc");
+  const nextStep = value("Focus · Pas");
+
+  return {
+    facts: facts.filter((fact) => !focusFactLabels.includes(fact.label)),
+    focus: why && consequence && nextStep
+      ? { why, consequence, nextStep, confidence: "high" as const }
+      : undefined,
+  };
+}
 
 export default function WorkspaceIntelligence({
   organizationId,
@@ -200,14 +218,18 @@ export default function WorkspaceIntelligence({
       if (!response.ok || !body.conversation) {
         throw new Error(body.error || "Conversația nu a putut fi încărcată.");
       }
-      const restored = (body.messages ?? []).map((item) => ({
-        key: item.id,
-        role: item.role,
-        content: item.content,
-        specialist: item.specialist,
-        facts: item.facts ?? [],
-        actions: [] as IntelligenceResponse["actions"],
-      }));
+      const restored = (body.messages ?? []).map((item) => {
+        const stored = splitStoredFocus(item.facts ?? []);
+        return {
+          key: item.id,
+          role: item.role,
+          content: item.content,
+          specialist: item.specialist,
+          facts: stored.facts,
+          actions: [] as IntelligenceResponse["actions"],
+          focus: stored.focus,
+        };
+      });
       const plan = await loadPlanForConversation(body.conversation.id, token);
       if (plan) {
         for (let index = restored.length - 1; index >= 0; index -= 1) {
@@ -274,6 +296,7 @@ export default function WorkspaceIntelligence({
         specialist: body.specialist,
         facts: body.facts,
         actions: body.actions,
+        focus: body.focus,
       }]);
       void loadConversations();
     } catch (reason) {
@@ -699,7 +722,7 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.21</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -805,6 +828,33 @@ export default function WorkspaceIntelligence({
                                 <span className="text-[9px] text-[var(--muted-2)]">ORBYVEN</span>
                               </div>
                               <p className="mt-2.5 text-[13px] leading-5 text-[var(--text)]">{displayContent}</p>
+                              {message.focus ? (
+                                <div
+                                  data-orbyven-focus-explanation="true"
+                                  className="mt-3 overflow-hidden rounded-[13px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055]"
+                                >
+                                  <div className="flex items-center justify-between border-b border-[#7897ff]/15 px-3 py-2">
+                                    <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">FOCUS</span>
+                                    <span className="text-[9px] font-semibold text-[var(--muted-2)]">
+                                      {message.focus.confidence === "high" ? "date verificate" : "context parțial"}
+                                    </span>
+                                  </div>
+                                  <div className="divide-y divide-[#7897ff]/10">
+                                    <div className="grid grid-cols-[58px_1fr] gap-2 px-3 py-2">
+                                      <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--muted-2)]">De ce</span>
+                                      <p className="text-[11px] leading-4 text-[var(--text)]">{message.focus.why}</p>
+                                    </div>
+                                    <div className="grid grid-cols-[58px_1fr] gap-2 px-3 py-2">
+                                      <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--muted-2)]">Risc</span>
+                                      <p className="text-[11px] leading-4 text-[var(--muted)]">{message.focus.consequence}</p>
+                                    </div>
+                                    <div className="grid grid-cols-[58px_1fr] gap-2 px-3 py-2">
+                                      <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--muted-2)]">Următor</span>
+                                      <p className="text-[11px] font-semibold leading-4 text-[var(--text)]">{message.focus.nextStep}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
                               {displayFacts.length ? (
                                 <div className="mt-3 grid grid-cols-2 gap-2">
                                   {displayFacts.map((fact, index) => (
@@ -855,7 +905,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.13 · Acțiunile sunt verificate înainte de execuție.
+                      0.8.21 · Focus explicabil · Acțiunile sunt verificate înainte de execuție.
                     </p>
                   </form>
                 ) : null}
