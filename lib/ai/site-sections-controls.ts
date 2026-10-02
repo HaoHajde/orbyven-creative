@@ -3,7 +3,7 @@ import {
   type SiteSectionId,
   SECTION_LABELS,
   applySitePatch,
-} from "./site-editor.ts";
+} from "@/lib/ai/site-editor";
 
 /** Hero remains first and visible. Every other finite section can be shown, hidden or reordered. */
 export function setSectionVisible(
