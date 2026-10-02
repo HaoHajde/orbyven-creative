@@ -111,6 +111,25 @@ export async function markOfferManually(org:string,estimateId:string,status:"sen
     .eq("organization_id",org).eq("estimate_id",estimateId).eq("id",data.id).eq("status",data.status).select("id").single();
   if(changed.error||!changed.data) throw new Error("Statusul nu a fost actualizat; reîncarcă.");
 }
+export async function syncOfferStatusFromEstimate(org:string,estimateId:string,status:"sent"|"accepted"){
+  if(!org||!estimateId)throw new Error("Firma și devizul sunt obligatorii.");
+  const existing=await orbyvenSupabase.from("sales_commercial_documents")
+    .select("id,status").eq("organization_id",org).eq("estimate_id",estimateId).eq("document_type","offer").maybeSingle();
+  if(existing.error)throw existing.error;
+  if(!existing.data)return {synced:false as const,reason:"missing" as const};
+
+  if(status==="sent"){
+    if(existing.data.status==="sent"||existing.data.status==="accepted")return {synced:false as const,reason:"already" as const};
+    if(existing.data.status!=="draft")return {synced:false as const,reason:"unsupported" as const};
+    await markOfferManually(org,estimateId,"sent");
+    return {synced:true as const,status:"sent" as const};
+  }
+
+  if(existing.data.status==="accepted")return {synced:false as const,reason:"already" as const};
+  if(existing.data.status==="draft")await markOfferManually(org,estimateId,"sent");
+  await markOfferManually(org,estimateId,"accepted");
+  return {synced:true as const,status:"accepted" as const};
+}
 export async function makeInvoiceDraft(org:string,estimateId:string){
   const source=await getSource(org,estimateId),lines=await getLines(org,estimateId);
   validateOffer(source,lines);
