@@ -25,6 +25,8 @@ import {
 } from "@/lib/modules/resources";
 import { RESOURCE_TYPE_LABELS, schedulerErrorMessage } from "@/lib/modules/resource-core";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -364,6 +366,7 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  useWorkspaceLiveContext({ clientId: selectedEvent?.client_id ?? undefined, taskId: selectedEvent?.task_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
   useWorkspaceCreateFocus(createOpen);
@@ -569,12 +572,15 @@ export default function CalendarModule({
         </div>
       </section>
 
-      <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
-        <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
-        <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
-        <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-9"
+        primary={<>
+          <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
+          <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
+          <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
+        </>}
+        secondary={<Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />}
+      />
 
       {error && <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">{error}</div>}
 
@@ -600,44 +606,29 @@ export default function CalendarModule({
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Titlu" className="xl:col-span-2"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex. Vizită tehnică — Popescu" className="calendar-input" /></Field>
-            <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
             <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
-            <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
-            <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Resurse" className="md:col-span-2 xl:col-span-2">
-              <div className="grid min-h-11 gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-2 sm:grid-cols-2">
-                {activeResources.length ? activeResources.map((resource) => {
-                  const checked = form.resourceIds.includes(resource.id);
-                  return (
-                    <label key={resource.id} className={`flex cursor-pointer items-center gap-2 rounded-[10px] px-2 py-2 text-xs ${checked ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"}`}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) => setForm((current) => ({
-                          ...current,
-                          resourceIds: event.target.checked
-                            ? [...current.resourceIds, resource.id]
-                            : current.resourceIds.filter((id) => id !== resource.id),
-                        }))}
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate font-semibold">{resource.name}</span>
-                        <span className="block truncate text-[10px] opacity-70">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
-                      </span>
-                    </label>
-                  );
-                }) : (
-                  <span className="px-2 py-2 text-xs text-[var(--muted)]">Nicio resursă activă. Adaugă oameni/resurse în modulul Echipă.</span>
-                )}
-              </div>
-            </Field>
-            <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
+            <Field label="Tip"><select value={form.eventType} onChange={(event) => setForm((current) => ({ ...current, eventType: event.target.value as CalendarEventType }))} className="calendar-input">{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
             <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
             <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
-            <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
-            <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
-            <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
           </div>
+          <ModuleAdvancedFields label="Context, resurse și reminder">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
+              <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
+              <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
+              <Field label="Reminder"><select value={form.reminderMinutes} onChange={(event) => setForm((current) => ({ ...current, reminderMinutes: event.target.value }))} className="calendar-input"><option value="">Fără reminder</option><option value="10">10 minute înainte</option><option value="30">30 minute înainte</option><option value="60">1 oră înainte</option><option value="1440">1 zi înainte</option></select></Field>
+              <label className="flex h-11 items-center gap-3 self-end rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 text-sm"><input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />Toată ziua</label>
+              <Field label="Resurse" className="md:col-span-2 xl:col-span-3">
+                <div className="grid min-h-11 gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-2 sm:grid-cols-2">
+                  {activeResources.length ? activeResources.map((resource) => {
+                    const checked = form.resourceIds.includes(resource.id);
+                    return <label key={resource.id} className={`flex cursor-pointer items-center gap-2 rounded-[10px] px-2 py-2 text-xs ${checked ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"}`}><input type="checkbox" checked={checked} onChange={(event) => setForm((current) => ({ ...current, resourceIds: event.target.checked ? [...current.resourceIds, resource.id] : current.resourceIds.filter((id) => id !== resource.id) }))} /><span className="min-w-0"><span className="block truncate font-semibold">{resource.name}</span><span className="block truncate text-[10px] opacity-70">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span></span></label>;
+                  }) : <span className="px-2 py-2 text-xs text-[var(--muted)]">Nicio resursă activă. Adaugă oameni/resurse în modulul Echipă.</span>}
+                </div>
+              </Field>
+              <Field label="Notițe" className="md:col-span-2 xl:col-span-4"><textarea rows={3} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalii utile, ce trebuie pregătit, context..." className="calendar-input min-h-[98px] py-3" /></Field>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex justify-end"><button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-50">{saving ? "Se salvează..." : "Adaugă în calendar"}</button></div>
         </form>
       )}
@@ -673,14 +664,34 @@ export default function CalendarModule({
         </div>
       )}
 
-      {selectedEvent && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
-          {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
+      {selectedEvent && canWrite ? (
+        <div className="mt-4">
+          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Alocă resurse înainte de execuție"
+              description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
+              action={<button type="button" onClick={() => document.querySelector('[data-calendar-resource-panel="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Alocă →</button>}
+            />
+          ) : selectedEvent.status === "scheduled" ? (
+            <ModuleNextAction
+              title="Programarea este pregătită"
+              description="După execuție, marcheaz-o finalizată pentru a păstra istoricul curat."
+              action={<button type="button" disabled={saving} onClick={() => void changeStatus(selectedEvent, "completed")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Finalizează</button>}
+            />
+          ) : null}
+          {(enabledModules.includes("leads") || enabledModules.includes("tasks")) && (
+            <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+              <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Context asociat</summary>
+              <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+                {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Client ↗</button>}
+                {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Lucrare ↗</button>}
+              </div>
+            </details>
+          )}
         </div>
-      )}
+      ) : null}
       {selectedEvent && (
-        <section className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
+        <section data-calendar-resource-panel="true" className="mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Scheduler · Resurse</p>
