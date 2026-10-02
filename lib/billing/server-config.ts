@@ -83,6 +83,45 @@ export function requireBillingReady() {
   return readiness;
 }
 
+export function getPublicCheckoutReadiness() {
+  const missing: string[] = [];
+
+  if (!billingServerConfig.enabled) missing.push("ORBYVEN_BILLING_ENABLED");
+  if (!billingServerConfig.stripeSecretKey) {
+    missing.push("STRIPE_SECRET_KEY");
+  } else if (billingServerConfig.stripeMode === "unknown") {
+    missing.push("valid STRIPE_SECRET_KEY mode");
+  }
+  if (!billingServerConfig.stripeWebhookSecret) missing.push("STRIPE_WEBHOOK_SECRET");
+  if (!billingServerConfig.supabaseServiceRoleKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (billingServerConfig.stripeMode === "live") {
+    if (!billingServerConfig.stripeLiveConfirmed) missing.push("ORBYVEN_BILLING_LIVE_CONFIRMED");
+    if (!legalConfig.isComplete) missing.push("legal operator data / merchant entity type / immutable key");
+    if (!process.env.NEXT_PUBLIC_ORBYVEN_PRICE_TAX_LABEL?.trim()) {
+      missing.push("NEXT_PUBLIC_ORBYVEN_PRICE_TAX_LABEL");
+    }
+  }
+
+  return {
+    ready: missing.length === 0,
+    enabled: billingServerConfig.enabled,
+    mode: billingServerConfig.stripeMode,
+    missing,
+  };
+}
+
+export function requirePublicCheckoutReady() {
+  const readiness = getPublicCheckoutReadiness();
+  if (!readiness.ready) {
+    throw new Error("ORBYVEN public checkout is not configured for commercial use.");
+  }
+  if (commercialIdentity.checkoutPaused) {
+    throw new Error("ORBYVEN commercial checkout is paused.");
+  }
+  return readiness;
+}
+
 /** A transition pauses NEW contracts, but not existing subscriptions or portal access. */
 export function requireCheckoutReady() {
   const readiness = requireBillingReady();
