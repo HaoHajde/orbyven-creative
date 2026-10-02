@@ -248,11 +248,11 @@ function AdvancedVisual({
       <div className="absolute inset-x-[6%] bottom-[7%] h-16 rounded-full bg-[#704cff]/24 blur-[40px]" />
       <div className="absolute left-[0%] right-[0%] top-[2%] scale-[1.05] [transform:perspective(1500px)_rotateY(-2deg)_rotateX(.7deg)]">
         <BrowserShell>
-          <div className="min-h-[400px] bg-[#0c0d13] p-4 text-white">
-            <div className="grid h-full grid-cols-[.23fr_.77fr] gap-3">
-              <div className="rounded-[15px] border border-white/7 bg-white/[.025] p-3">
+          <div className="min-h-[400px] bg-[#0c0d13] p-3 text-white sm:p-4">
+            <div className="grid h-full min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-2 sm:grid-cols-[.23fr_.77fr] sm:gap-3">
+              <div className="min-w-0 rounded-[15px] border border-white/7 bg-white/[.025] p-2 sm:p-3">
                 <p className="text-[8px] font-semibold tracking-[.14em] text-white/65">ORBYVEN</p>
-                <div className="mt-6 space-y-2">
+                <div className="mt-4 space-y-1.5 sm:mt-6 sm:space-y-2">
                   {[
                     ["Dashboard","Dashboard"],
                     ["CRM","CRM"],
@@ -267,39 +267,39 @@ function AdvancedVisual({
                       type="button"
                       onClick={() => onSelect(feature)}
                       key={label}
-                      className={`block w-full rounded-[9px] px-3 py-2 text-left text-[6px] transition ${activeFeature===feature || (i===0 && !activeFeature)?"bg-[#6d4cff] text-white shadow-[0_0_18px_rgba(109,76,255,.25)]":"text-white/38 hover:bg-white/[.04] hover:text-white/70"}`}
+                      className={`block w-full min-w-0 truncate rounded-[9px] px-2 py-2 text-left text-[6px] transition sm:px-3 ${activeFeature===feature || (i===0 && !activeFeature)?"bg-[#6d4cff] text-white shadow-[0_0_18px_rgba(109,76,255,.25)]":"text-white/38 hover:bg-white/[.04] hover:text-white/70"}`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
               </div>
-              <div>
-                <div className="flex items-center justify-between"><div><p className="text-[8px] text-white/35">Bun venit,</p><p className="mt-1 text-[15px] font-semibold">Dashboard</p></div><div className="h-7 w-28 rounded-full bg-white/[.045]" /></div>
-                <div className="mt-4 grid grid-cols-4 gap-2">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="text-[7px] text-white/35 sm:text-[8px]">Bun venit,</p><p className="mt-1 truncate text-[13px] font-semibold sm:text-[15px]">Dashboard</p></div><div className="h-6 w-16 shrink-0 rounded-full bg-white/[.045] sm:h-7 sm:w-28" /></div>
+                <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-4 sm:grid-cols-4 sm:gap-2">
                   {[
                     ["124","Clienți","CRM"],
                     ["18","Devize","Devize"],
                     ["7","Proiecte","Dashboard"],
                     ["12","Task-uri","Task-uri"],
                   ].map(([n,l,feature])=>(
-                    <button type="button" onClick={() => onSelect(feature)} key={l} className="rounded-[12px] border border-white/7 bg-white/[.035] p-3 text-left transition hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10">
-                      <p className="text-[17px] font-semibold">{n}</p><p className="mt-1 text-[6px] text-white/35">{l}</p>
+                    <button type="button" onClick={() => onSelect(feature)} key={l} className="min-w-0 rounded-[10px] border border-white/7 bg-white/[.035] p-2 text-left transition hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10 sm:rounded-[12px] sm:p-3">
+                      <p className="text-[14px] font-semibold sm:text-[17px]">{n}</p><p className="mt-1 truncate text-[6px] text-white/35">{l}</p>
                     </button>
                   ))}
                 </div>
-                <div className="mt-3 grid grid-cols-[1.25fr_.75fr] gap-2">
-                  <div className="rounded-[14px] border border-white/7 bg-white/[.035] p-3">
-                    <div className="flex justify-between"><span className="text-[7px] text-white/40">Creștere</span><span className="text-[12px] font-semibold text-emerald-300">+45%</span></div>
-                    <svg viewBox="0 0 220 80" className="mt-3 h-[92px] w-full" aria-hidden="true"><path d="M4 62 C32 58,42 32,65 42 S95 52,112 28 S145 38,164 19 S193 32,216 10" fill="none" stroke="#9f7cff" strokeWidth="3"/><path d="M4 62 C32 58,42 32,65 42 S95 52,112 28 S145 38,164 19 S193 32,216 10 L216 80 L4 80Z" fill="url(#g)" opacity=".15"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#9f7cff"/><stop offset="1" stopColor="#9f7cff" stopOpacity="0"/></linearGradient></defs></svg>
+                <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_68px] gap-1.5 sm:mt-3 sm:grid-cols-[1.25fr_.75fr] sm:gap-2">
+                  <div className="min-w-0 rounded-[12px] border border-white/7 bg-white/[.035] p-2 sm:rounded-[14px] sm:p-3">
+                    <div className="flex justify-between gap-2"><span className="text-[7px] text-white/40">Creștere</span><span className="text-[12px] font-semibold text-emerald-300">+45%</span></div>
+                    <svg viewBox="0 0 220 80" className="mt-2 h-[62px] w-full sm:mt-3 sm:h-[92px]" aria-hidden="true"><path d="M4 62 C32 58,42 32,65 42 S95 52,112 28 S145 38,164 19 S193 32,216 10" fill="none" stroke="#9f7cff" strokeWidth="3"/><path d="M4 62 C32 58,42 32,65 42 S95 52,112 28 S145 38,164 19 S193 32,216 10 L216 80 L4 80Z" fill="url(#g)" opacity=".15"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#9f7cff"/><stop offset="1" stopColor="#9f7cff" stopOpacity="0"/></linearGradient></defs></svg>
                   </div>
-                  <div className="rounded-[14px] border border-white/7 bg-white/[.035] p-3">
-                    <p className="text-[7px] text-white/40">Proiecte</p>
-                    <div className="mx-auto mt-4 grid h-20 w-20 place-items-center rounded-full border-[8px] border-[#815cff]/30 text-[17px] font-semibold">75%</div>
+                  <div className="min-w-0 rounded-[12px] border border-white/7 bg-white/[.035] p-2 sm:rounded-[14px] sm:p-3">
+                    <p className="truncate text-[6px] text-white/40 sm:text-[7px]">Proiecte</p>
+                    <div className="mx-auto mt-3 grid h-12 w-12 place-items-center rounded-full border-[5px] border-[#815cff]/30 text-[11px] font-semibold sm:mt-4 sm:h-20 sm:w-20 sm:border-[8px] sm:text-[17px]">75%</div>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => onSelect("CRM")} className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-left text-[7px] text-white/50 transition hover:border-[#a98dff]/35 hover:text-white/80">Activitate recentă</button>
+                <div className="mt-2 grid grid-cols-2 gap-1.5 sm:mt-3 sm:gap-2">
+                  <button type="button" onClick={() => onSelect("CRM")} className="min-w-0 rounded-[11px] border border-white/7 bg-white/[.035] p-2 text-left text-[6px] leading-3 text-white/50 transition hover:border-[#a98dff]/35 hover:text-white/80 sm:rounded-[14px] sm:p-3 sm:text-[7px]">Activitate recentă</button>
                   <button type="button" onClick={() => onSelect("Automatizări")} className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-left text-[7px] text-white/50 transition hover:border-[#a98dff]/35 hover:text-white/80">Automatizări · ON</button>
                 </div>
               </div>
