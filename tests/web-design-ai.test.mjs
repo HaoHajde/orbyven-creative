@@ -29,6 +29,11 @@ import {
 } from "../lib/ai/web-design-refine-locks.ts";
 import { guardWebDesignEvidence } from "../lib/ai/web-design-evidence.ts";
 import { deriveWebDesignBriefGaps } from "../lib/ai/web-design-brief-gaps.ts";
+import {
+  buildWebDesignInterviewPrompt,
+  pickNextWebDesignInterviewQuestion,
+  readWebDesignInterviewQuestions,
+} from "../lib/ai/web-design-interview.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -964,4 +969,131 @@ test("Generative Web Design derives Brief Gaps from the final selected draft", (
   assert.match(planner, /claim_evidence/);
   assert.match(specialist, /lipsesc:/);
   assert.doesNotMatch(planner, /fetch\(/);
+});
+
+
+test("Smart Interview validates and prioritizes one useful question at a time", () => {
+  const questions = readWebDesignInterviewQuestions([
+    {
+      id: "faq_real",
+      label: "întrebări reale",
+      question: "Care sunt întrebările reale?",
+      priority: 3,
+      sections: ["faq"],
+    },
+    {
+      id: "brand_name",
+      label: "nume brand real",
+      question: "Care este numele real al brandului?",
+      priority: 1,
+      sections: ["hero"],
+    },
+    {
+      id: "invalid_gap",
+      label: "invalid",
+      question: "Nu trebuie să treacă.",
+      priority: 1,
+      sections: ["hero"],
+    },
+  ]);
+
+  assert.equal(questions.length, 2);
+
+  const next = pickNextWebDesignInterviewQuestion({
+    count: questions.length,
+    completionScore: 60,
+    labels: questions.map((item) => item.label),
+    gaps: questions,
+  });
+
+  assert.ok(next);
+  assert.equal(next.id, "brand_name");
+  assert.equal(next.priority, 1);
+});
+
+test("Smart Interview converts real answers into targeted refine prompts", () => {
+  const brandPrompt = buildWebDesignInterviewPrompt(
+    {
+      id: "brand_name",
+      label: "nume brand real",
+      question: "Care este numele real al brandului?",
+      priority: 1,
+      sections: ["hero"],
+    },
+    "Flora Nova"
+  );
+  assert.match(brandPrompt ?? "", /Schimbă doar brandul/);
+  assert.match(brandPrompt ?? "", /Flora Nova/);
+
+  const servicesPrompt = buildWebDesignInterviewPrompt(
+    {
+      id: "services_real",
+      label: "servicii reale",
+      question: "Care sunt serviciile reale?",
+      priority: 1,
+      sections: ["services"],
+    },
+    "Montaj centrale, încălzire în pardoseală și service."
+  );
+  assert.match(servicesPrompt ?? "", /Schimbă doar secțiunea de servicii/);
+  assert.match(servicesPrompt ?? "", /Montaj centrale/);
+
+  const goalPrompt = buildWebDesignInterviewPrompt(
+    {
+      id: "conversion_goal",
+      label: "obiectiv principal",
+      question: "Care este obiectivul?",
+      priority: 1,
+      sections: ["hero", "contact"],
+    },
+    "Cerere de ofertă"
+  );
+  assert.match(goalPrompt ?? "", /hero-ul și contactul/);
+
+  assert.equal(
+    buildWebDesignInterviewPrompt(
+      {
+        id: "brand_name",
+        label: "brand",
+        question: "Brand?",
+        priority: 1,
+        sections: ["hero"],
+      },
+      " "
+    ),
+    null
+  );
+});
+
+test("Smart Interview handles evidence confirmation without fabricating claims", () => {
+  const gap = {
+    id: "claim_evidence",
+    label: "dovezi",
+    question: "Poți confirma că sunt reale următoarele afirmații: garanție, autorizări/certificări?",
+    priority: 2,
+    sections: [],
+  };
+
+  const confirmed = buildWebDesignInterviewPrompt(gap, "Da, ambele sunt reale.");
+  assert.match(confirmed ?? "", /confirmate explicit/);
+  assert.match(confirmed ?? "", /garanție/);
+
+  const rejected = buildWebDesignInterviewPrompt(gap, "Nu");
+  assert.match(rejected ?? "", /NU confirmă/);
+  assert.match(rejected ?? "", /Elimină sau evită/);
+});
+
+test("Web Design editor runs Smart Interview answers through the existing protected generator", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+  const interview = read("lib/ai/web-design-interview.ts");
+
+  assert.match(specialist, /readWebDesignInterviewQuestions/);
+  assert.match(specialist, /buildWebDesignInterviewPrompt/);
+  assert.match(specialist, /submitInterview/);
+  assert.match(specialist, /generateWithAi\(interviewPrompt\)/);
+  assert.match(specialist, /Întrebare utilă/);
+  assert.match(specialist, /Aplică răspunsul/);
+  assert.match(specialist, /Mai târziu/);
+  assert.doesNotMatch(specialist, /api\/ai\/web-design\/interview/);
+  assert.doesNotMatch(interview, /fetch\(/);
 });

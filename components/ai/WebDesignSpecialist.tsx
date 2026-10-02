@@ -15,6 +15,11 @@ import {
   shouldUseGenerativeWebDesign,
 } from "@/lib/ai/local-preview-commands";
 import {
+  buildWebDesignInterviewPrompt,
+  readWebDesignInterviewQuestions,
+  type WebDesignInterviewQuestion,
+} from "@/lib/ai/web-design-interview";
+import {
   getCurrentWorkspace,
   getWorkspaceEntryPath,
 } from "@/lib/orbyven-workspace";
@@ -115,6 +120,8 @@ export default function WebDesignSpecialist() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [qualityScore, setQualityScore] = useState<number | null>(null);
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
+  const [interviewQuestions, setInterviewQuestions] = useState<WebDesignInterviewQuestion[]>([]);
+  const [interviewAnswer, setInterviewAnswer] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -257,6 +264,8 @@ export default function WebDesignSpecialist() {
     setDraft(next);
     setQualityScore(null);
     setReadinessScore(null);
+    setInterviewQuestions([]);
+    setInterviewAnswer("");
     void saveRemote(next, source, lastPrompt);
   };
 
@@ -298,6 +307,11 @@ export default function WebDesignSpecialist() {
       });
       setDraft(next);
       setSuggestions((body.suggestions ?? []).slice(0, 4));
+      const nextInterviewQuestions = readWebDesignInterviewQuestions(
+        body.briefGaps?.gaps
+      );
+      setInterviewQuestions(nextInterviewQuestions);
+      if (!nextInterviewQuestions.length) setInterviewAnswer("");
       const nextQualityScore =
         typeof body.quality?.score === "number"
           ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
@@ -403,6 +417,30 @@ export default function WebDesignSpecialist() {
     void applyPrompt();
   };
 
+  const activeInterviewQuestion = interviewQuestions[0] ?? null;
+
+  const submitInterview = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activeInterviewQuestion || aiBusy || !canEdit) return;
+
+    const interviewPrompt = buildWebDesignInterviewPrompt(
+      activeInterviewQuestion,
+      interviewAnswer
+    );
+    if (!interviewPrompt) {
+      setMessage("Răspunsul este prea scurt sau prea lung pentru a fi aplicat.");
+      return;
+    }
+
+    const generated = await generateWithAi(interviewPrompt);
+    if (generated) setInterviewAnswer("");
+  };
+
+  const skipInterviewQuestion = () => {
+    setInterviewQuestions((current) => current.slice(1));
+    setInterviewAnswer("");
+  };
+
   const selectPreset = (preset: SitePresetId) => {
     const next = SITE_PRESETS[preset];
     setVisualMemory([]);
@@ -420,6 +458,8 @@ export default function WebDesignSpecialist() {
     setSuggestions([]);
     setQualityScore(null);
     setReadinessScore(null);
+    setInterviewQuestions([]);
+    setInterviewAnswer("");
     setMessage("Am revenit la versiunea anterioară.");
     void saveRemote(previous, "local", "undo");
   };
@@ -574,6 +614,52 @@ export default function WebDesignSpecialist() {
               </button>
             ))}
           </div>
+
+          {activeInterviewQuestion ? (
+            <form
+              onSubmit={submitInterview}
+              className="mt-4 rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055] p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aebcff]">
+                  Întrebare utilă
+                </p>
+                <span className="text-[9px] text-white/30">
+                  1 / {interviewQuestions.length}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-white/78">
+                {activeInterviewQuestion.question}
+              </p>
+              <textarea
+                value={interviewAnswer}
+                disabled={aiBusy || !canEdit}
+                onChange={(event) =>
+                  setInterviewAnswer(event.target.value.slice(0, 1200))
+                }
+                rows={3}
+                placeholder="Răspunde scurt, cu informația reală."
+                className="mt-3 w-full resize-none rounded-[11px] border border-white/10 bg-black/20 px-3 py-2.5 text-[10px] leading-5 outline-none placeholder:text-white/25 focus:border-[#7897ff]/40 disabled:opacity-40"
+              />
+              <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                <button
+                  type="submit"
+                  disabled={aiBusy || !canEdit || interviewAnswer.trim().length < 2}
+                  className="h-9 rounded-[10px] bg-white px-3 text-[10px] font-semibold text-black disabled:opacity-35"
+                >
+                  Aplică răspunsul
+                </button>
+                <button
+                  type="button"
+                  disabled={aiBusy}
+                  onClick={skipInterviewQuestion}
+                  className="h-9 rounded-[10px] border border-white/10 px-3 text-[10px] font-semibold text-white/55 disabled:opacity-35"
+                >
+                  Mai târziu
+                </button>
+              </div>
+            </form>
+          ) : null}
 
           {suggestions.length ? (
             <div className="mt-4 border-t border-white/10 pt-4">
