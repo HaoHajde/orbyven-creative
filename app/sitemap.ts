@@ -6,6 +6,7 @@ import {
   publicOriginForLocale,
 } from "@/lib/domain-locale";
 import { seoCaseStudies, seoGuides, seoLandingPages } from "@/lib/seo-foundation";
+import { seoLandingPagesEn } from "@/lib/seo-foundation-en";
 
 async function requestLocale() {
   const requestHeaders = await headers();
@@ -20,16 +21,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locale = await requestLocale();
   const siteUrl = publicOriginForLocale(locale);
 
-  const englishRoutes = [
+  const englishCoreRoutes = [
     { path: "", changeFrequency: "weekly" as const, priority: 1 },
     { path: "/servicii", changeFrequency: "monthly" as const, priority: 0.9 },
     { path: "/templates", changeFrequency: "weekly" as const, priority: 0.85 },
     { path: "/ai-web-design", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/solutii", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/studii-de-caz", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/ghid", changeFrequency: "monthly" as const, priority: 0.75 },
+    { path: "/despre", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/contact", changeFrequency: "monthly" as const, priority: 0.75 },
   ];
 
+  const englishLandingRoutes = seoLandingPagesEn.map((page) => ({
+    path: page.path,
+    changeFrequency: "monthly" as const,
+    priority: page.slug === "creare-site" || page.slug === "site-prezentare" ? 0.95 : 0.9,
+  }));
+
   if (locale === "en") {
-    return englishRoutes.map((route) => ({
+    return [...englishCoreRoutes, ...englishLandingRoutes].map((route) => ({
       url: `${siteUrl}${route.path}`,
       changeFrequency: route.changeFrequency,
       priority: route.priority,
