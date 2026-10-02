@@ -76,6 +76,16 @@ type InvoiceRow = {
 const FINANCE_ROLES = new Set(["owner", "admin", "manager"]);
 const CLOSED_WORK = new Set(["done", "cancelled"]);
 const CLOSED_ESTIMATE = new Set(["accepted", "rejected", "expired"]);
+
+function normalizeLookup(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("ro-RO")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
 function searchable(value: string) {
   return value.replace(/[%_]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
 }
@@ -146,11 +156,11 @@ async function findClientCandidates(actor: BillingActor, value: string): Promise
   }
 
   const rows = [...unique.values()];
-  const target = normalize(value);
+  const target = normalizeLookup(value);
   const exact = rows.filter(
     (row) =>
-      normalize(row.name) === target ||
-      Boolean(row.company && normalize(row.company) === target)
+      normalizeLookup(row.name) === target ||
+      Boolean(row.company && normalizeLookup(row.company) === target)
   );
   if (exact.length) return exact;
   return rows;
@@ -172,8 +182,8 @@ async function findWorkCandidates(actor: BillingActor, value: string): Promise<W
   if (error) throw error;
 
   const rows = (data ?? []) as WorkRow[];
-  const target = normalize(value);
-  const exact = rows.filter((row) => normalize(row.title) === target);
+  const target = normalizeLookup(value);
+  const exact = rows.filter((row) => normalizeLookup(row.title) === target);
   if (exact.length) return exact;
   return rows;
 }
@@ -472,6 +482,7 @@ async function workOverview(
             .eq("organization_id", actor.organizationId)
             .eq("task_id", entity.id)
             .neq("status", "cancelled")
+            .gte("start_at", nowIso)
             .order("start_at")
             .limit(30)
         : Promise.resolve({ data: [], error: null }),
