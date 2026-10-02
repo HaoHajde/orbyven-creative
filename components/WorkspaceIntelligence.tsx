@@ -84,7 +84,7 @@ function splitStoredOutcome(facts: Array<{ label: string; value: string }>) {
   const planId = value("Outcome · Plan");
   const rawStatus = value("Outcome · Status");
   const status =
-    rawStatus === "resolved" || rawStatus === "shifted" || rawStatus === "still_priority"
+    rawStatus === "no_longer_primary" || rawStatus === "shifted" || rawStatus === "still_priority"
       ? rawStatus
       : undefined;
   const summary = value("Outcome · Summary");
@@ -1022,8 +1022,8 @@ export default function WorkspaceIntelligence({
                                   <div className="flex items-center justify-between gap-2 border-b border-emerald-300/10 px-3 py-2">
                                     <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-200/85">OUTCOME</span>
                                     <span className="text-[9px] font-semibold text-[var(--muted-2)]">
-                                      {message.outcome.status === "resolved"
-                                        ? "rezolvat"
+                                      {message.outcome.status === "no_longer_primary"
+                                        ? "nu mai e Focus #1"
                                         : message.outcome.status === "shifted"
                                           ? "focus mutat"
                                           : "încă prioritar"}
