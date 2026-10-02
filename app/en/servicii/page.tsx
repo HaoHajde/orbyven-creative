@@ -1,4 +1,5 @@
 "use client";
+import AppDownloadSection from "@/components/AppDownloadSection";
 
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooterEn";
@@ -270,7 +271,7 @@ function AiPreview() {
 
 export default function ServicesPage() {
   const [theme, setTheme] = useState<Theme>("light");
-  const [activeModule, setActiveeModule] = useState("overview");
+  const [activeModule, setActiveModule] = useState("overview");
   const reduceMotion = useHydrationSafeReducedMotion();
 
   useEffect(() => {
@@ -473,11 +474,11 @@ export default function ServicesPage() {
             <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clients, projects, calendar and quotes can stay connected to the same context.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
-            <Link href="/cerere?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Build the system →</Link>
+            <Link href="/contact?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Build the system →</Link>
           </div>
         </div>
         <div className="mt-9">
-          <ModuleWorkspacePreview activeId={activeModule} onChange={setActiveeModule} />
+          <ModuleWorkspacePreview activeId={activeModule} onChange={setActiveModule} />
         </div>
       </section>
 
@@ -515,7 +516,7 @@ export default function ServicesPage() {
               href="/ai-web-design"
               className="inline-flex h-11 items-center rounded-full border border-[rgba(165,139,255,.30)] bg-[var(--accent-soft)] px-5 text-[10px] font-semibold text-[#a58bff] transition hover:border-[#a58bff]"
             >
-              Deschide AI Web Design →
+              Open AI Web Design →
             </Link>
           </div>
         </div>
@@ -534,12 +535,12 @@ export default function ServicesPage() {
             <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">A project can start as a business website and later add landing pages, forms, operational modules or custom experiences. We add only what makes sense for the business.</p>
             <nav aria-label="Learn more about web design" className="mt-6 flex flex-wrap gap-2">
               {[
-                { href: "/creare-site", label: "Creare site" },
-                { href: "/site-prezentare", label: "Site de prezentare" },
+                { href: "/creare-site", label: "Website development" },
+                { href: "/site-prezentare", label: "Business website" },
                 { href: "/web-design-bucuresti", label: "Web design Bucharest" },
                 { href: "/redesign-site", label: "Redesign" },
                 { href: "/ai-web-design", label: "AI Web Design" },
-                { href: "/studii-de-caz", label: "Studii de caz" },
+                { href: "/studii-de-caz", label: "Case studies" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[#a58bff]">{item.label} ↗</Link>
               ))}
@@ -555,10 +556,12 @@ export default function ServicesPage() {
               <p className="text-[8px] font-bold uppercase tracking-[.18em] opacity-45">From here, it becomes yours</p>
               <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,62px)] font-semibold leading-[.96] tracking-[-.055em]">Tell us what you want to solve.</h2>
             </div>
-            <Link href="/cerere?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]">Get started →</Link>
+            <Link href="/contact?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]">Get started →</Link>
           </div>
         </div>
       </section>
+
+      <AppDownloadSection locale="en" />
 
       <SiteFooter theme={theme} activePage="services" />
     </main>
