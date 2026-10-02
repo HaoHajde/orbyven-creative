@@ -31,27 +31,48 @@ const RULE_ORDER: Record<string, number> = {
   purchase_order_due: 9,
   estimate_expiring: 10,
   estimate_follow_up: 11,
-  client_retention_follow_up: 12,
-  lead_follow_up: 13,
-  client_reactivation: 14,
+  client_recovery_needed: 12,
+  client_retention_follow_up: 13,
+  lead_follow_up: 14,
   accepted_estimate_needs_schedule: 15,
   operation_due_soon: 16,
   operation_unplanned: 17,
-  appointment_upcoming: 18,
+  client_feedback_waiting: 18,
+  client_feedback_due: 19,
+  client_reactivation: 20,
+  client_review_waiting: 21,
+  client_review_opportunity: 22,
+  client_referral_waiting: 23,
+  client_referral_opportunity: 24,
+  client_upsell_due: 25,
+  client_upsell_opportunity: 26,
+  appointment_upcoming: 27,
 };
 
 function ruleOrder(rule?: string) {
   return rule ? (RULE_ORDER[rule] ?? 50) : 50;
 }
 
+const CLIENT_CONTEXT_RULES = new Set([
+  "lead_follow_up",
+  "client_retention_follow_up",
+  "client_reactivation",
+  "client_feedback_due",
+  "client_feedback_waiting",
+  "client_recovery_needed",
+  "client_review_opportunity",
+  "client_review_waiting",
+  "client_referral_opportunity",
+  "client_referral_waiting",
+  "client_upsell_opportunity",
+  "client_upsell_due",
+]);
+
 function contextKey(item: NextBestActionCandidate) {
-  if (item.taskId) return "task:" + item.taskId;
-  if (
-    item.clientId &&
-    ["lead_follow_up", "client_retention_follow_up", "client_reactivation"].includes(item.rule ?? "")
-  ) {
+  if (item.clientId && CLIENT_CONTEXT_RULES.has(item.rule ?? "")) {
     return "client:" + item.clientId;
   }
+  if (item.taskId) return "task:" + item.taskId;
   if (item.module && item.recordId) return item.module + ":" + item.recordId;
   return item.key;
 }
