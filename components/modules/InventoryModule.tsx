@@ -180,7 +180,7 @@ export default function InventoryModule({
   const trackedMaterials = materials.filter((item) => item.stock_tracked);
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
   const stock = useMemo(() => snapshot?.stock ?? [], [snapshot]);
-  const purchaseOrders = snapshot?.purchaseOrders ?? [];
+  const purchaseOrders = useMemo(() => snapshot?.purchaseOrders ?? [], [snapshot]);
   const visiblePurchaseOrders = useMemo(
     () =>
       purchaseOrderTaskScope
