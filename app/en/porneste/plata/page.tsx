@@ -44,7 +44,7 @@ function PaymentRedirectContent() {
         return;
       }
 
-      throw new Error(payload.error || "Payment is currently unavailable.");
+      throw new Error("Payment is currently unavailable.");
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Payment is currently unavailable.");
       setStatus("error");
