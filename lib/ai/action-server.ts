@@ -393,7 +393,7 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
       : (() => { throw new Error("INVALID_ESTIMATE_VALID_UNTIL"); })()
     : null;
 
-  const { data, error } = await client.rpc("ai_create_estimate_draft", {
+  const { data, error } = await client.rpc("ai_create_estimate_draft_actor", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
     p_title: title,
@@ -518,14 +518,13 @@ async function writeAudit(
 ) {
   const client = createBillingServiceClient(actor);
   const auditPlan = planMeta(proposal.payload);
-  const { error } = await client.from("platform_audit_log").insert({
-    actor_user_id: actor.userId,
-    actor_role: actor.role,
-    organization_id: actor.organizationId,
-    action: "ai_action.executed",
-    target_type: result.type,
-    target_id: result.id,
-    metadata: {
+  const { error } = await client.rpc("ai_action_audit_write", {
+    p_organization_id: actor.organizationId,
+    p_actor_id: actor.userId,
+    p_action: "ai_action.executed",
+    p_target_type: result.type,
+    p_target_id: result.id,
+    p_metadata: {
       proposal_id: proposal.id,
       action_type: proposal.action_type,
       module_id: result.moduleId,
