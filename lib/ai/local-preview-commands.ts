@@ -1,5 +1,5 @@
-import { applySitePatch, type EditableSite } from "@/lib/ai/site-editor";
-import { applySectionCommand } from "@/lib/ai/site-sections-controls";
+import { applySitePatch, type EditableSite } from "./site-editor.ts";
+import { applySectionCommand } from "./site-sections-controls.ts";
 
 export type DesignEngineResult = {
   draft: EditableSite;
