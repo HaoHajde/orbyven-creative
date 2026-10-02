@@ -181,8 +181,7 @@ begin
     new.client_id := pg_catalog.coalesce(task_client_id, new.client_id);
   end if;
 
-  if coalesce(nullif(pg_catalog.btrim(new.vendor), ''), '') = ''
-     and po_supplier_name is not null then
+  if po_supplier_name is not null then
     new.vendor := po_supplier_name;
   end if;
 
