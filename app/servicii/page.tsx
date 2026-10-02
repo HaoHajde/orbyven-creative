@@ -74,6 +74,16 @@ const services: Service[] = [
     tags: ["AI", "Preview live", "Design DNA"],
     gradient: "radial-gradient(circle at 18% 18%, rgba(116,92,255,.42), transparent 32%), radial-gradient(circle at 82% 74%, rgba(61,114,255,.25), transparent 38%), linear-gradient(140deg,#0b0916,#161126 56%,#08070d)",
   },
+  {
+    number: "06",
+    title: "Video AI",
+    line: "Transformă un brief într-un storyboard regizat și într-un pachet pregătit pentru randare video.",
+    href: "/video-ai",
+    linkLabel: "Deschide Video AI ORBYVEN",
+    tags: ["AI Director", "Storyboard", "Video"],
+    gradient: "radial-gradient(circle at 76% 18%, rgba(142,104,255,.40), transparent 32%), radial-gradient(circle at 18% 76%, rgba(62,88,255,.24), transparent 38%), linear-gradient(140deg,#0c0818,#18102b 56%,#08070e)",
+  },
+
 ];
 
 const modulePreviews: ModulePreview[] = [
