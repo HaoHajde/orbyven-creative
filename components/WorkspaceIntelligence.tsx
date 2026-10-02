@@ -43,12 +43,7 @@ const QUICK_PROMPTS = [
   "Compară opțiunile pentru Focus #1",
   "Ce am de făcut azi?",
   "Ce am de încasat?",
-  "Creează lead Ana Popescu; telefon: 0712345678",
-  "Creează lucrare Revizie centrală; prioritate: urgent",
-  "Programează o programare Revizie tehnică mâine la 10:30",
-  "Creează deviz Renovare baie; poziție: Montaj, 1 x 1500 lei",
-  "Creează document Raport intervenție; conținut: Verificare finalizată fără probleme.",
-  "Creează client Ana Popescu; apoi creează lucrare Revizie centrală pentru el; apoi programeaz-o mâine la 10:30",
+  "Creează o lucrare nouă",
   "Vreau să modific site-ul.",
 ];
 
