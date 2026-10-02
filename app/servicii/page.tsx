@@ -65,6 +65,15 @@ const services: Service[] = [
     tags: ["RSVP", "Microsite", "Custom"],
     gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.36), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.20), transparent 36%), linear-gradient(140deg,#0a0914,#171326 55%,#07070b)",
   },
+  {
+    number: "05",
+    title: "AI Web Design",
+    line: "Descrii business-ul și direcția. ORBYVEN generează, rafinează și compară variante de website.",
+    href: "/ai-web-design",
+    linkLabel: "Deschide AI Web Design ORBYVEN",
+    tags: ["AI", "Preview live", "Design DNA"],
+    gradient: "radial-gradient(circle at 18% 18%, rgba(116,92,255,.42), transparent 32%), radial-gradient(circle at 82% 74%, rgba(61,114,255,.25), transparent 38%), linear-gradient(140deg,#0b0916,#161126 56%,#08070d)",
+  },
 ];
 
 const modulePreviews: ModulePreview[] = [
@@ -534,7 +543,7 @@ export default function ServicesPage() {
         <Chapter>Ce construim</Chapter>
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <h2 className="max-w-4xl text-[clamp(40px,5.5vw,72px)] font-semibold leading-[.92] tracking-[-.06em]">
-            Patru direcții. <span className="text-[var(--home-violet)]">Un singur ecosistem.</span>
+            Cinci direcții. <span className="text-[var(--home-violet)]">Un singur ecosistem.</span>
           </h2>
           <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">Pornim simplu. Adăugăm doar ce rezolvă ceva real.</p>
         </div>
@@ -616,10 +625,15 @@ export default function ServicesPage() {
         <div className="mt-5 grid gap-8 lg:grid-cols-[.74fr_1.26fr] lg:items-end">
           <div>
             <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Spui intenția. Sistemul păstrează <span className="text-[var(--home-violet)]">contextul.</span></h2>
-            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Preview de produs pentru motorul contextual pe care îl dezvoltăm: cerere, limite, plan și rezultat vizual.</p>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">AI Web Design este disponibil ca produs ORBYVEN: brief, structură, preview live, alternative și rafinare controlată.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
-            <span className="rounded-full border border-[rgba(165,139,255,.26)] bg-[var(--accent-soft)] px-4 py-3 text-[9px] font-semibold text-[#a58bff]">AI · CONTEXT · CONTROL</span>
+            <Link
+              href="/ai-web-design"
+              className="inline-flex h-11 items-center rounded-full border border-[rgba(165,139,255,.30)] bg-[var(--accent-soft)] px-5 text-[10px] font-semibold text-[#a58bff] transition hover:border-[#a58bff]"
+            >
+              Deschide AI Web Design →
+            </Link>
           </div>
         </div>
         <div className="mt-9">
@@ -641,6 +655,7 @@ export default function ServicesPage() {
                 { href: "/site-prezentare", label: "Site de prezentare" },
                 { href: "/web-design-bucuresti", label: "Web design București" },
                 { href: "/redesign-site", label: "Redesign" },
+                { href: "/ai-web-design", label: "AI Web Design" },
                 { href: "/studii-de-caz", label: "Studii de caz" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[#a58bff]">{item.label} ↗</Link>
