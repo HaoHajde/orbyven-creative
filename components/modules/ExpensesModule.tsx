@@ -504,6 +504,10 @@ export default function ExpensesModule({
     setError("");
     setMessage("");
     try {
+      const selectedInvoice = incomeForm.invoiceId
+        ? invoices.find((item) => item.id === incomeForm.invoiceId)
+        : null;
+      const receivedCents = Math.round(Number(incomeForm.amount || 0) * 100);
       await createIncome(organizationId, {
         occurredOn: incomeForm.occurredOn,
         description: incomeForm.description,
@@ -518,7 +522,16 @@ export default function ExpensesModule({
       });
       setIncomeForm(emptyIncomeForm());
       setIncomeOpen(false);
-      setMessage("Încasarea a fost înregistrată.");
+      if (selectedInvoice) {
+        const remaining = Math.max(0, selectedInvoice.outstanding_cents - receivedCents);
+        setMessage(
+          remaining === 0
+            ? "Încasarea a fost înregistrată. Factura a trecut automat la «Achitată»."
+            : `Plata parțială a fost înregistrată. Mai rămân de încasat ${formatMoney(remaining, selectedInvoice.currency, locale)}.`
+        );
+      } else {
+        setMessage("Încasarea a fost înregistrată.");
+      }
       await load();
     } catch (reason) {
       console.error(reason);
