@@ -232,3 +232,31 @@ test("receipt evidence flows directly from documents into finance context", () =
   assert.match(expenseData, /client_id: string \| null/);
   assert.match(expenseData, /select\("id,name,client_id,task_id,estimate_id,purchase_order_id"\)/);
 });
+
+
+test("accepted estimates wait for material readiness before calendar", () => {
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /loadInventoryTaskMaterialPlan/);
+  assert.match(estimates, /taskMaterialPlanTaskId !== selected\.task_id/);
+  assert.match(estimates, /Rezolvă materialele lipsă/);
+  assert.match(estimates, /Rezervă materialele disponibile/);
+  assert.match(estimates, /Pregătește materialele →/);
+  assert.match(estimates, /enabledModules\.includes\("calendar"\) && !materialBlocksScheduling/);
+  assert.match(estimates, /prefillTitle: selected\.title/);
+
+  const navigation = read("lib/workspace-navigation.ts");
+  assert.match(navigation, /prefillTitle\?: string/);
+
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /initialTitle\?: string/);
+  assert.match(tasks, /title: initialTitle\?\.trim\(\) \|\| ""/);
+});
+
+test("calendar routes scheduled work through its dossier before completion", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /selectedEventCanComplete/);
+  assert.match(calendar, /Continuă în dosarul lucrării/);
+  assert.match(calendar, /Deschide lucrarea →/);
+  assert.match(calendar, /event\.status !== "completed" && canComplete/);
+  assert.match(calendar, /Ora de început a trecut/);
+});
