@@ -556,7 +556,7 @@ export default function ServicesPage() {
               whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: .15 }}
               transition={{ duration: .65, delay: index * .045, ease: easeOut }}
-              className="group relative min-h-[260px] overflow-hidden rounded-[30px] border border-white/10 p-6 text-white shadow-[0_20px_70px_rgba(0,0,0,.14)] sm:p-7"
+              className={`group relative min-h-[260px] overflow-hidden rounded-[30px] border border-white/10 p-6 text-white shadow-[0_20px_70px_rgba(0,0,0,.14)] sm:p-7 ${service.href === "/ai-web-design" ? "md:col-span-2" : ""}`}
               style={{ background: service.gradient }}
             >
               <div aria-hidden="true" className="absolute -right-6 -top-8 text-[120px] font-semibold leading-none tracking-[-.09em] text-white/[.035]">{service.number}</div>
