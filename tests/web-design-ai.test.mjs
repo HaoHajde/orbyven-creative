@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   readSiteDraft,
-  SITE_PRESETS,
   SECTION_IDS,
 } from "../lib/ai/site-editor.ts";
 
