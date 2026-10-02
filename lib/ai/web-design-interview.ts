@@ -1,8 +1,9 @@
+import type { EditableSite } from "./site-editor.ts";
 import type {
   WebDesignBriefGap,
   WebDesignBriefGapId,
   WebDesignBriefGapReport,
-} from "@/lib/ai/web-design-brief-gaps";
+} from "./web-design-brief-gaps.ts";
 
 export type WebDesignInterviewQuestion = WebDesignBriefGap;
 
@@ -113,28 +114,28 @@ function promptForGap(
 
   switch (id) {
     case "brand_name":
-      return `Schimbă doar brandul. Numele real al brandului/firmei este: "\${fact}". Păstrează toate celelalte zone neschimbate.`;
+      return `Schimbă doar brandul. Numele real al brandului/firmei este: "${fact}". Păstrează toate celelalte zone neschimbate.`;
     case "hero_offer":
-      return `Schimbă doar hero-ul pe baza acestei informații reale furnizate de utilizator: "\${fact}". Oferta principală trebuie să fie clară, scurtă și să nu inventeze alte fapte. Păstrează restul site-ului neschimbat.`;
+      return `Schimbă doar hero-ul pe baza acestei informații reale furnizate de utilizator: "${fact}". Oferta principală trebuie să fie clară, scurtă și să nu inventeze alte fapte. Păstrează restul site-ului neschimbat.`;
     case "services_real":
-      return `Schimbă doar secțiunea de servicii/produse. Informația reală furnizată de utilizator este: "\${fact}". Folosește exclusiv aceste informații și păstrează restul site-ului neschimbat.`;
+      return `Schimbă doar secțiunea de servicii/produse. Informația reală furnizată de utilizator este: "${fact}". Folosește exclusiv aceste informații și păstrează restul site-ului neschimbat.`;
     case "gallery_real":
-      return `Schimbă doar galeria/portofoliul. Proiectele, produsele sau exemplele reale furnizate de utilizator sunt: "\${fact}". Nu inventa alte proiecte. Păstrează restul neschimbat.`;
+      return `Schimbă doar galeria/portofoliul. Proiectele, produsele sau exemplele reale furnizate de utilizator sunt: "${fact}". Nu inventa alte proiecte. Păstrează restul neschimbat.`;
     case "about_real":
-      return `Schimbă doar secțiunea despre. Descrierea reală furnizată de utilizator este: "\${fact}". Rescrie concis fără să inventezi fapte și păstrează restul neschimbat.`;
+      return `Schimbă doar secțiunea despre. Descrierea reală furnizată de utilizator este: "${fact}". Rescrie concis fără să inventezi fapte și păstrează restul neschimbat.`;
     case "process_real":
-      return `Schimbă doar secțiunea proces. Pașii reali furnizați de utilizator sunt: "\${fact}". Nu inventa etape suplimentare și păstrează restul neschimbat.`;
+      return `Schimbă doar secțiunea proces. Pașii reali furnizați de utilizator sunt: "${fact}". Nu inventa etape suplimentare și păstrează restul neschimbat.`;
     case "faq_real":
-      return `Schimbă doar FAQ-ul. Întrebările și/sau răspunsurile reale furnizate de utilizator sunt: "\${fact}". Nu inventa politici, garanții sau condiții și păstrează restul neschimbat.`;
+      return `Schimbă doar FAQ-ul. Întrebările și/sau răspunsurile reale furnizate de utilizator sunt: "${fact}". Nu inventa politici, garanții sau condiții și păstrează restul neschimbat.`;
     case "contact_real":
-      return `Schimbă doar contactul și CTA-ul din hero astfel încât traseul real dorit să fie: "\${fact}". Păstrează restul site-ului neschimbat.`;
+      return `Schimbă doar contactul și CTA-ul din hero astfel încât traseul real dorit să fie: "${fact}". Păstrează restul site-ului neschimbat.`;
     case "conversion_goal":
-      return `Schimbă doar hero-ul și contactul pentru a reflecta obiectivul principal real al site-ului: "\${fact}". Nu modifica alte secțiuni.`;
+      return `Schimbă doar hero-ul și contactul pentru a reflecta obiectivul principal real al site-ului: "${fact}". Nu modifica alte secțiuni.`;
     case "claim_evidence":
       if (isNegativeAnswer(fact)) {
-        return `Utilizatorul NU confirmă afirmațiile din această întrebare: "\${question}". Elimină sau evită aceste afirmații și păstrează restul site-ului neschimbat.`;
+        return `Utilizatorul NU confirmă afirmațiile din această întrebare: "${question}". Elimină sau evită aceste afirmații și păstrează restul site-ului neschimbat.`;
       }
-      return `Utilizatorul răspunde la întrebarea de verificare "\${question}" astfel: "\${fact}". Folosește numai afirmațiile confirmate explicit de acest răspuns. Modifică doar copy-ul relevant din hero, servicii, despre și contact dacă este necesar; păstrează restul neschimbat.`;
+      return `Utilizatorul răspunde la întrebarea de verificare "${question}" astfel: "${fact}". Folosește numai afirmațiile confirmate explicit de acest răspuns. Modifică doar copy-ul relevant din hero, servicii, despre și contact dacă este necesar; păstrează restul neschimbat.`;
   }
 }
 
@@ -145,4 +146,95 @@ export function buildWebDesignInterviewPrompt(
   const trimmed = answer.trim();
   if (trimmed.length < 2 || trimmed.length > 1200) return null;
   return promptForGap(gap.id, trimmed, gap.question);
+}
+
+
+export type WebDesignInterviewLocalResult = {
+  draft: EditableSite;
+  message: string;
+};
+
+function ctaFromInterviewAnswer(answer: string) {
+  const value = normalize(answer);
+  if (/\b(programare|programeaza|rezervare|rezerva|booking|appointment)\b/.test(value)) {
+    return { cta: "Programează-te", title: "Programează-te" };
+  }
+  if (/\b(comanda|cumpara|vanzare|checkout|cos|buy|order)\b/.test(value)) {
+    return { cta: "Comandă acum", title: "Comandă" };
+  }
+  if (/\b(oferta|deviz|estimare|cotatie|quote)\b/.test(value)) {
+    return { cta: "Cere o ofertă", title: "Cere o ofertă" };
+  }
+  if (/\b(portofoliu|proiecte|lucrari|portfolio|gallery)\b/.test(value)) {
+    return { cta: "Vezi proiectele", title: "Vezi proiectele" };
+  }
+  if (/\b(contact|mesaj|telefon|whatsapp|email|scrie)\b/.test(value)) {
+    return { cta: "Contactează-ne", title: "Hai să vorbim" };
+  }
+  return null;
+}
+
+export function applyWebDesignInterviewAnswerLocally(
+  draft: EditableSite,
+  gap: WebDesignInterviewQuestion,
+  answer: string
+): WebDesignInterviewLocalResult | null {
+  const fact = answer.trim();
+  if (fact.length < 2 || fact.length > 1200) return null;
+
+  if (gap.id === "brand_name") {
+    const brand = fact.slice(0, 70).trim();
+    if (!brand) return null;
+    return {
+      draft: { ...draft, brand },
+      message: `Am setat numele real al brandului: ${brand}.`,
+    };
+  }
+
+  if (gap.id === "hero_offer") {
+    const description = fact.slice(0, 420).trim();
+    if (!description) return null;
+    return {
+      draft: { ...draft, description },
+      message: "Am aplicat oferta principală în hero fără să modific restul site-ului.",
+    };
+  }
+
+  if (gap.id === "about_real") {
+    const aboutDescription = fact.slice(0, 420).trim();
+    if (!aboutDescription) return null;
+    return {
+      draft: { ...draft, aboutDescription },
+      message: "Am înlocuit descrierea demonstrativă cu informația reală despre firmă.",
+    };
+  }
+
+  if (gap.id === "contact_real") {
+    const intent = ctaFromInterviewAnswer(fact);
+    const contactDescription = fact.slice(0, 420).trim();
+    if (!contactDescription) return null;
+    return {
+      draft: {
+        ...draft,
+        contactDescription,
+        ...(intent ? { cta: intent.cta, contactTitle: intent.title } : {}),
+      },
+      message: "Am actualizat traseul de contact folosind răspunsul real furnizat.",
+    };
+  }
+
+  if (gap.id === "conversion_goal") {
+    const intent = ctaFromInterviewAnswer(fact);
+    if (!intent) return null;
+    return {
+      draft: {
+        ...draft,
+        cta: intent.cta,
+        contactTitle: intent.title,
+      },
+      message: `Am setat obiectivul principal al site-ului: ${intent.cta}.`,
+    };
+  }
+
+  return null;
 }
