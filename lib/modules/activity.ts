@@ -9,6 +9,11 @@ import {
   type AutomationOperation,
 } from "@/lib/automation/business-signals";
 import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
+import { buildClientGrowthSignals } from "@/lib/automation/client-growth-signals";
+import {
+  listClientGrowthStates,
+  listLatestCompletedClientWorks,
+} from "@/lib/modules/client-growth";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 
 export type WorkspaceActivityLevel = "urgent" | "attention" | "upcoming";
@@ -64,7 +69,7 @@ export async function loadWorkspaceActivity(
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, reactivationClientsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
+  const [leadsResult, reactivationClientsResult, growthClientsResult, growthStates, completedGrowthWorks, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
     await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
@@ -86,6 +91,21 @@ export async function loadWorkspaceActivity(
             .order("converted_at", { ascending: true, nullsFirst: true })
             .limit(80)
         : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("leads")
+        ? orbyvenSupabase
+            .from("crm_leads")
+            .select("id,name")
+            .eq("organization_id", organizationId)
+            .eq("kind", "client")
+            .order("updated_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("leads")
+        ? listClientGrowthStates(organizationId, 200)
+        : Promise.resolve([]),
+      enabledModules.includes("leads") && enabledModules.includes("tasks")
+        ? listLatestCompletedClientWorks(organizationId, 180)
+        : Promise.resolve([]),
       enabledModules.includes("tasks")
         ? orbyvenSupabase
             .from("ops_tasks")
@@ -159,6 +179,7 @@ export async function loadWorkspaceActivity(
   const firstError =
     leadsResult.error ??
     reactivationClientsResult.error ??
+    growthClientsResult.error ??
     tasksResult.error ??
     eventsResult.error ??
     estimatesResult.error ??
@@ -248,6 +269,28 @@ export async function loadWorkspaceActivity(
       sortAt: lifecycle.lastTouchAt,
       actionLabel: "Planifică revenire",
       rule: "client_reactivation",
+    });
+  }
+
+  const growthSignals = buildClientGrowthSignals({
+    clients: growthClientsResult.data ?? [],
+    growthStates,
+    completedWorks: completedGrowthWorks,
+    now,
+  });
+  for (const signal of growthSignals) {
+    items.push({
+      key: signal.key,
+      module: "leads",
+      recordId: signal.clientId,
+      clientId: signal.clientId,
+      taskId: signal.taskId,
+      title: signal.title,
+      meta: signal.meta,
+      level: signal.level,
+      sortAt: signal.sortAt,
+      actionLabel: signal.actionLabel,
+      rule: signal.rule,
     });
   }
 
