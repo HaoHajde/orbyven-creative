@@ -5,7 +5,7 @@ import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type SitePage = "home" | "templates" | "webDesignAi" | "services" | "contact";
+export type SitePage = "home" | "templates" | "webDesignAi" | "videoAi" | "services" | "contact";
 
 type Theme = "light" | "dark";
 
@@ -16,7 +16,7 @@ const navItems: {
 }[] = [
   { key: "home", href: "/", label: "Home" },
   { key: "templates", href: "/templates", label: "Templates" },
-  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
+  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },\n  { key: "videoAi", href: "/video-ai", label: "Video AI" },
   { key: "services", href: "/servicii", label: "Services" },
   { key: "contact", href: "/contact", label: "Get started" },
 ];
@@ -90,7 +90,7 @@ export default function SiteHeader({
               <BrandLogo compact theme={theme} />
             </div>
 
-            <nav className="hidden items-center gap-5 text-[13px] font-medium text-[var(--muted)] md:flex lg:gap-7 xl:gap-8">
+            <nav className="hidden items-center gap-5 text-[13px] font-medium text-[var(--muted)] lg:flex lg:gap-5 xl:gap-7">
               {navItems.map((item) => {
                 const active = activePage === item.key;
                 return (
@@ -118,7 +118,7 @@ export default function SiteHeader({
                 {theme === "dark" ? <SunIcon /> : <MoonIcon />}
               </button>
 
-              <Link href="/workspace" className="hidden h-10 touch-manipulation items-center justify-center rounded-full border border-[var(--border-strong)] px-4 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface)] lg:inline-flex">
+              <Link href="/workspace" className="hidden h-10 touch-manipulation items-center justify-center rounded-full border border-[var(--border-strong)] px-4 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface)] xl:inline-flex">
                 Dashboard
               </Link>
 
@@ -134,7 +134,7 @@ export default function SiteHeader({
                 }}
                 aria-expanded={mobileOpen}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
-                className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] md:hidden"
+                className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-[var(--surface)] text-[var(--text)] active:scale-[0.96] lg:hidden"
               >
                 <span className="relative block h-4 w-4">
                   <span className={`absolute left-0 top-0 h-px w-4 bg-current transition-transform duration-150 ${mobileOpen ? "translate-y-[5.5px] rotate-45" : ""}`} />
