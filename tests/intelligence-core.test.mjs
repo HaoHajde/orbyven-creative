@@ -200,7 +200,7 @@ test("Focus explainability is structured, compact and persisted without a schema
   assert.match(panel, />De ce</);
   assert.match(panel, />Risc</);
   assert.match(panel, />Următor</);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
 });
 
 
@@ -225,7 +225,7 @@ test("Decision Support compares options without choosing or mutating", () => {
   assert.match(panel, /data-orbyven-decision-support="true"/);
   assert.match(panel, /Compromis:/);
   assert.match(panel, /Potrivit când:/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
 });
 
 
@@ -261,5 +261,36 @@ test("Decision Action handoff recalculates context and creates only confirmable 
   assert.match(panel, /handoffAvailable/);
   assert.match(panel, /expectedSubject: decision\.subject/);
   assert.match(panel, /expectedOptionLabel:/);
-  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.23/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
+});
+
+
+test("Action Outcome Loop rechecks only completed plans and remains read-only", () => {
+  const types = read("lib/ai/intelligence-types.ts");
+  const outcome = read("lib/ai/action-outcome.ts");
+  const route = read("app/api/ai/outcomes/recheck/route.ts");
+  const desktop = read("app/api/desktop/ai/outcomes/recheck/route.ts");
+  const conversation = read("lib/ai/conversation-server.ts");
+  const panel = read("components/WorkspaceIntelligence.tsx");
+
+  assert.match(types, /export type IntelligenceOutcome/);
+  assert.match(types, /status: "resolved" \| "shifted" \| "still_priority"/);
+  assert.match(types, /outcome\?: IntelligenceOutcome/);
+  assert.match(outcome, /loadLatestPlanAction/);
+  assert.match(outcome, /every\(\(step\) => step\.status === "executed"\)/);
+  assert.match(outcome, /OUTCOME_PLAN_NOT_COMPLETE/);
+  assert.match(outcome, /Fă-mi briefingul zilei/);
+  assert.match(outcome, /outcomeAlreadyRecorded/);
+  assert.match(outcome, /persistAssistantResponse/);
+  assert.doesNotMatch(outcome, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(route, /recheckActionOutcome/);
+  assert.match(route, /Cache-Control": "no-store"/);
+  assert.match(desktop, /withDesktopCors/);
+  assert.match(desktop, /desktopOptionsResponse/);
+  assert.match(conversation, /Outcome · Plan/);
+  assert.match(conversation, /Outcome · Status/);
+  assert.match(panel, /\/api\/ai\/outcomes\/recheck/);
+  assert.match(panel, /data-orbyven-outcome="true"/);
+  assert.match(panel, /latestPlan\.steps\.every/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.24/);
 });
