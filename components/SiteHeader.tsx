@@ -3,6 +3,7 @@
 import BackToTop from "@/components/BackToTop";
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
+import LanguageSwitch from "@/components/LanguageSwitch";
 import { useEffect, useRef, useState } from "react";
 
 export type SitePage = "home" | "templates" | "webDesignAi" | "services" | "contact";
@@ -126,6 +127,10 @@ export default function SiteHeader({
                 Începe un proiect
               </Link>
 
+              <div className="hidden md:block">
+                <LanguageSwitch compact={compact} />
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -176,6 +181,9 @@ export default function SiteHeader({
                 <Link href="/cerere" onClick={closeMobile} className="flex h-12 touch-manipulation items-center justify-center rounded-[18px] bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99]">
                   Începe un proiect
                 </Link>
+                <div className="flex justify-end pt-1">
+                  <LanguageSwitch />
+                </div>
               </div>
             </div>
           )}
