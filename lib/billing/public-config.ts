@@ -49,7 +49,7 @@ export const BILLING_PLANS: Record<
   pro: {
     id: "pro",
     name: "PRO",
-    priceLei: 699,
+    priceLei: 599,
     description: "Acces extins la întregul set de module portabile ORBYVEN.",
     entitlements: [...ALL_BILLING_MODULE_IDS],
   },
