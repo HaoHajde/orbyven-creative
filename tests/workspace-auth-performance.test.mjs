@@ -70,17 +70,23 @@ test("real-auth QA requires dedicated secrets and never uploads private screensh
 });
 
 
-test("public offer cards preserve the selected product through the direct checkout route", () => {
+test("public offer cards preserve the selected product through confirmation and checkout", () => {
   const contact = read("app/contact/page.tsx");
+  const confirmation = read("app/porneste/oferta/page.tsx");
   const payment = read("app/porneste/plata/page.tsx");
   const offers = read("lib/commerce/public-offers.ts");
 
-  assert.match(contact, /href="\/porneste\/plata\?offer=invitation"/);
-  assert.match(contact, /href="\/porneste\/plata\?offer=web"/);
-  assert.match(contact, /href="\/porneste\/plata\?offer=advanced"/);
+  assert.match(contact, /href="\/porneste\/oferta\?offer=invitation"/);
+  assert.match(contact, /href="\/porneste\/oferta\?offer=web"/);
+  assert.match(contact, /href="\/porneste\/oferta\?offer=advanced"/);
   assert.match(contact, /PUBLIC_OFFERS\.invitation\.priceLei/);
   assert.match(contact, /PUBLIC_OFFERS\.web\.priceLei/);
   assert.match(contact, /PUBLIC_OFFERS\.advanced\.priceLei/);
+
+  assert.match(confirmation, /isPublicOfferId\(rawOffer\)/);
+  assert.match(confirmation, /PUBLIC_OFFERS\[offerId\]/);
+  assert.match(confirmation, /\/porneste\/plata\?offer=\$\{offerId\}/);
+  assert.match(confirmation, /Confirm selecția/);
 
   assert.match(payment, /isPublicOfferId\(rawOffer\)/);
   assert.match(payment, /fetch\("\/api\/public-checkout"/);
