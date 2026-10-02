@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  DEFAULT_SITE,
   readSiteDraft,
   SECTION_IDS,
 } from "../lib/ai/site-editor.ts";
+import {
+  applyWebDesignStrategy,
+  buildWebDesignStrategy,
+  inferWebDesignRequestMode,
+} from "../lib/ai/web-design-intent.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -157,4 +163,84 @@ test("AI Web Design is discoverable from primary navigation, Services and Dashbo
   assert.match(workspace, /onOpenPath\("\/ai-web-design"\)/);
   assert.match(workspace, /AI Web Design/);
   assert.match(sitemap, /path: "\/ai-web-design"/);
+});
+
+
+test("Web Design intent architect maps business type and conversion goal into a bounded section strategy", () => {
+  const localService = buildWebDesignStrategy(
+    "Firmă de instalații termice. Vreau cereri de ofertă și un site foarte clar.",
+    DEFAULT_SITE
+  );
+  assert.equal(localService.archetype, "local_service");
+  assert.equal(localService.primaryGoal, "lead_generation");
+  assert.equal(localService.primaryAction, "request_quote");
+  assert.equal(localService.visibleSections.includes("process"), true);
+  assert.equal(localService.hiddenSections.includes("gallery"), true);
+
+  const retail = buildWebDesignStrategy(
+    "Florărie cu produse, comenzi online și checkout. Vreau să vindem direct.",
+    DEFAULT_SITE
+  );
+  assert.equal(retail.archetype, "retail");
+  assert.equal(retail.primaryGoal, "direct_sale");
+  assert.equal(retail.primaryAction, "buy");
+  assert.equal(retail.visibleSections.includes("gallery"), true);
+  assert.ok(retail.sectionOrder.indexOf("services") < retail.sectionOrder.indexOf("about"));
+
+  const portfolio = buildWebDesignStrategy(
+    "Sunt fotograf și vreau portofoliul și proiectele în centrul site-ului.",
+    DEFAULT_SITE
+  );
+  assert.equal(portfolio.archetype, "creative");
+  assert.equal(portfolio.primaryGoal, "showcase");
+  assert.equal(portfolio.primaryAction, "view_work");
+  assert.equal(portfolio.sectionOrder[1], "gallery");
+});
+
+test("Web Design intent architect preserves layout during targeted refinements", () => {
+  const prompt = "Fă hero-ul mai premium și mai aerisit, păstrează restul.";
+  assert.equal(inferWebDesignRequestMode(prompt), "refine");
+
+  const strategy = buildWebDesignStrategy(prompt, DEFAULT_SITE);
+  const candidate = {
+    ...DEFAULT_SITE,
+    sectionOrder: [...SECTION_IDS].reverse(),
+    hiddenSections: ["faq"],
+  };
+  const applied = applyWebDesignStrategy(candidate, strategy);
+
+  assert.deepEqual(applied.sectionOrder, candidate.sectionOrder);
+  assert.deepEqual(applied.hiddenSections, candidate.hiddenSections);
+});
+
+test("Web Design intent architect respects explicit section instructions and alternative composition", () => {
+  const explicit = buildWebDesignStrategy(
+    "Site pentru instalații. Cere ofertă. Adaugă galerie și scoate FAQ.",
+    DEFAULT_SITE
+  );
+  assert.equal(explicit.visibleSections.includes("gallery"), true);
+  assert.equal(explicit.hiddenSections.includes("faq"), true);
+
+  const alternative = buildWebDesignStrategy(
+    "Propune o altă variantă completă pentru același business.",
+    DEFAULT_SITE
+  );
+  assert.equal(alternative.mode, "alternative");
+  assert.equal(alternative.sectionOrder[0], "hero");
+  assert.equal(new Set(alternative.sectionOrder).size, SECTION_IDS.length);
+});
+
+test("Generative Web Design consumes the deterministic Site Strategy before rendering", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const intent = read("lib/ai/web-design-intent.ts");
+
+  assert.match(server, /buildWebDesignStrategy\(prompt, current\)/);
+  assert.match(server, /webDesignStrategyInstruction\(strategy\)/);
+  assert.match(server, /site_strategy: strategy/);
+  assert.match(server, /applyWebDesignStrategy\(parsedDraft, strategy\)/);
+  assert.match(intent, /primaryGoal/);
+  assert.match(intent, /primaryAction/);
+  assert.match(intent, /visibleSections/);
+  assert.match(intent, /hiddenSections/);
+  assert.doesNotMatch(intent, /Math\.random/);
 });
