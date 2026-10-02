@@ -26,6 +26,7 @@ import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ec
 import {
   syncCrmAfterAcceptedEstimate,
   syncCrmAfterEstimateCreated,
+  syncCrmAfterEstimateSent,
 } from "@/lib/automation/status-sync";
 import {
   loadMaterialLibrary,recipeEstimatePreview,
@@ -398,6 +399,28 @@ export default function EstimatesModule({
         } catch (syncError) {
           console.error(syncError);
           syncMessages.push("Documentul comercial asociat necesită verificare manuală.");
+        }
+      }
+
+      if (status === "sent" && next.client_id) {
+        try {
+          const crm = await syncCrmAfterEstimateSent(
+            organizationId,
+            next.client_id,
+            next.reference
+          );
+          if (crm.updated) {
+            syncMessages.push(
+              crm.activityLogged
+                ? "CRM-ul a actualizat ultima interacțiune pentru oferta trimisă."
+                : "CRM-ul a actualizat ultima interacțiune; jurnalul activității nu a putut fi completat."
+            );
+          } else if (crm.reason === "lost_conflict") {
+            syncMessages.push("Clientul este marcat «Pierdut» în CRM; ultima interacțiune nu a fost suprascrisă automat.");
+          }
+        } catch (crmError) {
+          console.error(crmError);
+          syncMessages.push("Devizul este trimis, dar ultima interacțiune CRM nu a putut fi sincronizată.");
         }
       }
 
