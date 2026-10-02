@@ -10,7 +10,7 @@ export type WorkspaceModuleFlow = {
 
 export type WorkspaceFlowContext = Pick<
   WorkspaceOpenOptions,
-  "clientId" | "taskId" | "estimateId" | "purchaseOrderId"
+  "clientId" | "taskId" | "estimateId" | "purchaseOrderId" | "documentId"
 >;
 
 export const WORKSPACE_MODULE_FLOW: Record<OrbyvenModuleId, WorkspaceModuleFlow> = {
@@ -100,7 +100,7 @@ export function getWorkspaceTargetOptions(
           : target === "estimates"
             ? { recordId: context.estimateId, clientId: context.clientId, taskId: context.taskId }
             : target === "documents"
-              ? { taskId: context.taskId, purchaseOrderId: context.purchaseOrderId }
+              ? { recordId: context.documentId, taskId: context.taskId, purchaseOrderId: context.purchaseOrderId }
               : target === "inventory"
                 ? { taskId: context.taskId }
                 : target === "expenses"
@@ -109,6 +109,7 @@ export function getWorkspaceTargetOptions(
                       taskId: context.taskId,
                       estimateId: context.estimateId,
                       purchaseOrderId: context.purchaseOrderId,
+                      documentId: context.documentId,
                     }
                   : target === "thermal"
                     ? { taskId: context.taskId }
