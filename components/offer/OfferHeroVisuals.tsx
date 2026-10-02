@@ -297,7 +297,15 @@ export function HeroVisual({
         : offerId === "web"
           ? <WebVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
           : <AdvancedVisual onSelect={onSelectFeature} activeFeature={activeFeature} />}
-      {activeFeature ? <FeatureScene offerId={offerId} feature={activeFeature} onClose={onCloseFeature} /> : null}
+      {activeFeature ? (
+        <FeatureScene
+          key={`${offerId}-${activeFeature}`}
+          offerId={offerId}
+          feature={activeFeature}
+          onClose={onCloseFeature}
+          onSelect={onSelectFeature}
+        />
+      ) : null}
     </div>
   );
 }

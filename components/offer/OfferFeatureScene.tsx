@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { PublicOfferId } from "@/lib/commerce/public-offers";
 
 export function Glyph({ kind }: { kind: string }) {
@@ -111,6 +111,12 @@ function SceneCard({
     </div>
   );
 }
+
+const FEATURE_ORDER: Record<PublicOfferId, string[]> = {
+  invitation: ["RSVP", "Locații", "Countdown", "Poveste", "Galerie", "Maps"],
+  web: ["Website", "Responsive", "SEO", "Dashboard", "Clienți", "Task-uri"],
+  advanced: ["CRM", "Task-uri", "Calendar", "Devize", "Stoc", "Automatizări", "Custom"],
+};
 
 function InvitationScene({ feature }: { feature: string }) {
   if (feature === "Galerie") {
@@ -411,11 +417,32 @@ export function FeatureScene({
   offerId,
   feature,
   onClose,
+  onSelect,
 }: {
   offerId: PublicOfferId;
   feature: string;
   onClose: () => void;
+  onSelect: (feature: string) => void;
 }) {
+  const features = FEATURE_ORDER[offerId];
+  const currentIndex = Math.max(0, features.indexOf(feature));
+  const previousFeature = features[(currentIndex - 1 + features.length) % features.length];
+  const nextFeature = features[(currentIndex + 1) % features.length];
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        onSelect(previousFeature);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        onSelect(nextFeature);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [nextFeature, onSelect, previousFeature]);
   const sceneTitle =
     feature === "RSVP" ? "RSVP live" :
     feature === "Locații" || feature === "Maps" ? "Locații & Maps" :
@@ -441,11 +468,43 @@ export function FeatureScene({
             <p className="mt-1 text-[14px] font-semibold">{sceneTitle}</p>
           </div>
         </div>
-        <button onClick={onClose} type="button" aria-label="Închide preview" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[16px] text-white/55 transition hover:rotate-90 hover:bg-white/[.08] hover:text-white">×</button>
+        <div className="flex items-center gap-2">
+          <span className="hidden min-w-[34px] text-center text-[7px] font-semibold tracking-[.12em] text-white/25 sm:block">{currentIndex + 1}/{features.length}</span>
+          <button
+            type="button"
+            onClick={() => onSelect(previousFeature)}
+            aria-label="Preview anterior"
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[13px] text-white/48 transition hover:-translate-x-0.5 hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10 hover:text-white"
+          >←</button>
+          <button
+            type="button"
+            onClick={() => onSelect(nextFeature)}
+            aria-label="Preview următor"
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[13px] text-white/48 transition hover:translate-x-0.5 hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10 hover:text-white"
+          >→</button>
+          <button onClick={onClose} type="button" aria-label="Închide preview" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[16px] text-white/55 transition hover:rotate-90 hover:bg-white/[.08] hover:text-white">×</button>
+        </div>
       </div>
 
       <div className="relative mt-4 h-[calc(100%-58px)] overflow-hidden rounded-[22px] border border-white/8 bg-[radial-gradient(circle_at_75%_12%,rgba(126,93,255,.18),transparent_30%),linear-gradient(145deg,#10121a,#08090e)] p-4">
-        {offerId === "invitation" ? <InvitationScene feature={feature} /> : offerId === "web" ? <WebScene feature={feature} /> : <AdvancedScene feature={feature} />}
+        <div className="h-full" key={feature}>
+          {offerId === "invitation" ? <InvitationScene feature={feature} /> : offerId === "web" ? <WebScene feature={feature} /> : <AdvancedScene feature={feature} />}
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-white/8 bg-[#05060a]/72 px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,.34)] backdrop-blur-xl">
+            {features.map((item, index) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onSelect(item)}
+                title={item}
+                aria-label={item}
+                className={`h-1.5 rounded-full transition-all duration-300 ${index === currentIndex ? "w-7 bg-[#a98dff] shadow-[0_0_12px_rgba(169,141,255,.65)]" : "w-1.5 bg-white/18 hover:bg-white/45"}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
