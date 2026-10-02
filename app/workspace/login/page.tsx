@@ -23,13 +23,13 @@ function WorkspaceLoginPageContent() {
     : "";
   const checkoutDestination = checkoutProduct
     ? `/porneste/web-design${checkoutQuery}`
-    : checkoutDestination;
+    : `/contact${checkoutQuery}`;
   const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
     if (!checkoutPlan) return destination === "/workspace/login" ? "/workspace" : destination;
     if (destination === "/workspace/onboarding" || destination === "/workspace/login") return `/workspace/onboarding${checkoutQuery}`;
     if (destination === "/workspace") return checkoutDestination;
     return destination;
-  }, [checkoutPlan, checkoutQuery]);
+  }, [checkoutDestination, checkoutPlan, checkoutQuery]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
