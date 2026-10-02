@@ -25,6 +25,7 @@ import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabili
 import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
 import {
   syncCrmAfterAcceptedEstimate,
+  syncCrmAfterEstimateClosedWithoutAcceptance,
   syncCrmAfterEstimateCreated,
   syncCrmAfterEstimateSent,
 } from "@/lib/automation/status-sync";
@@ -427,6 +428,26 @@ export default function EstimatesModule({
         }
       }
 
+      if ((status === "rejected" || status === "expired") && next.client_id) {
+        try {
+          const crm = await syncCrmAfterEstimateClosedWithoutAcceptance(
+            organizationId,
+            next.client_id,
+            status,
+            next.reference
+          );
+          if (crm.updated) {
+            syncMessages.push(
+              crm.activityLogged
+                ? "CRM-ul a înregistrat rezultatul ofertei fără să schimbe automat stadiul clientului."
+                : "CRM-ul a păstrat stadiul; jurnalul activității nu a putut fi completat."
+            );
+          }
+        } catch (crmError) {
+          console.error(crmError);
+          syncMessages.push("Rezultatul ofertei a fost salvat, dar jurnalul CRM nu a putut fi sincronizat.");
+        }
+      }
       if (status === "accepted" && next.client_id) {
         try {
           const crm = await syncCrmAfterAcceptedEstimate(
