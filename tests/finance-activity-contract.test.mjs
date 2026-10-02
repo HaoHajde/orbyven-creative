@@ -49,6 +49,38 @@ test("Finance service links income to invoice, work and customer and blocks over
   assert.match(service, /syncInvoicePaidStatus/);
 });
 
+test("Procurement finance bridge tracks supplier cashflow without double-counting task material cost", () => {
+  const migration = read("supabase/migrations/20261001234500_wave5_procurement_finance_bridge.sql");
+  const finance = read("lib/modules/expenses.ts");
+  const tasks = read("lib/modules/tasks.ts");
+  const ui = read("components/modules/ExpensesModule.tsx");
+
+  assert.match(migration, /add column if not exists purchase_order_id uuid/);
+  assert.match(migration, /finance_expenses_procurement_guard/);
+  assert.match(migration, /ops_purchase_order_finance_status/);
+  assert.match(migration, /received_without_recorded_expense_cents/);
+  assert.match(migration, /security_invoker = true/);
+  assert.match(finance, /purchaseOrderId/);
+  assert.match(finance, /ops_purchase_order_finance_status/);
+  assert.match(finance, /linkedCurrency = \(order\.currency \|\| linkedCurrency\)/);
+  assert.match(tasks, /\.is\("purchase_order_id", null\)/);
+  assert.match(ui, /Achiziții furnizor/);
+  assert.match(ui, /Costul de achiziție intră în cashflow/);
+  assert.match(ui, /\+ Cost furnizor/);
+});
+
+test("Supplier evidence can inherit Purchase Order context safely", () => {
+  const migration = read("supabase/migrations/20261001234500_wave5_procurement_finance_bridge.sql");
+  const documents = read("lib/modules/documents.ts");
+  const ui = read("components/modules/DocumentsModule.tsx");
+  assert.match(migration, /procurement_document_context_guard/);
+  assert.match(migration, /purchase_order_task_mismatch/);
+  assert.match(documents, /purchaseOrderId/);
+  assert.match(documents, /Comanda furnizor nu există în această firmă/);
+  assert.match(ui, /Comandă furnizor/);
+  assert.match(ui, /PO:/);
+});
+
 test("Activity center aggregates the operational sources without a duplicate notifications table", () => {
   const activity = read("lib/modules/activity.ts");
   for (const source of [
