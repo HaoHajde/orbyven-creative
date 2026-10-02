@@ -32,19 +32,19 @@ function useHydrationSafeReducedMotion() {
 const templateCategories = [
   {
     id: "constructii-instalatii",
-    short: "Construction",
-    kicker: "Construction · installations · infrastructure",
-    title: "Construction & installations",
-    description: "For companies delivering projects that need to build trust before the first quote.",
+    short: "Construcții",
+    kicker: "Construcții · instalații · infrastructură",
+    title: "Construcții & instalații",
+    description: "Pentru firme care execută lucrări și trebuie să inspire încredere înainte de prima ofertă.",
     featuredHrefs: ["/templates/asfaltari-bucuresti", "/templates/pilot-013-construction"],
     catalogSlugs: ["pilot-002", "instalatii"],
   },
   {
     id: "evenimente-invitatii",
     short: "Evenimente",
-    kicker: "Events · digital invitations",
-    title: "Events & invitations",
-    description: "From event services to complete digital invitations with clear atmosphere and actions.",
+    kicker: "Evenimente · invitații digitale",
+    title: "Evenimente & invitații",
+    description: "De la servicii pentru evenimente până la invitații digitale complete, cu atmosferă și acțiuni clare.",
     featuredHrefs: ["/templates/obsidian-moments", "/demo/nunta/elegant", "/templates/botez-fetita", "/templates/botez-baietel", "/templates/majorat"],
     catalogSlugs: ["evenimente"],
   },
@@ -53,7 +53,7 @@ const templateCategories = [
     short: "Auto",
     kicker: "Auto · detailing",
     title: "Auto & detailing",
-    description: "Visual experiences for automotive services where results should be instantly visible.",
+    description: "Experiențe vizuale pentru servicii auto unde rezultatul trebuie să se vadă imediat.",
     featuredHrefs: ["/templates/haos-customs", "/templates/pilot-009-auto-service"],
     catalogSlugs: [],
   },
@@ -62,7 +62,7 @@ const templateCategories = [
     short: "Lifestyle",
     kicker: "Retail · beauty · lifestyle",
     title: "Retail, beauty & lifestyle",
-    description: "Products and services chosen visually: strong presentation, simple selection and fast conversion.",
+    description: "Produse și servicii cumpărate cu ochii: imagine puternică, selecție simplă și conversie rapidă.",
     featuredHrefs: ["/templates/florarie-bragadiru", "/templates/barbershop", "/templates/pilot-006-barbershop"],
     catalogSlugs: ["beauty"],
   },
@@ -70,26 +70,26 @@ const templateCategories = [
     id: "restaurante-cafenele",
     short: "HoReCa",
     kicker: "Gastronomie · restaurant · cafenea",
-    title: "Restaurants & cafés",
-    description: "Menu, products, reservations and a clear path to ordering.",
+    title: "Restaurante & cafenele",
+    description: "Meniu, produse, rezervări și traseu clar până la comandă.",
     featuredHrefs: ["/templates/pilot-007-restaurant"],
     catalogSlugs: [],
   },
   {
     id: "imobiliare",
-    short: "Real estate",
-    kicker: "Properties · filters · viewings",
-    title: "Real estate",
-    description: "Easy-to-browse listings, filters and comparisons before a viewing.",
+    short: "Imobiliare",
+    kicker: "Proprietăți · filtre · vizionări",
+    title: "Imobiliare",
+    description: "Listări ușor de explorat, filtre și comparație înainte de o vizionare.",
     featuredHrefs: ["/templates/pilot-008-real-estate"],
     catalogSlugs: [],
   },
   {
     id: "turism-cazare",
-    short: "Travel",
+    short: "Turism",
     kicker: "Boutique hotel · pensiuni · retreat",
-    title: "Travel & accommodation",
-    description: "Rooms, dates, capacity and total stay cost before confirmation.",
+    title: "Turism & cazare",
+    description: "Camere, perioade, capacități și totalul sejurului înainte de confirmare.",
     featuredHrefs: ["/templates/pilot-011-retreat"],
     catalogSlugs: [],
   },
@@ -98,16 +98,16 @@ const templateCategories = [
     short: "Fitness",
     kicker: "Fitness · clase · abonamente",
     title: "Sport & fitness",
-    description: "Recurring experiences for classes, trainers and memberships.",
+    description: "Experiențe recurente pentru clase, antrenori și abonamente.",
     featuredHrefs: ["/templates/pilot-012-movement"],
     catalogSlugs: [],
   },
   {
     id: "medical",
     short: "Medical",
-    kicker: "Medical · professional services",
+    kicker: "Medical · servicii profesionale",
     title: "Medical",
-    description: "Clear information, trust and easy booking for services where comfort matters.",
+    description: "Informație clară, încredere și programare simplă pentru servicii unde confortul contează.",
     featuredHrefs: ["/templates/pilot-010-dental-clinic"],
     catalogSlugs: ["clinica-dentara"],
   },
@@ -178,7 +178,7 @@ function CatalogCard({ template, delay = 0 }: { template: ClientTemplateConfig; 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted)]">{template.category}</p>
-              <span className="text-[8px] text-[var(--muted)]/65">· ORBYVEN template</span>
+              <span className="text-[8px] text-[var(--muted)]/65">· Model ORBYVEN</span>
             </div>
             <h3 className="mt-3 text-[30px] font-semibold leading-[.96] tracking-[-.05em] sm:text-[34px]">{template.title}</h3>
             <p className="mt-3 max-w-xl text-[11px] leading-5 text-[var(--muted)]">{template.description}</p>
@@ -300,11 +300,11 @@ export default function TemplatesPage() {
               transition={{ duration: .9, delay: .06, ease }}
               className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]"
             >
-              See it.
+              Vezi.
               <br />
-              <span className="text-white/35">Understand it.</span>
+              <span className="text-white/35">Înțelegi.</span>
               <br />
-              Choose it.
+              Alegi.
             </motion.h1>
           </div>
 
@@ -315,17 +315,17 @@ export default function TemplatesPage() {
             className="lg:pb-2"
           >
             <p className="max-w-md text-[15px] leading-7 text-white/55">
-              No endless explanations. Open a template and immediately see whether it fits.
+              Fără explicații kilometrice. Intră într-un model și vezi imediat dacă ți se potrivește.
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
-              {["01 · enter", "02 · explore", "03 · choose"].map((item) => (
+              {["01 · intri", "02 · explorezi", "03 · alegi"].map((item) => (
                 <span key={item} className="rounded-full border border-white/10 bg-white/[.045] px-4 py-2.5 text-[9px] font-semibold uppercase tracking-[.13em] text-white/55 backdrop-blur">
                   {item}
                 </span>
               ))}
             </div>
             <a href="#modele" className="mt-8 inline-flex h-12 items-center rounded-full bg-white px-6 text-[12px] font-semibold text-black transition hover:-translate-y-0.5">
-              View templates ↓
+              Vezi modelele ↓
             </a>
           </motion.div>
         </div>
@@ -334,15 +334,15 @@ export default function TemplatesPage() {
       <section id="modele" className="mx-auto max-w-[1520px] px-5 pb-8 pt-14 sm:px-6 md:px-10 md:pb-10 md:pt-20">
         <div className="flex flex-col gap-7 pb-10 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>ORBYVEN library</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+            <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Biblioteca ORBYVEN</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
             <h2 className="mt-4 text-[clamp(42px,6vw,76px)] font-semibold leading-[.9] tracking-[-.062em]">
-              Choose <span className="relative z-10 -mx-[0.018em] text-[var(--home-violet)]">your industry.</span>
+              Alege <span className="relative z-10 -mx-[0.018em] text-[var(--home-violet)]">industria.</span>
               <br />
-              Then choose a direction.
+              Apoi alege direcția.
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-6 text-[var(--muted)]">
-            Templates are grouped by business type so you can reach relevant examples quickly.
+            Modelele sunt grupate după tipul de business, ca să ajungi rapid la exemple relevante.
           </p>
         </div>
 
@@ -376,16 +376,16 @@ export default function TemplatesPage() {
             <div className="flex items-end justify-between gap-5">
               <p className="max-w-xl text-[13px] leading-6 text-[var(--muted)]">{group.description}</p>
               <span className="hidden shrink-0 text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--muted)] md:block">
-                {group.count} {group.count === 1 ? "template" : "templates"}
+                {group.count} {group.count === 1 ? "model" : "modele"}
               </span>
             </div>
           </div>
 
           {group.id === "evenimente-invitatii" ? (
-            <nav aria-label="ORBYVEN digital invitations" className="mb-7 flex flex-wrap gap-2">
-              <Link href="/invitatii-nunta" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Wedding invitations ↗</Link>
-              <Link href="/invitatii-botez" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Christening invitations ↗</Link>
-              <Link href="/invitatii-majorat" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Celebration invitations ↗</Link>
+            <nav aria-label="Invitații digitale ORBYVEN" className="mb-7 flex flex-wrap gap-2">
+              <Link href="/invitatii-nunta" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații nuntă ↗</Link>
+              <Link href="/invitatii-botez" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații botez ↗</Link>
+              <Link href="/invitatii-majorat" className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-semibold">Invitații majorat ↗</Link>
             </nav>
           ) : null}
 
@@ -406,10 +406,10 @@ export default function TemplatesPage() {
 
       <section className="px-5 pb-8 sm:px-6 md:px-10">
         <div className="mx-auto max-w-[1520px] overflow-hidden rounded-[36px] bg-[var(--button)] px-7 py-14 text-[var(--button-text)] sm:px-9 md:px-12 md:py-16">
-          <p className="text-[9px] font-bold uppercase tracking-[.2em] opacity-45">From here, it becomes yours</p>
+          <p className="text-[9px] font-bold uppercase tracking-[.2em] opacity-45">De aici devine al tău</p>
           <div className="mt-5 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="max-w-4xl text-[clamp(44px,6vw,74px)] font-semibold leading-[.9] tracking-[-.06em]">Like the direction?<br />We adapt it to your business.</h2>
-            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[12px] font-semibold text-[var(--text)]">Get started →</Link>
+            <h2 className="max-w-4xl text-[clamp(44px,6vw,74px)] font-semibold leading-[.9] tracking-[-.06em]">Îți place direcția?<br />O adaptăm business-ului tău.</h2>
+            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[12px] font-semibold text-[var(--text)]">Începe →</Link>
           </div>
         </div>
       </section>
