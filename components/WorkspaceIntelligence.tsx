@@ -714,6 +714,7 @@ export default function WorkspaceIntelligence({
           <>
           <button
             type="button"
+            data-workspace-mobile-float="true"
             aria-label={open ? "Închide ORBYVEN Intelligence" : "Deschide ORBYVEN Intelligence"}
             aria-haspopup="dialog"
             aria-controls="orbyven-intelligence-dialog"
