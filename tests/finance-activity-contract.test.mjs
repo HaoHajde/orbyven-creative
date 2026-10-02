@@ -81,6 +81,23 @@ test("Supplier evidence can inherit Purchase Order context safely", () => {
   assert.match(ui, /PO:/);
 });
 
+test("Activity center turns procurement reconciliation gaps into PO-scoped next actions", () => {
+  const activity = read("lib/modules/activity.ts");
+  const center = read("components/WorkspaceActivityCenter.tsx");
+  const financeUi = read("components/modules/ExpensesModule.tsx");
+  const nextBest = read("lib/automation/next-best-action.ts");
+
+  assert.match(activity, /ops_purchase_order_finance_status/);
+  assert.match(activity, /procurement_cost_missing/);
+  assert.match(activity, /procurement_evidence_missing/);
+  assert.match(activity, /procurement_cost_variance/);
+  assert.match(activity, /purchaseOrderId/);
+  assert.match(center, /purchaseOrderId: item\.purchaseOrderId/);
+  assert.match(financeUi, /initialPurchaseOrderId \? "procurement" : "overview"/);
+  assert.match(nextBest, /procurement_cost_missing/);
+  assert.match(nextBest, /purchase-order:/);
+});
+
 test("Activity center aggregates the operational sources without a duplicate notifications table", () => {
   const activity = read("lib/modules/activity.ts");
   for (const source of [
