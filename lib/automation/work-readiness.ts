@@ -218,13 +218,19 @@ export function evaluateWorkReadiness(input: {
   }
 
   if (enabled.documents && context) {
+    const completedWithoutEvidence =
+      operationalKind &&
+      operation.status === "done" &&
+      context.documentsCount === 0;
     checks.push({
       key: "documents",
       label: "Documente",
-      state: context.documentsCount > 0 ? "good" : "info",
+      state: context.documentsCount > 0 ? "good" : completedWithoutEvidence ? "attention" : "info",
       message: context.documentsCount
         ? context.documentsCount + " documente legate de dosar."
-        : "Dosarul nu are încă documente asociate.",
+        : completedWithoutEvidence
+          ? "Lucrarea este finalizată, dar dosarul nu are încă nicio dovadă sau document."
+          : "Dosarul nu are încă documente asociate.",
     });
   } else {
     checks.push({
