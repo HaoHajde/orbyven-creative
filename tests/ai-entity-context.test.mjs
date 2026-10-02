@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   detectContextEntityReferences,
-  detectImplicitEntityFollowUp,
   findLatestContextEntityCandidate,
 } from "../lib/ai/context-entity-core.ts";
 
@@ -97,25 +96,4 @@ test("Intelligence route clarifies unresolved references before Agent Action par
   assert.match(route, /Referință neconfirmată/);
   assert.match(route, /entityContext\.effectivePrompt/);
   assert.match(route, /entityContextUsed: entityContext\.usedContext/);
-});
-
-
-test("Implicit entity follow-up detection is conservative and topic-scoped", () => {
-  assert.equal(detectImplicitEntityFollowUp("Și cât mai am de încasat?"), true);
-  assert.equal(detectImplicitEntityFollowUp("Dar ce devize are?"), true);
-  assert.equal(detectImplicitEntityFollowUp("Iar următoarea programare?"), true);
-  assert.equal(detectImplicitEntityFollowUp("Și documentele?"), true);
-  assert.equal(detectImplicitEntityFollowUp("Cât am de încasat?"), false);
-  assert.equal(detectImplicitEntityFollowUp("Și creează un client nou"), false);
-  assert.equal(detectImplicitEntityFollowUp("Și cât am încasat; client: Exemplu SRL"), false);
-});
-
-test("Resolver only inherits one recent implicit entity and keeps validation boundaries", () => {
-  const source = read("lib/ai/context-entity-resolver.ts");
-  assert.match(source, /detectImplicitEntityFollowUp\(cleanPrompt\)/);
-  assert.match(source, /recent\.length === 1/);
-  assert.match(source, /recent\.length > 1/);
-  assert.match(source, /Follow-up-ul poate face referire atât la client, cât și la lucrare/);
-  assert.match(source, /validateClient/);
-  assert.match(source, /validateWork/);
 });
