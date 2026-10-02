@@ -7,7 +7,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 const overview = read("lib/modules/overview.ts");
 const dashboard = read("components/modules/OverviewModule.tsx");
 const search = read("components/WorkspaceSearch.tsx");
-const workspace = read("components/ClientWorkspace.tsx");
+const workspace = read("components/WorkspaceShell.tsx");
 const tasksData = read("lib/modules/tasks.ts");
 const tasksUi = read("components/modules/TasksModule.tsx");
 const estimatesData = read("lib/modules/estimates.ts");

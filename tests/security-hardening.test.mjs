@@ -127,7 +127,7 @@ test("no subscription and no pilot grant never gives default paid module access"
   assert.match(workspace, /validModuleIds\.has\(moduleId\) && entitled\.has\(moduleId\)/);
   assert.match(workspace, /entitledModules:/);
   assert.match(moduleStore, /!entitled \|\| !canManage/);
-  assert.match(read("components/ClientWorkspace.tsx"), /!workspace\.entitledModules\.includes\(id\)/);
+  assert.match(read("components/WorkspaceShell.tsx"), /!workspace\.entitledModules\.includes\(id\)/);
 });
 
 test("public requests cannot bypass the API IP limiter through anonymous RPC", () => {

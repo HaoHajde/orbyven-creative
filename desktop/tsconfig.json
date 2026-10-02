@@ -34,8 +34,14 @@
       "react-dom": [
         "node_modules/@types/react-dom/index.d.ts"
       ],
+      "@/components/BrandLogo": [
+        "src/BrandLogo.tsx"
+      ],
       "@/lib/orbyven-supabase": [
         "src/client.ts"
+      ],
+      "next/dynamic": [
+        "src/next-dynamic.tsx"
       ],
       "@/*": [
         "../*"

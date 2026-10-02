@@ -35,7 +35,7 @@ test("Finance specialist uses paged exact cashflow reads and does not expose fin
 });
 
 test("Global workspace mounts one ORBYVEN Intelligence entry point", () => {
-  const workspace = read("components/ClientWorkspace.tsx");
+  const workspace = read("components/WorkspaceShell.tsx");
   const panel = read("components/WorkspaceIntelligence.tsx");
   assert.match(workspace, /<WorkspaceIntelligence/);
   assert.match(panel, /\/api\/ai\/intelligence/);

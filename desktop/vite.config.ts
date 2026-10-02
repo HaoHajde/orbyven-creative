@@ -6,6 +6,8 @@ import { fileURLToPath, URL } from "node:url";
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const root = fileURLToPath(new URL("../", import.meta.url));
 const client = fileURLToPath(new URL("./src/client.ts", import.meta.url));
+const desktopBrandLogo = fileURLToPath(new URL("./src/BrandLogo.tsx", import.meta.url));
+const desktopDynamic = fileURLToPath(new URL("./src/next-dynamic.tsx", import.meta.url));
 const reactRuntime = fileURLToPath(new URL("./node_modules/react", import.meta.url));
 const reactDomRuntime = fileURLToPath(new URL("./node_modules/react-dom", import.meta.url));
 
@@ -23,8 +25,10 @@ export default defineConfig({
       { find: /^react\/(.*)$/, replacement: reactRuntime + "/$1" },
       { find: /^react-dom$/, replacement: reactDomRuntime },
       { find: /^react-dom\/(.*)$/, replacement: reactDomRuntime + "/$1" },
-      // Reuse the EXISTING ORBYVEN modules and access-state logic unchanged.
-      // Override only the Next.js Supabase client (which reads process.env).
+      // Reuse the canonical workspace shell. Swap only Next-only adapters.
+      { find: /^@\/components\/BrandLogo$/, replacement: desktopBrandLogo },
+      { find: /^next\/dynamic$/, replacement: desktopDynamic },
+      // Override the Next.js Supabase client (which reads process.env).
       { find: /^@\/lib\/orbyven-supabase$/, replacement: client },
       { find: "@", replacement: root },
     ],
