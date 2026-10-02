@@ -450,8 +450,8 @@ export default function WorkspaceShell({
               enabledModules={enabledModules}
               onOpenModule={openModule}
             />
-            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)]">{theme === "dark" ? "☀" : "☾"}</button>
-            <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm">{initials || "OR"}</button>
+            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9">{theme === "dark" ? "☀" : "☾"}</button>
+            <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm sm:h-9 sm:w-9">{initials || "OR"}</button>
           </div>
         </div>
       </header>
@@ -588,7 +588,7 @@ export default function WorkspaceShell({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Acțiune nouă</p>
                 <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">Ce vrei să creezi?</h2>
               </div>
-              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label="Închide" className="h-9 w-9 shrink-0 rounded-full border border-[var(--border)] text-lg">×</button>
+              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label="Închide" className="h-11 w-11 shrink-0 rounded-full border border-[var(--border)] text-lg sm:h-9 sm:w-9">×</button>
             </div>
             <div className="mt-5 grid gap-2">
               {createOptions.map((definition) => (
@@ -607,7 +607,7 @@ export default function WorkspaceShell({
         </div>
       )}
 
-      <div className="fixed bottom-[max(0.45rem,env(safe-area-inset-bottom))] left-1/2 z-[80] w-[calc(100%-16px)] max-w-[430px] -translate-x-1/2 md:hidden">
+      <div data-workspace-mobile-dock="true" className="fixed bottom-[max(0.45rem,env(safe-area-inset-bottom))] left-1/2 z-[80] w-[calc(100%-16px)] max-w-[430px] -translate-x-1/2 transition-opacity duration-150 md:hidden">
         {mobileModuleMenuOpen && (
           <div className="absolute bottom-[72px] left-1/2 max-h-[min(62dvh,520px)] w-full -translate-x-1/2 overflow-y-auto overscroll-contain rounded-[26px] border border-[var(--border-strong)] bg-[color:var(--surface)]/96 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
             <div className="grid grid-cols-4 gap-2">
@@ -652,7 +652,7 @@ export default function WorkspaceShell({
                   onClick={() => changeTextScale(-1)}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
                   aria-label="Micșorează textul"
-                  className="flex h-9 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                  className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A−
                 </button>
@@ -661,7 +661,7 @@ export default function WorkspaceShell({
                   onClick={() => changeTextScale(1)}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
                   aria-label="Mărește textul"
-                  className="flex h-9 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                  className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A+
                 </button>
@@ -686,7 +686,7 @@ export default function WorkspaceShell({
                 setPanel("modules");
                 setMobileModuleMenuOpen(false);
               }}
-              className="mt-2 flex h-10 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-[11px] font-semibold text-[var(--muted)]"
+              className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)]"
             >
               {canManageModules ? "Gestionează modulele" : "Vezi configurația modulelor"}
             </button>
