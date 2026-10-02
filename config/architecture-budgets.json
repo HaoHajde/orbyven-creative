@@ -1,0 +1,35 @@
+{
+  "version": 8,
+  "capturedFrom": "current-main-2026-10-02",
+  "source": {
+    "webRoots": ["app","components","lib"],
+    "webMaxFileBytes": 65536,
+    "webLargeFileThresholdBytes": 35840,
+    "webMaxLargeFiles": 11,
+    "desktopRoot": "desktop/src",
+    "desktopMaxFileBytes": 24576,
+    "desktopLargeFileThresholdBytes": 35840,
+    "desktopMaxLargeFiles": 0,
+    "desktopCssMaxFileBytes": 16384
+  },
+  "dependencies": {
+    "webRuntimeAllowlist": ["@supabase/supabase-js","framer-motion","next","react","react-dom"],
+    "desktopRuntimeAllowlist": ["@supabase/supabase-js","react","react-dom"],
+    "sharedVersions": ["@supabase/supabase-js","react","react-dom"],
+    "desktopForbidden": ["next","framer-motion","@supabase/ssr"]
+  },
+  "publicAssets": {
+    "totalBytesMax": 14680064,
+    "defaultFileBytesMax": 786432,
+    "exceptions": {
+      "public/demo/nunta/diana-florin/music.mp3": 7340032,
+      "public/demo/nunta/diana-florin/mobile-bg1.png": 2306867
+    }
+  },
+  "build": {
+    "nextStaticJsTotalBytesMax": 4194304,
+    "nextSingleJsChunkBytesMax": 524288,
+    "desktopDistTotalBytesMax": 2097152,
+    "desktopInstallerBytesMax": 4194304
+  }
+}
