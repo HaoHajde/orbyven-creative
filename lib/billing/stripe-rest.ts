@@ -4,9 +4,11 @@ import {
   getStripePriceId,
   requireBillingReady,
   requireCheckoutReady,
+  requirePublicCheckoutReady,
 } from "@/lib/billing/server-config";
 import { getSiteUrl } from "@/lib/site-config";
 import { commercialIdentity } from "@/lib/commercial-identity";
+import { PUBLIC_OFFERS, type PublicOfferId } from "@/lib/commerce/public-offers";
 import type { CheckoutPrice } from "@/lib/billing/order-evidence-guards";
 
 type StripeCheckoutSession = {
@@ -21,8 +23,14 @@ type StripePortalSession = {
   url: string;
 };
 
-async function stripePost<T>(path: string, params: URLSearchParams, archived = false): Promise<T> {
-  requireBillingReady();
+async function stripePost<T>(
+  path: string,
+  params: URLSearchParams,
+  archived = false,
+  readiness: "billing" | "public" = "billing"
+): Promise<T> {
+  if (readiness === "public") requirePublicCheckoutReady();
+  else requireBillingReady();
   const apiKey = archived
     ? billingServerConfig.stripeArchiveSecretKey
     : billingServerConfig.stripeSecretKey;
@@ -121,4 +129,98 @@ export async function createStripePortalSession(customerId: string, archived = f
     : billingServerConfig.stripePortalConfigurationId);
   params.set("return_url", `${getSiteUrl()}/workspace/billing`);
   return stripePost<StripePortalSession>("billing_portal/sessions", params, archived);
+}
+
+
+function setInlinePrice(
+  params: URLSearchParams,
+  index: number,
+  input: {
+    amountLei: number;
+    name: string;
+    description: string;
+    recurring?: boolean;
+  }
+) {
+  const prefix = `line_items[${index}][price_data]`;
+  params.set(`${prefix}[currency]`, "ron");
+  params.set(`${prefix}[unit_amount]`, String(input.amountLei * 100));
+  params.set(`${prefix}[product_data][name]`, input.name);
+  params.set(`${prefix}[product_data][description]`, input.description);
+  if (input.recurring) {
+    params.set(`${prefix}[recurring][interval]`, "month");
+  }
+  params.set(`line_items[${index}][quantity]`, "1");
+}
+
+export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
+  requirePublicCheckoutReady();
+  const offer = PUBLIC_OFFERS[offerId];
+  const params = new URLSearchParams();
+  const siteUrl = getSiteUrl();
+
+  params.set("locale", "ro");
+  params.set("billing_address_collection", "auto");
+  params.set("allow_promotion_codes", "false");
+  params.set("success_url", `${siteUrl}/porneste/succes?offer=${offerId}&session_id={CHECKOUT_SESSION_ID}`);
+  params.set("cancel_url", `${siteUrl}/contact?checkout=cancelled`);
+  params.set("metadata[public_offer]", offerId);
+  params.set("metadata[merchant_key]", commercialIdentity.entityKey || "prelaunch");
+  params.set("metadata[merchant_type]", commercialIdentity.entityType);
+
+  if (offerId === "invitation") {
+    params.set("mode", "payment");
+    params.set("submit_type", "pay");
+    setInlinePrice(params, 0, {
+      amountLei: offer.priceLei,
+      name: "Invitație online personalizată ORBYVEN",
+      description: "Design personalizat, RSVP și experiență online pentru eveniment.",
+    });
+  }
+
+  if (offerId === "web") {
+    params.set("mode", "subscription");
+    params.set("submit_type", "subscribe");
+    setInlinePrice(params, 0, {
+      amountLei: offer.priceLei,
+      name: "Web design ORBYVEN",
+      description: "Website personalizat. Include 30 de zile ORBYVEN Dashboard pentru primul utilizator.",
+    });
+    setInlinePrice(params, 1, {
+      amountLei: offer.recurringLei,
+      name: "ORBYVEN Dashboard",
+      description: "Pachetul continuă după perioada inclusă de 30 de zile.",
+      recurring: true,
+    });
+    params.set("subscription_data[trial_period_days]", String(offer.trialDays));
+    params.set("subscription_data[metadata][public_offer]", offerId);
+    params.set("subscription_data[metadata][plan_id]", "business");
+    params.set("subscription_data[metadata][merchant_key]", commercialIdentity.entityKey || "prelaunch");
+    params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
+    params.set(
+      "custom_text[submit][message]",
+      "Plătești 399 lei pentru web design. Dashboard-ul este inclus 30 de zile, apoi abonamentul continuă la 499 lei/lună până la anulare."
+    );
+  }
+
+  if (offerId === "advanced") {
+    params.set("mode", "subscription");
+    params.set("submit_type", "subscribe");
+    setInlinePrice(params, 0, {
+      amountLei: offer.recurringLei,
+      name: "ORBYVEN Advanced",
+      description: "Web design + Dashboard + module personalizabile pentru fluxurile firmei.",
+      recurring: true,
+    });
+    params.set("subscription_data[metadata][public_offer]", offerId);
+    params.set("subscription_data[metadata][plan_id]", "pro");
+    params.set("subscription_data[metadata][merchant_key]", commercialIdentity.entityKey || "prelaunch");
+    params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
+    params.set(
+      "custom_text[submit][message]",
+      "Abonament de 599 lei/lună pentru website, Dashboard și module personalizabile."
+    );
+  }
+
+  return stripePost<StripeCheckoutSession>("checkout/sessions", params, false, "public");
 }
