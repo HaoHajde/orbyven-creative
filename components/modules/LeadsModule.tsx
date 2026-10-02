@@ -18,6 +18,7 @@ import { evaluateClientLifecycle, type ClientLifecycleSnapshot } from "@/lib/aut
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import ClientGrowthPanel from "@/components/modules/ClientGrowthPanel";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
@@ -675,6 +676,18 @@ export default function LeadsModule({
                   canWrite={canWrite}
                   saving={saving}
                   onSchedule={() => void scheduleReactivation(7)}
+                />
+              )}
+
+              {selectedLead.kind === "client" && (
+                <ClientGrowthPanel
+                  organizationId={organizationId}
+                  clientId={selectedLead.id}
+                  clientName={selectedLead.name}
+                  locale={locale}
+                  canWrite={canWrite}
+                  enabledModules={enabledModules}
+                  onOpenModule={onOpenModule}
                 />
               )}
 
