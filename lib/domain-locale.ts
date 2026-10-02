@@ -40,4 +40,6 @@ export const ENGLISH_PUBLIC_PATHS = new Set([
   "/invitatii-majorat",
   "/legal/privacy",
   "/legal/terms",
+  "/porneste/oferta",
+  "/porneste/plata",
 ]);
