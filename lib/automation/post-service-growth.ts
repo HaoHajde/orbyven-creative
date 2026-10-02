@@ -5,6 +5,7 @@ export type PostServiceEventType =
   | "feedback_requested"
   | "feedback_positive"
   | "feedback_issue"
+  | "recovery_resolved"
   | "review_requested"
   | "referral_requested"
   | "upsell_dismissed";
@@ -41,6 +42,7 @@ const EVENT_LABELS: Record<PostServiceEventType, string> = {
   feedback_requested: "Feedback cerut după finalizarea lucrării.",
   feedback_positive: "Clientul a oferit feedback pozitiv.",
   feedback_issue: "Clientul a raportat o problemă după finalizarea lucrării.",
+  recovery_resolved: "Problema raportată de client a fost remediată.",
   review_requested: "Review public solicitat clientului.",
   referral_requested: "Recomandare solicitată clientului.",
   upsell_dismissed: "Oportunitatea comercială post-serviciu a fost amânată.",
@@ -101,6 +103,11 @@ export function buildPostServiceGrowthState(
         break;
       case "feedback_issue":
         state.feedback = "issue";
+        state.feedbackResolvedAt = event.occurredAt;
+        break;
+      case "recovery_resolved":
+        state.feedback = "requested";
+        state.feedbackRequestedAt = event.occurredAt;
         state.feedbackResolvedAt = event.occurredAt;
         break;
       case "review_requested":
