@@ -25,6 +25,7 @@ import WebDesignPreview, {
 
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
 const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
+const VISUAL_MEMORY_KEY = "orbyven-web-design-visual-memory-v01";
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -82,6 +83,7 @@ export default function WebDesignSpecialist() {
   const router = useRouter();
   const [draft, setDraft] = useState<EditableSite>(DEFAULT_SITE);
   const [history, setHistory] = useState<EditableSite[]>([]);
+  const [visualMemory, setVisualMemory] = useState<EditableSite[]>([]);
   const [prompt, setPrompt] = useState("");
   const [message, setMessage] = useState("Web Design Intelligence este pregătit.");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -134,6 +136,27 @@ export default function WebDesignSpecialist() {
           console.warn("ORBYVEN Web Design local draft could not be restored", error);
         }
         if (localDraft) setDraft(localDraft);
+
+        try {
+          const savedMemory = window.localStorage.getItem(VISUAL_MEMORY_KEY);
+          if (savedMemory) {
+            const parsedMemory = JSON.parse(savedMemory);
+            if (Array.isArray(parsedMemory)) {
+              const validMemory = parsedMemory
+                .map((item) => readSiteDraft(item))
+                .filter((item): item is EditableSite => item !== null)
+                .slice(-4);
+              setVisualMemory(validMemory);
+              window.localStorage.setItem(
+                VISUAL_MEMORY_KEY,
+                JSON.stringify(validMemory)
+              );
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design visual memory could not be restored", error);
+          window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+        }
 
         try {
           const token = await getAccessToken();
@@ -235,6 +258,7 @@ export default function WebDesignSpecialist() {
           organizationId,
           prompt: request,
           currentDraft: draft,
+          recentDrafts: visualMemory.slice(-4),
         }),
       });
 
@@ -245,6 +269,14 @@ export default function WebDesignSpecialist() {
       if (!next) throw new Error("Generatorul a returnat un draft invalid.");
 
       setHistory((current) => [...current.slice(-29), draft]);
+      setVisualMemory((current) => {
+        const nextMemory = [...current, draft].slice(-4);
+        window.localStorage.setItem(
+          VISUAL_MEMORY_KEY,
+          JSON.stringify(nextMemory)
+        );
+        return nextMemory;
+      });
       setDraft(next);
       setSuggestions((body.suggestions ?? []).slice(0, 4));
       const nextQualityScore =
@@ -335,6 +367,8 @@ export default function WebDesignSpecialist() {
 
   const selectPreset = (preset: SitePresetId) => {
     const next = SITE_PRESETS[preset];
+    setVisualMemory([]);
+    window.localStorage.removeItem(VISUAL_MEMORY_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
@@ -354,6 +388,8 @@ export default function WebDesignSpecialist() {
 
   const reset = () => {
     const next = SITE_PRESETS[draft.preset];
+    setVisualMemory([]);
+    window.localStorage.removeItem(VISUAL_MEMORY_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
