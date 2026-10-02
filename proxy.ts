@@ -40,6 +40,7 @@ export const config = {
     "/invitatii-nunta",
     "/invitatii-botez",
     "/invitatii-majorat",
+    "/legal",
     "/legal/privacy",
     "/legal/terms",
     "/porneste/oferta",
