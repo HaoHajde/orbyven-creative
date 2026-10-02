@@ -23,21 +23,30 @@ export const ENGLISH_PUBLIC_PATHS = new Set([
   "/templates",
   "/contact",
   "/ai-web-design",
-]);
-
-
-const ROMANIAN_ONLY_PUBLIC_PATHS = new Set([
-  "/cerere",
-  "/creare-site",
-  "/site-prezentare",
-  "/redesign-site",
-  "/invitatii-nunta",
-  "/invitatii-botez",
-  "/invitatii-majorat",
+  "/despre",
   "/solutii",
   "/studii-de-caz",
   "/ghid",
-  "/despre",
+  "/creare-site",
+  "/site-prezentare",
+  "/web-design-bucuresti",
+  "/redesign-site",
+  "/site-pentru-firme-mici",
+  "/site-pentru-instalatori",
+  "/site-pentru-detailing-auto",
+  "/site-pentru-servicii-evenimente",
+  "/invitatii-nunta",
+  "/invitatii-botez",
+  "/invitatii-majorat",
+  "/legal",
+  "/legal/privacy",
+  "/legal/terms",
+  "/porneste/oferta",
+  "/porneste/plata",
+]);
+
+const ROMANIAN_ONLY_PUBLIC_PATHS = new Set([
+  "/cerere",
 ]);
 
 const ROMANIAN_ONLY_PUBLIC_PREFIXES = [
@@ -45,6 +54,7 @@ const ROMANIAN_ONLY_PUBLIC_PREFIXES = [
   "/solutii/",
   "/studii-de-caz/",
   "/ghid/",
+  "/legal/",
 ] as const;
 
 export function shouldRedirectEnglishHostToRomanian(pathname: string) {

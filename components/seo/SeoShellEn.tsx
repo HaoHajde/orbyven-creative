@@ -5,33 +5,33 @@ import type { ReactNode } from "react";
 import LanguageSwitch from "@/components/LanguageSwitch";
 
 const primaryNav = [
-  { href: "/solutii", label: "Soluții" },
-  { href: "/studii-de-caz", label: "Studii de caz" },
-  { href: "/ghid", label: "Ghid" },
+  { href: "/solutii", label: "Solutions" },
+  { href: "/studii-de-caz", label: "Case studies" },
+  { href: "/ghid", label: "Guide" },
   { href: "/templates", label: "Templates" },
 ];
 
 const footerLinks = [
-  { href: "/servicii", label: "Servicii digitale" },
-  { href: "/studii-de-caz", label: "Studii de caz" },
-  { href: "/ghid", label: "Ghid web design" },
-  { href: "/creare-site", label: "Creare site" },
-  { href: "/site-prezentare", label: "Site de prezentare" },
-  { href: "/web-design-bucuresti", label: "Web design București" },
-  { href: "/redesign-site", label: "Redesign site" },
-  { href: "/invitatii-nunta", label: "Invitații digitale nuntă" },
-  { href: "/invitatii-botez", label: "Invitații digitale botez" },
-  { href: "/invitatii-majorat", label: "Invitații digitale majorat" },
-  { href: "/despre", label: "Despre ORBYVEN" },
+  { href: "/servicii", label: "Digital services" },
+  { href: "/studii-de-caz", label: "Case studies" },
+  { href: "/ghid", label: "Web design guide" },
+  { href: "/creare-site", label: "Website development" },
+  { href: "/site-prezentare", label: "Business websites" },
+  { href: "/web-design-bucuresti", label: "Web design Bucharest" },
+  { href: "/redesign-site", label: "Website redesign" },
+  { href: "/invitatii-nunta", label: "Digital wedding invitations" },
+  { href: "/invitatii-botez", label: "Digital christening invitations" },
+  { href: "/invitatii-majorat", label: "Digital event invitations" },
+  { href: "/despre", label: "About ORBYVEN" },
   { href: "/contact", label: "Contact" },
 ];
 
-export default function SeoShell({ children }: { children: ReactNode }) {
+export default function SeoShellEn({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-screen bg-white text-[#161618]">
       <header className="border-b border-black/[.07] bg-white/95">
-        <div className="mx-auto flex min-h-[76px] max-w-[1380px] items-center justify-between gap-6 px-5 sm:px-7 md:px-10">
-          <Link href="/" aria-label="ORBYVEN — Acasă" className="flex items-center gap-3">
+        <div className="mx-auto flex min-h-[76px] max-w-[1380px] items-center justify-between gap-5 px-5 sm:px-7 md:px-10">
+          <Link href="/" aria-label="ORBYVEN — Home" className="flex items-center gap-3">
             <Image
               src="/branding/orbyven-logo-light.png"
               alt="ORBYVEN CREATIVE"
@@ -46,7 +46,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-[12px] font-medium text-black/55 md:flex">
+          <nav className="hidden items-center gap-6 text-[12px] font-medium text-black/55 lg:flex">
             {primaryNav.map((item) => (
               <Link key={item.href} href={item.href} className="transition hover:text-black">
                 {item.label}
@@ -56,12 +56,12 @@ export default function SeoShell({ children }: { children: ReactNode }) {
 
           <div className="flex shrink-0 items-center gap-2">
             <Link
-              href="/cerere"
+              href="/contact"
               className="hidden h-10 items-center rounded-full bg-[#171719] px-5 text-[12px] font-semibold text-white sm:inline-flex"
             >
-              Începe un proiect
+              Start a project
             </Link>
-            <LanguageSwitch variant="light" initialLocale="ro" />
+            <LanguageSwitch variant="light" initialLocale="en" />
           </div>
         </div>
       </header>
@@ -74,7 +74,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-black/38">ORBYVEN CREATIVE</p>
               <p className="mt-4 max-w-lg text-[28px] font-semibold leading-[1.03] tracking-[-.045em]">
-                Site-ul public și workspace-ul pot face parte din același sistem.
+                Your public website and business workspace can be part of the same system.
               </p>
             </div>
             <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-black/55 sm:grid-cols-3">
@@ -88,8 +88,8 @@ export default function SeoShell({ children }: { children: ReactNode }) {
           <div className="mt-10 flex flex-col gap-3 border-t border-black/[.07] pt-6 text-[10px] uppercase tracking-[.14em] text-black/35 sm:flex-row sm:justify-between">
             <span>© 2026 ORBYVEN</span>
             <div className="flex gap-4">
-              <Link href="/legal/privacy">Confidențialitate</Link>
-              <Link href="/legal/terms">Termeni</Link>
+              <Link href="/legal/privacy">Privacy</Link>
+              <Link href="/legal/terms">Terms</Link>
             </div>
           </div>
         </div>
