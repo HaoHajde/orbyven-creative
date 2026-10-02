@@ -4,13 +4,13 @@ import ClientTemplatePreview from "@/components/ClientTemplatePreview";
 import FeaturedTemplatePreview from "@/components/FeaturedTemplatePreview";
 import HomeInvitationPreview from "@/components/HomeInvitationPreview";
 import HomeTemplatePreviewFrame from "@/components/HomeTemplatePreviewFrame";
-import { featuredTemplates } from "@/lib/featured-templates";
+import { featuredTemplatesEn } from "@/lib/public-catalog-en";
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooterEn";
 import SiteHeader from "@/components/SiteHeaderEn";
 import WarpMenu, { type WarpItem } from "@/components/WarpMenu";
 import { BILLING_PLANS } from "@/lib/billing/public-config";
-import { clientTemplateList } from "@/lib/client-template-catalog";
+import { clientTemplateListEn } from "@/lib/public-catalog-en";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -142,8 +142,8 @@ const planMeta = {
 
 // Featured previews are shared with /templates; no duplicate manually maintained list.
 const homepageTemplates = [
-  ...featuredTemplates.map((item) => ({ ...item, source: "featured" as const })),
-  ...clientTemplateList.map((item) => ({ ...item, source: "catalog" as const })),
+  ...featuredTemplatesEn.map((item) => ({ ...item, source: "featured" as const })),
+  ...clientTemplateListEn.map((item) => ({ ...item, source: "catalog" as const })),
 ];
 
 export default function HomePage() {
