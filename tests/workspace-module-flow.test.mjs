@@ -141,3 +141,41 @@ test("core modules expose one contextual next action while secondary actions sta
   assert.match(tasks, /Alte acțiuni/);
   assert.match(leads, /Alte acțiuni/);
 });
+
+
+test("documents and team use progressive disclosure for beginner-friendly defaults", () => {
+  const documents = read("components/modules/DocumentsModule.tsx");
+  assert.match(documents, /ModuleProgressiveMetrics/);
+  assert.match(documents, /ModuleAdvancedFields/);
+  assert.match(documents, /Dosarul acestei lucrări este gol/);
+  assert.match(documents, /Leagă documentul de context/);
+
+  const team = read("components/modules/TeamModule.tsx");
+  assert.match(team, /ModuleProgressiveMetrics/);
+  assert.match(team, /ModuleAdvancedFields/);
+  assert.match(team, /Acces și detalii/);
+  assert.match(team, /Detalii resursă/);
+});
+
+test("work dossier and inventory surface one operational action before secondary detail", () => {
+  const dossier = read("components/modules/tasks/WorkFileSummary.tsx");
+  assert.match(dossier, /ModuleNextAction/);
+  assert.match(dossier, /Dosar complet · \{cards\.length\} legături/);
+  assert.match(dossier, /attention\.key === "materials"/);
+  assert.match(dossier, /attention\.key === "schedule"/);
+
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /firstTaskShortage/);
+  assert.match(inventory, /Cumpără materialele lipsă/);
+  assert.match(inventory, /Rezervă stocul disponibil/);
+  assert.match(inventory, /Vezi calculele materialelor/);
+  assert.match(inventory, /Alte acțiuni/);
+});
+
+test("finance prioritizes overdue collection and missing evidence", () => {
+  const finance = read("components/modules/ExpensesModule.tsx");
+  assert.match(finance, /ModuleNextAction/);
+  assert.match(finance, /metrics\.overdue > 0/);
+  assert.match(finance, /metrics\.missingEvidence > 0/);
+  assert.match(finance, /Rezolvă dovezile/);
+});
