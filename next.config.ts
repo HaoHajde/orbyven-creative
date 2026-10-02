@@ -27,6 +27,16 @@ const englishPublicRoutes = [
   { source: "/cerere", destination: "/en/contact" },
   { source: "/checkout", destination: "/en/checkout" },
   { source: "/porneste/plata", destination: "/en/checkout" },
+  { source: "/success", destination: "/en/success" },
+  { source: "/porneste/succes", destination: "/en/success" },
+  { source: "/legal", destination: "/en/legal" },
+  { source: "/legal/terms", destination: "/en/legal/terms" },
+  { source: "/legal/privacy", destination: "/en/legal/privacy" },
+  { source: "/legal/cookies", destination: "/en/legal/cookies" },
+  { source: "/legal/consumer", destination: "/en/legal/consumer" },
+  { source: "/legal/ai", destination: "/en/legal/ai" },
+  { source: "/sitemap.xml", destination: "/en/sitemap.xml" },
+  { source: "/robots.txt", destination: "/en/robots.txt" },
 ] as const;
 
 const nextConfig: NextConfig = {
