@@ -10,10 +10,11 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import WarpMenu, { type WarpItem } from "@/components/WarpMenu";
 import { BILLING_PLANS } from "@/lib/billing/public-config";
+import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import { clientTemplateList } from "@/lib/client-template-catalog";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -179,7 +180,7 @@ export default function HomePage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = themeBodyBackground(nextTheme);
     };
     const frame = window.requestAnimationFrame(hydrate);
     return () => window.cancelAnimationFrame(frame);
@@ -221,7 +222,7 @@ export default function HomePage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = themeBodyBackground(next);
       return next;
     });
   };
@@ -234,36 +235,18 @@ export default function HomePage() {
   const nextTemplate = () =>
     setActiveTemplateIndex((current) => (current + 1) % homepageTemplates.length);
 
-  const vars = {
-    "--bg": theme === "dark" ? "#000000" : "#ffffff",
-    "--surface": theme === "dark" ? "#0c0c0e" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#151518" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--home-violet": "#a58bff",
-    "--home-flow-start": theme === "dark" ? "#0b0b0e" : "#fcfcfd",
-    "--home-flow": theme === "dark"
-      ? "linear-gradient(180deg, #0b0b0e 0%, #111117 45%, #0e0e13 100%)"
-      : "linear-gradient(180deg, #fcfcfd 0%, #f7f7fa 45%, #fafafd 100%)",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
-    "--accent-soft-2": theme === "dark" ? "rgba(111,66,255,0.11)" : "rgba(111,66,255,0.05)",
-  } as CSSProperties;
+  const vars = publicThemeVars(theme);
 
   return (
     <main
+      data-orbyven-theme={theme}
       style={{
         ...vars,
         backgroundColor: "var(--bg)",
         color: "var(--text)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="orbyven-home-main relative min-h-screen overflow-x-clip antialiased [&_input]:text-[16px] [&_select]:text-[16px] [&_textarea]:text-[16px]"
+      className="orbyven-theme-shell orbyven-home-main relative min-h-screen overflow-x-clip antialiased [&_input]:text-[16px] [&_select]:text-[16px] [&_textarea]:text-[16px]"
     >
       <SiteHeader theme={theme} compact={false} activePage="home" onToggleTheme={toggleTheme} />
       <WarpMenu items={warpItems} activeSection={activeSection} />
