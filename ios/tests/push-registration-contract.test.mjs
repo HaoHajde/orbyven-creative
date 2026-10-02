@@ -24,7 +24,9 @@ test("remote notification navigation is restricted to ORBYVEN URLs", () => {
   const app = read("../App.tsx");
 
   assert.match(app, /typeof data\?\.url === "string"/);
-  assert.match(app, /isTrustedOrbyvenUrl\(resolved\)/);
+  assert.match(app, /const navigateTrustedUrl = useCallback/);
+  assert.match(app, /if \(!isTrustedOrbyvenUrl\(url\)\) return/);
+  assert.match(app, /navigateTrustedUrl\(resolved\)/);
   assert.match(app, /url\.startsWith\("orbyven:\/\/"\)/);
 });
 
