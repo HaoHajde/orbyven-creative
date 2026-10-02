@@ -71,22 +71,26 @@ npm run export:ios
 
 ## Testare gratuită pe iPhone fără Mac
 
-Pentru dezvoltare putem folosi Expo Go fără Apple Developer Program:
+Pentru dezvoltare putem folosi Expo Go fără Apple Developer Program.
 
-1. instalează Expo Go pe iPhone;
-2. creează sau folosește același cont Expo pe PC și iPhone;
-3. pe Windows:
+### Windows — varianta rapidă
+
+1. instalează **Expo Go** pe iPhone;
+2. ține PC-ul și iPhone-ul pe aceeași rețea Wi-Fi;
+3. în folderul `ios`, dublu-click pe **`start-iphone.cmd`**;
+4. scanează QR-ul afișat în terminal cu iPhone-ul / Expo Go.
+
+Launcher-ul verifică Node.js 22.13+, instalează dependențele doar dacă lipsesc și pornește automat Expo în mod LAN.
+
+Dacă rețeaua locală blochează conexiunea, folosește **`start-iphone-tunnel.cmd`**. Este același launcher, dar pornește fallback-ul tunnel.
+
+Comenzile manuale rămân disponibile:
 
 ```bash
 cd ios
 npm install
-npx expo login
 npm run start:go
-```
-
-Scanează QR-ul afișat în terminal. Dacă telefonul nu poate ajunge la PC prin rețeaua locală, instalează `@expo/ngrok` conform documentației Expo și pornește:
-
-```bash
+# fallback:
 npm run start:tunnel
 ```
 
