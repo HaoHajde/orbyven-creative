@@ -70,23 +70,30 @@ test("real-auth QA requires dedicated secrets and never uploads private screensh
 });
 
 
-test("fast checkout preserves selected plan from public pricing through auth and onboarding", () => {
+test("dedicated web checkout preserves the selected plan through auth and onboarding", () => {
   const home = read("components/HomePageClient.tsx");
   const contact = read("app/contact/page.tsx");
+  const webStart = read("app/porneste/web-design/page.tsx");
   const register = read("app/workspace/register/page.tsx");
   const login = read("app/workspace/login/page.tsx");
   const callback = read("app/workspace/auth/callback/page.tsx");
   const onboarding = read("app/workspace/onboarding/page.tsx");
 
-  assert.match(home, /href=\{\`\/contact\?plan=\$\{plan\.id\}&source=homepage\`\}/);
-  assert.match(contact, /\/api\/billing\/checkout/);
-  assert.match(contact, /Apple Pay/);
-  assert.match(contact, /Google Pay/);
-  assert.match(contact, /LEGAL_DOCUMENT_VERSION/);
-  assert.match(contact, /Creează cont și continuă/);
+  assert.match(home, /href=\{\`\/porneste\/web-design\?mode=ecosystem&plan=\$\{plan\.id\}&source=homepage\`\}/);
+  assert.match(contact, /href="\/porneste\/web-design\?mode=web"/);
+  assert.match(contact, /href="\/porneste\/web-design\?mode=ecosystem"/);
+  assert.match(webStart, /\/api\/billing\/checkout/);
+  assert.match(webStart, /Apple Pay/);
+  assert.match(webStart, /Google Pay/);
+  assert.match(webStart, /LEGAL_DOCUMENT_VERSION/);
+  assert.match(webStart, /Creează cont și continuă/);
+  assert.match(webStart, /isBillingPlanId\(requestedPlan\)/);
+  assert.match(webStart, /product=web-design-dashboard&mode=\$\{mode\}/);
+
   for (const source of [register, login, callback, onboarding]) {
     assert.match(source, /checkoutQuery/);
-    assert.match(source, /\/contact\$\{checkoutQuery\}/);
+    assert.match(source, /checkoutProduct/);
+    assert.match(source, /\/porneste\/web-design\$\{checkoutQuery\}/);
   }
   assert.match(onboarding, /BILLING_PLANS\[checkoutPlan\]\.entitlements/);
   assert.match(onboarding, /Plan selectat/);
