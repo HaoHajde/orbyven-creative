@@ -235,6 +235,19 @@ export default function ExpensesModule({
       setDocuments(contexts.documents);
       setPurchaseOrders(contexts.purchaseOrders);
 
+      if (initialDocumentId) {
+        const document = contexts.documents.find((item) => item.id === initialDocumentId);
+        if (document) {
+          setExpenseForm((current) => ({
+            ...current,
+            documentId: document.id,
+            clientId: document.client_id || current.clientId,
+            taskId: document.task_id || current.taskId,
+            purchaseOrderId: document.purchase_order_id || current.purchaseOrderId,
+          }));
+        }
+      }
+
       if (initialTaskId) {
         const task = contexts.tasks.find((item) => item.id === initialTaskId);
         if (task?.client_id) {
