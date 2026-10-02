@@ -186,7 +186,7 @@ function FeatureScene({
     feature;
 
   return (
-    <div className="absolute inset-[5%] z-50 overflow-hidden rounded-[28px] border border-[#b396ff]/55 bg-[#08090f]/98 p-4 text-white shadow-[0_42px_130px_rgba(0,0,0,.72),0_0_60px_rgba(128,84,255,.20)] backdrop-blur-2xl sm:p-5">
+    <div className="orbyven-feature-scene absolute inset-[4%] z-50 overflow-hidden rounded-[28px] border border-[#b396ff]/62 bg-[#08090f]/98 p-4 text-white shadow-[0_42px_130px_rgba(0,0,0,.74),0_0_66px_rgba(128,84,255,.23)] backdrop-blur-2xl sm:p-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-[13px] border border-[#a78bff]/35 bg-[#8f6cff]/14 text-[#c8b8ff]">
@@ -271,7 +271,21 @@ function FeatureScene({
             </div>
           )
         )}
-      </div>
+      </button>
+
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Custom"}
+        onClick={() => onSelect("Custom")}
+        className="orbyven-float-a absolute bottom-[8%] right-[2%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] lg:block"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[#bcaaff]"><Glyph kind="Custom" /></span>
+          <span className="rounded-full border border-[#a98dff]/24 bg-[#8f6cff]/12 px-2 py-1 text-[6px] font-bold text-[#d3c8ff]">CUSTOM</span>
+        </div>
+        <p className="mt-3 text-[10px] font-semibold">Module custom</p>
+        <p className="mt-1 text-[6px] text-white/35">adaptate business-ului</p>
+      </button>
     </div>
   );
 }
@@ -287,7 +301,13 @@ function BrowserShell({ children }: { children: ReactNode }) {
   );
 }
 
-function InvitationVisual() {
+function InvitationVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_68%_16%,rgba(176,118,255,.40),transparent_28%),radial-gradient(circle_at_12%_58%,rgba(84,64,205,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
@@ -319,7 +339,12 @@ function InvitationVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Galerie"}
+        onClick={() => onSelect("Galerie")}
+        className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 text-left shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/60 hover:shadow-[0_36px_100px_rgba(0,0,0,.64),0_0_46px_rgba(126,93,255,.22)] sm:block"
+      >
         <div className="overflow-hidden rounded-[27px] bg-[radial-gradient(circle_at_50%_0%,rgba(255,235,220,.10),transparent_24%),linear-gradient(180deg,#17141d,#0c0b10)] px-4 py-5 text-center text-white">
           <p className="font-serif text-[12px] tracking-[.2em]">A | M</p>
           <p className="mt-7 text-[6px] tracking-[.3em] text-white/42">SAVE THE DATE</p>
@@ -329,21 +354,32 @@ function InvitationVisual() {
             {["Locație","Program","Poveste","Galerie"].map((x)=><div key={x} className="rounded-[12px] border border-white/8 bg-white/[.035] px-2 py-3 text-[6px] text-white/65">{x}</div>)}
           </div>
         </div>
-      </div>
+      </button>
 
-      <div className="absolute left-[-2%] top-[32%] hidden w-[158px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "RSVP"}
+        onClick={() => onSelect("RSVP")}
+        className="orbyven-float-a absolute left-[-2%] top-[32%] hidden w-[158px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#c2b2ff]"><Glyph kind="RSVP" /></div>
         <p className="mt-3 text-[10px] font-semibold">RSVP live</p>
         <div className="mt-3 flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emerald-400" />
           <span className="text-[7px] text-white/42">confirmări instant</span>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
 
-function WebVisual() {
+function WebVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_16%,rgba(95,110,255,.40),transparent_28%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
@@ -371,7 +407,12 @@ function WebVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[1%] right-[1%] hidden w-[194px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Dashboard"}
+        onClick={() => onSelect("Dashboard")}
+        className="absolute bottom-[1%] right-[1%] hidden w-[194px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 text-left shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/60 hover:shadow-[0_36px_100px_rgba(0,0,0,.64),0_0_46px_rgba(126,93,255,.22)] sm:block"
+      >
         <div className="overflow-hidden rounded-[27px] bg-[#0d0e14] p-4 text-white">
           <div className="flex items-center justify-between"><span className="text-[8px] font-semibold">Dashboard</span><span className="h-5 w-5 rounded-full bg-[#a58bff]/35" /></div>
           <div className="mt-5 grid grid-cols-2 gap-2">
@@ -383,21 +424,32 @@ function WebVisual() {
           </div>
           <div className="mt-3 space-y-2">{["Website nou","Client contactat","Task finalizat"].map(x=><div key={x} className="rounded-[10px] bg-white/[.035] px-3 py-2 text-[6px] text-white/55">{x}</div>)}</div>
         </div>
-      </div>
+      </button>
 
-      <div className="absolute left-[-2%] top-[30%] hidden w-[164px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Website"}
+        onClick={() => onSelect("Website")}
+        className="orbyven-float-a absolute left-[-2%] top-[30%] hidden w-[164px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="flex items-center justify-between">
           <span className="text-[#c2b2ff]"><Glyph kind="Website" /></span>
           <span className="rounded-full bg-[#8f6cff]/16 px-2 py-1 text-[6px] font-bold text-[#cdbfff]">LIVE</span>
         </div>
         <p className="mt-3 text-[10px] font-semibold">Website</p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[86%] rounded-full bg-[#8f6cff]" /></div>
-      </div>
+      </button>
     </div>
   );
 }
 
-function AdvancedVisual() {
+function AdvancedVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[540px] sm:min-h-[590px] lg:min-h-[445px] xl:min-h-[470px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_74%_16%,rgba(155,103,255,.44),transparent_28%),radial-gradient(circle_at_15%_64%,rgba(83,68,190,.23),transparent_35%),linear-gradient(180deg,rgba(81,52,160,.05),transparent)]" />
@@ -438,13 +490,28 @@ function AdvancedVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute left-[-3%] top-[22%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "CRM"}
+        onClick={() => onSelect("CRM")}
+        className="orbyven-float-a absolute left-[-3%] top-[22%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="CRM"/></div><p className="mt-3 text-[10px] font-semibold">CRM</p><p className="mt-1 text-[6px] text-white/35">Clienți & lead-uri</p>
-      </div>
-      <div className="absolute bottom-[7%] left-[0%] hidden w-[160px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      </button>
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Task-uri"}
+        onClick={() => onSelect("Task-uri")}
+        className="orbyven-float-b absolute bottom-[7%] left-[0%] hidden w-[160px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="Task-uri"/></div><p className="mt-3 text-[10px] font-semibold">Task-uri</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[62%] rounded-full bg-[#8f6cff]" /></div>
-      </div>
-      <div className="absolute right-[-3%] top-[20%] hidden w-[162px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      </button>
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Calendar"}
+        onClick={() => onSelect("Calendar")}
+        className="orbyven-float-b absolute right-[-3%] top-[20%] hidden w-[162px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="Calendar"/></div><p className="mt-3 text-[10px] font-semibold">Calendar</p><p className="mt-1 text-[6px] text-white/35">Programări</p>
       </div>
     </div>
@@ -455,14 +522,20 @@ function HeroVisual({
   offerId,
   activeFeature,
   onCloseFeature,
+  onSelectFeature,
 }: {
   offerId: PublicOfferId;
   activeFeature: string | null;
   onCloseFeature: () => void;
+  onSelectFeature: (feature: string) => void;
 }) {
   return (
     <div className="relative">
-      {offerId === "invitation" ? <InvitationVisual /> : offerId === "web" ? <WebVisual /> : <AdvancedVisual />}
+      {offerId === "invitation"
+        ? <InvitationVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+        : offerId === "web"
+          ? <WebVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+          : <AdvancedVisual onSelect={onSelectFeature} activeFeature={activeFeature} />}
       {activeFeature ? <FeatureScene offerId={offerId} feature={activeFeature} onClose={onCloseFeature} /> : null}
     </div>
   );
@@ -620,6 +693,18 @@ function OfferPageContent() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  const selectFeature = (feature: string) => {
+    setActiveFeature((current) => (current === feature ? null : feature));
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveFeature(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
@@ -671,11 +756,48 @@ function OfferPageContent() {
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
+      <style>{`
+        @keyframes orbyven-feature-in {
+          0% { opacity: 0; transform: scale(.965) translateY(8px); filter: blur(8px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+        @keyframes orbyven-float-a {
+          0%,100% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,-7px,0); }
+        }
+        @keyframes orbyven-float-b {
+          0%,100% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,6px,0); }
+        }
+        @keyframes orbyven-sweep {
+          0% { transform: translateX(-140%); opacity: 0; }
+          20% { opacity: .8; }
+          70% { opacity: .25; }
+          100% { transform: translateX(220%); opacity: 0; }
+        }
+        .orbyven-feature-scene { animation: orbyven-feature-in .34s cubic-bezier(.16,1,.3,1) both; }
+        .orbyven-float-a { animation: orbyven-float-a 6s ease-in-out infinite; }
+        .orbyven-float-b { animation: orbyven-float-b 7s ease-in-out infinite; }
+        .orbyven-stage-sweep { animation: orbyven-sweep 8s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .orbyven-feature-scene, .orbyven-float-a, .orbyven-float-b, .orbyven-stage-sweep { animation: none !important; }
+        }
+        @media (min-width: 1024px) and (max-height: 820px) {
+          .orbyven-offer-stage { transform: scale(.91); transform-origin: top center; width: 109.89%; margin-left: -4.945%; }
+        }
+        @media (min-width: 1024px) and (max-height: 740px) {
+          .orbyven-offer-stage { transform: scale(.83); width: 120.48%; margin-left: -10.24%; }
+        }
+      `}</style>
+
       <section className="relative z-10 px-5 pb-8 pt-24 sm:px-6 md:px-10 lg:h-[calc(100svh-18px)] lg:overflow-hidden lg:pb-4 lg:pt-20">
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
-          <div className="mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
+          <div className="orbyven-offer-stage relative mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-[32px]">
+              <div className="orbyven-stage-sweep absolute -top-[20%] h-[140%] w-[14%] rotate-[16deg] bg-[linear-gradient(90deg,transparent,rgba(183,151,255,.10),transparent)] blur-[6px]" />
+            </div>
             <div className="grid items-center gap-3 lg:min-h-[430px] lg:grid-cols-[.56fr_1.44fr] xl:min-h-[455px] xl:gap-5">
               <div className="relative z-20 min-w-0 self-center py-3 lg:-mr-8 xl:py-4">
                 <span className="inline-flex rounded-full border border-[#9f7cff]/65 bg-[#8f6cff]/14 px-5 py-2.5 text-[9px] font-bold tracking-[.20em] text-[#d1c5ff] shadow-[0_0_34px_rgba(137,94,255,.16)]">{meta.eyebrow}</span>
@@ -694,19 +816,24 @@ function OfferPageContent() {
                   {meta.priceDetail ? <p className="mt-3 text-[15px] font-medium text-white/42">{meta.priceDetail}</p> : null}
                 </div>
 
-                <QuickModules offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
+                <QuickModules offerId={offerId} activeFeature={activeFeature} onSelect={selectFeature} />
               </div>
 
               <div className="relative min-w-0 lg:-mr-8 xl:-mr-12">
                 <div className="pointer-events-none absolute left-[10%] right-[2%] top-[8%] h-[70%] rounded-full bg-[#6d4cff]/12 blur-[70px]" />
                 <div className="relative origin-center lg:scale-[1.02] xl:scale-[1.05]">
-                  <HeroVisual offerId={offerId} activeFeature={activeFeature} onCloseFeature={() => setActiveFeature(null)} />
+                  <HeroVisual
+                    offerId={offerId}
+                    activeFeature={activeFeature}
+                    onCloseFeature={() => setActiveFeature(null)}
+                    onSelectFeature={selectFeature}
+                  />
                 </div>
               </div>
             </div>
 
             <div className="relative z-20 mt-1">
-              <ModulesStrip offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
+              <ModulesStrip offerId={offerId} activeFeature={activeFeature} onSelect={selectFeature} />
             </div>
           </div>
 
