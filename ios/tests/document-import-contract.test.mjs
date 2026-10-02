@@ -15,7 +15,7 @@ test("native shell exposes document intake bridge", () => {
 });
 
 test("workspace routes native document intent to the existing document module", () => {
-  const workspace = read("../../components/ClientWorkspace.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
 
   assert.match(workspace, /orbyven:native-documents/);
   assert.match(workspace, /openModule\("documents", \{ create: true \}\)/);
