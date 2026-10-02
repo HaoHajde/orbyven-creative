@@ -116,6 +116,7 @@ export default function WorkspaceIntelligence({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proposalBusy, setProposalBusy] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(false);
   const [error, setError] = useState("");
   const messageSequence = useRef(0);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -534,6 +535,76 @@ export default function WorkspaceIntelligence({
     }
   };
 
+  const chooseDecision = async (
+    decision: NonNullable<IntelligenceResponse["decision"]>,
+    optionIndex: number
+  ) => {
+    if (decisionBusy || !conversationId) {
+      if (!conversationId) setError("Deschide comparația într-o conversație activă înainte de handoff.");
+      return;
+    }
+
+    setDecisionBusy(true);
+    setError("");
+    try {
+      const token = await accessToken();
+      const response = await requestApi("/api/ai/decisions/handoff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          organizationId,
+          conversationId,
+          optionIndex,
+        }),
+      });
+      const body = (await response.json()) as IntelligenceResponse & {
+        conversationId?: string;
+        handoff?: {
+          subject: string;
+          optionLabel: string;
+          optionIndex: number;
+        };
+        error?: string;
+      };
+      if (!response.ok || !body.handoff) {
+        throw new Error(body.error || "Planul nu a putut fi pregătit.");
+      }
+
+      const choiceText =
+        "Aleg varianta „" + body.handoff.optionLabel + "” pentru „" + body.handoff.subject + "”.";
+      setMessages((current) => [
+        ...current,
+        {
+          key: nextLocalKey("decision-choice"),
+          role: "user",
+          content: choiceText,
+          specialist: null,
+          facts: [],
+          actions: [],
+        },
+        {
+          key: nextLocalKey("decision-plan"),
+          role: "assistant",
+          content: body.answer,
+          specialist: body.specialist,
+          facts: body.facts,
+          actions: body.actions,
+          focus: body.focus,
+          decision: body.decision,
+        },
+      ]);
+      void loadConversations();
+    } catch (reason) {
+      console.error(reason);
+      setError(reason instanceof Error ? reason.message : "Planul nu a putut fi pregătit.");
+    } finally {
+      setDecisionBusy(false);
+    }
+  };
+
   const runAction = (action: IntelligenceResponse["actions"][number]) => {
     if (action.kind === "confirm_proposal") {
       void decideProposal(action, "confirm");
@@ -750,7 +821,7 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.22</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.23</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -907,6 +978,14 @@ export default function WorkspaceIntelligence({
                                         <p className="mt-2 text-[10px] leading-4 text-[var(--text)]">{option.impact}</p>
                                         <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Compromis: {option.tradeoff}</p>
                                         <p className="mt-1 text-[9px] leading-4 text-[var(--muted-2)]">Potrivit când: {option.whenToUse}</p>
+                                        <button
+                                          type="button"
+                                          disabled={decisionBusy}
+                                          onClick={() => void chooseDecision(message.decision!, index)}
+                                          className="mt-2 rounded-full border border-[#7897ff]/25 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
+                                        >
+                                          {decisionBusy ? "Se pregătește…" : "Pregătește planul"}
+                                        </button>
                                       </div>
                                     ))}
                                   </div>
@@ -962,7 +1041,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.22 · Focus + Decision Support · Acțiunile sunt verificate înainte de execuție.
+                      0.8.23 · Decision → Action · Confirmare înainte de execuție.
                     </p>
                   </form>
                 ) : null}
