@@ -118,14 +118,14 @@ export default function WorkspaceContent({
   } else if (activeModule === "estimates") {
     content = <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   } else if (activeModule === "documents") {
-    content = <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
+    content = <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
   } else if (activeModule === "inventory") {
     content = <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   } else if (activeModule === "expenses") {
     if (!["owner", "admin", "manager"].includes(role)) {
       return <div role="status" className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--muted)]">Finanțele firmei sunt disponibile doar administratorilor și managerilor.</div>;
     }
-    content = <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} />;
+    content = <ExpensesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} initialDocumentId={intent?.documentId} />;
   } else if (activeModule === "thermal") {
     content = <ThermalPlannerModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialTaskId={intent?.taskId} />;
   } else {
