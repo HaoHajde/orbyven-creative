@@ -3,6 +3,8 @@ import type { MetadataRoute } from "next";
 import { seoCaseStudies, seoGuides, seoLandingPages } from "@/lib/seo-foundation";
 import { getSiteUrl } from "@/lib/site-config";
 
+const SEO_LAST_MODIFIED = new Date("2026-10-02T00:00:00.000Z");
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
 
@@ -40,6 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [...coreRoutes, ...landingRoutes, ...caseStudyRoutes, ...guideRoutes].map((route) => ({
     url: `${siteUrl}${route.path}`,
+    lastModified: SEO_LAST_MODIFIED,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
