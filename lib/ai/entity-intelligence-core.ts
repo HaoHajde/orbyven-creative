@@ -43,7 +43,8 @@ export function detectEntityIntelligenceQuery(
   prompt: string
 ): EntityIntelligenceQuery | null {
   const cleanPrompt = prompt.trim();
-  if (!cleanPrompt || cleanPrompt.length > 2400 || !QUERY_HINT.test(cleanPrompt)) return null;
+  const normalizedPrompt = normalize(cleanPrompt);
+  if (!cleanPrompt || cleanPrompt.length > 2400 || !QUERY_HINT.test(normalizedPrompt)) return null;
 
   const explicitWork = explicitField(cleanPrompt, "lucrare");
   if (explicitWork) return { kind: "work", value: explicitWork };
