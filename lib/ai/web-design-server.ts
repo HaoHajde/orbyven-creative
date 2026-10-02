@@ -13,18 +13,16 @@ import {
   buildWebDesignStrategy,
   webDesignStrategyInstruction,
 } from "@/lib/ai/web-design-intent";
-import {
-  critiqueWebDesign,
-  type WebDesignQualityReport,
-} from "@/lib/ai/web-design-quality";
+import type { WebDesignQualityReport } from "@/lib/ai/web-design-quality";
 import {
   applyDesignDna,
   designDnaInstruction,
 } from "@/lib/ai/web-design-variation";
+import type { WebDesignReadinessReport } from "@/lib/ai/web-design-readiness";
 import {
-  evaluateWebDesignReadiness,
-  type WebDesignReadinessReport,
-} from "@/lib/ai/web-design-readiness";
+  autonomouslyRefineWebDesign,
+  type WebDesignAutonomousRefinementReport,
+} from "@/lib/ai/web-design-autorefine";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -59,6 +57,7 @@ export type WebDesignGenerationResult = {
   remainingToday: number | null;
   quality: WebDesignQualityReport;
   readiness: WebDesignReadinessReport;
+  refinement: WebDesignAutonomousRefinementReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -608,18 +607,15 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
-    const qualityResult = critiqueWebDesign(variedDraft, strategy);
-    const nextDraft = readSiteDraft(qualityResult.draft);
+    const autonomousResult = autonomouslyRefineWebDesign(
+      variedDraft,
+      strategy
+    );
+    const nextDraft = readSiteDraft(autonomousResult.draft);
     if (!nextDraft) {
-      await finishQuota(quota.requestId, false, usage, "QUALITY_INVALID");
+      await finishQuota(quota.requestId, false, usage, "AUTOREFINE_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
-
-    const readiness = evaluateWebDesignReadiness(
-      nextDraft,
-      strategy,
-      qualityResult.report
-    );
 
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
     await finishQuota(quota.requestId, true, usage);
@@ -629,8 +625,9 @@ export async function generateWebDesignForActor(
       summary: result.summary,
       suggestions: result.suggestions,
       remainingToday: quota.remainingToday,
-      quality: qualityResult.report,
-      readiness,
+      quality: autonomousResult.quality,
+      readiness: autonomousResult.readiness,
+      refinement: autonomousResult.refinement,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
