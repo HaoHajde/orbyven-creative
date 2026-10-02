@@ -40,9 +40,10 @@ test("cross-module navigation preserves the business context instead of forcing 
   assert.match(flow, /if \(extra\.create\) delete result\.recordId/);
 
   const guide = read("components/WorkspaceModuleGuide.tsx");
-  assert.match(guide, /getWorkspaceTargetOptions\(moduleId, liveContext, extra\)/);
+  assert.match(guide, /getWorkspaceTargetOptions\(moduleId, effectiveContext, extra\)/);
   assert.match(guide, /navigation\.module === activeModule/);
-  assert.match(guide, /setLiveContext\(navigationContext\)/);
+  assert.match(guide, /liveState\.module === activeModule/);
+  assert.doesNotMatch(guide, /setLiveContext\(navigationContext\)/);
 });
 
 test("active records publish live context for beginner-friendly cross-module continuity", () => {
@@ -68,7 +69,7 @@ test("active records publish live context for beginner-friendly cross-module con
 
   const guide = read("components/WorkspaceModuleGuide.tsx");
   assert.match(guide, /window\.addEventListener\(WORKSPACE_LIVE_CONTEXT_EVENT/);
-  assert.match(guide, /getWorkspaceTargetOptions\(moduleId, liveContext, extra\)/);
+  assert.match(guide, /getWorkspaceTargetOptions\(moduleId, effectiveContext, extra\)/);
 });
 
 test("shared module kit is visually compact without shrinking body readability", () => {
