@@ -415,7 +415,13 @@ export default function WorkspaceShell({
         vars={vars}
         theme={theme}
         title={copy.unavailable}
-        description={loadError}
+        description={
+          loadError === "Contul este autentificat, dar nu are încă un workspace ORBYVEN atribuit."
+            ? copy.noWorkspace
+            : loadError === "Workspace-ul nu a putut fi încărcat. Încearcă din nou."
+              ? copy.loadError
+              : loadError
+        }
         actionLabel={copy.retry}
         onAction={loadWorkspace}
         secondaryLabel={copy.signOut}
@@ -665,7 +671,7 @@ export default function WorkspaceShell({
                   onClick={() => openModule(definition.id, { create: true })}
                   className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
                 >
-                  <span>{definition.id === "leads" ? "Cerere nouă" : definition.id === "tasks" ? "Lucrare nouă" : definition.id === "calendar" ? "Programare nouă" : definition.id === "estimates" ? "Ofertă nouă" : definition.id === "expenses" ? "Înregistrare financiară" : definition.shortName}</span>
+                  <span>{workspaceCreateLabel(definition.id, uiLanguage)}</span>
                   <span aria-hidden="true" className="text-[var(--muted)]">→</span>
                 </button>
               ))}
@@ -705,15 +711,15 @@ export default function WorkspaceShell({
 
             <div data-workspace-text-scale-control="mobile" className="mt-3 min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2.5">
               <div className="flex min-w-0 items-center justify-between gap-2">
-                <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
+                <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">{copy.textSize}</span>
                 <button
                   type="button"
                   onClick={() => {
                     requestNativeHaptic();
                     resetTextScale();
                   }}
-                  aria-label="Revino la dimensiunea textului 100%"
-                  title="Revino la 100%"
+                  aria-label={copy.resetText}
+                  title={copy.resetText}
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold text-[var(--muted-2)]"
                 >
                   {Math.round(textScale * 100)}%
@@ -727,7 +733,7 @@ export default function WorkspaceShell({
                     changeTextScale(-1);
                   }}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
-                  aria-label="Micșorează textul"
+                  aria-label={copy.smallerText}
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A−
@@ -739,7 +745,7 @@ export default function WorkspaceShell({
                     changeTextScale(1);
                   }}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
-                  aria-label="Mărește textul"
+                  aria-label={copy.largerText}
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A+
@@ -775,7 +781,7 @@ export default function WorkspaceShell({
         )}
 
         <nav
-          aria-label="Navigare mobilă ORBYVEN"
+          aria-label={copy.mobileNavigation}
           className="grid grid-cols-5 items-center rounded-[24px] border border-[var(--border-strong)] bg-[color:var(--surface)]/96 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,0.32)] backdrop-blur-2xl"
         >
           <button
@@ -810,7 +816,7 @@ export default function WorkspaceShell({
             }`}
           >
             <ModuleGlyph id="tasks" />
-            <span>Lucrări</span>
+            <span>{workspaceModuleShortName("tasks", uiLanguage)}</span>
           </button>
 
           <button
@@ -828,7 +834,7 @@ export default function WorkspaceShell({
             className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 text-[9px] font-semibold text-[var(--text)] active:scale-[0.97]"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--button)] text-[23px] font-light leading-none text-[var(--button-text)] shadow-[0_8px_24px_rgba(57,86,210,0.35)]" aria-hidden="true">+</span>
-            <span>Nou</span>
+            <span>{copy.new}</span>
           </button>
 
           <button
@@ -846,13 +852,13 @@ export default function WorkspaceShell({
             }`}
           >
             <ModuleGlyph id="leads" />
-            <span>Clienți</span>
+            <span>{workspaceModuleShortName("leads", uiLanguage)}</span>
           </button>
 
           <button
             type="button"
             aria-expanded={mobileModuleMenuOpen}
-            aria-label={mobileModuleMenuOpen ? "Închide meniul modulelor" : "Deschide meniul modulelor"}
+            aria-label={mobileModuleMenuOpen ? copy.closeModules : copy.openModules}
             onClick={() => {
               requestNativeHaptic();
               setMobileModuleMenuOpen((current) => !current);
@@ -866,7 +872,7 @@ export default function WorkspaceShell({
               <span className="h-1 w-1 rounded-full bg-current" />
               <span className="h-1 w-1 rounded-full bg-current" />
             </span>
-            <span>Mai multe</span>
+            <span>{copy.more}</span>
           </button>
         </nav>
       </div>
