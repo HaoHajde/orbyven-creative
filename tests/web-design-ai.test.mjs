@@ -32,7 +32,9 @@ import { deriveWebDesignBriefGaps } from "../lib/ai/web-design-brief-gaps.ts";
 import {
   applyWebDesignInterviewAnswerLocally,
   buildWebDesignInterviewPrompt,
+  interviewFactsToEvidence,
   pickNextWebDesignInterviewQuestion,
+  readWebDesignInterviewFacts,
   readWebDesignInterviewQuestions,
 } from "../lib/ai/web-design-interview.ts";
 
@@ -1204,4 +1206,114 @@ test("Smart Interview queue persists across refreshes and resets with preset cha
   assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
   assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
   assert.match(specialist, /setInterviewQuestions\(\[\]\)/);
+});
+
+
+test("Smart Interview Fact Memory is bounded, validated and latest-wins per gap", () => {
+  const facts = readWebDesignInterviewFacts([
+    {
+      id: "brand_name",
+      question: "Care este brandul?",
+      answer: "Brand Vechi",
+    },
+    {
+      id: "contact_real",
+      question: "Cum vrei contactul?",
+      answer: "Telefon",
+    },
+    {
+      id: "brand_name",
+      question: "Care este brandul?",
+      answer: "Brand Nou",
+    },
+    {
+      id: "invalid_gap",
+      question: "Invalid?",
+      answer: "Nu trebuie păstrat",
+    },
+  ]);
+
+  assert.equal(facts.length, 2);
+  assert.equal(facts.find((fact) => fact.id === "brand_name")?.answer, "Brand Nou");
+  assert.equal(facts.find((fact) => fact.id === "contact_real")?.answer, "Telefon");
+
+  const many = readWebDesignInterviewFacts(
+    Array.from({ length: 12 }, (_, index) => ({
+      id: [
+        "brand_name",
+        "hero_offer",
+        "services_real",
+        "gallery_real",
+        "about_real",
+        "process_real",
+        "faq_real",
+        "contact_real",
+        "conversion_goal",
+        "claim_evidence",
+      ][index % 10],
+      question: `Întrebare ${index}`,
+      answer: `Răspuns real ${index}`,
+    }))
+  );
+  assert.ok(many.length <= 8);
+});
+
+test("Smart Interview facts become explicit verified evidence text", () => {
+  const evidence = interviewFactsToEvidence([
+    {
+      id: "claim_evidence",
+      question: "Garanția este reală?",
+      answer: "Da, garanția este 24 luni.",
+    },
+    {
+      id: "contact_real",
+      question: "Cum se face contactul?",
+      answer: "Doar telefonic.",
+    },
+  ]);
+
+  assert.match(evidence, /garanția este 24 luni/i);
+  assert.match(evidence, /doar telefonic/i);
+  assert.match(evidence, /Răspuns real:/);
+});
+
+test("Generation validates and uses Smart Interview facts in fact guards", () => {
+  const route = read("app/api/ai/web-design/generate/route.ts");
+  const server = read("lib/ai/web-design-server.ts");
+
+  assert.match(route, /readWebDesignInterviewFacts\(body\.interviewFacts\)/);
+  assert.match(route, /interviewFacts\s*\)/);
+  assert.match(server, /interviewFactsToEvidence/);
+  assert.match(server, /verifiedEvidence/);
+  assert.match(server, /verified_interview_facts: interviewFacts\.slice\(-8\)/);
+  assert.match(server, /parseModelResult\(parsed, current, verifiedEvidence\)/);
+  assert.match(server, /guardWebDesignEvidence\([\s\S]*verifiedEvidence/);
+});
+
+test("Web Design editor persists and sends bounded Smart Interview facts immediately", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(
+    specialist,
+    /INTERVIEW_FACTS_KEY = "orbyven-web-design-interview-facts-v01"/
+  );
+  assert.match(specialist, /getItem\(INTERVIEW_FACTS_KEY\)/);
+  assert.match(specialist, /interviewFacts: \(factOverride \?\? interviewFacts\)\.slice\(-8\)/);
+  assert.match(specialist, /generateWithAi\(interviewPrompt, nextFacts\)/);
+  assert.match(specialist, /removeItem\(INTERVIEW_FACTS_KEY\)/);
+});
+
+
+test("Rejected claim answers do not turn the interview question into positive evidence", () => {
+  const evidence = interviewFactsToEvidence([
+    {
+      id: "claim_evidence",
+      question: "Poți confirma garanția și autorizarea?",
+      answer: "Nu",
+    },
+  ]);
+
+  assert.match(evidence, /NU confirmă/);
+  assert.doesNotMatch(evidence, /garan/i);
+  assert.doesNotMatch(evidence, /autoriz/i);
 });
