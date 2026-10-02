@@ -163,7 +163,7 @@ test("web and desktop release metadata are aligned", () => {
   assert.equal(config.version, "0.8.0");
   assert.equal(manifest.version, "0.8.0");
   assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.8\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.2"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.02\.3"/);
 });
 
 test("canonical shell carries the exact responsive web layout", () => {
