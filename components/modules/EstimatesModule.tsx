@@ -23,6 +23,7 @@ import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPane
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
 import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
+import { syncCrmAfterAcceptedEstimate } from "@/lib/automation/status-sync";
 import {
   loadMaterialLibrary,recipeEstimatePreview,
   type MaterialLibrary,
@@ -354,25 +355,51 @@ export default function EstimatesModule({
     setError("");
     try {
       const next = await setEstimateStatus(organizationId, selected.id, status);
+      const syncMessages: string[] = [];
+
       if (status === "sent" || status === "accepted") {
         try {
           const sync = await syncOfferStatusFromEstimate(organizationId, selected.id, status);
-          setSyncWarning(
-            sync.synced
-              ? status === "accepted"
-                ? "Devizul și documentul de ofertă sunt sincronizate ca acceptate."
-                : "Devizul și documentul de ofertă sunt sincronizate ca trimise."
-              : sync.reason === "missing"
-                ? "Devizul a fost actualizat. Nu există încă un document comercial de ofertă de sincronizat."
-                : ""
-          );
+          if (sync.synced) {
+            syncMessages.push(
+              status === "accepted"
+                ? "Documentul comercial de ofertă a fost sincronizat ca acceptat."
+                : "Documentul comercial de ofertă a fost sincronizat ca trimis."
+            );
+          } else if (sync.reason === "missing") {
+            syncMessages.push("Nu există încă un document comercial de ofertă de sincronizat.");
+          }
         } catch (syncError) {
           console.error(syncError);
-          setSyncWarning("Devizul a fost actualizat, dar documentul comercial asociat necesită verificare manuală.");
+          syncMessages.push("Documentul comercial asociat necesită verificare manuală.");
         }
-      } else {
-        setSyncWarning("");
       }
+
+      if (status === "accepted" && next.client_id) {
+        try {
+          const crm = await syncCrmAfterAcceptedEstimate(
+            organizationId,
+            next.client_id,
+            next.reference
+          );
+          if (crm.converted) {
+            syncMessages.push(
+              crm.activityLogged
+                ? "Cererea a fost convertită automat în client câștigat."
+                : "Cererea a fost convertită în client câștigat; jurnalul CRM nu a putut fi completat."
+            );
+          } else if (crm.reason === "lost_conflict") {
+            syncMessages.push("Clientul este marcat «Pierdut» în CRM; statusul nu a fost suprascris automat.");
+          } else if (crm.reason === "state_changed") {
+            syncMessages.push("Starea CRM s-a schimbat între timp; verifică fișa clientului.");
+          }
+        } catch (crmError) {
+          console.error(crmError);
+          syncMessages.push("Devizul este acceptat, dar CRM-ul nu a putut fi sincronizat automat.");
+        }
+      }
+
+      setSyncWarning(syncMessages.join(" "));
       setEstimates((current) => current.map((item) => item.id === next.id ? next : item));
     } catch (statusError) {
       console.error(statusError);
