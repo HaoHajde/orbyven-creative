@@ -13,6 +13,7 @@ import {
   buildWebDesignStrategy,
   inferWebDesignRequestMode,
 } from "../lib/ai/web-design-intent.ts";
+import { critiqueWebDesign } from "../lib/ai/web-design-quality.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -276,4 +277,65 @@ test("Explicit new business context overrides the previous draft context", () =>
   assert.equal(strategy.archetype, "creative");
   assert.equal(strategy.primaryGoal, "showcase");
   assert.equal(strategy.primaryAction, "view_work");
+});
+
+
+test("Web Design quality critic fixes objective visual and conversion issues without another AI call", () => {
+  const strategy = buildWebDesignStrategy(
+    "Florărie cu produse și comenzi online. Vreau să vindem direct.",
+    SITE_PRESETS.florarie
+  );
+  const poorDraft = {
+    ...SITE_PRESETS.florarie,
+    headline: "O colecție foarte lungă care explică în prea multe cuvinte exact tot ce poate cumpăra clientul de la florăria noastră online",
+    headlineSize: "large",
+    cta: "Află mai mult",
+    background: "#ffffff",
+    textColor: "#d9d9d9",
+    density: "compact",
+    hiddenSections: [],
+  };
+
+  const result = critiqueWebDesign(poorDraft, strategy);
+
+  assert.equal(result.draft.cta, "Vezi produsele");
+  assert.equal(result.draft.headlineSize, "normal");
+  assert.equal(result.draft.density, "balanced");
+  assert.equal(result.draft.textColor, "#17171b");
+  assert.ok(result.report.fixesApplied >= 4);
+  assert.ok(result.report.score < 100);
+  assert.ok(result.report.issues.some((issue) => issue.code === "LOW_TEXT_CONTRAST"));
+  assert.ok(result.report.issues.some((issue) => issue.code === "GENERIC_CTA"));
+});
+
+test("Web Design quality critic does not override an explicit CTA during refine", () => {
+  const strategy = buildWebDesignStrategy(
+    "Schimbă CTA-ul în Află mai mult și păstrează restul.",
+    SITE_PRESETS.instalatii
+  );
+  const draft = {
+    ...SITE_PRESETS.instalatii,
+    cta: "Află mai mult",
+  };
+
+  const result = critiqueWebDesign(draft, strategy);
+  assert.equal(strategy.mode, "refine");
+  assert.equal(result.draft.cta, "Află mai mult");
+  assert.equal(result.report.issues.some((issue) => issue.code === "GENERIC_CTA"), false);
+});
+
+test("Generative Web Design runs quality critic before cloud persistence", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+  const quality = read("lib/ai/web-design-quality.ts");
+
+  assert.match(server, /critiqueWebDesign\(strategicDraft, strategy\)/);
+  assert.match(server, /quality: qualityResult\.report/);
+  assert.match(server, /saveWebDesignDraft\(actor, nextDraft, "ai", prompt\)/);
+  assert.match(specialist, /Quality \{qualityScore\}/);
+  assert.match(specialist, /corecții automate/);
+  assert.match(quality, /contrastRatio/);
+  assert.match(quality, /visibleSectionCount/);
+  assert.match(quality, /repeatedCopy/);
+  assert.doesNotMatch(quality, /fetch\(/);
 });
