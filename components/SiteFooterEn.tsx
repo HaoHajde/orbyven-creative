@@ -1,0 +1,90 @@
+"use client";
+
+import BrandLogo from "@/components/BrandLogo";
+import Link from "next/link";
+import type { SitePage } from "@/components/SiteHeader";
+
+type Theme = "light" | "dark";
+
+const navItems: { key: SitePage; href: string; label: string }[] = [
+  { key: "home", href: "/", label: "Home" },
+  { key: "templates", href: "/templates", label: "Templates" },
+  { key: "services", href: "/servicii", label: "Services" },
+  { key: "contact", href: "/contact", label: "Get started" },
+];
+
+const seoLinks = [
+  ["/creare-site", "Web design"],
+  ["/site-prezentare", "Business websites"],
+  ["/web-design-bucuresti", "Web design Bucharest"],
+  ["/invitatii-nunta", "Digital wedding invitations"],
+  ["/invitatii-botez", "Digital christening invitations"],
+  ["/invitatii-majorat", "Digital event invitations"],
+  ["/redesign-site", "Redesign"],
+  ["/studii-de-caz", "Case studies"],
+  ["/ghid", "Guide"],
+] as const;
+
+const legalLinks = [
+  ["/legal/terms", "Terms"],
+  ["/legal/privacy", "Privacy"],
+  ["/legal/cookies", "Cookies"],
+  ["/legal/consumer", "Consumer information"],
+  ["/legal/ai", "AI use"],
+] as const;
+
+export default function SiteFooter({ theme, activePage }: { theme: Theme; activePage: SitePage }) {
+  return (
+    <footer className="relative z-10 px-5 pb-6 sm:px-6 md:px-10 md:pb-8">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-8 text-[var(--button-text)] sm:px-8 md:px-12 md:py-10">
+        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col items-start gap-3">
+            <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
+            <a href="mailto:contact@orbyven.ro" className="text-sm opacity-75 transition hover:opacity-100">
+              contact@orbyven.ro
+            </a>
+          </div>
+
+          <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm">
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={activePage === item.key ? "page" : undefined}
+                className={activePage === item.key ? "opacity-100" : "opacity-55 transition hover:opacity-100"}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <nav className="mt-8 flex flex-wrap gap-x-5 gap-y-3 border-t border-current/15 pt-6 text-[11px] opacity-55">
+          {seoLinks.map(([href, label]) => (
+            <Link key={href} href={href} className="transition hover:opacity-100">
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-6 flex flex-col gap-4 border-t border-current/15 pt-6 text-[10px] uppercase tracking-[0.14em] opacity-40 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span>© 2026 ORBYVEN</span>
+            {legalLinks.map(([href, label]) => (
+              <Link key={href} href={href} className="transition hover:opacity-100">
+                {label}
+              </Link>
+            ))}
+            <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-100">SAL · ANPC ↗</a>
+            {process.env.NEXT_PUBLIC_OPTIONAL_COOKIES_ENABLED === "true" && (
+              <button type="button" onClick={() => window.dispatchEvent(new Event("orbyven:open-cookie-preferences"))} className="transition hover:opacity-100 normal-case tracking-normal">Cookie preferences</button>
+            )}
+          </div>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="self-start sm:self-auto">
+            Back to top ↑
+          </button>
+        </div>
+      </div>
+    </footer>
+  );
+}
