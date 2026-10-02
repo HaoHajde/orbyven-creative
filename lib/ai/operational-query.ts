@@ -181,7 +181,7 @@ function taskActions(rows: TaskRow[]) {
   }));
 }
 
-function unavailable(moduleId: OrbyvenModuleId, label: string): IntelligenceResponse {
+function unavailable(label: string): IntelligenceResponse {
   return {
     specialist: "operations",
     answer: `Nu pot răspunde exact la această întrebare deoarece modulul ${label} nu este activ în workspace.`,
@@ -408,24 +408,23 @@ export async function answerOperationalQuery(
   if (!kind) return null;
 
   if (kind === "lead_followups") {
-    if (!available.has("leads")) return unavailable("leads", "Lead-uri");
+    if (!available.has("leads")) return unavailable("Lead-uri");
     return leadFollowupQuery(actor);
   }
   if (kind === "estimate_followups") {
-    if (!available.has("estimates")) return unavailable("estimates", "Devize");
+    if (!available.has("estimates")) return unavailable("Devize");
     return estimateFollowupQuery(actor);
   }
   if (kind === "today") {
     if (!available.has("tasks") && !available.has("calendar")) {
-      return unavailable("tasks", "Lucrări / Calendar");
+      return unavailable("Lucrări / Calendar");
     }
     if (!available.has("tasks") || !available.has("calendar")) {
-      const fallback = available.has("tasks") ? "tasks" : "calendar";
-      return unavailable(fallback, "Lucrări / Calendar");
+      return unavailable("Lucrări / Calendar");
     }
     return todayQuery(actor);
   }
 
-  if (!available.has("tasks")) return unavailable("tasks", "Lucrări");
+  if (!available.has("tasks")) return unavailable("Lucrări");
   return taskQuery(actor, kind);
 }
