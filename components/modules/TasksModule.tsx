@@ -59,6 +59,7 @@ type Props = {
   initialRecordId?: string;
   initialClientId?: string;
   initialEstimateId?: string;
+  initialTitle?: string;
 };
 
 type ViewMode = "board" | "list";
@@ -153,7 +154,7 @@ function dayKey(value: string | null) {
 
 export default function TasksModule({
   organizationId, locale, role, enabledModules, onOpenModule,
-  initialCreate = false, initialRecordId, initialClientId, initialEstimateId,
+  initialCreate = false, initialRecordId, initialClientId, initialEstimateId, initialTitle,
 }: Props) {
   const [tasks, setTasks] = useState<WorkTask[]>([]);
   const [clients, setClients] = useState<WorkTaskClient[]>([]);
@@ -167,7 +168,11 @@ export default function TasksModule({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(initialRecordId ? "list" : "board");
   const [createOpen, setCreateOpen] = useState(initialCreate && role !== "viewer");
-  const [form, setForm] = useState<CreateForm>(() => ({ ...emptyForm, clientId: initialClientId ?? "" }));
+  const [form, setForm] = useState<CreateForm>(() => ({
+    ...emptyForm,
+    clientId: initialClientId ?? "",
+    title: initialTitle?.trim() || "",
+  }));
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [snapshotIso, setSnapshotIso] = useState("");
   const [workContext, setWorkContext] = useState<WorkTaskContext | null>(null);
