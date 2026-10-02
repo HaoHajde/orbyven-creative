@@ -21,6 +21,7 @@ export type WorkReadinessContext = {
   inventoryMovementsCount: number | null;
   inventoryConsumedCents: number | null;
   inventoryRequiredLines: number | null;
+  inventoryUntrackedLines: number | null;
   inventoryUnreadyLines: number | null;
   inventoryShortageLines: number | null;
 };
@@ -243,6 +244,7 @@ export function evaluateWorkReadiness(input: {
 
   if (enabled.inventory && operationalKind && context) {
     const requiredLines = context.inventoryRequiredLines ?? 0;
+    const untrackedLines = context.inventoryUntrackedLines ?? 0;
     const unreadyLines = context.inventoryUnreadyLines ?? 0;
     const shortageLines = context.inventoryShortageLines ?? 0;
 
@@ -264,8 +266,10 @@ export function evaluateWorkReadiness(input: {
       checks.push({
         key: "materials",
         label: "Materiale",
-        state: "good",
-        message: "Necesarul material este consumat sau rezervat integral.",
+        state: untrackedLines > 0 ? "info" : "good",
+        message: untrackedLines > 0
+          ? untrackedLines + " poziții materiale nu folosesc stoc tracking; verificarea lor rămâne manuală."
+          : "Necesarul material este consumat sau rezervat integral.",
       });
     } else {
       checks.push({
