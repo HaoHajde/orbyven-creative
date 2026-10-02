@@ -43,6 +43,12 @@ type GenerationBody = {
     status?: "strong" | "good" | "review";
     fixesApplied?: number;
   };
+  readiness?: {
+    score?: number;
+    status?: "ready" | "almost_ready" | "draft";
+    placeholderCount?: number;
+    blockers?: Array<{ code?: string; message?: string }>;
+  };
   error?: string;
   code?: string;
 };
@@ -70,6 +76,7 @@ export default function WebDesignSpecialist() {
   const [aiBusy, setAiBusy] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [qualityScore, setQualityScore] = useState<number | null>(null);
+  const [readinessScore, setReadinessScore] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -190,6 +197,7 @@ export default function WebDesignSpecialist() {
     setHistory((current) => [...current.slice(-29), draft]);
     setDraft(next);
     setQualityScore(null);
+    setReadinessScore(null);
     void saveRemote(next, source, lastPrompt);
   };
 
@@ -227,10 +235,21 @@ export default function WebDesignSpecialist() {
           ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
           : null;
       setQualityScore(nextQualityScore);
+      const nextReadinessScore =
+        typeof body.readiness?.score === "number"
+          ? Math.max(0, Math.min(100, Math.round(body.readiness.score)))
+          : null;
+      setReadinessScore(nextReadinessScore);
+      const blockerCount = Array.isArray(body.readiness?.blockers)
+        ? body.readiness.blockers.length
+        : 0;
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
           (typeof body.quality?.fixesApplied === "number" && body.quality.fixesApplied > 0
             ? ` · ${body.quality.fixesApplied} corecții automate`
+            : "") +
+          (blockerCount > 0
+            ? ` · ${blockerCount} elemente de completat înainte de publicare`
             : "") +
           (typeof body.remainingToday === "number"
             ? ` · ${body.remainingToday} generări rămase astăzi`
@@ -297,6 +316,7 @@ export default function WebDesignSpecialist() {
     setHistory((current) => current.slice(0, -1));
     setSuggestions([]);
     setQualityScore(null);
+    setReadinessScore(null);
     setMessage("Am revenit la versiunea anterioară.");
     void saveRemote(previous, "local", "undo");
   };
@@ -355,6 +375,14 @@ export default function WebDesignSpecialist() {
                 className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/[0.08] px-2.5 py-1.5 text-[9px] font-semibold text-[#b9c5ff]"
               >
                 Quality {qualityScore}
+              </span>
+            ) : null}
+            {readinessScore !== null ? (
+              <span
+                title="Grad de pregătire pentru publicare: placeholders, structură și calitate"
+                className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1.5 text-[9px] font-semibold text-emerald-200/80"
+              >
+                Ready {readinessScore}
               </span>
             ) : null}
             <button
