@@ -27,6 +27,7 @@ import {
   applyWebDesignRefineScope,
   resolveWebDesignRefineScope,
 } from "../lib/ai/web-design-refine-locks.ts";
+import { guardWebDesignEvidence } from "../lib/ai/web-design-evidence.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -755,4 +756,100 @@ test("Generative Web Design applies Refine Locks before candidate selection", ()
   assert.match(locks, /mergeTargetVisibility/);
   assert.match(specialist, /editare izolată/);
   assert.doesNotMatch(locks, /fetch\(/);
+});
+
+
+test("Evidence Guard retracts unsupported commercial claims without discarding the whole draft", () => {
+  const current = SITE_PRESETS.instalatii;
+  const candidate = {
+    ...current,
+    headline: "Instalații autorizate cu garanție completă.",
+    services: current.services.map((item, index) => ({
+      ...item,
+      description:
+        index === 0
+          ? "Intervenții autorizate, cu garanție și serviciu non-stop."
+          : item.description,
+    })),
+  };
+
+  const result = guardWebDesignEvidence(
+    candidate,
+    current,
+    "Fă site-ul mai premium și mai clar."
+  );
+
+  assert.equal(result.draft.headline, current.headline);
+  assert.equal(
+    result.draft.services[0].description,
+    current.services[0].description
+  );
+  assert.ok(result.report.revertedFields.includes("hero.headline"));
+  assert.ok(
+    result.report.unsupportedConcepts.includes("credentials")
+  );
+  assert.ok(result.report.unsupportedConcepts.includes("guarantee"));
+  assert.ok(result.report.unsupportedConcepts.includes("nonstop"));
+});
+
+test("Evidence Guard preserves claims explicitly supplied by the user", () => {
+  const current = SITE_PRESETS.instalatii;
+  const candidate = {
+    ...current,
+    headline: "Echipă autorizată, cu garanție pentru lucrările executate.",
+    contactDescription:
+      "Suntem disponibili pentru intervenții de urgență.",
+  };
+
+  const result = guardWebDesignEvidence(
+    candidate,
+    current,
+    "Firma este autorizată, oferim garanție pentru lucrări și intervenții de urgență."
+  );
+
+  assert.equal(result.draft.headline, candidate.headline);
+  assert.equal(result.draft.contactDescription, candidate.contactDescription);
+  assert.equal(result.report.revertedFields.length, 0);
+  assert.equal(result.report.unsupportedConcepts.length, 0);
+});
+
+test("Evidence Guard catches non-numeric risky offers that numeric fact guard cannot", () => {
+  const current = SITE_PRESETS.florarie;
+  const candidate = {
+    ...current,
+    description:
+      "Comandă acum cu livrare gratuită și livrare în aceeași zi.",
+    contactDescription:
+      "Consultanță gratuită pentru alegerea aranjamentului.",
+  };
+
+  const result = guardWebDesignEvidence(
+    candidate,
+    current,
+    "Vreau un site elegant pentru florărie."
+  );
+
+  assert.equal(result.draft.description, current.description);
+  assert.equal(result.draft.contactDescription, current.contactDescription);
+  assert.ok(result.report.unsupportedConcepts.includes("free_delivery"));
+  assert.ok(result.report.unsupportedConcepts.includes("same_day"));
+  assert.ok(result.report.unsupportedConcepts.includes("free_consultation"));
+});
+
+test("Generative Web Design runs Evidence Guard before candidate selection", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const evidence = read("lib/ai/web-design-evidence.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(server, /guardWebDesignEvidence\(/);
+  assert.ok(
+    server.indexOf("guardWebDesignEvidence(") <
+      server.indexOf("selectBestWebDesignCandidate")
+  );
+  assert.match(server, /evidence: evidenceResult\.report/);
+  assert.match(evidence, /unsupportedConcepts/);
+  assert.match(evidence, /free_delivery/);
+  assert.match(evidence, /official_partner/);
+  assert.match(specialist, /afirmații neverificate retrase/);
+  assert.doesNotMatch(evidence, /fetch\(/);
 });

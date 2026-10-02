@@ -71,6 +71,10 @@ type GenerationBody = {
     strict?: boolean;
     targets?: string[];
   };
+  evidence?: {
+    revertedFields?: string[];
+    unsupportedConcepts?: string[];
+  };
   error?: string;
   code?: string;
 };
@@ -308,8 +312,14 @@ export default function WebDesignSpecialist() {
         body.refineScope?.strict && Array.isArray(body.refineScope.targets)
           ? body.refineScope.targets.slice(0, 4)
           : [];
+      const revertedClaimCount = Array.isArray(body.evidence?.revertedFields)
+        ? body.evidence.revertedFields.length
+        : 0;
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (revertedClaimCount > 0
+            ? ` · ${revertedClaimCount} afirmații neverificate retrase`
+            : "") +
           (lockedTargets.length > 0
             ? ` · editare izolată: ${lockedTargets.join(", ")}`
             : "") +
