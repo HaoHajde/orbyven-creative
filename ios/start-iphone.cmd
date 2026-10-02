@@ -32,13 +32,39 @@ if not exist "node_modules\expo\package.json" (
 )
 
 echo.
+echo [ORBYVEN] Verific autentificarea Expo CLI...
+call npx expo whoami > "%TEMP%\orbyven-expo-whoami.txt" 2>&1
+if errorlevel 1 (
+  echo [ORBYVEN] PC-ul nu este autentificat in Expo.
+  echo.
+  echo Se deschide login-ul Expo CLI.
+  echo Foloseste acelasi cont pe care il vei folosi in Expo Go pe iPhone.
+  echo.
+  call npx expo login
+  if errorlevel 1 (
+    echo.
+    echo [ORBYVEN] Autentificarea Expo nu a reusit.
+    echo Incearca din nou si verifica user/parola sau autentificarea browser.
+    echo.
+    del "%TEMP%\orbyven-expo-whoami.txt" >nul 2>&1
+    pause
+    exit /b 1
+  )
+) else (
+  set /p EXPO_USER=<"%TEMP%\orbyven-expo-whoami.txt"
+  echo [ORBYVEN] Expo CLI autentificat: %EXPO_USER%
+)
+del "%TEMP%\orbyven-expo-whoami.txt" >nul 2>&1
+
+echo.
 echo ===============================================
 echo   ORBYVEN iOS Alpha 0.7 - iPhone Dev Launcher
 echo ===============================================
 echo.
-echo 1. Deschide Expo Go pe iPhone.
-echo 2. Tine iPhone-ul si PC-ul pe aceeasi retea Wi-Fi.
-echo 3. Scaneaza QR-ul care va aparea in terminal.
+echo 1. Deschide Expo Go pe iPhone si autentifica-te.
+echo 2. Foloseste ACELASI cont Expo ca pe PC.
+echo 3. Tine iPhone-ul si PC-ul pe aceeasi retea Wi-Fi.
+echo 4. Scaneaza QR-ul care va aparea in terminal.
 echo.
 echo Inchide acest terminal pentru a opri serverul.
 echo.
