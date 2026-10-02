@@ -335,7 +335,7 @@ function AdvancedScene({ feature }: { feature: string }) {
       <div className="relative grid h-full place-items-center overflow-hidden">
         <div className="absolute h-[220px] w-[280px] rounded-full border border-[#9f7cff]/10 shadow-[0_0_90px_rgba(126,93,255,.12)] sm:h-[280px] sm:w-[520px]" />
         <div className="relative flex min-w-0 items-center gap-2 sm:gap-4">
-          {["CRM","AI","Task-uri"].map((x,i)=><div key={x} className="flex items-center gap-4"><div className={`grid h-20 w-20 shrink-0 place-items-center rounded-[18px] border sm:h-28 sm:w-28 sm:rounded-[24px] ${x==="AI"?"border-[#a98dff]/65 bg-[#8f6cff]/20 shadow-[0_0_46px_rgba(126,93,255,.25)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-3 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[13px] text-[#9f7cff] sm:text-[18px]">→</span>:null}</div>)}
+          {["CRM","AI","Task-uri"].map((x,i)=><div key={x} className="flex min-w-0 items-center gap-1 sm:gap-4"><div className={`grid h-20 w-20 shrink-0 place-items-center rounded-[18px] border sm:h-28 sm:w-28 sm:rounded-[24px] ${x==="AI"?"border-[#a98dff]/65 bg-[#8f6cff]/20 shadow-[0_0_46px_rgba(126,93,255,.25)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-3 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[13px] text-[#9f7cff] sm:text-[18px]">→</span>:null}</div>)}
         </div>
       </div>
     );
@@ -406,9 +406,9 @@ function AdvancedScene({ feature }: { feature: string }) {
   }
 
   return (
-    <div className="grid h-full grid-cols-[.22fr_.78fr] gap-3">
-      <SceneCard className="p-3">{["Dashboard","CRM","Task-uri","Calendar","Devize","Stoc","AI"].map((x)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</SceneCard>
-      <div className="grid grid-cols-2 gap-3">{[["124","Clienți"],["18","Proiecte"],["12","Task-uri"],["75%","Progres"]].map(([n,l])=><SceneCard key={l} className="p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></SceneCard>)}</div>
+    <div className="grid h-full min-w-0 grid-cols-[.28fr_.72fr] gap-2 sm:grid-cols-[.22fr_.78fr] sm:gap-3">
+      <SceneCard className="p-2 sm:p-3">{["Dashboard","CRM","Task-uri","Calendar","Devize","Stoc","AI"].map((x)=><div key={x} className={`mb-2 truncate rounded-[9px] px-2 py-2 text-[6px] sm:px-3 sm:text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</SceneCard>
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3">{[["124","Clienți"],["18","Proiecte"],["12","Task-uri"],["75%","Progres"]].map(([n,l])=><SceneCard key={l} className="p-2 sm:p-4"><p className="text-[18px] font-semibold sm:text-[25px]">{n}</p><p className="mt-2 truncate text-[6px] text-white/35 sm:text-[7px]">{l}</p></SceneCard>)}</div>
     </div>
   );
 }
@@ -456,7 +456,7 @@ export function FeatureScene({
     feature;
 
   return (
-    <div className="orbyven-feature-scene absolute inset-[2%] z-50 overflow-hidden rounded-[24px] border border-[#b396ff]/68 bg-[#06070c]/98 p-3 sm:inset-[3%] sm:rounded-[28px] sm:p-5 text-white shadow-[0_42px_140px_rgba(0,0,0,.78),0_0_76px_rgba(128,84,255,.24)] backdrop-blur-2xl sm:p-5">
+    <div className="orbyven-feature-scene absolute inset-[2%] z-50 overflow-hidden rounded-[24px] border border-[#b396ff]/68 bg-[#06070c]/98 p-3 text-white shadow-[0_42px_140px_rgba(0,0,0,.78),0_0_76px_rgba(128,84,255,.24)] backdrop-blur-2xl sm:inset-[3%] sm:rounded-[28px] sm:p-5">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_8%,rgba(137,94,255,.17),transparent_28%)]" />
       <div className="relative flex min-w-0 items-center justify-between gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -480,7 +480,7 @@ export function FeatureScene({
             type="button"
             onClick={() => onSelect(nextFeature)}
             aria-label="Preview următor"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[13px] text-white/48 transition hover:translate-x-0.5 hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10 hover:text-white"
+            className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[12px] text-white/48 transition hover:translate-x-0.5 sm:h-9 sm:w-9 sm:text-[13px] hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10 hover:text-white"
           >→</button>
           <button onClick={onClose} type="button" aria-label="Închide preview" className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[15px] sm:h-9 sm:w-9 sm:text-[16px] text-white/55 transition hover:rotate-90 hover:bg-white/[.08] hover:text-white">×</button>
         </div>
