@@ -206,3 +206,28 @@ test("purchase orders expose one status-driven primary action", () => {
   assert.match(inventory, /order\.status === "received" && enabledModules\.includes\("documents"\)/);
   assert.match(inventory, /<summary className=\{button \+ " flex cursor-pointer list-none items-center \[&::-webkit-details-marker\]:hidden"\}>Alte acțiuni<\/summary>/);
 });
+
+
+test("receipt evidence flows directly from documents into finance context", () => {
+  const navigation = read("lib/workspace-navigation.ts");
+  assert.match(navigation, /documentId\?: string/);
+
+  const flow = read("lib/workspace-module-flow.ts");
+  assert.match(flow, /"purchaseOrderId" \| "documentId"/);
+  assert.match(flow, /target === "documents"[\s\S]*recordId: context\.documentId/);
+  assert.match(flow, /target === "expenses"[\s\S]*documentId: context\.documentId/);
+
+  const documents = read("components/modules/DocumentsModule.tsx");
+  assert.match(documents, /document\.category === "receipt"/);
+  assert.match(documents, /Înregistrează cheltuiala →/);
+  assert.match(documents, /documentId: document\.id/);
+
+  const finance = read("components/modules/ExpensesModule.tsx");
+  assert.match(finance, /initialDocumentId\?: string/);
+  assert.match(finance, /documentId: initialDocumentId \?\? ""/);
+  assert.match(finance, /contexts\.documents\.find\(\(item\) => item\.id === initialDocumentId\)/);
+
+  const expenseData = read("lib/modules/expenses.ts");
+  assert.match(expenseData, /client_id: string \| null/);
+  assert.match(expenseData, /select\("id,name,client_id,task_id,estimate_id,purchase_order_id"\)/);
+});
