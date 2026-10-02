@@ -42,34 +42,37 @@ export default function WorkspaceModuleGuide({
   ), [
     activeModule,
     navigation.module,
-    navigation.token,
     navigation.clientId,
     navigation.taskId,
     navigation.estimateId,
     navigation.purchaseOrderId,
   ]);
-  const [liveContext, setLiveContext] = useState<WorkspaceLiveContext>(navigationContext);
-
-  useEffect(() => {
-    setLiveContext(navigationContext);
-  }, [navigationContext]);
+  const [liveState, setLiveState] = useState<{
+    module: OrbyvenModuleId;
+    context: WorkspaceLiveContext;
+  }>({ module: activeModule, context: {} });
+  const liveContext = liveState.module === activeModule ? liveState.context : {};
+  const effectiveContext = useMemo<WorkspaceLiveContext>(
+    () => ({ ...navigationContext, ...liveContext }),
+    [navigationContext, liveContext]
+  );
 
   useEffect(() => {
     const handleContext = (event: Event) => {
       const detail = (event as CustomEvent<WorkspaceLiveContext>).detail;
       if (!detail) return;
-      setLiveContext((current) => ({ ...current, ...detail }));
+      setLiveState({ module: activeModule, context: detail });
     };
     window.addEventListener(WORKSPACE_LIVE_CONTEXT_EVENT, handleContext);
     return () => window.removeEventListener(WORKSPACE_LIVE_CONTEXT_EVENT, handleContext);
-  }, []);
+  }, [activeModule]);
 
   if (activeModule === "overview") return null;
 
   const openConnectedModule = (
     moduleId: OrbyvenModuleId,
     extra: Pick<WorkspaceOpenOptions, "create"> = {},
-  ) => onOpenModule(moduleId, getWorkspaceTargetOptions(moduleId, liveContext, extra));
+  ) => onOpenModule(moduleId, getWorkspaceTargetOptions(moduleId, effectiveContext, extra));
 
   return (
     <section
