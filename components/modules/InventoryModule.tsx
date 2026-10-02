@@ -101,6 +101,8 @@ export default function InventoryModule({
     taskId: string | null;
     reference: string;
   } | null>(null);
+  const [purchaseOrderTaskScope, setPurchaseOrderTaskScope] = useState(initialTaskId ?? "");
+  const [procurementScopeWarped, setProcurementScopeWarped] = useState(false);
   const [planTaskId, setPlanTaskId] = useState(initialTaskId ?? "");
   const [taskPlan, setTaskPlan] = useState<InventoryTaskMaterialPlan[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
@@ -179,9 +181,32 @@ export default function InventoryModule({
   const activeSuppliers = (snapshot?.suppliers ?? []).filter((item) => item.active);
   const stock = useMemo(() => snapshot?.stock ?? [], [snapshot]);
   const purchaseOrders = snapshot?.purchaseOrders ?? [];
+  const visiblePurchaseOrders = useMemo(
+    () =>
+      purchaseOrderTaskScope
+        ? purchaseOrders.filter((order) => order.task_id === purchaseOrderTaskScope)
+        : purchaseOrders,
+    [purchaseOrderTaskScope, purchaseOrders]
+  );
   const purchaseItems = snapshot?.purchaseItems ?? [];
   const recentMovements = snapshot?.recentMovements ?? [];
   const tasks = useMemo(() => snapshot?.tasks ?? [], [snapshot]);
+
+  useEffect(() => {
+    if (
+      !initialTaskId ||
+      loading ||
+      procurementScopeWarped ||
+      visiblePurchaseOrders.length === 0
+    ) return;
+    const timer = window.setTimeout(() => {
+      document
+        .querySelector('[data-inventory-procurement-scope="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setProcurementScopeWarped(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialTaskId, loading, procurementScopeWarped, visiblePurchaseOrders.length]);
 
   const supplierById = useMemo(
     () => new Map((snapshot?.suppliers ?? []).map((item) => [item.id, item])),
@@ -1055,16 +1080,20 @@ export default function InventoryModule({
         </article>
       </section>
 
-      <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-        <div className="flex items-end justify-between gap-3">
+      <section data-inventory-procurement-scope="true" className="mt-4 scroll-mt-28 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Procurement</p>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]">Comenzi furnizor</h2>
+            {purchaseOrderTaskScope ? <p className="mt-1 text-[10px] text-[var(--muted)]">Context lucrare · sunt afișate doar comenzile ei deschise.</p> : null}
           </div>
-          <span className="text-[10px] text-[var(--muted)]">{purchaseOrders.length} deschise</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[var(--muted)]">{visiblePurchaseOrders.length}{purchaseOrderTaskScope ? " în context" : " deschise"}</span>
+            {purchaseOrderTaskScope ? <button type="button" onClick={() => setPurchaseOrderTaskScope("")} className="h-8 rounded-full border border-[var(--border)] px-3 text-[9px] font-semibold text-[var(--muted)]">Toate comenzile</button> : null}
+          </div>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {purchaseOrders.map((order) => {
+          {visiblePurchaseOrders.map((order) => {
             const items = purchaseItems.filter((item) => item.purchase_order_id === order.id);
             const supplier = supplierById.get(order.supplier_id);
             return <article key={order.id} className="rounded-[17px] border border-[var(--border)] bg-[var(--surface-2)]/45 p-4">
@@ -1104,7 +1133,7 @@ export default function InventoryModule({
               </div>
             </article>;
           })}
-          {!purchaseOrders.length ? <div className="lg:col-span-2 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-8 text-center"><p className="text-sm font-semibold">Nu există comenzi furnizor deschise.</p><p className="mt-1 text-[10px] text-[var(--muted)]">Creează una manual sau pornește dintr-un semnal de lipsă.</p></div> : null}
+          {!visiblePurchaseOrders.length ? <div className="lg:col-span-2 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-8 text-center"><p className="text-sm font-semibold">{purchaseOrderTaskScope ? "Nu există PO deschise pe această lucrare." : "Nu există comenzi furnizor deschise."}</p><p className="mt-1 text-[10px] text-[var(--muted)]">{purchaseOrderTaskScope ? "Poți reveni la toate comenzile sau continua cu material readiness." : "Creează una manual sau pornește dintr-un semnal de lipsă."}</p></div> : null}
         </div>
       </section>
 
