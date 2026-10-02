@@ -30,6 +30,7 @@ import {
   loadPostServiceGrowthState,
   recordPostServiceEvent,
 } from "@/lib/modules/client-growth";
+import { createOrRefreshClientFeedbackLink } from "@/lib/modules/feedback-links";
 import { listTeamMembers, type TeamMember } from "@/lib/modules/team";
 import {
   evaluatePostServiceGrowth,
@@ -173,6 +174,7 @@ export default function TasksModule({
   const [contextError, setContextError] = useState("");
   const [growthState, setGrowthState] = useState<PostServiceGrowthState | null>(null);
   const [growthLoading, setGrowthLoading] = useState(false);
+  const [feedbackLinkCopiedTaskId, setFeedbackLinkCopiedTaskId] = useState<string | null>(null);
 
   const canWrite = role !== "viewer";
   useWorkspaceCreateFocus(createOpen);
@@ -555,6 +557,42 @@ export default function TasksModule({
         create: true,
         clientId: selectedTask.client_id,
       });
+    }
+  };
+
+  const copyClientFeedbackLink = async () => {
+    if (
+      !canWrite ||
+      !selectedTask?.client_id ||
+      selectedTask.status !== "done" ||
+      selectedTask.kind === "task" ||
+      saving
+    ) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const link = await createOrRefreshClientFeedbackLink(
+        organizationId,
+        selectedTask.id,
+        selectedTask.client_id
+      );
+      if (link.submitted) {
+        setError("Feedbackul pentru această lucrare a fost deja trimis.");
+        return;
+      }
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API unavailable.");
+      }
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/feedback/${link.public_token}`
+      );
+      setFeedbackLinkCopiedTaskId(selectedTask.id);
+    } catch (linkError) {
+      console.error(linkError);
+      setError("Linkul public de feedback nu a putut fi copiat.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1006,6 +1044,8 @@ export default function TasksModule({
             saving={saving}
             canWrite={canWrite}
             estimatesEnabled={enabledModules.includes("estimates")}
+            feedbackLinkCopied={feedbackLinkCopiedTaskId === selectedTask.id}
+            onCopyFeedbackLink={() => void copyClientFeedbackLink()}
             onEvent={(type, score) => void recordGrowthEvent(type, score)}
             onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
             onCreateRecovery={() => onOpenModule("tasks", { create: true, clientId: selectedTask.client_id! })}
@@ -1078,6 +1118,8 @@ function PostServiceGrowthPanel({
   saving,
   canWrite,
   estimatesEnabled,
+  feedbackLinkCopied,
+  onCopyFeedbackLink,
   onEvent,
   onOpenClient,
   onCreateRecovery,
@@ -1090,6 +1132,8 @@ function PostServiceGrowthPanel({
   saving: boolean;
   canWrite: boolean;
   estimatesEnabled: boolean;
+  feedbackLinkCopied: boolean;
+  onCopyFeedbackLink: () => void;
   onEvent: (type: PostServiceEventType, score?: number) => void;
   onOpenClient: () => void;
   onCreateRecovery: () => void;
@@ -1154,6 +1198,14 @@ function PostServiceGrowthPanel({
                     Marchează feedback cerut
                   </button>
                 )}
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={onCopyFeedbackLink}
+                  className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {feedbackLinkCopied ? "Link feedback copiat ✓" : "Copiază link feedback"}
+                </button>
                 {[1, 2, 3, 4, 5].map((score) => (
                   <button
                     key={score}
