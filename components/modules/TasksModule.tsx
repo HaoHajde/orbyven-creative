@@ -1147,6 +1147,9 @@ function PostServiceGrowthPanel({
               <button type="button" onClick={onCreateRecovery} className="h-9 rounded-full bg-[var(--button)] px-3.5 text-xs font-semibold text-[var(--button-text)]">
                 + Lucrare de remediere
               </button>
+              <button type="button" disabled={saving} onClick={() => onEvent("recovery_resolved")} className="h-9 rounded-full border border-emerald-500/30 px-3.5 text-xs font-semibold text-emerald-600 disabled:opacity-50">
+                Remediere rezolvată ✓
+              </button>
             </>
           )}
           {state.feedback === "positive" && !state.reviewRequestedAt && (
