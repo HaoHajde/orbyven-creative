@@ -645,17 +645,36 @@ export default function LeadsModule({
                 </div>
               ) : canWrite && selectedLead.kind === "client" ? (
                 <div className="mt-4">
-                  {enabledModules.includes("tasks") ? (
+                  {selectedLifecycle?.state === "overdue" ? (
+                    <ModuleNextAction
+                      title="Follow-up ajuns la termen"
+                      description={selectedLifecycle.detail}
+                      action={<button type="button" onClick={() => document.querySelector('[data-client-follow-up="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide follow-up →</button>}
+                    />
+                  ) : selectedLifecycle?.needsReactivation ? (
+                    <ModuleNextAction
+                      title={selectedLifecycle.label}
+                      description={selectedLifecycle.detail}
+                      action={<button type="button" disabled={saving} onClick={() => void scheduleReactivation(7)} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Planifică revenire →</button>}
+                    />
+                  ) : selectedLifecycle?.state === "scheduled" ? (
+                    <ModuleNextAction
+                      title="Revenirea este deja programată"
+                      description={selectedLifecycle.detail}
+                      action={<button type="button" onClick={() => document.querySelector('[data-client-follow-up="true"]')?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Vezi revenirea →</button>}
+                    />
+                  ) : enabledModules.includes("tasks") ? (
                     <ModuleNextAction title="Pornește următoarea lucrare" description="Clientul rămâne asociat automat." action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Lucrare</button>} />
                   ) : enabledModules.includes("estimates") ? (
                     <ModuleNextAction title="Pregătește o ofertă" action={<button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă</button>} />
                   ) : enabledModules.includes("calendar") ? (
                     <ModuleNextAction title="Programează următorul contact" action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>} />
                   ) : null}
-                  {(enabledModules.includes("estimates") || enabledModules.includes("calendar")) && (
+                  {(enabledModules.includes("estimates") || enabledModules.includes("calendar") || enabledModules.includes("tasks")) && (
                     <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--bg)]">
                       <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Alte acțiuni</summary>
                       <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+                        {enabledModules.includes("tasks") && <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Lucrare</button>}
                         {enabledModules.includes("estimates") && <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
                         {enabledModules.includes("calendar") && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
                       </div>
@@ -717,7 +736,7 @@ export default function LeadsModule({
               )}
 
               {canWrite && (
-                <div className="mt-5 rounded-[16px] border border-[var(--border)] bg-[var(--surface)]/70 p-4">
+                <div data-client-follow-up="true" className="mt-5 scroll-mt-28 rounded-[16px] border border-[var(--border)] bg-[var(--surface)]/70 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">Următoarea revenire</p>
                   <div className="mt-3 flex flex-wrap items-end gap-2">
                     <label className="min-w-[190px] flex-1 text-xs text-[var(--muted)]">
