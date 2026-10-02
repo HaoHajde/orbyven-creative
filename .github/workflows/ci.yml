@@ -32,6 +32,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Architecture and lightweight source gate
+        run: npm run test:architecture
+
       - name: Ecosystem contract tests (offline)
         run: npm run test:ecosystem
 
@@ -47,6 +50,9 @@ jobs:
       - name: B2B order evidence regression tests (offline)
         run: npm run test:orders
 
+      - name: Client offboarding regression tests (offline)
+        run: npm run test:offboarding
+
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 
@@ -61,3 +67,6 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Built client JavaScript budget
+        run: node scripts/architecture-integrity.mjs --web-build-only
