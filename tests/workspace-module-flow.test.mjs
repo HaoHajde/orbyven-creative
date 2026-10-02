@@ -373,3 +373,39 @@ test("finance can resolve missing evidence on an existing expense", () => {
   assert.match(finance, /item\.document_id === document\.id/);
   assert.match(finance, /\+ Încarcă dovadă/);
 });
+
+
+test("calendar and tasks synchronize only safe deterministic statuses", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /export async function syncTaskCalendarSchedule/);
+  assert.match(sync, /\.eq\("status", "scheduled"\)/);
+  assert.match(sync, /\.order\("start_at", \{ ascending: true \}\)/);
+  assert.match(sync, /status: "in_progress"/);
+  assert.match(sync, /\.eq\("status", "planned"\)/);
+  assert.match(sync, /completeElapsedWorkEventsForTask/);
+  assert.match(sync, /\.lte\("end_at", nowIso\)/);
+  assert.match(sync, /futureScheduled/);
+
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /syncTaskAfterWorkScheduled/);
+  assert.match(calendar, /syncTaskAfterWorkEventCompleted/);
+  assert.match(calendar, /syncTaskCalendarSchedule/);
+  assert.match(calendar, /Programarea a fost ștearsă/);
+
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /completeElapsedWorkEventsForTask/);
+  assert.match(tasks, /progress === 100/);
+  assert.match(tasks, /programări de lucru viitoare sunt încă active/);
+});
+
+test("estimate status synchronizes the existing commercial offer", () => {
+  const actions = read("lib/ecosystem/actions.ts");
+  assert.match(actions, /export async function syncOfferStatusFromEstimate/);
+  assert.match(actions, /if\(existing\.data\.status==="draft"\)await markOfferManually\(org,estimateId,"sent"\)/);
+  assert.match(actions, /await markOfferManually\(org,estimateId,"accepted"\)/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /syncOfferStatusFromEstimate/);
+  assert.match(estimates, /status === "sent" \|\| status === "accepted"/);
+  assert.match(estimates, /documentul comercial asociat necesită verificare manuală/);
+});
