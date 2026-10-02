@@ -1,6 +1,6 @@
-import type { EditableSite, SiteSectionId } from "@/lib/ai/site-editor";
-import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
-import type { WebDesignQualityReport } from "@/lib/ai/web-design-quality";
+import type { EditableSite, SiteSectionId } from "./site-editor.ts";
+import type { WebDesignStrategy } from "./web-design-intent.ts";
+import type { WebDesignQualityReport } from "./web-design-quality.ts";
 
 export type WebDesignReadinessBlockerCode =
   | "PLACEHOLDER_COPY"
