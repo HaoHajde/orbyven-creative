@@ -10,7 +10,7 @@ import {
   type VideoStyle,
 } from "@/lib/video-ai-director";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
@@ -249,7 +249,7 @@ export default function VideoAiStudio() {
                 <button
                   type="button"
                   onClick={generateDirection}
-                  className="mt-6 flex h-13 w-full items-center justify-between rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5"
+                  className="mt-6 flex h-[52px] w-full items-center justify-between rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5"
                 >
                   <span>Generate direction</span>
                   <span aria-hidden="true">→</span>
@@ -402,7 +402,7 @@ export default function VideoAiStudio() {
   );
 }
 
-function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function ControlGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">{label}</p>
@@ -445,7 +445,7 @@ function SceneDetail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
+function Badge({ children }: { children: ReactNode }) {
   return (
     <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-[var(--muted)]">
       {children}
