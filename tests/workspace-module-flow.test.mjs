@@ -330,3 +330,18 @@ test("inventory shortages remain blockers for roles without procurement rights",
   assert.match(inventory, /Owner, Admin sau Manager/);
   assert.match(inventory, /canProcure && firstTaskShortage/);
 });
+
+
+test("finance closeout distinguishes draft invoice, collection and missing commercial document", () => {
+  const finance = read("components/modules/ExpensesModule.tsx");
+  assert.match(finance, /draftInvoices/);
+  assert.match(finance, /openInvoices/);
+  assert.match(finance, /factură\/facturi sunt încă în ciornă/);
+  assert.match(finance, /Încasarea lucrării este încă deschisă/);
+  assert.match(finance, /Nu există încă un document comercial pentru această lucrare/);
+  assert.match(finance, /onOpenModule\("estimates", \{ taskId: scopeTaskId \}\)/);
+  assert.match(finance, /Închiderea financiară este în regulă/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /nextEstimates\.find\(\(item\) => item\.task_id === initialTaskId\)/);
+});
