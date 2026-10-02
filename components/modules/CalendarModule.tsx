@@ -355,14 +355,24 @@ export default function CalendarModule({
     }
     return next;
   }, [resourceAssignments]);
+  const activeResourceIdsByEvent = useMemo(() => {
+    const next = new Map<string, string[]>();
+    for (const [eventId, ids] of resourceIdsByEvent) {
+      next.set(
+        eventId,
+        ids.filter((id) => resourceById.get(id)?.active)
+      );
+    }
+    return next;
+  }, [resourceById, resourceIdsByEvent]);
   const resourceLabelForEvent = useCallback(
     (eventId: string) => {
-      const names = (resourceIdsByEvent.get(eventId) ?? [])
+      const names = (activeResourceIdsByEvent.get(eventId) ?? [])
         .map((id) => resourceById.get(id)?.name)
         .filter((name): name is string => Boolean(name));
       return names.join(", ");
     },
-    [resourceById, resourceIdsByEvent]
+    [activeResourceIdsByEvent, resourceById]
   );
   const activeResources = useMemo(
     () => resources.filter((resource) => resource.active),
@@ -404,10 +414,10 @@ export default function CalendarModule({
       (calendarEvent) =>
         calendarEvent.status === "scheduled" &&
         calendarEvent.event_type === "work" &&
-        (resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
+        (activeResourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
     ).length;
     return { scheduled, today, completed, linked, needsResources };
-  }, [events, timeZone, todayKey, resourceIdsByEvent]);
+  }, [activeResourceIdsByEvent, events, timeZone, todayKey]);
 
   const openCreate = (dateKey?: string) => {
     setForm({
@@ -560,7 +570,7 @@ export default function CalendarModule({
     if (!canWrite || saving) return;
     const desired =
       resourceDrafts[calendarEvent.id] ??
-      resourceIdsByEvent.get(calendarEvent.id) ??
+      activeResourceIdsByEvent.get(calendarEvent.id) ??
       [];
     setSaving(true);
     setError("");
@@ -706,7 +716,7 @@ export default function CalendarModule({
                   <div><p className="text-xs font-semibold">{formatDayKey(dayKey, locale)}</p>{isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}</div>
                   {canWrite && <button type="button" onClick={() => openCreate(dayKey)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
                 </div>
-                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
+                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={activeResourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
               </article>
             );
           })}
@@ -726,13 +736,13 @@ export default function CalendarModule({
 
       {selectedEvent && canWrite ? (
         <div className="mt-4">
-          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 && activeResources.length === 0 && enabledModules.includes("team") ? (
+          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 && activeResources.length === 0 && enabledModules.includes("team") ? (
             <ModuleNextAction
               title="Adaugă resurse înainte de execuție"
               description="Lucrarea este programată, dar firma nu are încă oameni sau resurse active disponibile în scheduler."
               action={<button type="button" onClick={() => onOpenModule("team")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide Echipă →</button>}
             />
-          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (resourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
+          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
             <ModuleNextAction
               title="Alocă resurse înainte de execuție"
               description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
@@ -793,7 +803,7 @@ export default function CalendarModule({
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {activeResources.length ? activeResources.map((resource) => {
-              const baseline = resourceIdsByEvent.get(selectedEvent.id) ?? [];
+              const baseline = activeResourceIdsByEvent.get(selectedEvent.id) ?? [];
               const selected = (resourceDrafts[selectedEvent.id] ?? baseline).includes(resource.id);
               return (
                 <label key={resource.id} className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs ${selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
