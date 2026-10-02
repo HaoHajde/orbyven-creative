@@ -29,6 +29,7 @@ import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveCo
 import {
   syncTaskAfterWorkEventCompleted,
   syncTaskAfterWorkScheduled,
+  syncTaskCalendarSchedule,
 } from "@/lib/automation/status-sync";
 import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
@@ -519,18 +520,33 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
-      if (status === "completed") {
+      if (updated.event_type === "work" && updated.task_id) {
         try {
-          const sync = await syncTaskAfterWorkEventCompleted(organizationId, updated);
-          setSyncWarning(
-            sync.taskUpdated
-              ? "Programarea a fost finalizată, iar lucrarea a trecut automat din «De făcut» în «În lucru»."
-              : ""
-          );
+          if (status === "completed") {
+            const sync = await syncTaskAfterWorkEventCompleted(organizationId, updated);
+            setSyncWarning(
+              sync.taskUpdated
+                ? "Programarea a fost finalizată, iar lucrarea a trecut automat din «De făcut» în «În lucru»."
+                : sync.scheduleUpdated
+                  ? "Programarea a fost finalizată, iar următoarea dată activă a lucrării a fost sincronizată."
+                  : ""
+            );
+          } else {
+            const sync = await syncTaskCalendarSchedule(organizationId, updated.task_id);
+            setSyncWarning(
+              sync.taskUpdated
+                ? status === "cancelled"
+                  ? "Programarea a fost anulată, iar următoarea dată activă a lucrării a fost recalculată."
+                  : "Programarea a fost reactivată, iar data lucrării a fost sincronizată."
+                : ""
+            );
+          }
         } catch (syncError) {
           console.error(syncError);
-          setSyncWarning("Programarea a fost finalizată, dar statusul lucrării nu a putut fi sincronizat automat.");
+          setSyncWarning("Programarea a fost actualizată, dar data/statusul lucrării nu au putut fi sincronizate automat.");
         }
+      } else {
+        setSyncWarning("");
       }
     } catch (statusError) {
       console.error(statusError);
