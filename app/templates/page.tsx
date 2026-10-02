@@ -205,7 +205,7 @@ export default function TemplatesPage() {
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#000000" : "#e7e8f3";
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -215,24 +215,24 @@ export default function TemplatesPage() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#ffffff";
+      document.body.style.backgroundColor = next === "dark" ? "#000000" : "#e7e8f3";
       return next;
     });
   };
 
   const vars = {
-    "--bg": theme === "dark" ? "#050506" : "#f7f7f8",
-    "--surface": theme === "dark" ? "#0d0d0f" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#151518" : "#eeeeF1",
-    "--text": theme === "dark" ? "#f5f5f7" : "#111114",
-    "--muted": theme === "dark" ? "#9a9aa0" : "#6b6b72",
-    "--border": theme === "dark" ? "rgba(255,255,255,.09)" : "rgba(0,0,0,.08)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#111114",
+    "--bg": theme === "dark" ? "#050506" : "#e7e8f3",
+    "--surface": theme === "dark" ? "#0d0d0f" : "#f5f4fb",
+    "--surface-2": theme === "dark" ? "#151518" : "#ebe9f6",
+    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
+    "--muted": theme === "dark" ? "#9a9aa0" : "#62647a",
+    "--border": theme === "dark" ? "rgba(255,255,255,.09)" : "rgba(96,76,168,.16)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
     "--button-text": theme === "dark" ? "#050506" : "#ffffff",
-    "--home-violet": "#a58bff",
-    "--accent-soft": theme === "dark" ? "rgba(123,92,255,.16)" : "rgba(111,78,255,.10)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.16)" : "rgba(0,0,0,.15)",
-    "--template-canvas": theme === "dark" ? "#09090d" : "#f8f8fa",
+    "--home-violet": theme === "dark" ? "#a58bff" : "#7458d7",
+    "--accent-soft": theme === "dark" ? "rgba(123,92,255,.16)" : "rgba(116,88,215,.13)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.16)" : "rgba(91,72,172,.28)",
+    "--template-canvas": theme === "dark" ? "#09090d" : "#e7e8f3",
   } as CSSProperties;
 
   const templateGroups = templateCategories.map((category) => {
@@ -255,8 +255,9 @@ export default function TemplatesPage() {
 
   return (
     <main
+      data-orbyven-public-theme={theme}
       style={{ ...vars, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif" }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--template-canvas)] text-[var(--text)] antialiased"
+      className="orbyven-public-shell relative min-h-screen overflow-x-hidden bg-[var(--template-canvas)] text-[var(--text)] antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="templates" onToggleTheme={toggleTheme} />
 
