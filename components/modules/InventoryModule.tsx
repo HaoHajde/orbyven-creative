@@ -969,13 +969,26 @@ export default function InventoryModule({
                   </div>;
                 })}
               </div>
-              <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-3">
-                {enabledModules.includes("documents") ? <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>+ Dovadă</button> : null}
-                {canProcure && enabledModules.includes("expenses") && ["ordered","partially_received","received"].includes(order.status) ? <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={button}>Finanțe ↗</button> : null}
-                {canProcure && order.status === "draft" ? <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată</button> : null}
-                {canProcure && ["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
-                  if (window.confirm("Anulezi această comandă furnizor?")) void run(() => setPurchaseOrderStatus(organizationId, order.id, "cancelled"), "Comanda a fost anulată.");
-                }} className={button}>Anulează</button> : null}
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
+                {canProcure && order.status === "draft" ? (
+                  <button type="button" disabled={busy} onClick={() => void run(() => setPurchaseOrderStatus(organizationId, order.id, "ordered"), "Comanda a fost marcată transmisă furnizorului.")} className={primary}>Marchează comandată →</button>
+                ) : order.status === "received" && enabledModules.includes("documents") ? (
+                  <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={primary}>+ Dovadă</button>
+                ) : order.status === "received" && canProcure && enabledModules.includes("expenses") ? (
+                  <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className={primary}>Finanțe →</button>
+                ) : null}
+                {(enabledModules.includes("documents") || (canProcure && enabledModules.includes("expenses")) || (canProcure && ["draft", "ordered"].includes(order.status))) ? (
+                  <details className="relative">
+                    <summary className={button + " flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"}>Alte acțiuni</summary>
+                    <div className="absolute bottom-11 right-0 z-30 min-w-[180px] space-y-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                      {enabledModules.includes("documents") && order.status !== "received" ? <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">+ Dovadă</button> : null}
+                      {canProcure && enabledModules.includes("expenses") && ["ordered","partially_received","received"].includes(order.status) && !(order.status === "received" && !enabledModules.includes("documents")) ? <button type="button" onClick={() => onOpenModule("expenses", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.id })} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold hover:bg-[var(--surface-2)]">Finanțe ↗</button> : null}
+                      {canProcure && ["draft", "ordered"].includes(order.status) ? <button type="button" disabled={busy} onClick={() => {
+                        if (window.confirm("Anulezi această comandă furnizor?")) void run(() => setPurchaseOrderStatus(organizationId, order.id, "cancelled"), "Comanda a fost anulată.");
+                      }} className="w-full rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold text-rose-400 hover:bg-[var(--surface-2)] disabled:opacity-40">Anulează</button> : null}
+                    </div>
+                  </details>
+                ) : null}
               </div>
             </article>;
           })}
