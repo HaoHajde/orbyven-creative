@@ -113,6 +113,26 @@ function isMissingPlatformTableError(error: { code?: string; message?: string } 
   );
 }
 
+async function requireControlCenterAal2(admin: SupabaseClient, token: string) {
+  const { data, error } = await admin.auth.mfa.getAuthenticatorAssuranceLevel(token);
+
+  if (error) {
+    throw new ControlCenterHttpError(
+      401,
+      "invalid_session",
+      "Sesiunea internă nu a putut fi verificată pentru MFA."
+    );
+  }
+
+  if (data.currentLevel !== "aal2") {
+    throw new ControlCenterHttpError(
+      403,
+      "mfa_required",
+      "Control Center necesită autentificare în doi pași."
+    );
+  }
+}
+
 export async function authorizeControlCenter(request: Request): Promise<ControlCenterAuthorization> {
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.startsWith("Bearer ")
@@ -139,6 +159,7 @@ export async function authorizeControlCenter(request: Request): Promise<ControlC
   if (staffError && !isMissingPlatformTableError(staffError)) throw staffError;
 
   if (staff?.enabled && VALID_STAFF_ROLES.has(staff.role as OrbyvenStaffRole)) {
+    await requireControlCenterAal2(admin, token);
     return {
       admin,
       user: data.user,
@@ -152,6 +173,7 @@ export async function authorizeControlCenter(request: Request): Promise<ControlC
   const email = data.user.email?.toLowerCase() ?? "";
 
   if (emails.has(email) || userIds.has(data.user.id)) {
+    await requireControlCenterAal2(admin, token);
     return {
       admin,
       user: data.user,
