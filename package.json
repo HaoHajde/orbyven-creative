@@ -10,14 +10,15 @@
     "typecheck": "tsc --noEmit",
     "test:ecosystem": "node --experimental-strip-types --test tests/ecosystem-contract.test.mjs tests/thermal-planner-live.test.mjs tests/finance-activity-contract.test.mjs tests/intelligence-core.test.mjs tests/web-design-ai.test.mjs tests/ai-agent-actions.test.mjs tests/ai-estimate-action.test.mjs tests/ai-document-action.test.mjs tests/ai-conversation-memory.test.mjs tests/ai-context-followups.test.mjs tests/ai-selective-language.test.mjs tests/ai-entity-context.test.mjs tests/automation-business-signals.test.mjs tests/inventory-procurement.test.mjs tests/resource-scheduler.test.mjs tests/ai-plan-mode.test.mjs tests/intelligence-floating-overlay.test.mjs tests/pwa-install-contract.test.mjs tests/workspace-warp-navigation.test.mjs tests/client-retention-aftercare.test.mjs tests/post-service-growth.test.mjs",
     "test:billing": "node --experimental-strip-types --test tests/billing-webhook-state.test.mjs tests/billing-merchant-contract.test.mjs",
-    "validate": "npm run lint && npm run typecheck && npm run test:architecture && npm run test:ecosystem && npm run test:billing && npm run test:security && npm run test:compliance && npm run test:orders && node --test tests/pilot-demo-integrity.test.mjs && npm run test:performance && npm run test:seo && npm run test:data && npm run build",
+    "validate": "npm run lint && npm run typecheck && npm run test:architecture && npm run test:ecosystem && npm run test:billing && npm run test:security && npm run test:compliance && npm run test:orders && npm run test:offboarding && node --test tests/pilot-demo-integrity.test.mjs && npm run test:performance && npm run test:seo && npm run test:data && npm run build",
     "test:security": "node --experimental-strip-types --test tests/security-hardening.test.mjs tests/document-signature.test.mjs",
     "test:performance": "node --test tests/performance-boundaries.test.mjs tests/workspace-auth-performance.test.mjs tests/device-integrity.test.mjs",
     "test:data": "node --experimental-strip-types --test tests/data-efficiency.test.mjs",
     "test:seo": "node --test tests/seo-contract.test.mjs",
-    "test:compliance": "node --experimental-strip-types --test tests/compliance-foundation.test.mjs",
+    "test:compliance": "node --experimental-strip-types --test tests/compliance-foundation.test.mjs tests/legal-audit-retention.test.mjs",
     "test:orders": "node --experimental-strip-types --test tests/order-evidence.test.mjs",
-    "test:architecture": "node scripts/architecture-integrity.mjs --source"
+    "test:architecture": "node scripts/architecture-integrity.mjs --source",
+    "test:offboarding": "node --experimental-strip-types --test tests/client-offboarding.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
