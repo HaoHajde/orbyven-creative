@@ -11,6 +11,7 @@ const route=read("app/api/billing/checkout/route.ts");
 const stripe=read("lib/billing/stripe-rest.ts");
 const webhook=read("app/api/billing/webhook/route.ts");
 const sync=read("lib/billing/order-evidence-sync.ts");
+const offerBuilder=read("lib/billing/order-evidence.ts");
 const legalAPI=read("app/api/control-center/compliance/route.ts");
 const legalUI=read("app/control-center/legal/page.tsx");
 const price={
@@ -92,6 +93,7 @@ test("checkout saves accepted snapshot before creating the Stripe session",()=>{
   assert.match(webhook,/syncStripeCheckoutCompleted\(client, event\.data\.object, verifiedMerchantKey, event\.id\)/);
   assert.match(sync,/stripe_checkout_session_id:sessionId/);
   assert.match(sync,/hashOrderOffer\(snapshot\)/);
+  assert.match(offerBuilder,/stripe_livemode:price\.livemode/);
 });
 
 test("internal dossier separates accepted offer from Stripe result",()=>{

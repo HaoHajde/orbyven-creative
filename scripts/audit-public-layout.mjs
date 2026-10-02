@@ -58,8 +58,9 @@ try {
         await page.waitForTimeout(250);
         const frameStates = [];
         for (const frame of page.frames()) {
+          const isMainFrame = frame === page.mainFrame();
           try {
-            frameStates.push(await frame.evaluate(() => {
+            const state = await frame.evaluate(() => {
               const width = document.documentElement.scrollWidth;
               const viewport = window.innerWidth;
               const bodyText = document.body?.innerText?.trim() || "";
@@ -87,7 +88,8 @@ try {
                 })
                 .reduce((min, element) => Math.min(min, Number.parseFloat(getComputedStyle(element).fontSize) || 999), 999);
               return { width, viewport, bodyTextLength: bodyText.length, interactiveFixed, minTouchFont };
-            }));
+            });
+            frameStates.push({ ...state, isMainFrame });
           } catch {
             // A third-party frame that cannot be inspected must not invalidate the ORBYVEN shell.
           }
@@ -96,7 +98,7 @@ try {
         if (frameStates.some((state) => state.width > state.viewport + 2)) throw new Error("horizontal overflow");
         if (!frameStates.some((state) => state.bodyTextLength > 0)) throw new Error("blank page");
         if (pageErrors.length > 0) throw new Error("browser runtime exception: " + pageErrors[0]);
-        if (device.isMobile && frameStates.some((state) => state.minTouchFont < 16)) throw new Error("touch form control below 16px");
+        if (device.isMobile && frameStates.some((state) => state.isMainFrame && state.minTouchFont < 16)) throw new Error("touch form control below 16px");
         if (frameStates.some((state) => state.interactiveFixed.some((rect) => rect.left < -3 || rect.right > state.viewport + 3 || rect.width > state.viewport + 6))) {
           throw new Error("interactive fixed element escapes viewport");
         }

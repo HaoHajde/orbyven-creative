@@ -6,6 +6,8 @@ import { splitPlanClauses, applyPlanBindings } from "../lib/ai/plan-core.ts";
 import { parseMutationPrompt } from "../lib/ai/action-parser.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
+const proposalServer = read("lib/ai/proposal-server.ts");
+const proposalMigration = read("supabase/migrations/20261002074430_ai_action_authenticated_fallback_rpc.sql");
 
 test("Plan Mode splits only on action boundaries and keeps field separators inside a step", () => {
   const clauses = splitPlanClauses(
@@ -80,19 +82,27 @@ test("Plan compiler creates separate server-only proposals with explicit sequent
   assert.match(source, /randomUUID/);
   assert.match(source, /__orbyven_plan/);
   assert.match(source, /dependsOnProposalId: index > 0 \? proposalIds\[index - 1\] : null/);
-  assert.match(source, /from\("ai_action_proposals"\)\.insert\(rows\)/);
+  assert.match(source, /insertAiActionProposals/);
+  assert.match(source, /await insertAiActionProposals\(/);
+  assert.match(proposalServer, /rpc\("ai_action_proposals_insert"/);
+  assert.match(proposalServer, /p_organization_id: actor\.organizationId/);
+  assert.match(proposalServer, /p_actor_id: actor\.userId/);
   assert.match(source, /kind: "review_plan"/);
   assert.doesNotMatch(source, /decideMutationProposal/);
 });
 
-test("Plan confirmation checks the previous proposal before the atomic claim", () => {
+test("Plan confirmation validates dependency inside the tenant-scoped atomic claim", () => {
   const source = read("lib/ai/action-server.ts");
-  const dependency = source.indexOf("await assertPlanDependency");
-  const claim = source.indexOf('.update({ status: "executing"');
-  assert.ok(dependency >= 0);
-  assert.ok(claim > dependency);
-  assert.match(source, /PLAN_DEPENDENCY_REQUIRED/);
-  assert.match(source, /dependencyMeta\.step !== meta\.step - 1/);
+  assert.match(source, /claimAiActionProposal\(actor, proposalId\)/);
+  assert.match(source, /claimed\.state === "dependency_required"/);
+  assert.match(source, /claimed\.state === "dependency_invalid"/);
+  assert.match(proposalServer, /rpc\("ai_action_proposal_claim"/);
+  const dependencyCheck = proposalMigration.indexOf("v_dependency.status <> 'executed'");
+  const stateClaim = proposalMigration.indexOf("set status = 'executing'");
+  assert.ok(dependencyCheck >= 0);
+  assert.ok(stateClaim > dependencyCheck);
+  assert.match(proposalMigration, /p\.organization_id = p_organization_id[\s\S]*p\.actor_id = p_actor_id/);
+  assert.match(proposalMigration, /v_dependency_step_text::integer <> v_step_text::integer - 1/);
 });
 
 test("Calendar execution revalidates and writes the universal operation linkage", () => {
@@ -108,9 +118,13 @@ test("Calendar execution revalidates and writes the universal operation linkage"
 test("Persisted Plan Mode state is actor and organization scoped", () => {
   const source = read("lib/ai/plan-server.ts");
   const route = read("app/api/ai/plans/route.ts");
-  assert.match(source, /\.eq\("organization_id", actor\.organizationId\)/);
-  assert.match(source, /\.eq\("actor_id", actor\.userId\)/);
-  assert.match(source, /\.eq\("conversation_id", conversationId\)/);
+  assert.match(source, /listAiActionProposals\(actor/);
+  assert.match(source, /conversationId,/);
+  assert.match(proposalServer, /rpc\("ai_action_proposals_list"/);
+  assert.match(proposalServer, /p_organization_id: actor\.organizationId/);
+  assert.match(proposalServer, /p_actor_id: actor\.userId/);
+  assert.match(proposalServer, /p_conversation_id: options\.conversationId \?\? null/);
+  assert.match(proposalMigration, /where p\.organization_id = p_organization_id[\s\S]*p\.actor_id = p_actor_id[\s\S]*p_conversation_id is null or p\.conversation_id = p_conversation_id/);
   assert.match(route, /authenticateBillingActor\(request, organizationId, false\)/);
 });
 
@@ -148,7 +162,10 @@ test("Plan Recovery rebuilds only remaining proposal steps with a fresh dependen
   assert.match(source, /dependsOnProposalId: index > 0 \? newProposalIds\[index - 1\] : null/);
   assert.match(source, /recoveredFromPlanId: planId/);
   assert.match(source, /recoveredFromStep: recovery\.blockedStep/);
-  assert.match(source, /PLAN_SUPERSEDED_BY_RECOVERY/);
+  assert.match(source, /supersedeAiActionProposals\(actor, obsoleteIds\)/);
+  assert.match(proposalServer, /rpc\("ai_action_proposals_supersede"/);
+  assert.match(proposalMigration, /failure_code = 'PLAN_SUPERSEDED_BY_RECOVERY'/);
+  assert.match(proposalMigration, /where organization_id = p_organization_id[\s\S]*actor_id = p_actor_id[\s\S]*id = any\(p_proposal_ids\)/);
   assert.doesNotMatch(source, /recoverPlan[\s\S]{0,9000}executeClaimedProposal/);
 });
 

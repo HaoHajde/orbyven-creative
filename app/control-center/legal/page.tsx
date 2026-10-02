@@ -28,15 +28,20 @@ type OrderEvidence = {
     legal_document_version:string;acknowledgement_text:string;
   };
 };
+type ExitCase = {
+  id:string;organization_id:string;status:string;requested_at:string;
+  package_sha256:string|null;package_generated_at:string|null;
+  action_note:string;closure_reference:string|null;
+};
 type PrivacyCase = {
   id:string;organization_id:string|null;subject_reference:string;request_type:string;
   processing_role:string;status:string;received_at:string;due_at:string;last_action:string|null;
 };
 type Payload = {
   organizations:Organization[];contracts:Contract[];checkouts:Acceptance[];
-  subscriptions:Subscription[];privacyCases:PrivacyCase[];orderEvidence:OrderEvidence[];
+  subscriptions:Subscription[];privacyCases:PrivacyCase[];orderEvidence:OrderEvidence[];exitCases:ExitCase[];offboardingConfigured:boolean;
 };
-const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[],orderEvidence:[]};
+const EMPTY:Payload = {organizations:[],contracts:[],checkouts:[],subscriptions:[],privacyCases:[],orderEvidence:[],exitCases:[],offboardingConfigured:false};
 const INPUT = "w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-indigo-400";
 const BUTTON = "rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium hover:border-indigo-400 disabled:opacity-50";
 const statuses = ["received","identity_check","triage","in_progress","responded","closed"] as const;
@@ -68,6 +73,8 @@ export default function LegalOperationsPage() {
   });
   const [caseNotes,setCaseNotes]=useState<Record<string,string>>({});
   const [caseRoles,setCaseRoles]=useState<Record<string,string>>({});
+  const [exitNotes,setExitNotes]=useState<Record<string,string>>({});
+  const [exitRefs,setExitRefs]=useState<Record<string,string>>({});
   const [caseStates,setCaseStates]=useState<Record<string,string>>({});
 
   const headers=useCallback(async()=>{
@@ -222,6 +229,53 @@ export default function LegalOperationsPage() {
                 <button disabled={busy} className={BUTTON+" sm:col-span-2"}>Înregistrează documentul fără modificări ulterioare</button>
               </form>
             </>}
+          </section>
+          <section className="mt-7 rounded-[24px] border border-white/10 bg-white/[.04] p-5 sm:p-7">
+            <h2 className="text-xl font-semibold">Predarea și închiderea datelor clientului ({payload.exitCases.length})</h2>
+            <p className="mt-3 text-sm text-white/60">
+              Clientul solicită exportul din workspace. Personalul autorizat verifică solicitarea,
+              aprobă generarea pachetului și revizuiește manual retenția, copiile de siguranță,
+              Storage și sistemele externe. Nu se execută ștergeri automate.
+            </p>
+            {!payload.offboardingConfigured&&<p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[.07] p-4 text-sm text-amber-100">
+              Migrarea de offboarding nu este activată încă. Dosarul contractual și registrul GDPR rămân disponibile; exportul clientului rămâne blocat până la release-ul bazei de date.
+            </p>}
+            <div className="mt-5 space-y-4">
+              {payload.exitCases.length===0&&<p className="text-sm text-white/50">Nu există cereri de predare.</p>}
+              {payload.exitCases.map(c=>{
+                const next=c.status==="requested"?"authorized"
+                  :c.status==="package_generated"?"retention_review"
+                  :c.status==="retention_review"?"closed":null;
+                return <article key={c.id} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <strong>{payload.organizations.find(o=>o.id===c.organization_id)?.name||c.organization_id}</strong>
+                    <span className="text-amber-200">{c.status}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-white/60">Solicitat: {date(c.requested_at)} · Acțiune: {c.action_note}</p>
+                  {c.package_sha256&&<p className="mt-2 break-all text-xs text-white/60">
+                    Pachet generat la {c.package_generated_at?date(c.package_generated_at):"—"} · SHA-256 {c.package_sha256}.
+                    Generarea nu confirmă primirea fișierului.
+                  </p>}
+                  {c.closure_reference&&<p className="mt-2 text-xs text-white/60">Dovadă închidere: {c.closure_reference}</p>}
+                  {next&&<div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <input aria-label="Notă de predare sau retenție" className={INPUT}
+                      placeholder="Acțiune documentată, fără date personale" value={exitNotes[c.id]||""}
+                      onChange={e=>setExitNotes({...exitNotes,[c.id]:e.target.value})}/>
+                    {next==="closed"&&<input aria-label="Referință închidere" className={INPUT}
+                      placeholder="Referință aprobată: retenție / predare / instrucțiuni"
+                      value={exitRefs[c.id]||""}
+                      onChange={e=>setExitRefs({...exitRefs,[c.id]:e.target.value})}/>}
+                    <button type="button" className={BUTTON} disabled={busy}
+                      onClick={()=>void post({
+                        action:"advance_exit_case",id:c.id,status:next,
+                        actionNote:exitNotes[c.id]||"",closureReference:exitRefs[c.id]||"",
+                      })}>{next==="authorized"?"Autorizează exportul":
+                        next==="retention_review"?"Începe revizia retenției":
+                        "Închide cu referință"}</button>
+                  </div>}
+                </article>;
+              })}
+            </div>
           </section>
           <section className="mt-7 rounded-[24px] border border-white/10 bg-white/[.04] p-5 sm:p-7">
             <h2 className="text-xl font-semibold">Cereri GDPR ({payload.privacyCases.length})</h2>

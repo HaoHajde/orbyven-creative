@@ -35,3 +35,10 @@ test("iOS native chrome can shrink instead of clipping narrow widths", () => {
   assert.match(source, /numberOfLines=\{1\} style=\{\[styles\.subtitle/);
   assert.match(source, /status: \{ flexShrink: 0/);
 });
+
+
+test("public layout audit ignores noninteractive preview-frame form sizing", () => {
+  const audit = read("scripts/audit-public-layout.mjs");
+  assert.match(audit, /const isMainFrame = frame === page\.mainFrame\(\);/);
+  assert.match(audit, /state\.isMainFrame && state\.minTouchFont < 16/);
+});
