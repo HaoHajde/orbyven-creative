@@ -35,10 +35,12 @@ type UiMessage = {
   facts: Array<{ label: string; value: string }>;
   actions: IntelligenceResponse["actions"];
   focus?: IntelligenceResponse["focus"];
+  decision?: IntelligenceResponse["decision"];
 };
 
 const QUICK_PROMPTS = [
   "Fă-mi briefingul zilei",
+  "Compară opțiunile pentru Focus #1",
   "Ce am de făcut azi?",
   "Ce am de încasat?",
   "Creează lead Ana Popescu; telefon: 0712345678",
@@ -58,10 +60,11 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
   general: "ORBYVEN Core",
 };
 
-const focusFactLabels = ["Focus · De ce", "Focus · Risc", "Focus · Pas"];
+const focusFactLabels = ["Focus · Motiv", "Focus · De ce", "Focus · Risc", "Focus · Pas"];
 
 function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
   const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  const reason = value("Focus · Motiv");
   const why = value("Focus · De ce");
   const consequence = value("Focus · Risc");
   const nextStep = value("Focus · Pas");
@@ -69,7 +72,34 @@ function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
   return {
     facts: facts.filter((fact) => !focusFactLabels.includes(fact.label)),
     focus: why && consequence && nextStep
-      ? { why, consequence, nextStep, confidence: "high" as const }
+      ? {
+          ...(reason ? { reason: reason as NonNullable<IntelligenceResponse["focus"]>["reason"] } : {}),
+          why,
+          consequence,
+          nextStep,
+          confidence: "high" as const,
+        }
+      : undefined,
+  };
+}
+
+function splitStoredDecision(facts: Array<{ label: string; value: string }>) {
+  const subject = facts.find((fact) => fact.label === "Decision · Context")?.value;
+  const optionFacts = facts
+    .filter((fact) => /^Decision · [1-3]$/.test(fact.label))
+    .sort((left, right) => left.label.localeCompare(right.label));
+
+  const options = optionFacts.flatMap((fact) => {
+    const [label, impact, tradeoff, whenToUse] = fact.value.split("¦");
+    return label && impact && tradeoff && whenToUse
+      ? [{ label, impact, tradeoff, whenToUse }]
+      : [];
+  });
+
+  return {
+    facts: facts.filter((fact) => !fact.label.startsWith("Decision · ")),
+    decision: subject && options.length
+      ? { subject, options, confidence: "high" as const }
       : undefined,
   };
 }
@@ -219,15 +249,17 @@ export default function WorkspaceIntelligence({
         throw new Error(body.error || "Conversația nu a putut fi încărcată.");
       }
       const restored = (body.messages ?? []).map((item) => {
-        const stored = splitStoredFocus(item.facts ?? []);
+        const storedFocus = splitStoredFocus(item.facts ?? []);
+        const storedDecision = splitStoredDecision(storedFocus.facts);
         return {
           key: item.id,
           role: item.role,
           content: item.content,
           specialist: item.specialist,
-          facts: stored.facts,
+          facts: storedDecision.facts,
           actions: [] as IntelligenceResponse["actions"],
-          focus: stored.focus,
+          focus: storedFocus.focus,
+          decision: storedDecision.decision,
         };
       });
       const plan = await loadPlanForConversation(body.conversation.id, token);
@@ -297,6 +329,7 @@ export default function WorkspaceIntelligence({
         facts: body.facts,
         actions: body.actions,
         focus: body.focus,
+        decision: body.decision,
       }]);
       void loadConversations();
     } catch (reason) {
@@ -722,7 +755,7 @@ export default function WorkspaceIntelligence({
                 <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.21</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.22</p>
                       <h2 className="mt-1 truncate text-[19px] font-semibold tracking-[-0.04em]">
                         {historyOpen ? "Conversațiile tale" : "Ce vrei să rezolvăm?"}
                       </h2>
@@ -855,6 +888,32 @@ export default function WorkspaceIntelligence({
                                   </div>
                                 </div>
                               ) : null}
+                              {message.decision ? (
+                                <div
+                                  data-orbyven-decision-support="true"
+                                  className="mt-3 rounded-[13px] border border-[var(--border)] bg-[var(--surface)]/48 p-2.5"
+                                >
+                                  <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                                    <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aab9ff]">VARIANTE</span>
+                                    <span className="truncate text-[9px] text-[var(--muted-2)]">{message.decision.subject}</span>
+                                  </div>
+                                  <div className="grid gap-2">
+                                    {message.decision.options.slice(0, 3).map((option, index) => (
+                                      <div key={`${option.label}-${index}`} className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-2.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#7897ff]/25 bg-[#7897ff]/10 text-[9px] font-bold text-[#b9c5ff]">
+                                            {index + 1}
+                                          </span>
+                                          <p className="min-w-0 truncate text-[11px] font-semibold">{option.label}</p>
+                                        </div>
+                                        <p className="mt-2 text-[10px] leading-4 text-[var(--text)]">{option.impact}</p>
+                                        <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Compromis: {option.tradeoff}</p>
+                                        <p className="mt-1 text-[9px] leading-4 text-[var(--muted-2)]">Potrivit când: {option.whenToUse}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                               {displayFacts.length ? (
                                 <div className="mt-3 grid grid-cols-2 gap-2">
                                   {displayFacts.map((fact, index) => (
@@ -905,7 +964,7 @@ export default function WorkspaceIntelligence({
                       </button>
                     </div>
                     <p className="mt-2 px-1 text-[9px] text-[var(--muted-2)]">
-                      0.8.21 · Focus explicabil · Acțiunile sunt verificate înainte de execuție.
+                      0.8.22 · Focus + Decision Support · Acțiunile sunt verificate înainte de execuție.
                     </p>
                   </form>
                 ) : null}
