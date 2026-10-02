@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import SiteHeader from "@/components/SiteHeader";
-import { HeroVisual, OfferGlyph } from "@/components/offer/OfferVisuals";
+import OfferGlyph from "@/components/offer/OfferGlyph";
+import { HeroVisual } from "@/components/offer/OfferVisuals";
 import {
   PUBLIC_CHECKOUT_IS_DEMO,
   PUBLIC_OFFERS,
