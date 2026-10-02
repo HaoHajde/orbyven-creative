@@ -137,6 +137,7 @@ test("all canonical AI actions have desktop CORS bridges", () => {
     "../../app/api/desktop/ai/conversations/route.ts",
     "../../app/api/desktop/ai/plans/route.ts",
     "../../app/api/desktop/ai/plans/recover/route.ts",
+    "../../app/api/desktop/ai/decisions/handoff/route.ts",
     "../../app/api/desktop/ai/actions/confirm/route.ts",
   ];
   assert.match(cors, /Authorization, Content-Type/);
