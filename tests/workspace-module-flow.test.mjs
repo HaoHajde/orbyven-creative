@@ -472,3 +472,16 @@ test("estimate creation advances active CRM leads to proposal without reopening 
   assert.match(estimates, /CRM-ul a mutat cererea automat în stadiul Propunere/);
   assert.match(estimates, /Cererea este marcată «Pierdut» în CRM/);
 });
+
+
+test("inventory becomes the single procurement status source when enabled", () => {
+  const workflow = read("components/modules/CommercialWorkflowPanel.tsx");
+  assert.match(workflow, /inventoryOwnsProcurement=inventoryEnabled&&Boolean\(estimate\.task_id\)/);
+  assert.match(workflow, /Gestionat în Stoc & achiziții/);
+  assert.match(workflow, /!inventoryOwnsProcurement&&row\.status!=="bought"/);
+  assert.match(workflow, /Deschide Stoc & achiziții →/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /inventoryEnabled=\{enabledModules\.includes\("inventory"\)\}/);
+  assert.match(estimates, /onOpenInventory=\{selected\.task_id/);
+});
