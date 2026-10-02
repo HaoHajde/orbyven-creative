@@ -396,8 +396,8 @@ export default function EstimatesModule({
                 ? "Documentul comercial de ofertă a fost sincronizat ca acceptat."
                 : "Documentul comercial de ofertă a fost sincronizat ca trimis."
             );
-          } else if (sync.reason === "missing") {
-            syncMessages.push("Nu există încă un document comercial de ofertă de sincronizat.");
+          } else if (sync.reason === "missing_context") {
+            syncMessages.push("Documentul intern de ofertă va putea fi generat după ce devizul are client, lucrare și poziții valide.");
           }
         } catch (syncError) {
           console.error(syncError);
