@@ -520,3 +520,15 @@ test("sending an estimate refreshes CRM contact recency", () => {
   assert.match(estimates, /status === "sent" && next\.client_id/);
   assert.match(estimates, /ultima interacțiune pentru oferta trimisă/);
 });
+
+
+test("task calendar sync warnings are actionable and status-sync keeps a stable result shape", () => {
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /syncCalendarReview/);
+  assert.match(tasks, /Deschide Calendar →/);
+  assert.match(tasks, /onOpenModule\("calendar"\)/);
+
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /scheduleUpdated: false as const/);
+  assert.match(sync, /nextScheduledAt: null/);
+});
