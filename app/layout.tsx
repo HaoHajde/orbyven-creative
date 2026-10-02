@@ -71,7 +71,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "ORBYVEN",
-    statusBarStyle: "black",
+    statusBarStyle: "black-translucent",
   },
 
   twitter: {
