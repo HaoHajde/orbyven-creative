@@ -35,3 +35,28 @@ test("iOS native chrome can shrink instead of clipping narrow widths", () => {
   assert.match(source, /numberOfLines=\{1\} style=\{\[styles\.subtitle/);
   assert.match(source, /status: \{ flexShrink: 0/);
 });
+
+
+test("dashboard text scaling has an explicit visual-integrity contract", () => {
+  const shell = read("components/WorkspaceShell.tsx");
+  const css = read("app/globals.css");
+  const qa = read("scripts/audit-authenticated-workspace.mjs");
+
+  assert.match(shell, /TEXT_SCALE_STEPS: TextScale\[\] = \[0\.9, 1, 1\.1, 1\.2, 1\.3\]/);
+  assert.match(shell, /TEXT_SCALE_SIDEBAR_WIDTH/);
+  assert.match(shell, /--workspace-sidebar-width/);
+  assert.match(shell, /md:grid-cols-\[var\(--workspace-sidebar-width\)_minmax\(0,1fr\)\]/);
+  assert.match(shell, /data-workspace-text-scale-control="desktop"/);
+  assert.match(shell, /data-workspace-text-scale-control="mobile"/);
+  assert.match(shell, /overflow-y-auto overscroll-contain/);
+
+  assert.match(css, /Visual integrity guard/);
+  assert.match(css, /:where\(\.flex, \.grid\) > \* \{\s*min-inline-size: 0;/);
+  assert.match(css, /max-inline-size: 100%/);
+  assert.match(css, /\[data-workspace-text-scale-control\] \{\s*overflow: hidden;/);
+
+  assert.match(qa, /const textScales = \["0\.9", "1", "1\.1", "1\.2", "1\.3"\]/);
+  assert.match(qa, /for \(const scale of textScales\)/);
+  assert.match(qa, /Text escaped its visual frame/);
+  assert.match(qa, /Text-scale control escaped its frame/);
+});
