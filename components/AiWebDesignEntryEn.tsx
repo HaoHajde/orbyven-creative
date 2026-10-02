@@ -1,0 +1,285 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState, type CSSProperties } from "react";
+
+import SiteFooter from "@/components/SiteFooterEn";
+import SiteHeader from "@/components/SiteHeaderEn";
+import WebDesignPreview from "@/components/ai/WebDesignPreview";
+import WebDesignSpecialist from "@/components/ai/WebDesignSpecialist";
+import { SITE_PRESETS, type EditableSite } from "@/lib/ai/site-editor";
+import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+
+type Theme = "light" | "dark";
+type EntryMode = "checking" | "public" | "tool";
+
+const DEMO_DRAFT: EditableSite = {
+  ...SITE_PRESETS.studio,
+  brand: "ORBYVEN AI",
+  eyebrow: "WEB DESIGN INTELLIGENCE",
+  headline: "Describe your business. ORBYVEN builds the direction.",
+  description:
+    "A live preview built from validated components, with coherent structure, copy and visual identity.",
+  cta: "Start the project",
+  servicesTitle: "A website built around the goal",
+  services: [
+    {
+      title: "Structure",
+      description: "The AI chooses and orders the right sections for the page goal.",
+    },
+    {
+      title: "Identity",
+      description: "Palette, density and visual rhythm stay coherent in one direction.",
+    },
+    {
+      title: "Refinement",
+      description: "Request precise changes without rebuilding the entire design.",
+    },
+  ],
+  benefitsTitle: "Control without complexity",
+  benefits: [
+    { title: "Preview live", description: "See the direction immediately before publishing." },
+    { title: "Design DNA", description: "Meaningfully different alternatives, not just rewritten text." },
+    { title: "Safe by design", description: "The model returns validated data, not arbitrary code." },
+  ],
+  aboutTitle: "AI that works within clear boundaries",
+  aboutDescription:
+    "ORBYVEN Web Design AI preserves real facts, follows the business goal and uses only controlled components.",
+  hiddenSections: ["gallery", "process", "faq"],
+  accent: "#745cff",
+  background: "#0b0b10",
+  surface: "#14141c",
+  textColor: "#f5f5f7",
+  visualTone: "editorial",
+  layout: "editorial",
+  variants: {
+    ...SITE_PRESETS.studio.variants,
+    hero: "editorial",
+    services: "spotlight",
+    benefits: "strip",
+    about: "story",
+    contact: "compact",
+  },
+};
+
+export default function AiWebDesignEntry() {
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [mode, setMode] = useState<EntryMode>("checking");
+
+  useEffect(() => {
+    let active = true;
+
+    const saved = window.localStorage.getItem("studio-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nextTheme: Theme =
+      saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
+
+    const themeFrame = window.requestAnimationFrame(() => {
+      setTheme(nextTheme);
+      document.documentElement.style.colorScheme = nextTheme;
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#e7e8f3";
+    });
+
+    void orbyvenSupabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setMode(data.session ? "tool" : "public");
+    }).catch((error) => {
+      console.warn("ORBYVEN AI Web Design session check unavailable", error);
+      if (active) setMode("public");
+    });
+
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(themeFrame);
+    };
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const next = current === "light" ? "dark" : "light";
+      window.localStorage.setItem("studio-theme", next);
+      document.documentElement.style.colorScheme = next;
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#e7e8f3";
+      return next;
+    });
+  };
+
+  if (mode === "tool") {
+    return <WebDesignSpecialist />;
+  }
+
+  const vars = {
+    "--bg": theme === "dark" ? "#09090d" : "#e7e8f3",
+    "--surface": theme === "dark" ? "#101014" : "#f5f4fb",
+    "--surface-2": theme === "dark" ? "#17171d" : "#ebe9f6",
+    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
+    "--muted": theme === "dark" ? "#aaaab2" : "#62647a",
+    "--muted-2": theme === "dark" ? "#74747e" : "#797b91",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(96,76,168,.16)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(91,72,172,.28)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
+    "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
+    "--accent": theme === "dark" ? "#745cff" : "#6859d6",
+    "--accent-soft": theme === "dark" ? "rgba(116,92,255,.16)" : "rgba(116,88,215,.13)",
+  } as CSSProperties;
+
+  if (mode === "checking") {
+    return (
+      <main
+        data-orbyven-public-theme={theme}
+        style={vars}
+        className="orbyven-public-shell grid min-h-screen place-items-center bg-[var(--bg)] text-[var(--text)]"
+      >
+        <div className="text-center">
+          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#9f8dff]">
+            ORBYVEN · AI WEB DESIGN
+          </p>
+          <p className="mt-3 text-[12px] text-[var(--muted)]">Preparing the experience…</p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      data-orbyven-public-theme={theme}
+      style={{
+        ...vars,
+        fontFamily:
+          "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
+      }}
+      className="orbyven-public-shell relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-[-26rem] h-[64rem] w-[78rem] max-w-[96vw] -translate-x-1/2 rounded-full bg-[rgba(116,92,255,.18)] blur-[180px]" />
+        <div className="absolute right-[-20rem] top-[56rem] h-[44rem] w-[44rem] rounded-full bg-[rgba(64,108,255,.10)] blur-[180px]" />
+      </div>
+
+      <SiteHeader
+        theme={theme}
+        compact={false}
+        activePage="webDesignAi"
+        onToggleTheme={toggleTheme}
+      />
+
+      <section className="relative z-10 px-5 pb-16 pt-32 sm:px-6 md:px-10 md:pb-24 md:pt-40">
+        <div className="mx-auto grid max-w-[1500px] gap-12 lg:grid-cols-[.78fr_1.22fr] lg:items-center">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#9f8dff]">
+              ORBYVEN · AI WEB DESIGN
+            </p>
+            <h1 className="mt-6 max-w-[760px] text-[clamp(54px,7vw,112px)] font-semibold leading-[.86] tracking-[-.074em]">
+              Your website starts with a <span className="text-[#9f8dff]">conversation.</span>
+            </h1>
+            <p className="mt-7 max-w-xl text-[14px] leading-7 text-[var(--muted)] sm:text-[15px]">
+              Describe your business, goal and desired direction. ORBYVEN Web Design AI builds,
+              refines and proposes alternatives within a controlled visual system.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/workspace/login?next=ai-web-design"
+                className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-[12px] font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5"
+              >
+                Open AI Web Design →
+              </Link>
+              <Link
+                href="/templates"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-[12px] font-semibold"
+              >
+                View Templates
+              </Link>
+            </div>
+
+            <div className="mt-9 grid max-w-xl grid-cols-3 gap-2">
+              {[
+                ["01", "Brief"],
+                ["02", "Preview"],
+                ["03", "Refinement"],
+              ].map(([number, label]) => (
+                <div
+                  key={number}
+                  className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)]/80 px-4 py-4"
+                >
+                  <p className="text-[8px] font-bold text-[#9f8dff]">{number}</p>
+                  <p className="mt-2 text-[11px] font-semibold">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[#0e1018] p-2 shadow-[0_35px_120px_rgba(0,0,0,.28)] sm:p-3">
+            <div className="mb-2 flex items-center justify-between px-3 py-2">
+              <div>
+                <p className="text-[8px] font-bold uppercase tracking-[.18em] text-white/40">
+                  LIVE DESIGN ENGINE
+                </p>
+                <p className="mt-1 text-[11px] font-semibold text-white/80">Controlled preview</p>
+              </div>
+              <span className="rounded-full border border-[#9f8dff]/25 bg-[#9f8dff]/10 px-3 py-2 text-[8px] font-bold text-[#c9beff]">
+                AI
+              </span>
+            </div>
+            <div className="max-h-[690px] overflow-hidden rounded-[24px]">
+              <WebDesignPreview draft={DEMO_DRAFT} device="desktop" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">
+          HOW IT WORKS
+        </p>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "Understands intent",
+              copy: "Separates the page goal from visual preferences and preserves real facts.",
+            },
+            {
+              title: "Builds coherently",
+              copy: "Chooses structure, components, density, palette and hierarchy in one coherent direction.",
+            },
+            {
+              title: "Refines without chaos",
+              copy: "Precise changes preserve the elements that do not need rebuilding.",
+            },
+          ].map((item, index) => (
+            <article
+              key={item.title}
+              className="min-h-[220px] rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-6"
+            >
+              <p className="text-[9px] font-bold text-[#9f8dff]">0{index + 1}</p>
+              <h2 className="mt-10 text-[24px] font-semibold tracking-[-.045em]">{item.title}</h2>
+              <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 px-5 pb-10 pt-6 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
+          <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-[.18em] opacity-45">
+                ORBYVEN WEB DESIGN INTELLIGENCE
+              </p>
+              <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,64px)] font-semibold leading-[.94] tracking-[-.06em]">
+                Tell us what you want to build.
+              </h2>
+            </div>
+            <Link
+              href="/workspace/login?next=ai-web-design"
+              className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]"
+            >
+              Enter AI Web Design →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter theme={theme} activePage="services" />
+    </main>
+  );
+}
