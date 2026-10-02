@@ -25,7 +25,13 @@ export default function LanguageSwitcher({
 
     const search = window.location.search;
     const hash = window.location.hash;
-    const next = new URL(pathname, ORIGIN_BY_LOCALE[target]);
+    const publicPath =
+      pathname === "/en"
+        ? "/"
+        : pathname.startsWith("/en/")
+          ? pathname.slice(3)
+          : pathname;
+    const next = new URL(publicPath, ORIGIN_BY_LOCALE[target]);
     next.search = search;
     next.hash = hash;
     window.location.assign(next.toString());
