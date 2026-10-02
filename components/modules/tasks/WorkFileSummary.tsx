@@ -256,16 +256,20 @@ export default function WorkFileSummary({
             title={
               task.status === "done"
                 ? "Dosarul operațional este coerent"
-                : operationalCloseReady
-                  ? "Lucrarea este pregătită pentru închidere"
-                  : "Poți continua execuția"
+                : task.status === "cancelled"
+                  ? "Operațiunea este anulată"
+                  : operationalCloseReady
+                    ? "Lucrarea este pregătită pentru închidere"
+                    : "Poți continua execuția"
             }
             description={
               task.status === "done"
                 ? "Lucrarea este finalizată. Următorul pas este verificarea încasării, facturii și costurilor asociate."
-                : operationalCloseReady
-                  ? "Nu mai există programări viitoare, checklist-ul este complet și dosarul are documentație asociată."
-                  : "Nu există un blocaj operațional detectat în datele disponibile."
+                : task.status === "cancelled"
+                  ? "Contextul rămâne disponibil pentru istoric. Nu există nicio acțiune de execuție recomandată."
+                  : operationalCloseReady
+                    ? "Nu mai există programări viitoare, checklist-ul este complet și dosarul are documentație asociată."
+                    : "Nu există un blocaj operațional detectat în datele disponibile."
             }
             action={completionFinanceAction ? (
               <button
