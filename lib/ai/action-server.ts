@@ -72,7 +72,7 @@ async function assertPlanDependency(
   const meta = planMeta(proposal.payload);
   if (!meta?.dependsOnProposalId) return meta;
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_action_proposals")
     .select("id,status,payload")
@@ -116,12 +116,12 @@ function actionModule(actionType: IntelligenceMutationType): OrbyvenModuleId {
   return "calendar";
 }
 
-async function organizationTimeZone(organizationId: string) {
-  const client = createBillingServiceClient();
+async function organizationTimeZone(actor: BillingActor) {
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("organization_profiles")
     .select("timezone")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
   if (error) throw error;
   return data?.timezone || "Europe/Bucharest";
@@ -136,7 +136,7 @@ export async function createMutationIntelligenceResponse(
   const normalizedPrompt = normalize(prompt);
   if (!/\b(creeaza|adauga|inregistreaza|deschide|programeaza)\b/.test(normalizedPrompt)) return null;
 
-  const timeZone = await organizationTimeZone(actor.organizationId);
+  const timeZone = await organizationTimeZone(actor);
   const parsed = parseMutationPrompt(prompt, { timeZone });
 
   if (parsed.kind === "none") return null;
@@ -175,7 +175,7 @@ export async function createMutationIntelligenceResponse(
     };
   }
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_action_proposals")
     .insert({
@@ -207,22 +207,22 @@ export async function createMutationIntelligenceResponse(
 }
 
 async function resolveClientId(
-  organizationId: string,
+  actor: BillingActor,
   clientName: string | null | undefined
 ): Promise<string | null> {
   if (!clientName?.trim()) return null;
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const name = clientName.trim();
 
   const [nameResult, companyResult] = await Promise.all([
     client.from("crm_leads")
       .select("id,name,company")
-      .eq("organization_id", organizationId)
+      .eq("organization_id", actor.organizationId)
       .ilike("name", name)
       .limit(5),
     client.from("crm_leads")
       .select("id,name,company")
-      .eq("organization_id", organizationId)
+      .eq("organization_id", actor.organizationId)
       .ilike("company", name)
       .limit(5),
   ]);
@@ -242,18 +242,18 @@ async function resolveClientId(
 }
 
 async function resolveWorkContext(
-  organizationId: string,
+  actor: BillingActor,
   taskTitle: string | null | undefined,
   explicitClientId: string | null
 ): Promise<{ taskId: string | null; clientId: string | null }> {
   if (!taskTitle?.trim()) return { taskId: null, clientId: explicitClientId };
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const title = taskTitle.trim();
   const { data, error } = await client
     .from("ops_tasks")
     .select("id,title,client_id,kind")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .in("kind", ["work", "order"])
     .ilike("title", title)
     .limit(5);
@@ -288,7 +288,7 @@ async function executeLead(
   actionType: "create_lead" | "create_client",
   payload: Record<string, unknown>
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as LeadActionPayload;
   const name = requireText(input.name, "name", 120);
   const isClient = actionType === "create_client";
@@ -317,14 +317,14 @@ async function executeLead(
 }
 
 async function executeTask(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as TaskActionPayload;
   const title = requireText(input.title, "title", 180);
   const kind = input.kind === "work" || input.kind === "order" ? input.kind : "task";
   const priority = ["low", "normal", "high", "urgent"].includes(input.priority)
     ? input.priority
     : "normal";
-  const clientId = await resolveClientId(actor.organizationId, input.clientName);
+  const clientId = await resolveClientId(actor, input.clientName);
 
   const { data, error } = await client
     .from("ops_tasks")
@@ -345,7 +345,7 @@ async function executeTask(actor: BillingActor, payload: Record<string, unknown>
 }
 
 async function executeCalendar(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as CalendarActionPayload;
   const title = requireText(input.title, "title", 180);
   const startAt = new Date(requireText(input.startAt, "start_at", 80));
@@ -353,8 +353,8 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
   if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime()) || endAt <= startAt) {
     throw new Error("INVALID_EVENT_TIME");
   }
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const operation = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const operation = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
   const reminder = typeof input.reminderMinutes === "number" && Number.isFinite(input.reminderMinutes)
     ? Math.max(0, Math.min(1440, Math.round(input.reminderMinutes)))
     : 30;
@@ -383,7 +383,7 @@ async function executeCalendar(actor: BillingActor, payload: Record<string, unkn
 }
 
 async function executeEstimate(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as EstimateActionPayload;
   const title = requireText(input.title, "estimate_title", 180);
   if (input.currency !== "RON") throw new Error("INVALID_ESTIMATE_CURRENCY");
@@ -405,8 +405,8 @@ async function executeEstimate(actor: BillingActor, payload: Record<string, unkn
     };
   });
 
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const work = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
 
   const taxRate = input.taxRate === null
     ? null
@@ -452,7 +452,7 @@ function safeGeneratedFileName(title: string) {
 }
 
 async function executeDocumentDraft(actor: BillingActor, payload: Record<string, unknown>) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const input = payload as DocumentDraftActionPayload;
   const title = requireText(input.title, "document_title", 160);
   const content = requireText(input.content, "document_content", 900);
@@ -460,8 +460,8 @@ async function executeDocumentDraft(actor: BillingActor, payload: Record<string,
     ? input.category
     : "general";
 
-  const explicitClientId = await resolveClientId(actor.organizationId, input.clientName);
-  const work = await resolveWorkContext(actor.organizationId, input.taskTitle, explicitClientId);
+  const explicitClientId = await resolveClientId(actor, input.clientName);
+  const work = await resolveWorkContext(actor, input.taskTitle, explicitClientId);
 
   const fileText = [
     "ORBYVEN — DRAFT INTERN",
@@ -543,7 +543,7 @@ async function writeAudit(
   proposal: ProposalRow,
   result: { id: string; type: string; moduleId: OrbyvenModuleId }
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const auditPlan = planMeta(proposal.payload);
   const { error } = await client.from("platform_audit_log").insert({
     actor_user_id: actor.userId,
@@ -574,7 +574,7 @@ export async function decideMutationProposal(
   const actor = await authenticateBillingActor(request, organizationId, false);
   if (!MUTATION_ROLES.has(actor.role)) throw new Error("MUTATION_ROLE_REQUIRED");
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const now = new Date().toISOString();
 
   if (decision === "reject") {
