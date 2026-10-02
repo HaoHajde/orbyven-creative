@@ -24,6 +24,8 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import { ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -120,6 +122,9 @@ export default function InventoryModule({
   const [movementTaskId, setMovementTaskId] = useState(initialTaskId ?? "");
   const [movementQuantity, setMovementQuantity] = useState("1");
   const [movementNote, setMovementNote] = useState("");
+  useWorkspaceLiveContext({
+    taskId: planTaskId || purchaseTaskId || movementTaskId || undefined,
+  });
 
   const canWrite = role !== "viewer";
   const canProcure = ["owner", "admin", "manager"].includes(role);
@@ -548,13 +553,18 @@ export default function InventoryModule({
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <Metric label="Materiale urmărite" value={String(summary.trackedMaterials)} note="stoc activ" />
-        <Metric label="Atenție" value={String(summary.lowOrShort)} note="sub prag / lipsă" />
-        <Metric label="Lipsuri reale" value={String(summary.shortageMaterials)} note="cerere confirmată" />
-        <Metric label="PO deschise" value={String(summary.openPurchaseOrders)} note="furnizori" />
-        <Metric label="Valoare stoc" value={money(summary.stockValueCents, locale)} note="estimare operațională" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <Metric label="Atenție" value={String(summary.lowOrShort)} note="sub prag / lipsă" />
+          <Metric label="Lipsuri reale" value={String(summary.shortageMaterials)} note="cerere confirmată" />
+          <Metric label="PO deschise" value={String(summary.openPurchaseOrders)} note="furnizori" />
+        </>}
+        secondary={<>
+          <Metric label="Materiale urmărite" value={String(summary.trackedMaterials)} note="stoc activ" />
+          <Metric label="Valoare stoc" value={money(summary.stockValueCents, locale)} note="estimare operațională" />
+        </>}
+      />
 
       {error ? (
         <p role="alert" className="mt-4 rounded-[15px] border border-rose-400/25 bg-rose-400/[0.06] px-4 py-3 text-xs text-rose-300">
