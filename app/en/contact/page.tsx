@@ -5,7 +5,8 @@ import { useEffect, useState, type CSSProperties } from "react";
 
 import SiteFooter from "@/components/SiteFooterEn";
 import SiteHeader from "@/components/SiteHeaderEn";
-import { PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
+import { PUBLIC_CHECKOUT_IS_DEMO } from "@/lib/commerce/public-offers";
+import { PUBLIC_OFFERS_EN as PUBLIC_OFFERS } from "@/lib/commerce/public-offers-en";
 
 type Theme = "light" | "dark";
 
@@ -91,14 +92,24 @@ export default function ContactPage() {
 
             <div className="max-w-xl lg:justify-self-end lg:pb-3">
               <p className="text-[14px] leading-7 text-[var(--muted)] sm:text-[15px]">
-                Three different paths, three different experiences. Pick a card and go straight into the right flow.
+                Three different paths, three different experiences. Pick a card and enter the dedicated flow.
               </p>
             </div>
           </div>
 
-          <div className="orbyven-start-cards mt-12">
+          {PUBLIC_CHECKOUT_IS_DEMO ? (
+            <div className="mt-8 flex flex-col gap-3 rounded-[22px] border border-amber-300/20 bg-amber-300/[.06] px-5 py-4 text-[11px] leading-5 text-amber-100/80 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold uppercase tracking-[.14em] text-amber-200">TEST / DEMO MODE</p>
+                <p className="mt-1 text-white/58">No real money is charged and no commercial order is created. Use Stripe test data only.</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-[9px] font-bold text-amber-100">SANDBOX</span>
+            </div>
+          ) : null}
+
+          <div className="orbyven-start-cards mt-6">
             <Link
-              href="/checkout?offer=invitation"
+              href="/offer?offer=invitation"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#120d17] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_10%,rgba(234,201,255,.22),transparent_28%),radial-gradient(circle_at_86%_22%,rgba(137,93,255,.18),transparent_30%),linear-gradient(155deg,#201322_0%,#100c16_48%,#09090d_100%)]" />
@@ -120,7 +131,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">01 · EVENT</span>
-                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">CUSTOM</span>
+                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · TEST" : "CUSTOM"}</span>
                 </div>
 
                 <div className="max-w-[420px]">
@@ -140,14 +151,14 @@ export default function ContactPage() {
                     Design, RSVP, locations and an experience built around your event.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Continue to checkout <span className="transition-transform group-hover:translate-x-1">→</span>
+                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/checkout?offer=web"
+              href="/offer?offer=web"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#0b0d14] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_8%,rgba(70,112,255,.25),transparent_30%),radial-gradient(circle_at_15%_52%,rgba(71,70,238,.12),transparent_35%),linear-gradient(155deg,#0d1322_0%,#0a0c13_56%,#08090d_100%)]" />
@@ -171,7 +182,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">02 · WEB DESIGN</span>
-                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">30 DAYS FREE</span>
+                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · 30 DAYS" : "30 DAYS FREE"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
@@ -194,14 +205,14 @@ export default function ContactPage() {
                     With your first web design purchase, the first user gets 30 days to try ORBYVEN Dashboard.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Continue to checkout <span className="transition-transform group-hover:translate-x-1">→</span>
+                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/checkout?offer=advanced"
+              href="/offer?offer=advanced"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-[#a58bff]/26 bg-[#0d0a17] text-white shadow-[0_30px_110px_rgba(71,48,160,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.30),transparent_30%),radial-gradient(circle_at_20%_64%,rgba(75,70,238,.18),transparent_36%),linear-gradient(155deg,#17102b_0%,#0e0b18_54%,#09090d_100%)]" />
@@ -230,7 +241,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">03 · ECOSYSTEM</span>
-                  <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">ADVANCED</span>
+                  <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · ADVANCED" : "ADVANCED"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
@@ -247,10 +258,10 @@ export default function ContactPage() {
                     <span className="text-[#b9a6ff]">Advanced Dashboard.</span>
                   </h2>
                   <p className="mt-4 max-w-md text-[12px] leading-6 text-white/68">
-                    We connect the website to your operations and customize modules around the way your business works.
+                    We connect the website to your operations and customize modules around your workflows.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Continue to checkout <span className="transition-transform group-hover:translate-x-1">→</span>
+                    View plan <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
