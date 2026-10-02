@@ -19,6 +19,17 @@ const GAP_IDS = new Set<WebDesignBriefGapId>([
   "claim_evidence",
 ]);
 
+const SECTION_IDS = new Set<WebDesignBriefGap["sections"][number]>([
+  "hero",
+  "services",
+  "benefits",
+  "about",
+  "gallery",
+  "process",
+  "faq",
+  "contact",
+]);
+
 export function readWebDesignInterviewQuestions(
   value: unknown
 ): WebDesignInterviewQuestion[] {
@@ -37,8 +48,12 @@ export function readWebDesignInterviewQuestions(
           ? record.priority
           : null;
       const sections = Array.isArray(record.sections)
-        ? record.sections.filter((section): section is WebDesignBriefGap["sections"][number] =>
-            typeof section === "string"
+        ? record.sections.filter(
+            (section): section is WebDesignBriefGap["sections"][number] =>
+              typeof section === "string" &&
+              SECTION_IDS.has(
+                section as WebDesignBriefGap["sections"][number]
+              )
           )
         : [];
 
