@@ -467,6 +467,15 @@ iframe {
 html[data-app-mode="standalone"],
 html[data-app-mode="standalone"] body {
   min-height: 100dvh;
+  background: var(--orbyven-workspace-chrome, #08111f);
+}
+
+html[data-app-mode="standalone"] .orbyven-workspace-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+html[data-app-mode="standalone"] .orbyven-workspace-shell {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 html[data-app-mode="standalone"] {
