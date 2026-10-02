@@ -8,13 +8,18 @@ export default function SeoRelatedLinks({
   links,
   eyebrow,
   title,
+  locale = "ro",
 }: {
   currentPath: string;
   links: SeoLink[];
   eyebrow: string;
   title: string;
+  locale?: "ro" | "en";
 }) {
-  const resolved = getSeoClusterLinks(currentPath, links);
+  const resolved =
+    locale === "ro"
+      ? getSeoClusterLinks(currentPath, links)
+      : links.map((item) => ({ ...item, copy: "Explore this related ORBYVEN direction." }));
 
   return (
     <section className="border-t border-black/[.07] px-5 py-16 sm:px-7 md:px-10 md:py-20">
@@ -42,9 +47,9 @@ export default function SeoRelatedLinks({
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-black/[.07] pt-6">
-          <p className="max-w-2xl text-sm leading-6 text-black/48">Ai deja contextul? Trimite direct nevoia proiectului, fără un brief complicat.</p>
-          <Link href="/cerere" className="inline-flex h-11 items-center rounded-full bg-[#171719] px-5 text-xs font-semibold text-white">
-            Începe un proiect →
+          <p className="max-w-2xl text-sm leading-6 text-black/48">{locale === "ro" ? "Ai deja contextul? Trimite direct nevoia proiectului, fără un brief complicat." : "Already know what you need? Start with the project goal—no complicated brief required."}</p>
+          <Link href={locale === "ro" ? "/cerere" : "/contact"} className="inline-flex h-11 items-center rounded-full bg-[#171719] px-5 text-xs font-semibold text-white">
+            {locale === "ro" ? "Începe un proiect →" : "Start a project →"}
           </Link>
         </div>
       </div>
