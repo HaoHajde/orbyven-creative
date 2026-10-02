@@ -100,6 +100,7 @@ export type IntelligenceDecisionOption = {
   impact: string;
   tradeoff: string;
   whenToUse: string;
+  handoffPrompt?: string;
 };
 
 export type IntelligenceDecisionSupport = {
