@@ -3,6 +3,7 @@ import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
+import { answerOperationalQuery } from "@/lib/ai/operational-query";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
@@ -443,6 +444,9 @@ export async function answerIntelligenceForActor(
 
   const mutation = await createMutationIntelligenceResponse(actor, available, prompt, conversationId);
   if (mutation) return mutation;
+
+  const operationalQuery = await answerOperationalQuery(actor, available, prompt);
+  if (operationalQuery) return operationalQuery;
 
   const intent = routeIntelligencePrompt(prompt);
 
