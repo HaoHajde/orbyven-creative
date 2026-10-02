@@ -363,6 +363,7 @@ export default function WorkspaceShell({
 
   return (
     <main
+      data-orbyven-text-scale={textScale}
       style={{
         ...vars,
         fontFamily:
@@ -415,6 +416,7 @@ export default function WorkspaceShell({
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
               themeVars={vars}
+              textScale={textScale}
               onOpenModule={openModule}
               onOpenPath={onOpenPath}
               request={intelligenceRequest}
