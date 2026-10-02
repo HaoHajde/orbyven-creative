@@ -28,6 +28,7 @@ import {
   resolveWebDesignRefineScope,
 } from "../lib/ai/web-design-refine-locks.ts";
 import { guardWebDesignEvidence } from "../lib/ai/web-design-evidence.ts";
+import { deriveWebDesignBriefGaps } from "../lib/ai/web-design-brief-gaps.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -852,4 +853,115 @@ test("Generative Web Design runs Evidence Guard before candidate selection", () 
   assert.match(evidence, /official_partner/);
   assert.match(specialist, /afirmații neverificate retrase/);
   assert.doesNotMatch(evidence, /fetch\(/);
+});
+
+
+test("Brief Gap Planner asks only for real missing information on demo drafts", () => {
+  const draft = SITE_PRESETS.studio;
+  const strategy = buildWebDesignStrategy(
+    "Creează un site pentru firma mea.",
+    draft
+  );
+  const quality = critiqueWebDesign(draft, strategy).report;
+  const readiness = evaluateWebDesignReadiness(draft, strategy, quality);
+  const evidence = guardWebDesignEvidence(
+    draft,
+    draft,
+    "Creează un site pentru firma mea."
+  ).report;
+
+  const gaps = deriveWebDesignBriefGaps(
+    draft,
+    strategy,
+    readiness,
+    evidence
+  );
+
+  assert.ok(gaps.count > 0);
+  assert.ok(gaps.gaps.some((gap) => gap.id === "brand_name"));
+  assert.ok(gaps.gaps.some((gap) => gap.id === "conversion_goal"));
+  assert.ok(gaps.labels.includes("nume brand real"));
+  assert.ok(gaps.completionScore < 100);
+});
+
+test("Brief Gap Planner returns zero gaps for a ready, high-confidence real draft", () => {
+  const draft = {
+    ...SITE_PRESETS.florarie,
+    brand: "Flora Nova",
+    headline: "Flori pentru momente care contează.",
+    description: "Buchete și aranjamente florale pentru comenzi și ocazii speciale.",
+    services: [
+      { title: "Buchete", description: "Selecții florale pentru cadouri." },
+      { title: "Aranjamente", description: "Compoziții florale pentru evenimente." },
+      { title: "Personalizare", description: "Comenzi adaptate preferințelor tale." },
+    ],
+    gallery: [
+      { title: "Buchet sezonier", description: "Selecție florală din colecția curentă." },
+      { title: "Aranjament floral", description: "Compoziție pentru ocazii speciale." },
+      { title: "Colecție cadou", description: "Selecție pregătită pentru a fi oferită." },
+    ],
+    hiddenSections: ["process", "faq"],
+  };
+  const prompt =
+    "Florărie cu produse, comenzi online și checkout. Vreau vânzare directă.";
+  const strategy = buildWebDesignStrategy(prompt, draft);
+  const quality = critiqueWebDesign(draft, strategy).report;
+  const readiness = evaluateWebDesignReadiness(draft, strategy, quality);
+  const evidence = guardWebDesignEvidence(draft, draft, prompt).report;
+
+  const gaps = deriveWebDesignBriefGaps(
+    draft,
+    strategy,
+    readiness,
+    evidence
+  );
+
+  assert.equal(readiness.status, "ready");
+  assert.equal(strategy.confidence, "high");
+  assert.equal(gaps.count, 0);
+  assert.equal(gaps.completionScore, 100);
+});
+
+test("Brief Gap Planner converts unsupported claims into evidence questions", () => {
+  const draft = SITE_PRESETS.instalatii;
+  const prompt = "Vreau un site modern pentru instalații.";
+  const strategy = buildWebDesignStrategy(prompt, draft);
+  const quality = critiqueWebDesign(draft, strategy).report;
+  const readiness = evaluateWebDesignReadiness(draft, strategy, quality);
+  const evidence = guardWebDesignEvidence(
+    {
+      ...draft,
+      headline: "Instalații autorizate cu garanție.",
+    },
+    draft,
+    prompt
+  ).report;
+
+  const gaps = deriveWebDesignBriefGaps(
+    draft,
+    strategy,
+    readiness,
+    evidence
+  );
+
+  const claimGap = gaps.gaps.find((gap) => gap.id === "claim_evidence");
+  assert.ok(claimGap);
+  assert.match(claimGap.question, /autorizări\/certificări|garanție/);
+});
+
+test("Generative Web Design derives Brief Gaps from the final selected draft", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const planner = read("lib/ai/web-design-brief-gaps.ts");
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(server, /deriveWebDesignBriefGaps\(/);
+  assert.ok(
+    server.indexOf("const nextDraft = readSiteDraft") <
+      server.indexOf("deriveWebDesignBriefGaps(")
+  );
+  assert.match(server, /briefGaps,/);
+  assert.match(planner, /conversion_goal/);
+  assert.match(planner, /claim_evidence/);
+  assert.match(specialist, /lipsesc:/);
+  assert.doesNotMatch(planner, /fetch\(/);
 });
