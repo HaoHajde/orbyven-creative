@@ -58,6 +58,7 @@ export type WorkTaskContext = {
   expensesCount: number | null;
   expensesCents: number | null;
   inventoryMovementsCount: number | null;
+  openPurchaseOrdersCount: number | null;
   inventoryConsumedCents: number | null;
   inventoryRequiredLines: number | null;
   inventoryUntrackedLines: number | null;
@@ -173,7 +174,7 @@ export async function loadWorkTaskContext(
   requireTaskId(taskId);
 
   const nowIso = new Date().toISOString();
-  const [estimatesResult, documentsResult, eventsResult, expenseRows, inventoryResult, thermalResult] =
+  const [estimatesResult, documentsResult, eventsResult, expenseRows, inventoryResult, purchaseOrdersResult, thermalResult] =
     await Promise.all([
       options.includeEstimates
         ? orbyvenSupabase
@@ -215,6 +216,14 @@ export async function loadWorkTaskContext(
       options.includeInventory
         ? loadTaskInventoryConsumption(organizationId, taskId)
         : Promise.resolve(null),
+      options.includeInventory
+        ? orbyvenSupabase
+            .from("ops_purchase_orders")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", organizationId)
+            .eq("task_id", taskId)
+            .in("status", ["draft", "ordered", "partially_received"])
+        : Promise.resolve({ count: null, error: null }),
       options.includeThermal
         ? orbyvenSupabase
             .from("thermal_sketches")
@@ -227,6 +236,7 @@ export async function loadWorkTaskContext(
   if (estimatesResult.error) throw estimatesResult.error;
   if (documentsResult.error) throw documentsResult.error;
   if (eventsResult.error) throw eventsResult.error;
+  if (purchaseOrdersResult.error) throw purchaseOrdersResult.error;
   if (thermalResult.error) throw thermalResult.error;
   if (options.includeDocuments && documentsResult.count === null) throw new Error("Document count unavailable.");
 
@@ -252,6 +262,7 @@ export async function loadWorkTaskContext(
     expensesCount: expenseRows ? expenseRows.length : null,
     expensesCents,
     inventoryMovementsCount: inventoryResult?.count ?? null,
+    openPurchaseOrdersCount: options.includeInventory ? (purchaseOrdersResult.count ?? 0) : null,
     inventoryConsumedCents,
     inventoryRequiredLines: inventoryResult?.requiredLines ?? null,
     inventoryUntrackedLines: inventoryResult?.untrackedLines ?? null,
