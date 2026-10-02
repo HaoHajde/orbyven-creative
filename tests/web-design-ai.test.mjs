@@ -32,6 +32,7 @@ import { deriveWebDesignBriefGaps } from "../lib/ai/web-design-brief-gaps.ts";
 import {
   buildWebDesignInterviewPrompt,
   pickNextWebDesignInterviewQuestion,
+  prioritizeWebDesignInterviewQuestions,
   readWebDesignInterviewQuestions,
 } from "../lib/ai/web-design-interview.ts";
 
@@ -1096,4 +1097,83 @@ test("Web Design editor runs Smart Interview answers through the existing protec
   assert.match(specialist, /Mai târziu/);
   assert.doesNotMatch(specialist, /api\/ai\/web-design\/interview/);
   assert.doesNotMatch(interview, /fetch\(/);
+});
+
+
+test("Smart Interview memory prioritizes unanswered gaps without hiding unresolved answered gaps", () => {
+  const questions = readWebDesignInterviewQuestions([
+    {
+      id: "brand_name",
+      label: "nume brand real",
+      question: "Care este numele brandului?",
+      priority: 1,
+      sections: ["hero"],
+    },
+    {
+      id: "services_real",
+      label: "servicii reale",
+      question: "Care sunt serviciile reale?",
+      priority: 1,
+      sections: ["services"],
+    },
+    {
+      id: "gallery_real",
+      label: "proiecte reale",
+      question: "Ce proiecte reale ai?",
+      priority: 2,
+      sections: ["gallery"],
+    },
+  ]);
+
+  const prioritized = prioritizeWebDesignInterviewQuestions(
+    questions,
+    ["brand_name"]
+  );
+
+  assert.equal(prioritized[0].id, "services_real");
+  assert.equal(prioritized[1].id, "gallery_real");
+  assert.equal(prioritized[2].id, "brand_name");
+});
+
+test("Smart Interview memory remains deterministic when every remaining gap was answered before", () => {
+  const questions = readWebDesignInterviewQuestions([
+    {
+      id: "gallery_real",
+      label: "proiecte reale",
+      question: "Ce proiecte reale ai?",
+      priority: 2,
+      sections: ["gallery"],
+    },
+    {
+      id: "services_real",
+      label: "servicii reale",
+      question: "Care sunt serviciile reale?",
+      priority: 1,
+      sections: ["services"],
+    },
+  ]);
+
+  const prioritized = prioritizeWebDesignInterviewQuestions(
+    questions,
+    ["services_real", "gallery_real"]
+  );
+
+  assert.equal(prioritized[0].id, "services_real");
+  assert.equal(prioritized[1].id, "gallery_real");
+});
+
+test("Web Design editor persists only answered interview gap IDs and auto-advances after an answer", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(specialist, /INTERVIEW_MEMORY_KEY/);
+  assert.match(specialist, /answeredInterviewIds/);
+  assert.match(specialist, /prioritizeWebDesignInterviewQuestions/);
+  assert.match(specialist, /answeredGapId\?: WebDesignBriefGapId/);
+  assert.match(specialist, /activeInterviewQuestion\.id/);
+  assert.match(specialist, /JSON\.stringify\(nextAnsweredIds\)/);
+  assert.doesNotMatch(
+    specialist,
+    /JSON\.stringify\(interviewAnswer\)/
+  );
+  assert.match(specialist, /removeItem\(INTERVIEW_MEMORY_KEY\)/);
 });
