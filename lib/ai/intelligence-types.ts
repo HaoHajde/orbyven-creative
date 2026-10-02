@@ -88,7 +88,7 @@ export type IntelligenceFocusReason =
   | "appointment";
 
 export type IntelligenceFocusInsight = {
-  reason: IntelligenceFocusReason;
+  reason?: IntelligenceFocusReason;
   why: string;
   consequence: string;
   nextStep: string;
