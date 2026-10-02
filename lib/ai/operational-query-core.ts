@@ -2,7 +2,11 @@ export type OperationalQueryKind =
   | "overdue_tasks"
   | "blocked_tasks"
   | "unassigned_tasks"
+  | "urgent_tasks"
+  | "unscheduled_tasks"
   | "today"
+  | "tomorrow"
+  | "week"
   | "lead_followups"
   | "estimate_followups";
 
@@ -24,6 +28,18 @@ export function detectOperationalQuery(prompt: string): OperationalQueryKind | n
     return "unassigned_tasks";
   }
   if (
+    /\b(urgent|urgente|prioritate mare|prioritate ridicata|high priority)\b/.test(value) &&
+    /\b(lucrar|task|sarcin|comand)\w*/.test(value)
+  ) {
+    return "urgent_tasks";
+  }
+  if (
+    /\b(neprogramat|neprogramate|fara programare|fara data|de programat)\b/.test(value) &&
+    /\b(lucrar|task|sarcin|comand)\w*/.test(value)
+  ) {
+    return "unscheduled_tasks";
+  }
+  if (
     /\b(intarziat|intarziate|restant|restante|depasit|depasite|termen depasit|scadent)\b/.test(value) &&
     /\b(lucrar|task|sarcin|comand|operational|ce|care)\w*/.test(value)
   ) {
@@ -40,6 +56,18 @@ export function detectOperationalQuery(prompt: string): OperationalQueryKind | n
     /\b(expir|expira|urmar|trimis|trimise|astept|asteapta|follow.?up|valabil)\w*/.test(value)
   ) {
     return "estimate_followups";
+  }
+  if (
+    /\b(maine)\b/.test(value) &&
+    /\b(ce am|programar|calendar|lucrar|task|sarcin|agenda|de facut|fac)\w*/.test(value)
+  ) {
+    return "tomorrow";
+  }
+  if (
+    /\b(saptamana asta|saptamana urmatoare|urmatoarele 7 zile|7 zile)\b/.test(value) &&
+    /\b(ce am|programar|calendar|lucrar|task|sarcin|agenda|de facut|urmeaza)\w*/.test(value)
+  ) {
+    return "week";
   }
   if (
     /\b(azi|astazi)\b/.test(value) &&
