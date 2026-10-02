@@ -24,6 +24,78 @@ const browser = await chromium.launch({
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
 
+const textScales = ["0.9", "1", "1.1", "1.2", "1.3"];
+
+async function auditScaledWorkspace(page, device, scale) {
+  await page.evaluate((value) => {
+    window.localStorage.setItem("orbyven-dashboard-text-scale", value);
+  }, scale);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('button[aria-label="Schimbă tema"]').waitFor();
+
+  const state = await page.evaluate(() => {
+    const root = document.querySelector("main.orbyven-workspace-text-scale");
+    if (!root) return { missingRoot: true, documentOverflow: false, textOverflowCount: 0, scaleControlEscapes: 0 };
+
+    const isVisible = (element) => {
+      const style = window.getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+
+    const allowsOverflow = (value) => value === "auto" || value === "scroll" || value === "hidden" || value === "clip";
+    const textCandidates = root.querySelectorAll(
+      "button, a, h1, h2, h3, h4, p, strong, label, input, textarea, select, [role='button']"
+    );
+    let textOverflowCount = 0;
+
+    for (const element of textCandidates) {
+      if (!isVisible(element)) continue;
+      if (element.classList.contains("truncate") || element.classList.contains("whitespace-nowrap")) continue;
+      const style = window.getComputedStyle(element);
+      const horizontalOverflow =
+        element.clientWidth > 0 &&
+        element.scrollWidth > element.clientWidth + 2 &&
+        !allowsOverflow(style.overflowX);
+      const verticalOverflow =
+        element.clientHeight > 0 &&
+        element.scrollHeight > element.clientHeight + 2 &&
+        !allowsOverflow(style.overflowY);
+      if (horizontalOverflow || verticalOverflow) textOverflowCount++;
+    }
+
+    let scaleControlEscapes = 0;
+    for (const control of root.querySelectorAll("[data-workspace-text-scale-control]")) {
+      if (!isVisible(control)) continue;
+      const rect = control.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      if (
+        rect.left < rootRect.left - 1 ||
+        rect.right > rootRect.right + 1 ||
+        control.scrollWidth > control.clientWidth + 2 ||
+        control.scrollHeight > control.clientHeight + 2
+      ) {
+        scaleControlEscapes++;
+      }
+    }
+
+    return {
+      missingRoot: false,
+      documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+      textOverflowCount,
+      scaleControlEscapes,
+    };
+  });
+
+  if (state.missingRoot) throw new Error(`Workspace root missing at text scale ${scale}`);
+  if (state.documentOverflow) throw new Error(`Horizontal document overflow at text scale ${scale}`);
+  if (state.textOverflowCount > 0) throw new Error(`Text escaped its visual frame at text scale ${scale}`);
+  if (state.scaleControlEscapes > 0) throw new Error(`Text-scale control escaped its frame at text scale ${scale}`);
+
+  console.log(`${device.name}: text scale ${Math.round(Number(scale) * 100)}% visual integrity=ok`);
+}
+
 let failed = false;
 try {
   for (const device of [
@@ -62,6 +134,10 @@ try {
       if (state.width > state.viewport + 2) throw new Error("Horizontal overflow on workspace");
       if (state.searchCount !== 1) throw new Error("Workspace search instance count differs from one");
 
+      for (const scale of textScales) {
+        await auditScaledWorkspace(page, device, scale);
+      }
+
       const aiLauncher = page.getByRole("button", { name: "Deschide ORBYVEN Intelligence" });
       await aiLauncher.click();
       const aiDialog = page.getByRole("dialog", { name: "ORBYVEN Intelligence" });
@@ -81,7 +157,7 @@ try {
         await page.getByRole("button", { name: "Schimbă tema" }).waitFor();
       }
       if (scriptErrors > 0) throw new Error("Browser runtime exception");
-      console.log(`${device.name}: authenticated workspace loaded; click-to-dashboard=${loginToWorkspaceMs}ms; search instances=1; horizontal overflow=no; browser exceptions=0`);
+      console.log(`${device.name}: authenticated workspace loaded; click-to-dashboard=${loginToWorkspaceMs}ms; search instances=1; text scales=90-130% verified; horizontal overflow=no; browser exceptions=0`);
     } catch {
       failed = true;
       // Do not expose the browser's DOM or network error; it may contain QA data.

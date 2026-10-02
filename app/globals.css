@@ -92,6 +92,36 @@ iframe {
    ========================================================= */
 
 .orbyven-workspace-text-scale {
+  /*
+   * Visual integrity guard: text scaling must never force flex/grid children,
+   * controls or text outside their intended frame. Truncation utilities keep
+   * their intentional single-line behavior.
+   */
+  overflow-wrap: break-word;
+}
+
+.orbyven-workspace-text-scale :where(.flex, .grid) > * {
+  min-inline-size: 0;
+}
+
+.orbyven-workspace-text-scale :where(button, a, input, textarea, select, [role="button"]) {
+  max-inline-size: 100%;
+}
+
+.orbyven-workspace-text-scale :where(h1, h2, h3, h4, h5, h6, p, span, strong, label, td, th, button, a) {
+  overflow-wrap: break-word;
+}
+
+.orbyven-workspace-text-scale :where(.truncate, .whitespace-nowrap) {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.orbyven-workspace-text-scale [data-workspace-text-scale-control] {
+  overflow: hidden;
+}
+
+.orbyven-workspace-text-scale {
   --orbyven-text-8: 8px;
   --orbyven-text-9: 9px;
   --orbyven-text-10: 10px;
