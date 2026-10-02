@@ -106,8 +106,11 @@ test("theme-switchable pages expose the shared theme shell and persistent palett
   const services = read("app/servicii/page.tsx");
   const contact = read("app/contact/page.tsx");
   const request = read("components/ProjectRequestFlow.tsx");
+  const webDesignStart = read("app/porneste/web-design/page.tsx");
+  const invitationStart = read("app/porneste/invitatie/page.tsx");
+  const offerStart = read("app/porneste/oferta/page.tsx");
 
-  for (const source of [home, templates, services, contact, request]) {
+  for (const source of [home, templates, services, contact, request, webDesignStart, invitationStart, offerStart]) {
     assert.match(source, /themeBodyBackground/);
     assert.match(source, /publicThemeVars/);
   }
@@ -117,7 +120,7 @@ test("visual QA explicitly audits both public themes and workspace light mode", 
   const publicAudit = read("scripts/audit-public-layout.mjs");
   const authenticatedAudit = read("scripts/audit-authenticated-workspace.mjs");
 
-  assert.match(publicAudit, /themeRoutes = new Set\(\["\/", "\/servicii", "\/contact", "\/templates"\]\)/);
+  assert.match(publicAudit, /themeRoutes = new Set\(\[[\s\S]*?"\/servicii"[\s\S]*?"\/contact"[\s\S]*?"\/templates"[\s\S]*?"\/porneste\/invitatie"[\s\S]*?"\/porneste\/web-design"[\s\S]*?\]\)/);
   assert.match(publicAudit, /for \(const theme of \["light", "dark"\]\)/);
   assert.match(publicAudit, /light theme reverted to pure white/);
   assert.match(publicAudit, /theme horizontal overflow/);
