@@ -180,3 +180,20 @@ test("finance prioritizes overdue collection and missing evidence", () => {
   assert.match(finance, /metrics\.missingEvidence > 0/);
   assert.match(finance, /Rezolvă dovezile/);
 });
+
+
+test("overview promotes the ranked next best action above secondary dashboard detail", () => {
+  const overview = read("components/modules/OverviewModule.tsx");
+  assert.match(overview, /ModuleNextAction/);
+  assert.match(overview, /priorityAttention = computed\?\.attention\[0\]/);
+  assert.match(overview, /taskId: priorityAttention\.taskId/);
+  assert.match(overview, /clientId: priorityAttention\.clientId/);
+  assert.match(overview, /Nu există o acțiune urgentă/);
+});
+
+test("team resource engine stays available without dominating the default screen", () => {
+  const team = read("components/modules/TeamModule.tsx");
+  assert.match(team, /<details className="group mt-5/);
+  assert.match(team, /Resurse operaționale · \{activeResourceCount\} active/);
+  assert.match(team, /Resource Engine/);
+});
