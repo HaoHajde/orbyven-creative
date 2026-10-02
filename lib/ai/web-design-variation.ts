@@ -178,15 +178,17 @@ export function getAlternativeDesignDnaCandidates(
   prompt: string,
   limit = 3
 ): DesignDna[] {
+  const fingerprint = currentFingerprint(current);
+  const promptKey = normalize(prompt);
   const ranked = [...DESIGN_DNA].sort((left, right) => {
     const distance =
       distanceFromCurrent(current, right) - distanceFromCurrent(current, left);
     if (distance !== 0) return distance;
 
-    const seed = hash(
-      `${normalize(prompt)}|${currentFingerprint(current)}|${left.id}|${right.id}`
-    );
-    return seed % 2 === 0 ? left.id.localeCompare(right.id) : right.id.localeCompare(left.id);
+    const leftSeed = hash(`${promptKey}|${fingerprint}|${left.id}`);
+    const rightSeed = hash(`${promptKey}|${fingerprint}|${right.id}`);
+    if (leftSeed !== rightSeed) return leftSeed - rightSeed;
+    return left.id.localeCompare(right.id);
   });
 
   return ranked.slice(0, Math.max(1, Math.min(limit, ranked.length)));
