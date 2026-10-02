@@ -1,6 +1,6 @@
 "use client";
 
-import { ModuleError } from "@/components/modules/ModuleKit";
+import { ModuleError, ModuleNextAction } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
 import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
@@ -365,6 +365,8 @@ export default function OverviewModule({
   const activeQuickActions = role === "viewer"
     ? []
     : QUICK_ACTIONS.filter((action) => enabledModules.includes(action.id));
+  const priorityAttention = computed?.attention[0] ?? null;
+  const priorityToday = !priorityAttention ? computed?.todayQueue[0] ?? null : null;
 
   // The ring is based only on this organization's actual task statuses.
   const workStages = [
@@ -422,6 +424,29 @@ export default function OverviewModule({
 
       {snapshot && computed ? (
         <>
+          <div className="mt-3">
+            {priorityAttention ? (
+              <ModuleNextAction
+                eyebrow={priorityAttention.level === "urgent" ? "Prioritate acum" : "Următorul pas"}
+                title={priorityAttention.title}
+                description={priorityAttention.meta}
+                action={<button type="button" onClick={() => onOpenModule(priorityAttention.module, { recordId: priorityAttention.recordId, taskId: priorityAttention.taskId, clientId: priorityAttention.clientId })} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Rezolvă →</button>}
+              />
+            ) : priorityToday ? (
+              <ModuleNextAction
+                eyebrow="Astăzi"
+                title={priorityToday.title}
+                description={priorityToday.meta}
+                action={<button type="button" onClick={() => onOpenModule(priorityToday.module, { recordId: priorityToday.recordId })} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Deschide →</button>}
+              />
+            ) : (
+              <ModuleNextAction
+                eyebrow="Acum"
+                title="Nu există o acțiune urgentă"
+                description="Poți continua cu lucrările curente sau crea o înregistrare nouă."
+              />
+            )}
+          </div>
           <section aria-label="Indicatori business" className="mt-3.5 grid grid-cols-2 gap-2 sm:gap-2.5 xl:grid-cols-4">
             <MetricCard label="Cereri active" value={snapshot.activeLeadsCount} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
             <MetricCard label="Lucrări deschise" value={snapshot.openTasksCount} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
