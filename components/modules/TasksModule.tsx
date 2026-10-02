@@ -1583,7 +1583,7 @@ function TaskDetail({
         )}
       </article>
 
-      <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
+      <article data-task-checklist="true" className="scroll-mt-28 rounded-[30px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-medium text-[var(--muted)]">Checklist</p>
