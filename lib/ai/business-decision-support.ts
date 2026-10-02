@@ -178,7 +178,7 @@ export async function answerDecisionSupport(
   const focus = briefing.focus;
   const subject = briefing.facts.find((fact) => fact.label === "Focus #1")?.value;
 
-  if (!focus || !subject) {
+  if (!focus || !focus.reason || !subject) {
     return {
       specialist: "operations",
       answer: "Nu există acum un Focus #1 suficient de clar pentru o comparație de opțiuni.",
