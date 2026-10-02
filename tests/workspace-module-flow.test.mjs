@@ -658,3 +658,16 @@ test("team and resources surface the future-booking deactivation guard clearly",
   const team = read("components/modules/TeamModule.tsx");
   assert.match(team, /resourceError instanceof Error \? resourceError\.message/);
 });
+
+
+test("fully paid invoices are logged in CRM without blocking finance", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /syncCrmAfterInvoicePaid/);
+  assert.match(sync, /Factura" \+ label \+ " a fost achitată integral/);
+
+  const financeData = read("lib/modules/expenses.ts");
+  assert.match(financeData, /const becamePaid = invoice\.status !== "paid" && nextStatus === "paid"/);
+  assert.match(financeData, /if \(paymentSync\.becamePaid && invoice\.client_id\)/);
+  assert.match(financeData, /await syncCrmAfterInvoicePaid/);
+  assert.match(financeData, /CRM invoice payment sync failed/);
+});
