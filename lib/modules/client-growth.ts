@@ -28,6 +28,15 @@ export type ClientGrowthState = {
   updated_at: string;
 };
 
+
+export type ClientGrowthCompletedWork = {
+  id: string;
+  client_id: string;
+  title: string;
+  kind: "work" | "order";
+  completed_at: string;
+};
+
 type GrowthPatch = Partial<Pick<
   ClientGrowthState,
   | "feedback_task_id"
@@ -58,6 +67,52 @@ function requireIds(organizationId: string, clientId?: string) {
 function cleanOptional(value?: string | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+export async function loadLatestCompletedClientWork(
+  organizationId: string,
+  clientId: string
+): Promise<ClientGrowthCompletedWork | null> {
+  requireIds(organizationId, clientId);
+  const { data, error } = await orbyvenSupabase
+    .from("ops_tasks")
+    .select("id,client_id,title,kind,completed_at")
+    .eq("organization_id", organizationId)
+    .eq("client_id", clientId)
+    .in("kind", ["work", "order"])
+    .eq("status", "done")
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  return ((data ?? [])[0] as ClientGrowthCompletedWork | undefined) ?? null;
+}
+
+export async function listLatestCompletedClientWorks(
+  organizationId: string,
+  limit = 160
+): Promise<ClientGrowthCompletedWork[]> {
+  requireIds(organizationId);
+  const safeLimit = Math.min(500, Math.max(1, Math.round(limit)));
+  const { data, error } = await orbyvenSupabase
+    .from("ops_tasks")
+    .select("id,client_id,title,kind,completed_at")
+    .eq("organization_id", organizationId)
+    .in("kind", ["work", "order"])
+    .eq("status", "done")
+    .not("client_id", "is", null)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) throw error;
+
+  const latestByClient = new Map<string, ClientGrowthCompletedWork>();
+  for (const row of (data ?? []) as ClientGrowthCompletedWork[]) {
+    if (!latestByClient.has(row.client_id)) latestByClient.set(row.client_id, row);
+  }
+  return [...latestByClient.values()];
 }
 
 export async function listClientGrowthStates(
