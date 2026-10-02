@@ -29,6 +29,7 @@ import {
   ModuleError,
   ModuleHeader,
   ModuleMetric,
+  ModuleNextAction,
   ModuleProgressiveMetrics,
   moduleInputClass,
 } from "@/components/modules/ModuleKit";
@@ -568,6 +569,27 @@ export default function ExpensesModule({
         </>}
         secondary={<ModuleMetric label="Cheltuieli luna aceasta" value={formatMoney(metrics.monthExpenses, "RON", locale)} note="registru operațional · RON" />}
       />
+
+      <div className="mt-3">
+        {metrics.overdue > 0 ? (
+          <ModuleNextAction
+            title={`${metrics.overdue} scadențe necesită atenție`}
+            description="Începe cu sumele restante; acestea au prioritate față de analiza istorică."
+            action={<button type="button" onClick={() => setTab("invoices")} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Vezi de încasat →</button>}
+          />
+        ) : metrics.missingEvidence > 0 ? (
+          <ModuleNextAction
+            title={`${metrics.missingEvidence} cheltuieli sunt fără document justificativ`}
+            description="Completează dovada ca dosarul financiar și operațional să rămână coerent."
+            action={<button type="button" onClick={() => { setEvidenceOnly(true); setTab("expenses"); }} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Rezolvă dovezile →</button>}
+          />
+        ) : (
+          <ModuleNextAction
+            title="Nu există o problemă financiară urgentă"
+            description="Poți continua cu înregistrările curente sau analiza cashflow-ului."
+          />
+        )}
+      </div>
 
       {scopeTaskId ? (
         <div className="mt-4 flex items-center gap-2">
