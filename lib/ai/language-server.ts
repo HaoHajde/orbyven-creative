@@ -74,7 +74,7 @@ async function claimLanguageQuota(
   conversationId: string | null,
   config: LanguageConfig
 ): Promise<string | null> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client.rpc("ai_language_claim", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -100,7 +100,7 @@ async function finishLanguageQuota(
   usage: { input: number; output: number },
   failureCode?: string
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { error } = await client.rpc("ai_language_finish", {
     p_request_id: requestId,
     p_success: success,
