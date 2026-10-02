@@ -70,7 +70,7 @@ export default function LegalDocument({
               href="/legal"
               className="hidden text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6] sm:inline-flex"
             >
-              Centrul juridic
+              {copy.center}
             </Link>
             <LanguageSwitch variant="light" initialLocale={locale} />
           </div>
@@ -92,7 +92,7 @@ export default function LegalDocument({
 
             {!legalConfig.isComplete && (
               <div className="mt-8 rounded-[22px] border border-amber-500/20 bg-amber-500/[0.08] px-5 py-4 text-sm leading-6">
-                Document de pre-lansare. Datele juridice ale operatorului și tratamentul TVA trebuie completate înainte de activarea plăților comerciale. Sistemul de billing este blocat automat până atunci.
+                {copy.prelaunch}
               </div>
             )}
 
@@ -104,7 +104,7 @@ export default function LegalDocument({
           <aside className="lg:sticky lg:top-8 lg:self-start">
             <div className="rounded-[24px] border border-black/[0.08] bg-[#f5f5f7] p-5 dark:border-white/[0.1] dark:bg-[#111113]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#86868b]">
-                Documente
+                {copy.documents}
               </p>
               <nav className="mt-4 flex flex-col gap-2.5 text-sm">
                 {legalLinks.map(([href, label]) => (
