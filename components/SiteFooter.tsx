@@ -7,30 +7,30 @@ import type { SitePage } from "@/components/SiteHeader";
 type Theme = "light" | "dark";
 
 const navItems: { key: SitePage; href: string; label: string }[] = [
-  { key: "home", href: "/", label: "Home" },
+  { key: "home", href: "/", label: "Acasă" },
   { key: "templates", href: "/templates", label: "Templates" },
-  { key: "services", href: "/servicii", label: "Services" },
-  { key: "contact", href: "/contact", label: "Get started" },
+  { key: "services", href: "/servicii", label: "Servicii" },
+  { key: "contact", href: "/contact", label: "Pornește" },
 ];
 
 const seoLinks = [
-  ["/creare-site", "Web design"],
-  ["/site-prezentare", "Business websites"],
-  ["/web-design-bucuresti", "Web design Bucharest"],
-  ["/invitatii-nunta", "Digital wedding invitations"],
-  ["/invitatii-botez", "Digital christening invitations"],
-  ["/invitatii-majorat", "Digital event invitations"],
+  ["/creare-site", "Creare site"],
+  ["/site-prezentare", "Site de prezentare"],
+  ["/web-design-bucuresti", "Web design București"],
+  ["/invitatii-nunta", "Invitații nuntă digitale"],
+  ["/invitatii-botez", "Invitații botez digitale"],
+  ["/invitatii-majorat", "Invitații majorat digitale"],
   ["/redesign-site", "Redesign"],
-  ["/studii-de-caz", "Case studies"],
-  ["/ghid", "Guide"],
+  ["/studii-de-caz", "Studii de caz"],
+  ["/ghid", "Ghid"],
 ] as const;
 
 const legalLinks = [
-  ["/legal/terms", "Terms"],
-  ["/legal/privacy", "Privacy"],
+  ["/legal/terms", "Termeni"],
+  ["/legal/privacy", "Confidențialitate"],
   ["/legal/cookies", "Cookies"],
-  ["/legal/consumer", "Consumer information"],
-  ["/legal/ai", "AI use"],
+  ["/legal/consumer", "Consumatori"],
+  ["/legal/ai", "Utilizare AI"],
 ] as const;
 
 export default function SiteFooter({ theme, activePage }: { theme: Theme; activePage: SitePage }) {
@@ -77,11 +77,11 @@ export default function SiteFooter({ theme, activePage }: { theme: Theme; active
             ))}
             <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-100">SAL · ANPC ↗</a>
             {process.env.NEXT_PUBLIC_OPTIONAL_COOKIES_ENABLED === "true" && (
-              <button type="button" onClick={() => window.dispatchEvent(new Event("orbyven:open-cookie-preferences"))} className="transition hover:opacity-100 normal-case tracking-normal">Cookie preferences</button>
+              <button type="button" onClick={() => window.dispatchEvent(new Event("orbyven:open-cookie-preferences"))} className="transition hover:opacity-100 normal-case tracking-normal">Preferințe cookies</button>
             )}
           </div>
           <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="self-start sm:self-auto">
-            Back to top ↑
+            Sus ↑
           </button>
         </div>
       </div>
