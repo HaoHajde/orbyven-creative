@@ -53,7 +53,7 @@ export async function insertAiActionProposals(
   actor: BillingActor,
   rows: AiProposalInsertRow[]
 ): Promise<Array<{ id: string; expires_at: string }>> {
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposals_insert", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -76,7 +76,7 @@ export async function listAiActionProposals(
   actor: BillingActor,
   options: { conversationId?: string | null; limit?: number } = {}
 ): Promise<AiActionProposalRow[]> {
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposals_list", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -92,7 +92,7 @@ export async function rejectAiActionProposal(
   actor: BillingActor,
   proposalId: string
 ): Promise<{ state: string; proposal: AiActionProposalRow | null }> {
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposal_reject", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -110,7 +110,7 @@ export async function claimAiActionProposal(
   actor: BillingActor,
   proposalId: string
 ): Promise<{ state: string; proposal: AiActionProposalRow | null }> {
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposal_claim", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -131,7 +131,7 @@ export async function finishAiActionProposal(
     | { success: true; resultType: string; resultId: string }
     | { success: false; failureCode: string }
 ): Promise<void> {
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposal_finish", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -150,7 +150,7 @@ export async function supersedeAiActionProposals(
   proposalIds: string[]
 ): Promise<number> {
   if (!proposalIds.length) return 0;
-  const client = createBillingServiceClient(actor);
+  const client = createBillingServiceClient();
   const { data, error } = await client.rpc("ai_action_proposals_supersede", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
