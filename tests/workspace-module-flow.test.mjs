@@ -295,7 +295,10 @@ test("work dossier routes checklist attention locally and finance after completi
   assert.match(summary, /module: "expenses"/);
 
   const tasks = read("components/modules/TasksModule.tsx");
-  assert.match(tasks, /data-task-checklist="true"/);
+  assert.match(tasks, /TaskChecklistPanel/);
+
+  const checklistPanel = read("components/modules/tasks/TaskChecklistPanel.tsx");
+  assert.match(checklistPanel, /data-task-checklist="true"/);
 });
 
 
@@ -344,4 +347,13 @@ test("finance closeout distinguishes draft invoice, collection and missing comme
 
   const estimates = read("components/modules/EstimatesModule.tsx");
   assert.match(estimates, /nextEstimates\.find\(\(item\) => item\.task_id === initialTaskId\)/);
+});
+
+
+test("tasks keeps the checklist outside the main module ownership budget", () => {
+  const tasks = read("components/modules/TasksModule.tsx");
+  const checklist = read("components/modules/tasks/TaskChecklistPanel.tsx");
+  assert.match(tasks, /import TaskChecklistPanel/);
+  assert.match(tasks, /<TaskChecklistPanel/);
+  assert.match(checklist, /WorkTaskChecklistItem/);
 });
