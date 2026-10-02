@@ -644,6 +644,9 @@ export async function attachExpenseDocument(
   if (expense.task_id && document.task_id && expense.task_id !== document.task_id) {
     throw new Error("Documentul aparține altei lucrări.");
   }
+  if (expense.estimate_id && document.estimate_id && expense.estimate_id !== document.estimate_id) {
+    throw new Error("Documentul aparține altui deviz.");
+  }
   if (
     expense.purchase_order_id &&
     document.purchase_order_id &&
