@@ -80,19 +80,22 @@ test("Plan compiler creates separate server-only proposals with explicit sequent
   assert.match(source, /randomUUID/);
   assert.match(source, /__orbyven_plan/);
   assert.match(source, /dependsOnProposalId: index > 0 \? proposalIds\[index - 1\] : null/);
-  assert.match(source, /from\("ai_action_proposals"\)\.insert\(rows\)/);
+  assert.match(source, /insertAiActionProposals/);
   assert.match(source, /kind: "review_plan"/);
   assert.doesNotMatch(source, /decideMutationProposal/);
 });
 
 test("Plan confirmation checks the previous proposal before the atomic claim", () => {
   const source = read("lib/ai/action-server.ts");
-  const dependency = source.indexOf("await assertPlanDependency");
-  const claim = source.indexOf('.update({ status: "executing"');
+  const fallback = read("supabase/migrations/20261002074430_ai_action_authenticated_fallback_rpc.sql");
+  assert.match(source, /claimAiActionProposal\(actor, proposalId\)/);
+  assert.match(source, /PLAN_DEPENDENCY_REQUIRED/);
+  const dependency = fallback.indexOf("dependsOnProposalId");
+  const claim = fallback.indexOf("set status = 'executing'");
   assert.ok(dependency >= 0);
   assert.ok(claim > dependency);
-  assert.match(source, /PLAN_DEPENDENCY_REQUIRED/);
-  assert.match(source, /dependencyMeta\.step !== meta\.step - 1/);
+  assert.match(fallback, /dependency_required/);
+  assert.match(fallback, /v_dependency_step_text::integer <> v_step_text::integer - 1/);
 });
 
 test("Calendar execution revalidates and writes the universal operation linkage", () => {
@@ -107,10 +110,13 @@ test("Calendar execution revalidates and writes the universal operation linkage"
 
 test("Persisted Plan Mode state is actor and organization scoped", () => {
   const source = read("lib/ai/plan-server.ts");
+  const proposalServer = read("lib/ai/proposal-server.ts");
   const route = read("app/api/ai/plans/route.ts");
-  assert.match(source, /\.eq\("organization_id", actor\.organizationId\)/);
-  assert.match(source, /\.eq\("actor_id", actor\.userId\)/);
-  assert.match(source, /\.eq\("conversation_id", conversationId\)/);
+  assert.match(source, /listAiActionProposals\(actor/);
+  assert.match(source, /conversationId/);
+  assert.match(proposalServer, /p_organization_id: actor\.organizationId/);
+  assert.match(proposalServer, /p_actor_id: actor\.userId/);
+  assert.match(proposalServer, /p_conversation_id: options\.conversationId \?\? null/);
   assert.match(route, /authenticateBillingActor\(request, organizationId, false\)/);
 });
 
@@ -121,10 +127,11 @@ test("Language layer cannot rewrite Plan Mode actions", () => {
 
 test("Workspace renders separate per-step confirmation instead of one bulk execution control", () => {
   const source = read("components/WorkspaceIntelligence.tsx");
-  assert.match(source, /PLAN MODE/);
-  assert.match(source, /Confirmă pasul/);
-  assert.match(source, /Oprește planul/);
-  assert.match(source, /Fiecare pas se confirmă separat/);
+  assert.match(source, />PLAN<\/p>/);
+  assert.match(source, /Confirmare pas cu pas/);
+  assert.match(source, /"Confirmă"/);
+  assert.match(source, />\s*Oprește\s*</);
+  assert.match(source, /Plan pregătit ·/);
   assert.match(source, /loadPlanForConversation/);
 });
 
@@ -148,7 +155,9 @@ test("Plan Recovery rebuilds only remaining proposal steps with a fresh dependen
   assert.match(source, /dependsOnProposalId: index > 0 \? newProposalIds\[index - 1\] : null/);
   assert.match(source, /recoveredFromPlanId: planId/);
   assert.match(source, /recoveredFromStep: recovery\.blockedStep/);
-  assert.match(source, /PLAN_SUPERSEDED_BY_RECOVERY/);
+  assert.match(source, /supersedeAiActionProposals/);
+  const fallback = read("supabase/migrations/20261002074430_ai_action_authenticated_fallback_rpc.sql");
+  assert.match(fallback, /PLAN_SUPERSEDED_BY_RECOVERY/);
   assert.doesNotMatch(source, /recoverPlan[\s\S]{0,9000}executeClaimedProposal/);
 });
 
@@ -173,11 +182,11 @@ test("Plan Recovery endpoint is authenticated, bounded and no-store", () => {
 test("Recovered plans remain audited and explicitly confirmed step by step", () => {
   const source = read("lib/ai/plan-server.ts");
   const ui = read("components/WorkspaceIntelligence.tsx");
-  assert.match(source, /action: "ai_plan\.recovered"/);
+  assert.match(source, /p_action: "ai_plan\.recovered"/);
   assert.match(source, /execution: "proposal_only_explicit_confirmation_required"/);
   assert.match(ui, /PLAN RECOVERY/);
   assert.match(ui, /recoverPlanAction/);
-  assert.match(ui, /Confirmă pasul/);
+  assert.match(ui, /"Confirmă"/);
   assert.doesNotMatch(ui, />\\s*Confirmă tot\\s*</);
 });
 
