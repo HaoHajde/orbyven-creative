@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
 import { detectOperationalQuery } from "../lib/ai/operational-query.ts";
+import { detectEntityIntelligenceQuery } from "../lib/ai/entity-intelligence.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -81,4 +82,34 @@ test("Operational Query Mode resolves concrete dashboard questions before generi
   assert.match(query, /\.limit\(120\)/);
   assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
   assert.match(query, /recordId: row\.id/);
+});
+
+
+test("Entity Intelligence detects named client/work queries and stays bounded read-only", () => {
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Ce se întâmplă cu clientul Popescu SRL?"),
+    { kind: "client", value: "Popescu SRL" }
+  );
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Arată-mi situația pentru lucrarea Revizie centrală"),
+    { kind: "work", value: "Revizie centrală" }
+  );
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Ce am făcut pentru clientul acela; client: Exemplu SRL"),
+    { kind: "client", value: "Exemplu SRL" }
+  );
+  assert.equal(detectEntityIntelligenceQuery("Creează client: Exemplu SRL"), null);
+
+  const server = read("lib/ai/intelligence-server.ts");
+  const entity = read("lib/ai/entity-intelligence.ts");
+  assert.match(server, /answerEntityIntelligenceQuery\(actor, available, prompt\)/);
+  assert.match(entity, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(entity, /crm_leads/);
+  assert.match(entity, /ops_tasks/);
+  assert.match(entity, /sales_estimates/);
+  assert.match(entity, /calendar_events/);
+  assert.match(entity, /ops_documents/);
+  assert.match(entity, /FINANCE_ROLES/);
+  assert.match(entity, /available\.has\("expenses"\)/);
+  assert.doesNotMatch(entity, /\.(insert|update|delete|upsert)\s*\(/);
 });
