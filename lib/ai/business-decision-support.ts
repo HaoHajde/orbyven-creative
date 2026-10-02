@@ -170,6 +170,49 @@ const OPTIONS: Record<IntelligenceFocusReason, IntelligenceDecisionOption[]> = {
   ],
 };
 
+function safePlanText(value: string, max = 120) {
+  return value
+    .replace(/[;\n\r]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+function handoffPlanPrompt(
+  reason: IntelligenceFocusReason,
+  option: IntelligenceDecisionOption,
+  subject: string
+) {
+  const base = safePlanText(
+    subject.replace(
+      /^(?:Deblochează|Termen depășit|Urgent|Prioritate ridicată|Fără responsabil|Fără programare|Follow-up lead|Ofertă de urmărit|Ofertă fără răspuns|Programare)\s*·\s*/i,
+      ""
+    )
+  );
+  const urgent = reason === "blocked" || reason === "overdue" || reason === "unassigned";
+  const firstPriority = urgent ? "urgent" : "high";
+  const secondPriority = urgent ? "high" : "normal";
+  const firstTitle = safePlanText(option.label + " · " + base, 170);
+  const secondTitle = safePlanText("Verifică rezultatul · " + base, 170);
+  const firstDescription = safePlanText(
+    option.impact + " Potrivit când: " + option.whenToUse,
+    420
+  );
+  const secondDescription = safePlanText(
+    "Confirmă efectul variantei „" + option.label + "” și stabilește următorul pas pentru " + base + ".",
+    420
+  );
+
+  return (
+    "Creează task; titlu: " + firstTitle +
+    "; prioritate: " + firstPriority +
+    "; descriere: " + firstDescription +
+    "; apoi creează task; titlu: " + secondTitle +
+    "; prioritate: " + secondPriority +
+    "; descriere: " + secondDescription
+  ).slice(0, 1100);
+}
+
 export async function answerDecisionSupport(
   actor: BillingActor,
   available: Set<OrbyvenModuleId>
@@ -196,7 +239,12 @@ export async function answerDecisionSupport(
     focus,
     decision: {
       subject,
-      options: OPTIONS[focus.reason],
+      options: OPTIONS[focus.reason].map((option) => ({
+        ...option,
+        ...(available.has("tasks")
+          ? { handoffPrompt: handoffPlanPrompt(focus.reason!, option, subject) }
+          : {}),
+      })),
       confidence: "high",
     },
     generatedBy: "orbyven_core",
