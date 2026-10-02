@@ -48,6 +48,7 @@ export const TENANT_EXPORT_TABLES = [
 ] as const;
 
 const PER_TABLE_LIMIT = 2000;
+const PAGE_SIZE = 500;
 const MAX_ARCHIVE_BYTES = 8 * 1024 * 1024;
 
 export class TenantExportError extends Error {}
@@ -83,6 +84,36 @@ export function requireExportableCase(
   }
 }
 
+async function loadTenantRows(
+  admin:SupabaseClient,
+  name:string,
+  organizationId:string,
+) {
+  const {count,error:countError}=await admin.from(name)
+    .select("organization_id",{count:"exact",head:true})
+    .eq("organization_id",organizationId);
+  if(countError || count===null) {
+    throw new TenantExportError("Archive cannot safely count "+name);
+  }
+  if(count>PER_TABLE_LIMIT) {
+    throw new TenantExportError("Archive limit reached in "+name+"; manual paginated transfer required.");
+  }
+  if(count===0)return [];
+
+  const rows:unknown[]=[];
+  for(let start=0;start<count;start+=PAGE_SIZE) {
+    const end=Math.min(start+PAGE_SIZE-1,count-1);
+    const {data,error}=await admin.from(name)
+      .select("*").eq("organization_id",organizationId).range(start,end);
+    if(error)throw new TenantExportError("Archive cannot safely include "+name);
+    rows.push(...(data??[]));
+  }
+  if(rows.length!==count) {
+    throw new TenantExportError("Archive changed while reading "+name+"; retry or use assisted export.");
+  }
+  return stableRows(rows);
+}
+
 export async function buildTenantArchive(
   admin:SupabaseClient,
   organizationId:string,
@@ -97,14 +128,7 @@ export async function buildTenantArchive(
   const datasets:Record<string,unknown[]> = {};
   // Sequential for predictable bounds. No partial archive is ever returned.
   for(const name of TENANT_EXPORT_TABLES) {
-    const {data,error}=await admin.from(name)
-      .select("*").eq("organization_id",organizationId)
-      .range(0,PER_TABLE_LIMIT);
-    if(error)throw new TenantExportError("Archive cannot safely include "+name);
-    if((data??[]).length>PER_TABLE_LIMIT) {
-      throw new TenantExportError("Archive limit reached in "+name+"; manual paginated transfer required.");
-    }
-    datasets[name]=stableRows(data??[]);
+    datasets[name]=await loadTenantRows(admin,name,organizationId);
   }
   const archive={
     format:"orbyven-tenant-export",

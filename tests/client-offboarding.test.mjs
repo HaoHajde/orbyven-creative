@@ -43,11 +43,12 @@ test("export allowlist excludes cross-tenant/Auth/platform and raw payment data"
 test("org-scoped archive keeps only tenant records, records explicit exclusions, and has checksum",async()=>{
   const calls=[];
   const admin={from:(table)=>({
-    select:()=>({eq:(column,value)=>{
-      calls.push({table,column,value});
+    select:(columns,options)=>({eq:(column,value)=>{
+      calls.push({table,column,value,columns});
       if(table==="organizations")return {maybeSingle:async()=>({
         data:{id:value,name:"Client Pilot"},error:null
       })};
+      if(options?.head)return Promise.resolve({count:1,error:null,data:null});
       return {range:async()=>({
         data:[{id:table+"-record",organization_id:value}],error:null
       })};
@@ -63,14 +64,26 @@ test("org-scoped archive keeps only tenant records, records explicit exclusions,
   assert.ok(calls.every(c=>c.value===org));
 });
 
-test("an oversized dataset is rejected, never emitted as partial export",async()=>{
+test("an oversized dataset is rejected before partial rows are emitted",async()=>{
   const admin={from:(table)=>({
-    select:()=>({eq:()=>table==="organizations"
-      ? {maybeSingle:async()=>({data:{id:org},error:null})}
-      : {range:async()=>({data:Array.from({length:2001},()=>({})),error:null})}
-    }),
+    select:(columns,options)=>({eq:(column,value)=>{
+      if(table==="organizations")return {maybeSingle:async()=>({data:{id:value},error:null})};
+      if(options?.head)return Promise.resolve({count:2001,error:null,data:null});
+      return {range:async()=>({data:[],error:null})};
+    }}),
   })};
   await assert.rejects(buildTenantArchive(admin,org,caseId,"2026-09-27T13:00:00.000Z"),/limit reached/);
+});
+
+test("page/count mismatch fails closed instead of returning a partial archive",async()=>{
+  const admin={from:(table)=>({
+    select:(columns,options)=>({eq:(column,value)=>{
+      if(table==="organizations")return {maybeSingle:async()=>({data:{id:value},error:null})};
+      if(options?.head)return Promise.resolve({count:2,error:null,data:null});
+      return {range:async()=>({data:[{id:"only-one",organization_id:value}],error:null})};
+    }}),
+  })};
+  await assert.rejects(buildTenantArchive(admin,org,caseId,"2026-09-27T13:00:00.000Z"),/changed while reading/);
 });
 
 test("no anon/authenticated grants, no automatic deletion, and append-only audit",()=>{
@@ -98,10 +111,11 @@ test("owner-only download, staff-only authorization, and clear distinction from 
 
 test("archive checksum is stable when Supabase returns rows in a different order",async()=>{
   const makeAdmin=(reverse)=>({from:(table)=>({
-    select:()=>({eq:(column,value)=>{
+    select:(columns,options)=>({eq:(column,value)=>{
       if(table==="organizations")return {maybeSingle:async()=>({
         data:{updated_at:"2026-09-30T00:00:00Z",id:value,name:"Client Pilot",slug:"pilot",legal_name:null,lifecycle_status:"active",created_at:"2026-01-01T00:00:00Z"},error:null
       })};
+      if(options?.head)return Promise.resolve({count:2,error:null,data:null});
       const rows=[
         {organization_id:value,id:"b",nested:{z:1,a:2}},
         {nested:{a:1,z:2},id:"a",organization_id:value},
