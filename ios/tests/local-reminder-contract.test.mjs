@@ -40,7 +40,9 @@ test("calendar module mirrors its existing reminder_minutes into native reminder
   assert.match(calendar, /postCalendarReminderBridge/);
   assert.match(calendar, /orbyven:schedule-calendar-reminder/);
   assert.match(calendar, /orbyven:cancel-calendar-reminder/);
-  assert.match(calendar, /created\.reminder_minutes !== null/);
+  assert.match(calendar, /syncNativeCalendarReminder\(created\)/);
+  assert.match(calendar, /syncNativeCalendarReminder\(updated\)/);
+  assert.match(calendar, /type: "orbyven:cancel-calendar-reminder"/);
 });
 
 test("workspace opens the exact calendar record and acknowledges native routing", () => {
