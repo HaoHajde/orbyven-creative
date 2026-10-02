@@ -16,7 +16,8 @@ const navItems: {
 }[] = [
   { key: "home", href: "/", label: "Home" },
   { key: "templates", href: "/templates", label: "Templates" },
-  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },\n  { key: "videoAi", href: "/video-ai", label: "Video AI" },
+  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
+  { key: "videoAi", href: "/video-ai", label: "Video AI" },
   { key: "services", href: "/servicii", label: "Services" },
   { key: "contact", href: "/contact", label: "Get started" },
 ];
