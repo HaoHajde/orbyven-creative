@@ -20,6 +20,8 @@ import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
+import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -162,6 +164,7 @@ export default function LeadsModule({
   const selectedLifecycle = selectedLead?.kind === "client"
     ? lifecycleByClient.get(selectedLead.id) ?? null
     : null;
+  useWorkspaceLiveContext({ clientId: selectedLead?.id });
   useWorkspaceRecordFocus(initialRecordId, selectedLeadId, loading);
   useWorkspaceSelectionWarp(selectedLeadId, loading);
 
@@ -496,29 +499,25 @@ export default function LeadsModule({
             </span>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <Field label="Nume *" value={draft.name} onChange={(value) => setDraft((d) => ({ ...d, name: value }))} />
-            <Field label="Companie" value={draft.company} onChange={(value) => setDraft((d) => ({ ...d, company: value }))} />
             <Field label="Telefon" value={draft.phone} onChange={(value) => setDraft((d) => ({ ...d, phone: value }))} />
             <Field label="Email" type="email" value={draft.email} onChange={(value) => setDraft((d) => ({ ...d, email: value }))} />
-            <Field label="Sursă" value={draft.source} onChange={(value) => setDraft((d) => ({ ...d, source: value }))} />
-            <Field label="Valoare estimată" type="number" value={draft.estimatedValue} onChange={(value) => setDraft((d) => ({ ...d, estimatedValue: value }))} />
-            <Field label="Monedă" value={draft.currency} onChange={(value) => setDraft((d) => ({ ...d, currency: value }))} />
-            <Field label="Follow-up" type="datetime-local" value={draft.nextFollowUpAt} onChange={(value) => setDraft((d) => ({ ...d, nextFollowUpAt: value }))} />
+            <Field label="Companie" value={draft.company} onChange={(value) => setDraft((d) => ({ ...d, company: value }))} />
           </div>
 
-          <label className="mt-3 block">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
-              Notă
-            </span>
-            <textarea
-              value={draft.note}
-              onChange={(event) => setDraft((d) => ({ ...d, note: event.target.value }))}
-              rows={3}
-              className="w-full resize-none rounded-[18px] border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
-              placeholder="Ce trebuie să știi despre această cerere?"
-            />
-          </label>
+          <ModuleAdvancedFields label="Context comercial">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Sursă" value={draft.source} onChange={(value) => setDraft((d) => ({ ...d, source: value }))} />
+              <Field label="Valoare estimată" type="number" value={draft.estimatedValue} onChange={(value) => setDraft((d) => ({ ...d, estimatedValue: value }))} />
+              <Field label="Monedă" value={draft.currency} onChange={(value) => setDraft((d) => ({ ...d, currency: value }))} />
+              <Field label="Follow-up" type="datetime-local" value={draft.nextFollowUpAt} onChange={(value) => setDraft((d) => ({ ...d, nextFollowUpAt: value }))} />
+            </div>
+            <label className="mt-3 block">
+              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Notă</span>
+              <textarea value={draft.note} onChange={(event) => setDraft((d) => ({ ...d, note: event.target.value }))} rows={3} className="w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm outline-none focus:border-[var(--accent)]" placeholder="Ce trebuie să știi despre această cerere?" />
+            </label>
+          </ModuleAdvancedFields>
 
           <button
             type="submit"
@@ -530,13 +529,18 @@ export default function LeadsModule({
         </form>
       )}
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Metric label="Cereri active" value={String(metrics.active)} note="în lucru acum" />
-        <Metric label="Clienți" value={String(metrics.clients)} note="convertiți din pipeline" />
-        <Metric label="Pipeline" value={money.format(metrics.pipeline)} note="valoare estimată" />
-        <Metric label="Follow-up" value={String(metrics.followUps)} note="programate" />
-        <Metric label="De reactivat" value={String(metrics.reactivation)} note="relații fără pas următor" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <Metric label="Cereri active" value={String(metrics.active)} note="în lucru acum" />
+          <Metric label="Follow-up" value={String(metrics.followUps)} note="programate" />
+          <Metric label="De reactivat" value={String(metrics.reactivation)} note="relații fără pas următor" />
+        </>}
+        secondary={<>
+          <Metric label="Clienți" value={String(metrics.clients)} note="convertiți din pipeline" />
+          <Metric label="Pipeline" value={money.format(metrics.pipeline)} note="valoare estimată" />
+        </>}
+      />
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
@@ -628,29 +632,37 @@ export default function LeadsModule({
                     {selectedLead.company || "Persoană / companie nespecificată"}
                   </p>
                 </div>
-                {canWrite && selectedLead.kind === "lead" && (
-                  <button
-                    type="button"
-                    onClick={convertToClient}
-                    disabled={saving}
-                    className="h-10 shrink-0 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50"
-                  >
-                    Transformă în client
-                  </button>
-                )}
+
               </div>
 
-              {canWrite && <div className="mt-4 flex flex-wrap gap-2">
-                {enabledModules.includes("tasks") && (
-                  <button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Lucrare pentru acest client</button>
-                )}
-                {enabledModules.includes("estimates") && (
-                  <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă pentru acest client</button>
-                )}
-                {enabledModules.includes("calendar") && (
-                  <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>
-                )}
-              </div>}
+              {canWrite && selectedLead.kind === "lead" ? (
+                <div className="mt-4">
+                  <ModuleNextAction
+                    title="Transformă cererea în client"
+                    description="Păstrezi istoricul și poți porni apoi lucrarea, oferta sau programarea."
+                    action={<button type="button" onClick={convertToClient} disabled={saving} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50">Transformă →</button>}
+                  />
+                </div>
+              ) : canWrite && selectedLead.kind === "client" ? (
+                <div className="mt-4">
+                  {enabledModules.includes("tasks") ? (
+                    <ModuleNextAction title="Pornește următoarea lucrare" description="Clientul rămâne asociat automat." action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Lucrare</button>} />
+                  ) : enabledModules.includes("estimates") ? (
+                    <ModuleNextAction title="Pregătește o ofertă" action={<button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă</button>} />
+                  ) : enabledModules.includes("calendar") ? (
+                    <ModuleNextAction title="Programează următorul contact" action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>} />
+                  ) : null}
+                  {(enabledModules.includes("estimates") || enabledModules.includes("calendar")) && (
+                    <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--bg)]">
+                      <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Alte acțiuni</summary>
+                      <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+                        {enabledModules.includes("estimates") && <button type="button" onClick={() => onOpenModule("estimates", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
+                        {enabledModules.includes("calendar") && <button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selectedLead.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              ) : null}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <Detail label="Telefon" value={selectedLead.phone || "—"} />
