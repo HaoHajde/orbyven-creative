@@ -122,6 +122,15 @@ export default function WorkspaceShell({
       if (nextWorkspace) {
         setWorkspace(nextWorkspace);
         setLoadError("");
+
+        if (!nextWorkspace.enabledModules.includes(activeModule)) {
+          setPanel("workspace");
+          setActiveModule("overview");
+          setNavigation((current) => ({
+            module: "overview",
+            token: current.token + 1,
+          }));
+        }
         return;
       }
 
@@ -131,7 +140,7 @@ export default function WorkspaceShell({
     } catch (error) {
       console.error("Silent workspace refresh failed", error);
     }
-  }, [onUnauthenticated]);
+  }, [activeModule, onUnauthenticated]);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("orbyven-dashboard-theme");
@@ -203,17 +212,6 @@ export default function WorkspaceShell({
     () => ORBYVEN_MODULES.filter((definition) => enabledModules.includes(definition.id)),
     [enabledModules]
   );
-
-  useEffect(() => {
-    if (!enabledModules.includes(activeModule)) {
-      setPanel("workspace");
-      setActiveModule("overview");
-      setNavigation((current) => ({
-        module: "overview",
-        token: current.token + 1,
-      }));
-    }
-  }, [activeModule, enabledModules]);
 
   const activeDefinition =
     ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ?? ORBYVEN_MODULES[0];
