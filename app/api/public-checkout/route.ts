@@ -24,8 +24,18 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     console.error("Public checkout unavailable.", message);
+
+    const sandboxFallback =
+      message.includes("not configured for commercial use") ||
+      message.includes("commercial checkout is paused");
+
     return NextResponse.json(
-      { error: "Plata nu este disponibilă momentan. Încearcă din nou în câteva momente." },
+      {
+        error: sandboxFallback
+          ? "Checkout-ul comercial nu este activ încă."
+          : "Plata nu este disponibilă momentan. Încearcă din nou în câteva momente.",
+        code: sandboxFallback ? "SANDBOX_FALLBACK" : "CHECKOUT_UNAVAILABLE",
+      },
       { status: 503 }
     );
   }
