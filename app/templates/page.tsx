@@ -105,7 +105,7 @@ const templateCategories = [
   {
     id: "medical",
     short: "Medical",
-    kicker: "Medical · servicii profesionale",
+    kicker: "Medical · professional services",
     title: "Medical",
     description: "Clear information, trust and easy booking for services where comfort matters.",
     featuredHrefs: ["/templates/pilot-010-dental-clinic"],
@@ -299,7 +299,7 @@ export default function TemplatesPage() {
               transition={{ duration: .9, delay: .06, ease }}
               className="mt-6 max-w-[1120px] text-[clamp(62px,10vw,150px)] font-semibold leading-[.78] tracking-[-.078em]"
             >
-              Vezi.
+              See it.
               <br />
               <span className="text-white/35">Understand it.</span>
               <br />
