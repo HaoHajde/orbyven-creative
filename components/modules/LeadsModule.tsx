@@ -15,6 +15,7 @@ import {
   type CrmLeadStage,
 } from "@/lib/modules/leads";
 import { evaluateClientLifecycle, type ClientLifecycleSnapshot } from "@/lib/automation/client-lifecycle";
+import { syncNativeCrmFollowUp } from "@/lib/modules/native-reminders";
 import { displayPostServiceActivity } from "@/lib/automation/post-service-growth";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
@@ -271,6 +272,7 @@ export default function LeadsModule({
           ? new Date(draft.nextFollowUpAt).toISOString()
           : null,
       });
+      syncNativeCrmFollowUp(created);
       setLeads((current) => [created, ...current]);
       setSelectedLeadId(created.id);
       setDraft(emptyDraft(locale));
@@ -298,6 +300,7 @@ export default function LeadsModule({
       setLeads((current) =>
         current.map((lead) => (lead.id === updated.id ? updated : lead))
       );
+      syncNativeCrmFollowUp(updated);
       const label = STAGES.find((item) => item.id === stage)?.label ?? stage;
       const activity = await createCrmLeadActivity(
         organizationId,
@@ -327,6 +330,7 @@ export default function LeadsModule({
       setLeads((current) =>
         current.map((lead) => (lead.id === updated.id ? updated : lead))
       );
+      syncNativeCrmFollowUp(updated);
       setLifecycleNowIso(new Date().toISOString());
       const activity = await createCrmLeadActivity(
         organizationId,
@@ -365,6 +369,7 @@ export default function LeadsModule({
             "Follow-up reprogramat."
           );
       setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead));
+      syncNativeCrmFollowUp(updated);
       setLifecycleNowIso(new Date().toISOString());
       if (done) {
         try {
@@ -401,6 +406,7 @@ export default function LeadsModule({
         `Reactivare client planificată peste ${days} zile.`
       );
       setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead));
+      syncNativeCrmFollowUp(updated);
       setLifecycleNowIso(new Date().toISOString());
       const local = new Date(new Date(updated.next_follow_up_at!).getTime() - new Date(updated.next_follow_up_at!).getTimezoneOffset() * 60000)
         .toISOString()
