@@ -1,4 +1,5 @@
 "use client";
+import AppDownloadSection from "@/components/AppDownloadSection";
 
 import OrbitalSystem from "@/components/OrbitalSystem";
 import SiteFooter from "@/components/SiteFooterEn";
@@ -559,6 +560,8 @@ export default function ServicesPage() {
           </div>
         </div>
       </section>
+
+      <AppDownloadSection locale="en" />
 
       <SiteFooter theme={theme} activePage="services" />
     </main>
