@@ -42,12 +42,14 @@ const RULE_ORDER: Record<string, number> = {
   operation_due_soon: 19,
   operation_unplanned: 20,
   appointment_upcoming: 21,
-  post_service_recovery: 19,
-  post_service_feedback: 20,
-  post_service_feedback_followup: 21,
-  post_service_review: 22,
-  post_service_referral: 23,
-  post_service_upsell: 24,
+  post_service_recovery: 22,
+  post_service_feedback: 23,
+  post_service_feedback_followup: 24,
+  post_service_review: 25,
+  post_service_review_followup: 26,
+  post_service_referral: 27,
+  post_service_referral_followup: 28,
+  post_service_upsell: 29,
 };
 
 function ruleOrder(rule?: string) {
