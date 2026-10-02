@@ -118,7 +118,12 @@ export async function updateTeamMember(
     .eq("id", memberId)
     .select(FIELDS)
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes("resource_has_future_bookings")) {
+      throw new Error("Membrul este alocat în programări viitoare. Realocă sau anulează acele programări din Calendar înainte de a-l marca inactiv.");
+    }
+    throw error;
+  }
   return data as TeamMember;
 }
 
