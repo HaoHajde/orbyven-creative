@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { buildStoryboard } from "../lib/video-ai-director.ts";
 import { buildRenderManifest, getVideoProviders } from "../lib/video-ai-render.ts";
@@ -58,4 +60,13 @@ test("Video provider registry exposes Wan, LTX and external adapters", () => {
     ["wan", "ltx", "external"],
   );
   assert.ok(providers.every((provider) => provider.supports.textToVideo));
+});
+
+
+test("Video AI render route validates payloads and never embeds provider secrets", () => {
+  const route = readFileSync(join(process.cwd(), "app/api/video-ai/render-plan/route.ts"), "utf8");
+  assert.match(route, /Cache-Control": "no-store"/);
+  assert.match(route, /allowedProviders/);
+  assert.match(route, /buildRenderManifest/);
+  assert.doesNotMatch(route, /NEXT_PUBLIC_.*VIDEO/i);
 });
