@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
+import { detectOperationalQuery } from "../lib/ai/operational-query.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -61,4 +62,23 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   assert.match(route, /answerIntelligenceForActor/);
   assert.match(route, /ensureConversation/);
   assert.match(route, /persistAssistantResponse/);
+});
+
+
+test("Operational Query Mode resolves concrete dashboard questions before generic overview", () => {
+  assert.equal(detectOperationalQuery("Ce lucrări sunt întârziate?"), "overdue_tasks");
+  assert.equal(detectOperationalQuery("Arată-mi lucrările blocate"), "blocked_tasks");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt fără responsabil?"), "unassigned_tasks");
+  assert.equal(detectOperationalQuery("Ce am de făcut azi?"), "today");
+  assert.equal(detectOperationalQuery("Ce leaduri trebuie contactate azi?"), "lead_followups");
+  assert.equal(detectOperationalQuery("Ce oferte expiră și trebuie urmărite?"), "estimate_followups");
+  assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
+
+  const server = read("lib/ai/intelligence-server.ts");
+  const query = read("lib/ai/operational-query.ts");
+  assert.match(server, /answerOperationalQuery\(actor, available, prompt\)/);
+  assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(query, /\.limit\(120\)/);
+  assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(query, /recordId: row\.id/);
 });
