@@ -1,3 +1,4 @@
+import { syncCrmAfterInvoicePaid } from "@/lib/automation/status-sync";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 
 export type ExpensePaymentMethod = "cash" | "card" | "bank" | "other";
@@ -175,12 +176,16 @@ async function syncInvoicePaidStatus(
   invoice: FinanceInvoice,
   paidCents?: number
 ) {
-  if (!["issued", "paid"].includes(invoice.status)) return;
+  if (!["issued", "paid"].includes(invoice.status)) {
+    return { becamePaid: false as const, statusChanged: false as const };
+  }
   const paid = paidCents ?? await paidForInvoice(organizationId, invoice.id);
   const isPaid = invoice.total_cents > 0 && paid >= invoice.total_cents;
   const nextStatus = isPaid ? "paid" : "issued";
   const nextPaidAt = isPaid ? invoice.paid_at || new Date().toISOString() : null;
-  if (invoice.status === nextStatus && invoice.paid_at === nextPaidAt) return;
+  if (invoice.status === nextStatus && invoice.paid_at === nextPaidAt) {
+    return { becamePaid: false as const, statusChanged: false as const };
+  }
 
   const { error } = await orbyvenSupabase
     .from("sales_commercial_documents")
@@ -189,6 +194,9 @@ async function syncInvoicePaidStatus(
     .eq("id", invoice.id)
     .eq("document_type", "invoice_draft");
   if (error) throw error;
+
+  const becamePaid = invoice.status !== "paid" && nextStatus === "paid";
+  return { becamePaid, statusChanged: true as const };
 }
 
 export async function listExpenses(organizationId: string): Promise<BusinessExpense[]> {
@@ -584,11 +592,22 @@ export async function createIncome(
   if (error) throw error;
 
   if (invoice) {
-    await syncInvoicePaidStatus(
+    const paymentSync = await syncInvoicePaidStatus(
       organizationId,
       invoice,
       (await paidForInvoice(organizationId, invoice.id))
     );
+    if (paymentSync.becamePaid && invoice.client_id) {
+      try {
+        await syncCrmAfterInvoicePaid(
+          organizationId,
+          invoice.client_id,
+          invoice.external_reference || invoice.reference
+        );
+      } catch (crmError) {
+        console.error("CRM invoice payment sync failed", crmError);
+      }
+    }
   }
   return data as FinanceIncomeEntry;
 }
