@@ -1,5 +1,5 @@
 import { createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
-import type { IntelligenceAction, IntelligenceIntelligenceFocusReason, IntelligenceResponse } from "@/lib/ai/intelligence-types";
+import type { IntelligenceAction, IntelligenceFocusReason, IntelligenceResponse } from "@/lib/ai/intelligence-types";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 type TaskRow = {
