@@ -15,13 +15,15 @@ function errorResponse(code: string) {
     code === "AUTH_REQUIRED" ? 401 :
     code === "ORG_ACCESS_REQUIRED" ? 403 :
     code === "CONVERSATION_NOT_FOUND" ? 404 :
-    ["DECISION_NOT_AVAILABLE", "DECISION_HANDOFF_UNAVAILABLE", "DECISION_HANDOFF_INVALID"].includes(code) ? 409 :
+    ["DECISION_NOT_AVAILABLE", "DECISION_STALE", "DECISION_HANDOFF_UNAVAILABLE", "DECISION_HANDOFF_INVALID"].includes(code) ? 409 :
     500;
 
   const message =
     code === "DECISION_NOT_AVAILABLE"
-      ? "Focus-ul s-a schimbat sau nu mai există o comparație validă. Cere din nou opțiunile."
-      : code === "DECISION_HANDOFF_UNAVAILABLE"
+      ? "Nu mai există o comparație validă. Cere din nou opțiunile."
+      : code === "DECISION_STALE"
+        ? "Focus-ul sau variantele s-au schimbat între timp. Cere din nou comparația înainte de a continua."
+        : code === "DECISION_HANDOFF_UNAVAILABLE"
         ? "Varianta nu poate fi transformată acum într-un plan confirmabil."
         : code === "DECISION_HANDOFF_INVALID"
           ? "Planul rezultat nu a trecut verificarea de siguranță."
@@ -45,13 +47,19 @@ export async function POST(request: Request) {
     const organizationId = typeof body.organizationId === "string" ? body.organizationId.trim() : "";
     const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
     const optionIndex = typeof body.optionIndex === "number" ? body.optionIndex : Number(body.optionIndex);
+    const expectedSubject = typeof body.expectedSubject === "string" ? body.expectedSubject.trim() : "";
+    const expectedOptionLabel = typeof body.expectedOptionLabel === "string" ? body.expectedOptionLabel.trim() : "";
 
     if (
       !/^[a-f0-9-]{36}$/i.test(organizationId) ||
       !/^[a-f0-9-]{36}$/i.test(conversationId) ||
       !Number.isInteger(optionIndex) ||
       optionIndex < 0 ||
-      optionIndex > 2
+      optionIndex > 2 ||
+      !expectedSubject ||
+      expectedSubject.length > 180 ||
+      !expectedOptionLabel ||
+      expectedOptionLabel.length > 120
     ) {
       return NextResponse.json(
         { error: "Cerere invalidă." },
@@ -71,6 +79,9 @@ export async function POST(request: Request) {
     const option = decision?.options[optionIndex];
 
     if (!decision || !option) throw new Error("DECISION_NOT_AVAILABLE");
+    if (decision.subject !== expectedSubject || option.label !== expectedOptionLabel) {
+      throw new Error("DECISION_STALE");
+    }
     if (!option.handoffPrompt) throw new Error("DECISION_HANDOFF_UNAVAILABLE");
 
     const handoff = await answerIntelligenceForActor(
@@ -108,6 +119,7 @@ export async function POST(request: Request) {
       "ORG_ACCESS_REQUIRED",
       "CONVERSATION_NOT_FOUND",
       "DECISION_NOT_AVAILABLE",
+      "DECISION_STALE",
       "DECISION_HANDOFF_UNAVAILABLE",
       "DECISION_HANDOFF_INVALID",
     ].includes(code)) {
