@@ -2,7 +2,7 @@ import type {
   WebDesignBriefGap,
   WebDesignBriefGapId,
   WebDesignBriefGapReport,
-} from "@/lib/ai/web-design-brief-gaps";
+} from "./web-design-brief-gaps.ts";
 
 export type WebDesignInterviewQuestion = WebDesignBriefGap;
 
