@@ -70,12 +70,12 @@ export type PlanRecoveryResult =
       plan: PlanAction;
     };
 
-async function organizationTimeZone(organizationId: string) {
-  const client = createBillingServiceClient();
+async function organizationTimeZone(actor: BillingActor) {
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("organization_profiles")
     .select("timezone")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
   if (error) throw error;
   return data?.timezone || "Europe/Bucharest";
@@ -259,7 +259,7 @@ function buildPlanAction(planRows: StoredPlanProposal[]): PlanAction {
 
 async function loadPlanRows(actor: BillingActor, planId: string) {
   if (!/^[a-f0-9-]{36}$/i.test(planId)) throw new Error("PLAN_ID_INVALID");
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_action_proposals")
     .select("id,action_type,payload,summary,status,expires_at,created_at,failure_code,conversation_id")
@@ -298,7 +298,7 @@ export async function createPlanIntelligenceResponse(
     };
   }
 
-  const timeZone = await organizationTimeZone(actor.organizationId);
+  const timeZone = await organizationTimeZone(actor);
   const bindings: PlanBindings = {};
   const compiled: Array<{ proposal: ParsedMutation; prompt: string }> = [];
 
@@ -348,7 +348,7 @@ export async function createPlanIntelligenceResponse(
   const planId = randomUUID();
   const proposalIds = compiled.map(() => randomUUID());
   const expiresAt = new Date(Date.now() + PLAN_TTL_MS).toISOString();
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
 
   const rows = compiled.map((step, index) => ({
     id: proposalIds[index],
@@ -405,7 +405,7 @@ export async function loadLatestPlanAction(
   actor: BillingActor,
   conversationId: string
 ): Promise<PlanAction | null> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_action_proposals")
     .select("id,action_type,payload,summary,status,expires_at,created_at,failure_code,conversation_id")
@@ -474,7 +474,7 @@ export async function recoverPlan(
   const newProposalIds = remainingRows.map(() => randomUUID());
   const expiresAt = new Date(Date.now() + PLAN_TTL_MS).toISOString();
   const conversationId = blockedRow.conversation_id || planRows[0].conversation_id;
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const nextAttempt = blockedMeta.recoveryAttempt + 1;
 
   const newRows = remainingRows.map((row, index) => {
