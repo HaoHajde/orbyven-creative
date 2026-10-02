@@ -14,6 +14,7 @@ const themeRoutes = new Set([
   "/templates",
   "/porneste/invitatie",
   "/porneste/web-design",
+  "/ai-web-design",
 ]);
 
 const routes = [
@@ -23,6 +24,7 @@ const routes = [
   "/templates",
   "/porneste/invitatie",
   "/porneste/web-design",
+  "/ai-web-design",
   "/workspace/login",
   "/workspace/register",
   "/workspace/forgot-password",
