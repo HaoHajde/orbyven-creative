@@ -145,6 +145,13 @@ export default function WorkspaceShell({
   }, [initialWorkspace, loadWorkspace]);
 
 
+  useEffect(() => {
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:theme", theme }));
+  }, [theme]);
+
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
     [workspace]

@@ -6,6 +6,16 @@ type NavigatorWithStandalone = Navigator & {
   standalone?: boolean;
 };
 
+type OrbyvenNativeRuntime = {
+  platform?: string;
+  version?: string;
+  capabilities?: string[];
+};
+
+type WindowWithNativeRuntime = Window & {
+  __ORBYVEN_NATIVE__?: OrbyvenNativeRuntime;
+};
+
 function isStandaloneMode() {
   const navigatorWithStandalone = navigator as NavigatorWithStandalone;
   return (
@@ -14,14 +24,31 @@ function isStandaloneMode() {
   );
 }
 
+function getNativeRuntime() {
+  return (window as WindowWithNativeRuntime).__ORBYVEN_NATIVE__ ?? null;
+}
+
 export default function AppModeRuntime() {
   useEffect(() => {
     const media = window.matchMedia("(display-mode: standalone)");
 
     const syncMode = () => {
-      document.documentElement.dataset.appMode = isStandaloneMode()
-        ? "standalone"
-        : "browser";
+      const nativeRuntime = getNativeRuntime();
+      const root = document.documentElement;
+
+      root.dataset.appMode = nativeRuntime
+        ? "native"
+        : isStandaloneMode()
+          ? "standalone"
+          : "browser";
+
+      if (nativeRuntime) {
+        root.dataset.nativePlatform = nativeRuntime.platform || "ios";
+        if (nativeRuntime.version) root.dataset.nativeVersion = nativeRuntime.version;
+      } else {
+        delete root.dataset.nativePlatform;
+        delete root.dataset.nativeVersion;
+      }
     };
 
     const resume = () => {
@@ -32,14 +59,18 @@ export default function AppModeRuntime() {
 
     syncMode();
     media.addEventListener("change", syncMode);
+    window.addEventListener("orbyven:native-ready", syncMode);
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("pageshow", resume);
 
     return () => {
       media.removeEventListener("change", syncMode);
+      window.removeEventListener("orbyven:native-ready", syncMode);
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("pageshow", resume);
       delete document.documentElement.dataset.appMode;
+      delete document.documentElement.dataset.nativePlatform;
+      delete document.documentElement.dataset.nativeVersion;
     };
   }, []);
 

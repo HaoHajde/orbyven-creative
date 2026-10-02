@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.6
+# ORBYVEN iOS — Alpha 0.7
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.6:
+Native Alpha 0.7:
+- handshake explicit native → web prin `window.__ORBYVEN_NATIVE__`, fără a folosi user-agent-ul drept sursă de adevăr;
+- runtime-ul web marchează `data-app-mode="native"` și publică platforma/versiunea shell-ului pentru UI și diagnostic;
+- capabilitățile native sunt declarate explicit (biometric lock, deep links, documente, haptics, remindere, network recovery, push registration);
+- tema Dashboard-ului este sincronizată către shell-ul iOS, astfel încât status bar-ul, safe-area și privacy shield-ul rămân coerente cu tema aleasă manual;
+- revenirea aplicației în foreground emite explicit `orbyven:app-resume`;
+- shell-ul nativ rămâne vizual invizibil pe paginile ORBYVEN de încredere, pentru a păstra un singur header/dock;
+
+Păstrat din Alpha 0.6:
 - foundation pentru push remote, cu activare explicită din centrul de atenționări;
 - tokenul Expo Push este obținut numai într-un build legat la EAS și este salvat prin sesiunea web autentificată;
 - registry tenant-scoped pe organizație + utilizator + token, protejat prin RLS;
@@ -180,3 +188,10 @@ Notificările locale pot fi testate fără infrastructură push. Push-urile remo
 Versiunea 0.6.0 pregătește notificările push remote fără să slăbească autentificarea existentă. Utilizatorul activează explicit alertele din Activity Center; shell-ul nativ obține Expo Push Token numai când există un `projectId` EAS valid, iar workspace-ul autentificat îl persistă în `user_push_devices`. RLS permite fiecărui utilizator să își gestioneze doar propriile dispozitive din organizațiile în care are membership activ.
 
 În această etapă este implementată infrastructura de înregistrare și routing, nu expedierea automată server-side. Pentru push real pe iPhone este necesar un development/store build cu proiectul EAS legat și credențiale Apple Push. Reminderele locale din Alpha 0.5 rămân independente și continuă să funcționeze fără backend de push.
+
+
+## Alpha 0.7
+
+Versiunea 0.7.0 transformă legătura dintre Dashboard și shell-ul iOS într-un contract explicit. WebView-ul injectează înainte de încărcarea aplicației un runtime limitat la informații de platformă, versiune și capabilități UI; acesta nu conține tokenuri, credentiale, sesiuni sau drepturi de autorizare. Autentificarea și RLS rămân exclusiv în fluxul ORBYVEN existent.
+
+Tema aleasă în Dashboard este trimisă către shell-ul iOS prin bridge-ul React Native WebView, astfel încât status bar-ul și ecranele native auxiliare să nu mai poată rămâne într-o temă diferită față de workspace. La revenirea din background, shell-ul emite explicit evenimentul `orbyven:app-resume`, pe lângă protecția biometrică existentă.
