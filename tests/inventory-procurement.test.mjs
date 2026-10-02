@@ -195,3 +195,10 @@ test("production inventory migrations are exact and keep stock writes guarded", 
   assert.throws(() => read("supabase/migrations/20260930073000_alpha09_inventory_procurement_core.sql"));
   assert.throws(() => read("supabase/migrations/20260930074500_alpha09_inventory_automation_signal.sql"));
 });
+
+test("Wave 5 migration does not schema-qualify SQL special expressions", () => {
+  const migration = read("supabase/migrations/20261001234500_wave5_procurement_finance_bridge.sql");
+  assert.doesNotMatch(migration, /pg_catalog\.(?:coalesce|greatest|least)\s*\(/i);
+  assert.match(migration, /create or replace view public\.ops_purchase_order_finance_status/i);
+  assert.match(migration, /add column if not exists purchase_order_id uuid/i);
+});
