@@ -23,10 +23,49 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.6.0";
+const APP_VERSION = "0.10.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
+type NativeTheme = "light" | "dark";
+type NetworkNotice = "offline" | "online" | null;
+
+const NATIVE_RUNTIME = {
+  platform: "ios",
+  version: APP_VERSION,
+  capabilities: [
+    "biometric-lock",
+    "deep-links",
+    "documents",
+    "haptics",
+    "local-notifications",
+    "navigation-haptics",
+    "network-recovery",
+    "network-state-bridge",
+    "state-preserving-reconnect",
+    "stateful-deep-links",
+    "workspace-continuity",
+    "web-readiness-handshake",
+    "workspace-readiness-handshake",
+    "pending-intent-replay",
+    "push-registration",
+  ],
+} as const;
+
+const NATIVE_BOOTSTRAP_SCRIPT = `
+(function () {
+  var runtime = ${JSON.stringify(NATIVE_RUNTIME)};
+  window.__ORBYVEN_NATIVE__ = runtime;
+  var root = document.documentElement;
+  if (root) {
+    root.dataset.appMode = "native";
+    root.dataset.nativePlatform = runtime.platform;
+    root.dataset.nativeVersion = runtime.version;
+  }
+  window.dispatchEvent(new CustomEvent("orbyven:native-ready", { detail: runtime }));
+})();
+true;
+`;
 
 type CalendarReminderMessage = {
   eventId: string;
@@ -150,30 +189,57 @@ function nativeUrlToWebUrl(url: string) {
 export default function App() {
   const webRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
-  const dark = colorScheme !== "light";
+  const [webTheme, setWebTheme] = useState<NativeTheme | null>(null);
+  const dark = (webTheme ?? colorScheme) !== "light";
 
   const [connection, setConnection] = useState<ConnectionState>("loading");
   const [currentUrl, setCurrentUrl] = useState(WORKSPACE_URL);
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [webHasLoaded, setWebHasLoaded] = useState(false);
   const [privacyShielded, setPrivacyShielded] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [deviceOffline, setDeviceOffline] = useState(false);
+  const [networkNotice, setNetworkNotice] = useState<NetworkNotice>(null);
 
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
   const pendingCalendarEventId = useRef<string | null>(null);
+  const pendingDocumentsIntent = useRef(false);
+  const webRuntimeReadyRef = useRef(false);
+  const workspaceReadyRef = useRef(false);
+  const webFailedRef = useRef(false);
+  const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentUrlRef = useRef(WORKSPACE_URL);
+
+  useEffect(() => {
+    currentUrlRef.current = currentUrl;
+  }, [currentUrl]);
+
+  const navigateTrustedUrl = useCallback((url: string) => {
+    if (!isTrustedOrbyvenUrl(url)) return;
+
+    if (currentUrlRef.current === url) {
+      webRef.current?.injectJavaScript(
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); true;",
+      );
+      return;
+    }
+
+    webRuntimeReadyRef.current = false;
+    workspaceReadyRef.current = false;
+    setCurrentUrl(url);
+  }, []);
 
   const openNativeLink = useCallback((url: string | null) => {
     if (!url) return;
     const webUrl = nativeUrlToWebUrl(url);
-    if (!webUrl || !isTrustedOrbyvenUrl(webUrl)) return;
-    setCurrentUrl(webUrl);
-    setReloadKey((value) => value + 1);
-  }, []);
+    if (!webUrl) return;
+    navigateTrustedUrl(webUrl);
+  }, [navigateTrustedUrl]);
 
   const authenticateToUnlock = useCallback(async () => {
     if (authenticationInProgress.current) return;
@@ -251,7 +317,7 @@ export default function App() {
       }
 
       webRef.current?.injectJavaScript(
-        "window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); true;",
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); document.dispatchEvent(new Event('visibilitychange')); true;",
       );
 
       const backgroundAt = lastBackgroundAt.current;
@@ -267,6 +333,30 @@ export default function App() {
     return () => subscription.remove();
   }, [authenticateToUnlock]);
 
+  const emitNativeNetworkState = useCallback((online: boolean) => {
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-network-change',{detail:{online:" +
+        (online ? "true" : "false") +
+        "}})); true;",
+    );
+  }, []);
+
+  const showNetworkNotice = useCallback((notice: Exclude<NetworkNotice, null>) => {
+    if (networkNoticeTimerRef.current) {
+      clearTimeout(networkNoticeTimerRef.current);
+      networkNoticeTimerRef.current = null;
+    }
+
+    setNetworkNotice(notice);
+
+    if (notice === "online") {
+      networkNoticeTimerRef.current = setTimeout(() => {
+        setNetworkNotice(null);
+        networkNoticeTimerRef.current = null;
+      }, 1800);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -281,19 +371,34 @@ export default function App() {
       setDeviceOffline(definitelyOffline);
 
       if (definitelyOffline) {
+        const wasOnline = previousReachability.current !== false;
         previousReachability.current = false;
+        setConnection("offline");
+        emitNativeNetworkState(false);
+        if (wasOnline) showNetworkNotice("offline");
         return;
       }
 
       if (definitelyOnline && previousReachability.current === false) {
         previousReachability.current = true;
-        setConnection("loading");
-        webRef.current?.reload();
+        setDeviceOffline(false);
+        emitNativeNetworkState(true);
+        showNetworkNotice("online");
+        void Haptics.selectionAsync().catch(() => undefined);
+
+        if (webFailedRef.current) {
+          webFailedRef.current = false;
+          setConnection("loading");
+          webRef.current?.reload();
+        } else {
+          setConnection("online");
+        }
         return;
       }
 
       if (definitelyOnline) {
         previousReachability.current = true;
+        emitNativeNetworkState(true);
       }
     };
 
@@ -306,8 +411,12 @@ export default function App() {
     return () => {
       mounted = false;
       subscription.remove();
+      if (networkNoticeTimerRef.current) {
+        clearTimeout(networkNoticeTimerRef.current);
+        networkNoticeTimerRef.current = null;
+      }
     };
-  }, []);
+  }, [emitNativeNetworkState, showNetworkNotice]);
 
   const onNavigationStateChange = useCallback((state: WebViewNavigation) => {
     setCurrentUrl(state.url);
@@ -341,7 +450,7 @@ export default function App() {
 
   const flushPendingCalendarIntent = useCallback(() => {
     const eventId = pendingCalendarEventId.current;
-    if (!eventId) return;
+    if (!eventId || !workspaceReadyRef.current) return;
 
     webRef.current?.injectJavaScript(
       "window.dispatchEvent(new CustomEvent('orbyven:native-calendar-record',{detail:{eventId:" +
@@ -350,34 +459,49 @@ export default function App() {
     );
   }, []);
 
-  const openCalendarRecord = useCallback((eventId: string) => {
-    pendingCalendarEventId.current = eventId;
-
-    if (!currentUrl.startsWith(WORKSPACE_URL)) {
-      setCurrentUrl(WORKSPACE_URL);
-      setReloadKey((value) => value + 1);
-      return;
-    }
-
-    setTimeout(flushPendingCalendarIntent, 0);
-  }, [currentUrl, flushPendingCalendarIntent]);
-
-  const openDocuments = useCallback(() => {
-    void Haptics.selectionAsync().catch(() => undefined);
+  const flushPendingDocumentsIntent = useCallback(() => {
+    if (!pendingDocumentsIntent.current || !workspaceReadyRef.current) return;
+    pendingDocumentsIntent.current = false;
     webRef.current?.injectJavaScript(
       "window.dispatchEvent(new CustomEvent('orbyven:native-documents',{detail:{create:true}})); true;",
     );
   }, []);
+
+  const openCalendarRecord = useCallback((eventId: string) => {
+    pendingCalendarEventId.current = eventId;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      navigateTrustedUrl(WORKSPACE_URL);
+      return;
+    }
+
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingCalendarIntent, 0);
+    }
+  }, [currentUrl, flushPendingCalendarIntent, navigateTrustedUrl]);
+
+  const openDocuments = useCallback(() => {
+    void Haptics.selectionAsync().catch(() => undefined);
+    pendingDocumentsIntent.current = true;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      navigateTrustedUrl(WORKSPACE_URL);
+      return;
+    }
+
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingDocumentsIntent, 0);
+    }
+  }, [currentUrl, flushPendingDocumentsIntent, navigateTrustedUrl]);
 
   const openNotificationUrl = useCallback((url: string) => {
     const resolved = url.startsWith("orbyven://")
       ? nativeUrlToWebUrl(url)
       : url;
 
-    if (!resolved || !isTrustedOrbyvenUrl(resolved)) return;
-    setCurrentUrl(resolved);
-    setReloadKey((value) => value + 1);
-  }, []);
+    if (!resolved) return;
+    navigateTrustedUrl(resolved);
+  }, [navigateTrustedUrl]);
 
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
@@ -417,9 +541,27 @@ export default function App() {
         startAt?: string;
         reminderMinutes?: number | null;
         location?: string | null;
+        theme?: NativeTheme;
+        href?: string;
       };
 
-      if (message.type === "orbyven:register-push") {
+      if (message.type === "orbyven:web-ready") {
+        webRuntimeReadyRef.current = true;
+        setWebHasLoaded(true);
+      } else if (message.type === "orbyven:workspace-ready") {
+        workspaceReadyRef.current = true;
+        setTimeout(() => {
+          flushPendingCalendarIntent();
+          flushPendingDocumentsIntent();
+        }, 0);
+      } else if (message.type === "orbyven:haptic") {
+        void Haptics.selectionAsync().catch(() => undefined);
+      } else if (
+        message.type === "orbyven:theme" &&
+        (message.theme === "light" || message.theme === "dark")
+      ) {
+        setWebTheme(message.theme);
+      } else if (message.type === "orbyven:register-push") {
         void registerForRemotePush()
           .then((expoPushToken) => {
             const detail = JSON.stringify({
@@ -533,7 +675,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, []);
+  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
@@ -541,10 +683,44 @@ export default function App() {
   const muted = dark ? "#91a0b8" : "#617089";
   const border = dark ? "#1a2940" : "#dfe5ef";
   const effectiveConnection = deviceOffline ? "offline" : connection;
+  // The authenticated ORBYVEN web app already owns its header and mobile dock.
+  // Keep the native shell visually invisible on trusted ORBYVEN pages so a
+  // future .ipa matches the approved PWA UI instead of duplicating chrome.
+  const webAppOwnsChrome = isTrustedOrbyvenUrl(currentUrl);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]}>
       <StatusBar barStyle={dark ? "light-content" : "dark-content"} />
+
+      {networkNotice ? (
+        <View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={[
+            styles.networkNotice,
+            networkNotice === "offline"
+              ? styles.networkNoticeOffline
+              : styles.networkNoticeOnline,
+          ]}
+        >
+          <View
+            style={[
+              styles.networkNoticeDot,
+              {
+                backgroundColor:
+                  networkNotice === "offline" ? "#ff7b7b" : "#6fe0ae",
+              },
+            ]}
+          />
+          <Text style={styles.networkNoticeText}>
+            {networkNotice === "offline"
+              ? "Fără internet · păstrăm ecranul curent"
+              : "Conexiune restabilită"}
+          </Text>
+        </View>
+      ) : null}
+
+      {!webAppOwnsChrome ? (
       <View style={[styles.header, { backgroundColor: surface, borderBottomColor: border }]}>
         <View style={styles.brandRow}>
           <View style={styles.mark}>
@@ -565,6 +741,7 @@ export default function App() {
           </Text>
         </View>
       </View>
+      ) : null}
 
       <View style={styles.content}>
         <WebView
@@ -572,24 +749,40 @@ export default function App() {
           ref={webRef}
           source={{ uri: currentUrl }}
           style={{ backgroundColor: background }}
+          injectedJavaScriptBeforeContentLoaded={NATIVE_BOOTSTRAP_SCRIPT}
           originWhitelist={["https://*", "orbyven://*"]}
           onNavigationStateChange={onNavigationStateChange}
           onShouldStartLoadWithRequest={shouldStart}
           onMessage={handleWebMessage}
-          onLoadStart={() => setConnection("loading")}
-          onLoadEnd={() => {
-            setConnection("online");
-            setTimeout(flushPendingCalendarIntent, 0);
+          onLoadStart={() => {
+            webRuntimeReadyRef.current = false;
+            workspaceReadyRef.current = false;
+            setConnection("loading");
           }}
-          onError={() => setConnection("offline")}
+          onLoadEnd={() => {
+            webFailedRef.current = false;
+            setWebHasLoaded(true);
+            setConnection("online");
+            emitNativeNetworkState(true);
+          }}
+          onError={() => {
+            webFailedRef.current = true;
+            setConnection("offline");
+          }}
           onHttpError={({ nativeEvent }) => {
-            if (nativeEvent.statusCode >= 500) setConnection("offline");
+            if (nativeEvent.statusCode >= 500) {
+              webFailedRef.current = true;
+              setConnection("offline");
+            }
           }}
           onContentProcessDidTerminate={() => {
+            webRuntimeReadyRef.current = false;
+            workspaceReadyRef.current = false;
+            setWebHasLoaded(false);
             setConnection("loading");
             webRef.current?.reload();
           }}
-          startInLoadingState
+          startInLoadingState={!webHasLoaded}
           renderLoading={() => (
             <View style={[styles.loader, { backgroundColor: background }]}>
               <ActivityIndicator size="large" />
@@ -607,6 +800,9 @@ export default function App() {
                 style={styles.retryButton}
                 onPress={() => {
                   void Haptics.selectionAsync().catch(() => undefined);
+                  webRuntimeReadyRef.current = false;
+                  workspaceReadyRef.current = false;
+                  setWebHasLoaded(false);
                   setReloadKey((value) => value + 1);
                 }}
               >
@@ -628,17 +824,18 @@ export default function App() {
         />
       </View>
 
+      {!webAppOwnsChrome ? (
       <View style={[styles.toolbar, { backgroundColor: surface, borderTopColor: border }]}>
         <ToolbarButton label="‹" hint="Înapoi" disabled={!canGoBack} onPress={() => webRef.current?.goBack()} text={text} muted={muted} />
         <ToolbarButton label="⌂" hint="Workspace" onPress={() => {
-          setCurrentUrl(WORKSPACE_URL);
-          setReloadKey((value) => value + 1);
+          navigateTrustedUrl(WORKSPACE_URL);
         }} text={text} muted={muted} />
         <ToolbarButton label="▣+" hint="Documente" onPress={openDocuments} text={text} muted={muted} />
         <ToolbarButton label="↻" hint="Refresh" onPress={() => webRef.current?.reload()} text={text} muted={muted} />
         <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
         <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
       </View>
+      ) : null}
 
       {privacyShielded ? (
         <View style={[styles.privacyShield, { backgroundColor: background }]}>
@@ -706,6 +903,46 @@ function ToolbarButton({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  networkNotice: {
+    position: "absolute",
+    top: 8,
+    left: 18,
+    right: 18,
+    zIndex: 120,
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    shadowColor: "#000000",
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  networkNoticeOffline: {
+    backgroundColor: "rgba(57,24,31,0.96)",
+    borderColor: "rgba(255,123,123,0.34)",
+  },
+  networkNoticeOnline: {
+    backgroundColor: "rgba(18,60,49,0.96)",
+    borderColor: "rgba(111,224,174,0.34)",
+  },
+  networkNoticeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  networkNoticeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+  },
   header: {
     minHeight: 66,
     borderBottomWidth: StyleSheet.hairlineWidth,

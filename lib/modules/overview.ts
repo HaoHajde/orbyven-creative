@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { requireOrbyvenSession } from "@/lib/orbyven-session";
 import { readAllPages } from "@/lib/modules/paged-read";
 
 export type OverviewLead = {
@@ -120,6 +121,7 @@ export async function loadOverviewSnapshot(
   includeTeam = false
 ): Promise<OverviewSnapshot> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
+  await requireOrbyvenSession();
 
   const now = new Date();
   const nowIso = now.toISOString();

@@ -22,3 +22,14 @@ export function getSiteUrl() {
 
   return withProtocol.replace(/\/+$/, "");
 }
+
+
+export const siteConfigEn = {
+  name: "ORBYVEN CREATIVE",
+  shortName: "ORBYVEN",
+  description:
+    "ORBYVEN builds premium websites, AI-assisted digital experiences and modular business workspaces. Explore templates, services and the ORBYVEN ecosystem.",
+  defaultUrl: "https://www.orbyven.com",
+  locale: "en_US",
+  language: "en",
+} as const;

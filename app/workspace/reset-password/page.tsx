@@ -7,6 +7,7 @@ import WorkspaceAuthShell, {
 } from "@/components/WorkspaceAuthShell";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
+import { ORBYVEN_PASSWORD_MIN_LENGTH, validateOrbyvenPassword } from "@/lib/auth/password-policy";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -52,8 +53,9 @@ export default function ResetPasswordPage() {
       setErrorMessage("Deschide din nou linkul primit pe email.");
       return;
     }
-    if (password.length < 8) {
-      setErrorMessage("Parola trebuie să aibă cel puțin 8 caractere.");
+    const passwordCheck = validateOrbyvenPassword(password);
+    if (!passwordCheck.valid) {
+      setErrorMessage(passwordCheck.message);
       return;
     }
     if (password !== confirmPassword) {
@@ -86,20 +88,20 @@ export default function ResetPasswordPage() {
           label="Parolă nouă"
           type="password"
           autoComplete="new-password"
-          minLength={8}
+          minLength={ORBYVEN_PASSWORD_MIN_LENGTH}
           value={password}
           onChange={(value) => {
             setPassword(value);
             setErrorMessage("");
           }}
-          placeholder="Minimum 8 caractere"
+          placeholder="12+ caractere · Aa1!"
         />
         <div className="mt-5">
           <AuthField
             label="Confirmă parola"
             type="password"
             autoComplete="new-password"
-            minLength={8}
+            minLength={ORBYVEN_PASSWORD_MIN_LENGTH}
             value={confirmPassword}
             onChange={(value) => {
               setConfirmPassword(value);

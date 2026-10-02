@@ -90,3 +90,92 @@ test("service and invitation hubs expose descriptive internal links", () => {
   assert.ok(invitations.includes("relatedInvitationCategories"));
 });
 
+
+test("RO and EN domains keep host-specific robots, sitemap and canonicals", () => {
+  const sitemap = read("app/sitemap.ts");
+  const robots = read("app/robots.ts");
+  const domainLocale = read("lib/domain-locale.ts");
+
+  for (const source of [sitemap, robots]) {
+    assert.ok(source.includes("publicLocaleForHost"));
+    assert.ok(source.includes("publicOriginForLocale"));
+    assert.ok(source.includes('requestHeaders.get("x-forwarded-host")'));
+  }
+
+  assert.ok(sitemap.includes('if (locale === "en")'));
+  assert.ok(sitemap.includes('const englishRoutes = ['));
+  for (const route of ["/servicii", "/templates", "/contact", "/ai-web-design"]) {
+    assert.ok(sitemap.includes(route), route);
+  }
+  assert.ok(domainLocale.includes('"https://www.orbyven.com"'));
+
+  const englishLayouts = [
+    ["app/en/servicii/layout.tsx", "https://www.orbyven.com/servicii"],
+    ["app/en/templates/layout.tsx", "https://www.orbyven.com/templates"],
+    ["app/en/contact/layout.tsx", "https://www.orbyven.com/contact"],
+  ];
+  for (const [path, canonical] of englishLayouts) {
+    assert.ok(read(path).includes(canonical), path);
+  }
+  assert.ok(read("app/en/templates/layout.tsx").includes("TemplateExperienceLayer"));
+  assert.ok(read("app/en/contact/layout.tsx").includes("orbyven-start-cards"));
+});
+
+test(".com never serves Romanian-only public routes under English lang", () => {
+  const proxy = read("proxy.ts");
+  const locale = read("lib/domain-locale.ts");
+
+  assert.ok(proxy.includes("shouldRedirectEnglishHostToRomanian"));
+  assert.ok(proxy.includes('url.hostname = "orbyven.ro"'));
+  assert.ok(proxy.includes("NextResponse.redirect(url, 308)"));
+
+  for (const route of [
+    "/cerere",
+    "/creare-site",
+    "/site-prezentare",
+    "/redesign-site",
+    "/invitatii-nunta",
+    "/invitatii-botez",
+    "/invitatii-majorat",
+    "/despre",
+  ]) {
+    assert.ok(locale.includes(`"${route}"`), route);
+    assert.ok(proxy.includes(`"${route}"`), route);
+  }
+
+  for (const prefix of ["/porneste/", "/solutii/", "/studii-de-caz/", "/ghid/"]) {
+    assert.ok(locale.includes(`"${prefix}"`), prefix);
+  }
+
+  // Authenticated product surfaces stay domain-neutral and are never forced
+  // to the Romanian marketing host by this public-language fallback.
+  assert.ok(!proxy.includes('"/workspace/:path*"'));
+  assert.ok(!proxy.includes('"/api/:path*"'));
+});
+
+test("English sitemap follows the expanded translated route set", () => {
+  const sitemap = read("app/sitemap.ts");
+  const start = sitemap.indexOf("const englishCoreRoutes");
+  const end = sitemap.indexOf("const coreRoutes");
+  const englishBlock = start >= 0 && end > start ? sitemap.slice(start, end) : "";
+
+  assert.match(sitemap, /seoLandingPagesEn/);
+  for (const route of [
+    "/servicii",
+    "/templates",
+    "/ai-web-design",
+    "/solutii",
+    "/studii-de-caz",
+    "/ghid",
+    "/despre",
+    "/contact",
+  ]) {
+    assert.ok(englishBlock.includes(`path: "${route}"`), route);
+  }
+  for (const slug of ["creare-site", "site-prezentare", "redesign-site"]) {
+    assert.ok(read("lib/seo-foundation-en.ts").includes(`slug: "${slug}"`), slug);
+  }
+  for (const route of ["/invitatii-nunta", "/invitatii-botez", "/invitatii-majorat"]) {
+    assert.ok(!englishBlock.includes(route), route);
+  }
+});

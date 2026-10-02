@@ -2,6 +2,7 @@
 
 import BackToTop from "@/components/BackToTop";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -82,7 +83,7 @@ export default function SiteHeader({
         <div className="mx-auto max-w-[1500px] px-4 pt-4 sm:px-6 md:px-10">
           <div
             style={{ backgroundColor: "var(--bg)" }}
-            className={`pointer-events-auto flex h-[68px] w-full touch-manipulation items-center justify-between rounded-full border border-[var(--border-strong)] px-4 shadow-[0_8px_28px_rgba(0,0,0,0.10)] md:px-6 md:transition-[height,border-radius] md:duration-300 ${
+            className={`orbyven-public-header-surface pointer-events-auto flex h-[68px] w-full touch-manipulation items-center justify-between rounded-full border border-[var(--border-strong)] px-4 shadow-[0_8px_28px_rgba(0,0,0,0.10)] md:px-6 md:transition-[height,border-radius] md:duration-300 ${
               compact ? "md:h-14 md:rounded-[22px]" : "md:h-[68px] md:rounded-full"
             }`}
           >
@@ -126,6 +127,8 @@ export default function SiteHeader({
                 Începe un proiect
               </Link>
 
+              <LanguageSwitcher locale="ro" />
+
               <button
                 type="button"
                 onClick={() => {
@@ -146,7 +149,7 @@ export default function SiteHeader({
           </div>
 
           {mobileOpen && (
-            <div style={{ backgroundColor: "var(--bg)" }} className="pointer-events-auto mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto overscroll-contain rounded-[26px] border border-[var(--border-strong)] p-2 shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
+            <div style={{ backgroundColor: "var(--bg)" }} className="orbyven-public-mobile-menu pointer-events-auto mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto overscroll-contain rounded-[26px] border border-[var(--border-strong)] p-2 shadow-[0_12px_36px_rgba(0,0,0,0.14)] md:hidden">
               <nav className="flex flex-col">
                 {navItems.map((item) => {
                   const active = activePage === item.key;

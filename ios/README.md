@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.6
+# ORBYVEN iOS — Alpha 0.10
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,38 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.6:
+Native Alpha 0.10:
+- handshake explicit `orbyven:web-ready` după hidratarea runtime-ului web;
+- handshake `orbyven:workspace-ready` după ce Dashboard-ul și listener-ele native sunt montate;
+- intenturile Calendar și Documente rămân în coadă până când workspace-ul este pregătit;
+- tap-ul pe o notificare la cold start/login nu mai depinde de momentul `onLoadEnd`;
+- replay-ul intenturilor este condiționat de readiness, reducând race conditions la pornire;
+- runtime-ul declară `web-readiness-handshake`, `workspace-readiness-handshake` și `pending-intent-replay`;
+
+Păstrat din Alpha 0.9:
+- ultimul modul activ din Dashboard este salvat local și restaurat la următoarea deschidere dacă modulul este încă activ pentru organizație;
+- deep-link-urile și tap-urile din notificări navighează în WebView-ul existent, fără remount inutil al aplicației;
+- loader-ul nativ complet este rezervat pornirii reale și recovery-ului hard, nu navigării interne;
+- revenirea pe aceeași destinație emite focus/resume fără reload;
+- runtime-ul declară capabilitățile `stateful-deep-links` și `workspace-continuity`;
+
+Păstrat din Alpha 0.8:
+- reconectarea la internet păstrează starea curentă a WebView-ului și evită reload-ul dacă pagina nu a eșuat efectiv;
+- indicator nativ discret pentru `Offline` / `Conexiune restabilită`;
+- bridge `orbyven:native-network-change` către Dashboard, cu `data-native-network` pentru diagnostic și UI contextual;
+- reload automat doar când WebView-ul a intrat efectiv în stare de eroare;
+- feedback haptic discret la revenirea conexiunii;
+- runtime-ul declară capabilitățile `network-state-bridge` și `state-preserving-reconnect`;
+
+Păstrat din Alpha 0.7:
+- handshake explicit native → web prin `window.__ORBYVEN_NATIVE__`, fără a folosi user-agent-ul drept sursă de adevăr;
+- runtime-ul web marchează `data-app-mode="native"` și publică platforma/versiunea shell-ului pentru UI și diagnostic;
+- capabilitățile native sunt declarate explicit (biometric lock, deep links, documente, haptics, remindere, network recovery, push registration);
+- tema Dashboard-ului este sincronizată către shell-ul iOS, astfel încât status bar-ul, safe-area și privacy shield-ul rămân coerente cu tema aleasă manual;
+- revenirea aplicației în foreground emite explicit `orbyven:app-resume`;
+- shell-ul nativ rămâne vizual invizibil pe paginile ORBYVEN de încredere, pentru a păstra un singur header/dock;
+
+Păstrat din Alpha 0.6:
 - foundation pentru push remote, cu activare explicită din centrul de atenționări;
 - tokenul Expo Push este obținut numai într-un build legat la EAS și este salvat prin sesiunea web autentificată;
 - registry tenant-scoped pe organizație + utilizator + token, protejat prin RLS;
@@ -63,22 +94,28 @@ npm run export:ios
 
 ## Testare gratuită pe iPhone fără Mac
 
-Pentru dezvoltare putem folosi Expo Go fără Apple Developer Program:
+Pentru dezvoltare putem folosi Expo Go fără Apple Developer Program.
 
-1. instalează Expo Go pe iPhone;
-2. creează sau folosește același cont Expo pe PC și iPhone;
-3. pe Windows:
+### Windows — varianta rapidă
+
+1. instalează **Expo Go** pe iPhone și autentifică-te într-un cont Expo;
+2. în folderul `ios`, dublu-click pe **`start-iphone.cmd`**;
+3. launcher-ul verifică automat autentificarea Expo CLI; dacă PC-ul nu este autentificat, pornește `npx expo login`;
+4. autentifică PC-ul în **același cont Expo** folosit în Expo Go pe iPhone;
+5. ține PC-ul și iPhone-ul pe aceeași rețea Wi-Fi;
+6. scanează QR-ul afișat în terminal cu iPhone-ul / Expo Go.
+
+Launcher-ul verifică Node.js 22.13+, instalează dependențele doar dacă lipsesc, validează sesiunea Expo CLI și pornește automat Expo în mod LAN.
+
+Dacă rețeaua locală blochează conexiunea, folosește **`start-iphone-tunnel.cmd`**. Este același launcher, dar pornește fallback-ul tunnel.
+
+Comenzile manuale rămân disponibile:
 
 ```bash
 cd ios
 npm install
-npx expo login
 npm run start:go
-```
-
-Scanează QR-ul afișat în terminal. Dacă telefonul nu poate ajunge la PC prin rețeaua locală, instalează `@expo/ngrok` conform documentației Expo și pornește:
-
-```bash
+# fallback:
 npm run start:tunnel
 ```
 
@@ -180,3 +217,31 @@ Notificările locale pot fi testate fără infrastructură push. Push-urile remo
 Versiunea 0.6.0 pregătește notificările push remote fără să slăbească autentificarea existentă. Utilizatorul activează explicit alertele din Activity Center; shell-ul nativ obține Expo Push Token numai când există un `projectId` EAS valid, iar workspace-ul autentificat îl persistă în `user_push_devices`. RLS permite fiecărui utilizator să își gestioneze doar propriile dispozitive din organizațiile în care are membership activ.
 
 În această etapă este implementată infrastructura de înregistrare și routing, nu expedierea automată server-side. Pentru push real pe iPhone este necesar un development/store build cu proiectul EAS legat și credențiale Apple Push. Reminderele locale din Alpha 0.5 rămân independente și continuă să funcționeze fără backend de push.
+
+
+## Alpha 0.7
+
+Versiunea 0.7.0 transformă legătura dintre Dashboard și shell-ul iOS într-un contract explicit. WebView-ul injectează înainte de încărcarea aplicației un runtime limitat la informații de platformă, versiune și capabilități UI; acesta nu conține tokenuri, credentiale, sesiuni sau drepturi de autorizare. Autentificarea și RLS rămân exclusiv în fluxul ORBYVEN existent.
+
+Tema aleasă în Dashboard este trimisă către shell-ul iOS prin bridge-ul React Native WebView, astfel încât status bar-ul și ecranele native auxiliare să nu mai poată rămâne într-o temă diferită față de workspace. La revenirea din background, shell-ul emite explicit evenimentul `orbyven:app-resume`, pe lângă protecția biometrică existentă.
+
+
+## Alpha 0.8
+
+Versiunea 0.8.0 mută recovery-ul de rețea de la „reload la orice reconectare” la un model care păstrează starea utilizatorului. Dacă Wi‑Fi-ul sau datele mobile dispar temporar, shell-ul păstrează WebView-ul și afișează un status nativ discret. La revenirea internetului, pagina curentă rămâne deschisă și primește evenimentul `orbyven:native-network-change`; reload-ul este rezervat situațiilor în care WebView-ul a raportat efectiv o eroare.
+
+Această schimbare reduce riscul de a pierde text introdus, poziția în modul sau contextul unei lucrări în timpul unei întreruperi scurte de conexiune. Runtime-ul web expune starea prin `data-native-network="online|offline"`, fără să schimbe autentificarea, sesiunea Supabase sau politicile RLS.
+
+
+## Alpha 0.9
+
+Versiunea 0.9.0 adaugă continuitate între sesiuni. Dashboard-ul memorează ultimul modul folosit în storage-ul local al workspace-ului și îl restaurează doar dacă acel modul este încă permis pentru organizația curentă. Astfel, redeschiderea ORBYVEN nu te trimite automat în Overview dacă lucrai în Calendar, Documente, Clienți sau alt modul activ.
+
+Deep-link-urile ORBYVEN și navigarea pornită din notificări folosesc acum WebView-ul existent. Un remount complet rămâne rezervat recuperării după o eroare reală sau unei reîncercări explicite, ceea ce reduce flash-urile și păstrează mai bine starea UI.
+
+
+## Alpha 0.10
+
+Versiunea 0.10.0 introduce un contract de readiness în două etape. Runtime-ul web confirmă către shell-ul iOS când pagina s-a hidratat, iar WorkspaceShell confirmă separat când workspace-ul autentificat și listener-ele pentru Calendar, Documente și celelalte bridge-uri sunt montate.
+
+Intenturile native care au nevoie de workspace — de exemplu deschiderea unei programări dintr-o notificare sau intrarea directă în Documente — sunt păstrate până la semnalul `orbyven:workspace-ready`. Astfel, un cold start, un login intermediar sau o încărcare mai lentă nu mai poate pierde acțiunea cerută de utilizator.

@@ -77,7 +77,7 @@ export default function AiWebDesignEntry() {
     const themeFrame = window.requestAnimationFrame(() => {
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#e7e8f3";
     });
 
     void orbyvenSupabase.auth.getSession().then(({ data }) => {
@@ -99,7 +99,7 @@ export default function AiWebDesignEntry() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#e7e8f3";
       return next;
     });
   };
@@ -109,25 +109,26 @@ export default function AiWebDesignEntry() {
   }
 
   const vars = {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#101014" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171d" : "#f1f1f5",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#74747e" : "#868690",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
+    "--bg": theme === "dark" ? "#09090d" : "#e7e8f3",
+    "--surface": theme === "dark" ? "#101014" : "#f5f4fb",
+    "--surface-2": theme === "dark" ? "#17171d" : "#ebe9f6",
+    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
+    "--muted": theme === "dark" ? "#aaaab2" : "#62647a",
+    "--muted-2": theme === "dark" ? "#74747e" : "#797b91",
+    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(96,76,168,.16)",
+    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(91,72,172,.28)",
+    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
     "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
-    "--accent": "#745cff",
-    "--accent-soft": theme === "dark" ? "rgba(116,92,255,.16)" : "rgba(116,92,255,.09)",
+    "--accent": theme === "dark" ? "#745cff" : "#6859d6",
+    "--accent-soft": theme === "dark" ? "rgba(116,92,255,.16)" : "rgba(116,88,215,.13)",
   } as CSSProperties;
 
   if (mode === "checking") {
     return (
       <main
+        data-orbyven-public-theme={theme}
         style={vars}
-        className="grid min-h-screen place-items-center bg-[var(--bg)] text-[var(--text)]"
+        className="orbyven-public-shell grid min-h-screen place-items-center bg-[var(--bg)] text-[var(--text)]"
       >
         <div className="text-center">
           <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#9f8dff]">
@@ -141,12 +142,13 @@ export default function AiWebDesignEntry() {
 
   return (
     <main
+      data-orbyven-public-theme={theme}
       style={{
         ...vars,
         fontFamily:
           "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
       }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
+      className="orbyven-public-shell relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-26rem] h-[64rem] w-[78rem] max-w-[96vw] -translate-x-1/2 rounded-full bg-[rgba(116,92,255,.18)] blur-[180px]" />

@@ -8,6 +8,7 @@ import WorkspaceAuthShell, {
 } from "@/components/WorkspaceAuthShell";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 import { getWorkspaceEntryPath } from "@/lib/orbyven-workspace";
+import { ORBYVEN_PASSWORD_MIN_LENGTH, validateOrbyvenPassword } from "@/lib/auth/password-policy";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
@@ -41,7 +42,7 @@ function getSignupErrorMessage(error: { message?: string; status?: number }) {
   }
 
   if (message.includes("password")) {
-    return "Parola nu respectă cerințele de securitate. Folosește minimum 8 caractere.";
+    return "Parola nu respectă cerințele de securitate. Folosește minimum 12 caractere, litere mici și mari, cifre și simboluri.";
   }
 
   return "Contul nu a putut fi creat. Verifică datele și încearcă din nou.";
@@ -100,8 +101,9 @@ function WorkspaceRegisterPageContent() {
       setErrorMessage("Introdu numele tău.");
       return;
     }
-    if (password.length < 8) {
-      setErrorMessage("Parola trebuie să aibă cel puțin 8 caractere.");
+    const passwordCheck = validateOrbyvenPassword(password);
+    if (!passwordCheck.valid) {
+      setErrorMessage(passwordCheck.message);
       return;
     }
 
@@ -231,8 +233,8 @@ function WorkspaceRegisterPageContent() {
               setErrorMessage("");
             }}
             autoComplete="new-password"
-            minLength={8}
-            placeholder="Minimum 8 caractere"
+            minLength={ORBYVEN_PASSWORD_MIN_LENGTH}
+            placeholder="12+ caractere · Aa1!"
           />
         </div>
 

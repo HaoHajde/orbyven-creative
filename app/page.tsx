@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    locale: siteConfig.locale,
+    locale: "ro_RO",
     siteName: siteConfig.name,
     url: "/",
     title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",

@@ -6,19 +6,19 @@ import SeoRelatedLinks from "@/components/seo/SeoRelatedLinks";
 import SeoShell from "@/components/seo/SeoShell";
 import type { SeoLandingPage as SeoLandingPageData } from "@/lib/seo-foundation";
 
-export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
+export default function SeoLandingPage({ page, locale = "ro" }: { page: SeoLandingPageData; locale?: "ro" | "en" }) {
   const breadcrumbs = [
-    { href: "/solutii", label: "Soluții" },
+    { href: "/solutii", label: locale === "ro" ? "Soluții" : "Solutions" },
     { href: page.path, label: page.title },
   ];
 
   return (
-    <SeoShell>
-      <SeoJsonLd kind="landing" page={page} breadcrumbs={breadcrumbs} />
+    <SeoShell locale={locale}>
+      <SeoJsonLd kind="landing" page={page} breadcrumbs={breadcrumbs} locale={locale} />
 
       <section className="px-5 pb-20 pt-10 sm:px-7 md:px-10 md:pb-28 md:pt-14">
         <div className="mx-auto max-w-[1380px]">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={breadcrumbs} locale={locale} />
           <div className="mt-12 grid gap-10 lg:grid-cols-[1.18fr_.82fr] lg:items-end">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-[#4b46ee]">{page.eyebrow}</p>
@@ -29,11 +29,11 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
             <div className="lg:pb-2">
               <p className="max-w-xl text-[16px] leading-7 text-black/55">{page.intro}</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/cerere" className="inline-flex h-12 items-center rounded-full bg-[#171719] px-6 text-sm font-semibold text-white">
-                  Discută proiectul
+                <Link href={locale === "ro" ? "/cerere" : "/contact"} className="inline-flex h-12 items-center rounded-full bg-[#171719] px-6 text-sm font-semibold text-white">
+                  {locale === "ro" ? "Discută proiectul" : "Discuss your project"}
                 </Link>
                 <Link href="/templates" className="inline-flex h-12 items-center rounded-full border border-black/12 px-6 text-sm font-semibold">
-                  Vezi exemple
+                  {locale === "ro" ? "Vezi exemple" : "View examples"}
                 </Link>
               </div>
             </div>
@@ -53,7 +53,7 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
 
       <section className="border-y border-black/[.07] bg-[#0d0d0f] px-5 py-20 text-white sm:px-7 md:px-10 md:py-28">
         <div className="mx-auto max-w-[1380px]">
-          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/35">Ce construim</p>
+          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/35">{locale === "ro" ? "Ce construim" : "What we build"}</p>
           <div className="mt-8 grid gap-px overflow-hidden rounded-[30px] border border-white/[.08] bg-white/[.08] sm:grid-cols-2">
             {page.deliverables.map((item) => (
               <article key={item.title} className="bg-[#0d0d0f] p-7 md:p-9">
@@ -69,8 +69,8 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
         <div className="mx-auto max-w-[1380px]">
           <div className="grid gap-12 lg:grid-cols-[.7fr_1.3fr]">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#4b46ee]">Proces</p>
-              <h2 className="mt-4 text-[42px] font-semibold leading-[.95] tracking-[-.055em]">Trei pași. Fără teatru de agenție.</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#4b46ee]">{locale === "ro" ? "Proces" : "Process"}</p>
+              <h2 className="mt-4 text-[42px] font-semibold leading-[.95] tracking-[-.055em]">{locale === "ro" ? "Trei pași. Fără teatru de agenție." : "Three steps. No agency theatre."}</h2>
             </div>
             <div className="border-t border-black/10">
               {page.steps.map((step) => (
@@ -88,8 +88,8 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
       <section className="border-y border-black/[.07] bg-[#f7f7f9] px-5 py-20 sm:px-7 md:px-10">
         <div className="mx-auto grid max-w-[1380px] gap-10 lg:grid-cols-[.72fr_1.28fr]">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Întrebări frecvente</p>
-            <h2 className="mt-4 text-[38px] font-semibold tracking-[-.05em]">Pe scurt.</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-black/35">{locale === "ro" ? "Întrebări frecvente" : "Frequently asked questions"}</p>
+            <h2 className="mt-4 text-[38px] font-semibold tracking-[-.05em]">{locale === "ro" ? "Pe scurt." : "In short."}</h2>
           </div>
           <div className="space-y-3">
             {page.faq.map((item) => (
@@ -105,8 +105,9 @@ export default function SeoLandingPage({ page }: { page: SeoLandingPageData }) {
       <SeoRelatedLinks
         currentPath={page.path}
         links={page.related}
-        eyebrow="Continuă explorarea"
-        title="Exemple, ghiduri și direcții care au legătură cu proiectul."
+        eyebrow={locale === "ro" ? "Continuă explorarea" : "Keep exploring"}
+        title={locale === "ro" ? "Exemple, ghiduri și direcții care au legătură cu proiectul." : "Examples, guides and directions related to your project."}
+        locale={locale}
       />
     </SeoShell>
   );

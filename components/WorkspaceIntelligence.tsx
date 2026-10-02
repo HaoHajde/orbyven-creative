@@ -11,6 +11,7 @@ type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Respons
 
 type Props = {
   organizationId: string;
+  theme: "light" | "dark";
   themeVars: CSSProperties;
   textScale: number;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
@@ -58,6 +59,7 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
 
 export default function WorkspaceIntelligence({
   organizationId,
+  theme,
   themeVars,
   textScale,
   onOpenModule,
@@ -651,22 +653,24 @@ export default function WorkspaceIntelligence({
   return createPortal(
         <div
           style={themeVars}
+          data-orbyven-theme={theme}
           data-orbyven-text-scale={textScale}
-          className="orbyven-workspace-text-scale contents text-[var(--text)]"
+          className="orbyven-workspace-text-scale orbyven-intelligence-shell contents text-[var(--text)]"
           data-orbyven-intelligence-theme-scope="true"
         >
           <>
           <button
+            data-workspace-mobile-float="true"
             type="button"
             aria-label={open ? "Închide ORBYVEN Intelligence" : "Deschide ORBYVEN Intelligence"}
             aria-haspopup="dialog"
             aria-controls="orbyven-intelligence-dialog"
             aria-expanded={open}
             onClick={() => setOpen((current) => !current)}
-            className="fixed bottom-[calc(5.35rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-12 w-12 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14"
+            className="orbyven-intelligence-launcher fixed bottom-[calc(5.35rem+env(safe-area-inset-bottom))] right-4 z-[140] flex h-12 w-12 items-center justify-center rounded-full border border-[#7e9cff]/30 bg-[linear-gradient(145deg,rgba(34,55,105,0.96),rgba(24,31,67,0.98))] text-[#dfe7ff] shadow-[0_18px_55px_rgba(27,46,112,0.52),0_0_24px_rgba(120,151,255,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#91a8ff]/55 active:translate-y-0 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14"
           >
             {!open ? (
-              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
+              <span className="orbyven-intelligence-status-dot absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#0a1222] bg-[#7897ff] shadow-[0_0_14px_rgba(120,151,255,0.95)]" aria-hidden="true" />
             ) : null}
             {open ? (
               <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.9">
@@ -686,7 +690,7 @@ export default function WorkspaceIntelligence({
               <button
                 type="button"
                 aria-label="Închide ORBYVEN Intelligence"
-                className="fixed inset-0 z-[100] cursor-default bg-[#020713]/70 backdrop-blur-[7px]"
+                className="orbyven-intelligence-backdrop fixed inset-0 z-[100] cursor-default bg-[#020713]/70 backdrop-blur-[7px]"
                 onClick={() => setOpen(false)}
               />
               <section
@@ -694,9 +698,9 @@ export default function WorkspaceIntelligence({
                 role="dialog"
                 aria-modal="true"
                 aria-label="ORBYVEN Intelligence"
-                className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] top-[max(0.75rem,env(safe-area-inset-top))] z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px] text-[var(--text)]"
+                className="orbyven-intelligence-panel fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] top-[max(0.75rem,env(safe-area-inset-top))] z-[101] flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#91a8ff]/20 bg-[linear-gradient(180deg,rgba(10,19,36,0.985),rgba(5,11,23,0.995))] shadow-[0_35px_120px_rgba(0,0,0,0.58),0_0_0_1px_rgba(120,151,255,0.04)] backdrop-blur-2xl sm:inset-y-4 sm:left-auto sm:right-4 sm:w-[460px] md:w-[480px] text-[var(--text)]"
               >
-                <header className="relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
+                <header className="orbyven-intelligence-header relative border-b border-[#91a8ff]/10 bg-[linear-gradient(180deg,rgba(120,151,255,0.06),transparent)] px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a8ff]">ORBYVEN INTELLIGENCE · 0.8.13</p>
@@ -734,7 +738,7 @@ export default function WorkspaceIntelligence({
                   </div>
                 </header>
     
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+                <div className="orbyven-intelligence-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
                   {historyOpen ? (
                     <div className="grid gap-2">
                       {historyLoading ? (
@@ -836,8 +840,8 @@ export default function WorkspaceIntelligence({
                 </div>
     
                 {!historyOpen ? (
-                  <form onSubmit={submit} className="border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
-                    <div className="flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                  <form onSubmit={submit} className="orbyven-intelligence-composer border-t border-[#91a8ff]/10 bg-[rgba(5,11,23,0.86)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-4">
+                    <div className="orbyven-intelligence-composer-field flex items-end gap-2 rounded-[17px] border border-[#91a8ff]/20 bg-[rgba(17,29,51,0.78)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
                       <textarea
                         ref={composerRef}
                         value={prompt}

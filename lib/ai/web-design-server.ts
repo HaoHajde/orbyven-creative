@@ -8,6 +8,37 @@ import {
   type SiteContentItem,
   type SiteFaqItem,
 } from "@/lib/ai/site-editor";
+import {
+  applyWebDesignStrategy,
+  buildWebDesignStrategy,
+  webDesignStrategyInstruction,
+} from "@/lib/ai/web-design-intent";
+import type { WebDesignQualityReport } from "@/lib/ai/web-design-quality";
+import { designDnaInstruction } from "@/lib/ai/web-design-variation";
+import type { WebDesignReadinessReport } from "@/lib/ai/web-design-readiness";
+import type { WebDesignAutonomousRefinementReport } from "@/lib/ai/web-design-autorefine";
+import {
+  selectBestWebDesignCandidate,
+  type WebDesignCandidateSelectionReport,
+} from "@/lib/ai/web-design-candidate-selection";
+import {
+  applyWebDesignRefineScope,
+  resolveWebDesignRefineScope,
+  webDesignRefineScopeInstruction,
+  type WebDesignRefineScope,
+} from "@/lib/ai/web-design-refine-locks";
+import {
+  guardWebDesignEvidence,
+  type WebDesignEvidenceGuardReport,
+} from "@/lib/ai/web-design-evidence";
+import {
+  deriveWebDesignBriefGaps,
+  type WebDesignBriefGapReport,
+} from "@/lib/ai/web-design-brief-gaps";
+import {
+  interviewFactsToEvidence,
+  type WebDesignInterviewFact,
+} from "@/lib/ai/web-design-interview";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -40,6 +71,13 @@ export type WebDesignGenerationResult = {
   summary: string;
   suggestions: string[];
   remainingToday: number | null;
+  quality: WebDesignQualityReport;
+  readiness: WebDesignReadinessReport;
+  refinement: WebDesignAutonomousRefinementReport;
+  selection: WebDesignCandidateSelectionReport;
+  refineScope: WebDesignRefineScope;
+  evidence: WebDesignEvidenceGuardReport;
+  briefGaps: WebDesignBriefGapReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -372,7 +410,7 @@ async function claimQuota(
   actor: BillingActor,
   config: WebDesignConfig
 ): Promise<{ requestId: string; remainingToday: number | null } | null> {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client.rpc("ai_web_design_claim", {
     p_organization_id: actor.organizationId,
     p_actor_id: actor.userId,
@@ -399,12 +437,13 @@ async function claimQuota(
 }
 
 async function finishQuota(
+  actor: BillingActor,
   requestId: string,
   success: boolean,
   usage: { input: number; output: number },
   failureCode?: string
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { error } = await client.rpc("ai_web_design_finish", {
     p_request_id: requestId,
     p_success: success,
@@ -416,7 +455,7 @@ async function finishQuota(
 }
 
 export async function loadWebDesignDraft(actor: BillingActor) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data, error } = await client
     .from("ai_web_design_drafts")
     .select("draft,revision,updated_at")
@@ -445,7 +484,7 @@ export async function saveWebDesignDraft(
   const valid = readSiteDraft(draft);
   if (!valid) throw new Error("WEB_DESIGN_DRAFT_INVALID");
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data: existing, error: existingError } = await client
     .from("ai_web_design_drafts")
     .select("revision")
@@ -483,17 +522,29 @@ export async function saveWebDesignDraft(
 export async function generateWebDesignForActor(
   actor: BillingActor,
   prompt: string,
-  current: EditableSite
+  current: EditableSite,
+  recentDrafts: EditableSite[] = [],
+  interviewFacts: WebDesignInterviewFact[] = []
 ): Promise<WebDesignGenerationResult> {
   if (actor.role === "viewer") throw new Error("WEB_DESIGN_EDIT_REQUIRED");
 
   const config = webDesignConfig();
   if (!config) throw new Error("WEB_DESIGN_AI_NOT_CONFIGURED");
 
+  const strategy = buildWebDesignStrategy(prompt, current);
+  const strategyInstruction = webDesignStrategyInstruction(strategy);
+  const variationInstruction = designDnaInstruction(current, strategy, prompt);
+  const refineScope = resolveWebDesignRefineScope(prompt, strategy);
+  const refineInstruction = webDesignRefineScopeInstruction(refineScope);
+  const interviewEvidence = interviewFactsToEvidence(interviewFacts.slice(-8));
+  const verifiedEvidence = [prompt, interviewEvidence]
+    .filter(Boolean)
+    .join("\n\n");
+
   const quota = await claimQuota(actor, config);
   if (!quota) throw new Error("WEB_DESIGN_AI_QUOTA");
 
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { data: organization } = await client
     .from("organizations")
     .select("name,legal_name")
@@ -521,12 +572,19 @@ export async function generateWebDesignForActor(
           "Nu inventa recenzii, ratinguri, ani de experiență, număr de clienți, certificări, premii, prețuri, reduceri, adrese, telefoane, program, garanții, termene sau disponibilitate. " +
           "Orice cifră din copy trebuie să existe deja în cererea utilizatorului sau în draftul curent. Dacă lipsesc date reale pentru portofoliu, folosește etichete neutre precum «Exemplu vizual» și explică faptul că trebuie înlocuite. " +
           "Nu produce URL-uri, cod, JSX, JavaScript, CSS, HTML sau markdown. Alege numai variantele și câmpurile permise de schemă. " +
-          "Păstrează un CTA principal clar, ierarhie vizuală bună, texte scurte, contrast bun și o paletă coerentă. Nu ascunde secțiunea hero.",
+          "Păstrează un CTA principal clar, ierarhie vizuală bună, texte scurte, contrast bun și o paletă coerentă. Nu ascunde secțiunea hero. " +
+          "Folosește Site Strategy ca arhitectură de conversie: respectă obiectivul principal, evită secțiunile redundante și nu transforma automat toate site-urile în aceeași structură. " +
+          "Dacă request_mode este refine, modifică doar ce cere utilizatorul și păstrează structura neschimbată dacă nu este cerută explicit.\n\n" +
+          strategyInstruction +
+          (variationInstruction ? "\n\n" + variationInstruction : "") +
+          (refineInstruction ? "\n\n" + refineInstruction : ""),
         input: JSON.stringify({
           user_request: prompt.slice(0, 2000),
           organization_name: organization?.name ?? null,
           legal_name: organization?.legal_name ?? null,
           current_site: current,
+          site_strategy: strategy,
+          verified_interview_facts: interviewFacts.slice(-8),
         }),
         max_output_tokens: 3600,
         text: { format: WEB_DESIGN_FORMAT },
@@ -534,7 +592,7 @@ export async function generateWebDesignForActor(
     });
 
     if (!upstream.ok) {
-      await finishQuota(quota.requestId, false, usage, `HTTP_${upstream.status}`);
+      await finishQuota(actor, quota.requestId, false, usage, `HTTP_${upstream.status}`);
       throw new Error("WEB_DESIGN_UPSTREAM");
     }
 
@@ -542,7 +600,7 @@ export async function generateWebDesignForActor(
     usage = usageFrom(payload);
     const output = extractOutputText(payload);
     if (!output) {
-      await finishQuota(quota.requestId, false, usage, "EMPTY_OUTPUT");
+      await finishQuota(actor, quota.requestId, false, usage, "EMPTY_OUTPUT");
       throw new Error("WEB_DESIGN_EMPTY_OUTPUT");
     }
 
@@ -550,33 +608,87 @@ export async function generateWebDesignForActor(
     try {
       parsed = JSON.parse(output);
     } catch {
-      await finishQuota(quota.requestId, false, usage, "INVALID_JSON");
+      await finishQuota(actor, quota.requestId, false, usage, "INVALID_JSON");
       throw new Error("WEB_DESIGN_INVALID_OUTPUT");
     }
 
-    const result = parseModelResult(parsed, current, prompt);
+    const result = parseModelResult(parsed, current, verifiedEvidence);
     if (!result) {
-      await finishQuota(quota.requestId, false, usage, "OUTPUT_GUARD");
+      await finishQuota(actor, quota.requestId, false, usage, "OUTPUT_GUARD");
       throw new Error("WEB_DESIGN_OUTPUT_GUARD");
     }
 
-    const nextDraft = readSiteDraft({
+    const parsedDraft = readSiteDraft({
       preset: current.preset,
       ...result.draft,
     });
-    if (!nextDraft) {
-      await finishQuota(quota.requestId, false, usage, "DRAFT_INVALID");
+    const strategicDraft = parsedDraft
+      ? readSiteDraft(applyWebDesignStrategy(parsedDraft, strategy))
+      : null;
+    if (!strategicDraft) {
+      await finishQuota(actor, quota.requestId, false, usage, "DRAFT_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
+    const scopedDraft = readSiteDraft(
+      applyWebDesignRefineScope(strategicDraft, current, refineScope)
+    );
+    if (!scopedDraft) {
+      await finishQuota(actor, quota.requestId, false, usage, "REFINE_SCOPE_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const evidenceResult = guardWebDesignEvidence(
+      scopedDraft,
+      current,
+      verifiedEvidence
+    );
+    const evidenceDraft = readSiteDraft(evidenceResult.draft);
+    if (!evidenceDraft) {
+      await finishQuota(actor, quota.requestId, false, usage, "EVIDENCE_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const selectedResult = selectBestWebDesignCandidate(
+      evidenceDraft,
+      current,
+      strategy,
+      prompt,
+      recentDrafts.slice(-4)
+    );
+    const nextDraft = readSiteDraft(selectedResult.draft);
+    if (!nextDraft) {
+      await finishQuota(actor, quota.requestId, false, usage, "AUTOREFINE_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const briefGaps = deriveWebDesignBriefGaps(
+      nextDraft,
+      strategy,
+      selectedResult.readiness,
+      evidenceResult.report
+    );
+
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
-    await finishQuota(quota.requestId, true, usage);
+    await finishQuota(actor, quota.requestId, true, usage);
 
     return {
       draft: nextDraft,
       summary: result.summary,
-      suggestions: result.suggestions,
+      suggestions: [
+        ...selectedResult.refinement.remainingActions,
+        ...result.suggestions,
+      ]
+        .filter((item, index, items) => items.indexOf(item) === index)
+        .slice(0, 4),
       remainingToday: quota.remainingToday,
+      quality: selectedResult.quality,
+      readiness: selectedResult.readiness,
+      refinement: selectedResult.refinement,
+      selection: selectedResult.selection,
+      refineScope,
+      evidence: evidenceResult.report,
+      briefGaps,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
@@ -591,7 +703,7 @@ export async function generateWebDesignForActor(
       ].includes(error.message)
     ) {
       const code = error.name === "AbortError" ? "TIMEOUT" : "UPSTREAM_ERROR";
-      await finishQuota(quota.requestId, false, usage, code);
+      await finishQuota(actor, quota.requestId, false, usage, code);
     }
     throw error;
   } finally {

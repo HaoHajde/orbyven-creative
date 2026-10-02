@@ -15,6 +15,14 @@ import {
   shouldUseGenerativeWebDesign,
 } from "@/lib/ai/local-preview-commands";
 import {
+  applyWebDesignInterviewAnswerLocally,
+  buildWebDesignInterviewPrompt,
+  readWebDesignInterviewFacts,
+  readWebDesignInterviewQuestions,
+  type WebDesignInterviewFact,
+  type WebDesignInterviewQuestion,
+} from "@/lib/ai/web-design-interview";
+import {
   getCurrentWorkspace,
   getWorkspaceEntryPath,
 } from "@/lib/orbyven-workspace";
@@ -25,6 +33,13 @@ import WebDesignPreview, {
 
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
 const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
+const VISUAL_MEMORY_KEY = "orbyven-web-design-visual-memory-v01";
+const INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01";
+const INTERVIEW_FACTS_KEY = "orbyven-web-design-interview-facts-v01";
+
+function workspaceStorageKey(base: string, organizationId: string) {
+  return `${base}:${organizationId}`;
+}
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -38,6 +53,53 @@ type GenerationBody = {
   summary?: string;
   suggestions?: string[];
   remainingToday?: number | null;
+  quality?: {
+    score?: number;
+    status?: "strong" | "good" | "review";
+    fixesApplied?: number;
+  };
+  readiness?: {
+    score?: number;
+    status?: "ready" | "almost_ready" | "draft";
+    placeholderCount?: number;
+    blockers?: Array<{ code?: string; message?: string }>;
+  };
+  refinement?: {
+    attempted?: boolean;
+    passes?: number;
+    improved?: boolean;
+    initialQuality?: number;
+    finalQuality?: number;
+    initialReadiness?: number;
+    finalReadiness?: number;
+    remainingActions?: string[];
+  };
+  selection?: {
+    evaluatedCandidates?: number;
+    selectedDna?: string | null;
+    selectedScore?: number;
+    selectedDistance?: number;
+    styleAffinity?: number;
+  };
+  refineScope?: {
+    strict?: boolean;
+    targets?: string[];
+  };
+  evidence?: {
+    revertedFields?: string[];
+    unsupportedConcepts?: string[];
+  };
+  briefGaps?: {
+    count?: number;
+    completionScore?: number;
+    labels?: string[];
+    gaps?: Array<{
+      id?: string;
+      label?: string;
+      question?: string;
+      priority?: number;
+    }>;
+  };
   error?: string;
   code?: string;
 };
@@ -54,6 +116,7 @@ export default function WebDesignSpecialist() {
   const router = useRouter();
   const [draft, setDraft] = useState<EditableSite>(DEFAULT_SITE);
   const [history, setHistory] = useState<EditableSite[]>([]);
+  const [visualMemory, setVisualMemory] = useState<EditableSite[]>([]);
   const [prompt, setPrompt] = useState("");
   const [message, setMessage] = useState("Web Design Intelligence este pregătit.");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -64,6 +127,11 @@ export default function WebDesignSpecialist() {
   const [canEdit, setCanEdit] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [qualityScore, setQualityScore] = useState<number | null>(null);
+  const [readinessScore, setReadinessScore] = useState<number | null>(null);
+  const [interviewQuestions, setInterviewQuestions] = useState<WebDesignInterviewQuestion[]>([]);
+  const [interviewFacts, setInterviewFacts] = useState<WebDesignInterviewFact[]>([]);
+  const [interviewAnswer, setInterviewAnswer] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -88,15 +156,35 @@ export default function WebDesignSpecialist() {
         setCanEdit(workspace.membership.role !== "viewer");
         setAuthorized(true);
 
+        const workspaceId = workspace.organization.id;
+        const draftStorageKey = workspaceStorageKey(STORAGE_KEY, workspaceId);
+        const visualMemoryStorageKey = workspaceStorageKey(
+          VISUAL_MEMORY_KEY,
+          workspaceId
+        );
+        const interviewQueueStorageKey = workspaceStorageKey(
+          INTERVIEW_QUEUE_KEY,
+          workspaceId
+        );
+        const interviewFactsStorageKey = workspaceStorageKey(
+          INTERVIEW_FACTS_KEY,
+          workspaceId
+        );
+
         let localDraft: EditableSite | null = null;
         try {
           const saved =
+            window.localStorage.getItem(draftStorageKey) ??
             window.localStorage.getItem(STORAGE_KEY) ??
             window.localStorage.getItem(LEGACY_STORAGE_KEY);
           if (saved) {
             localDraft = readSiteDraft(JSON.parse(saved));
             if (localDraft) {
-              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localDraft));
+              window.localStorage.setItem(
+                draftStorageKey,
+                JSON.stringify(localDraft)
+              );
+              window.localStorage.removeItem(STORAGE_KEY);
               window.localStorage.removeItem(LEGACY_STORAGE_KEY);
             }
           }
@@ -104,6 +192,79 @@ export default function WebDesignSpecialist() {
           console.warn("ORBYVEN Web Design local draft could not be restored", error);
         }
         if (localDraft) setDraft(localDraft);
+
+        try {
+          const savedFacts =
+            window.localStorage.getItem(interviewFactsStorageKey) ??
+            window.localStorage.getItem(INTERVIEW_FACTS_KEY);
+          if (savedFacts) {
+            const facts = readWebDesignInterviewFacts(JSON.parse(savedFacts));
+            setInterviewFacts(facts);
+            if (facts.length) {
+              window.localStorage.setItem(
+                interviewFactsStorageKey,
+                JSON.stringify(facts)
+              );
+            } else {
+              window.localStorage.removeItem(interviewFactsStorageKey);
+            }
+            window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design interview facts could not be restored", error);
+          window.localStorage.removeItem(interviewFactsStorageKey);
+          window.localStorage.removeItem(INTERVIEW_FACTS_KEY);
+        }
+
+        try {
+          const savedInterview =
+            window.localStorage.getItem(interviewQueueStorageKey) ??
+            window.localStorage.getItem(INTERVIEW_QUEUE_KEY);
+          if (savedInterview) {
+            const questions = readWebDesignInterviewQuestions(
+              JSON.parse(savedInterview)
+            );
+            setInterviewQuestions(questions);
+            if (questions.length) {
+              window.localStorage.setItem(
+                interviewQueueStorageKey,
+                JSON.stringify(questions)
+              );
+            } else {
+              window.localStorage.removeItem(interviewQueueStorageKey);
+            }
+            window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design interview queue could not be restored", error);
+          window.localStorage.removeItem(interviewQueueStorageKey);
+          window.localStorage.removeItem(INTERVIEW_QUEUE_KEY);
+        }
+
+        try {
+          const savedMemory =
+            window.localStorage.getItem(visualMemoryStorageKey) ??
+            window.localStorage.getItem(VISUAL_MEMORY_KEY);
+          if (savedMemory) {
+            const parsedMemory = JSON.parse(savedMemory);
+            if (Array.isArray(parsedMemory)) {
+              const validMemory = parsedMemory
+                .map((item) => readSiteDraft(item))
+                .filter((item): item is EditableSite => item !== null)
+                .slice(-4);
+              setVisualMemory(validMemory);
+              window.localStorage.setItem(
+                visualMemoryStorageKey,
+                JSON.stringify(validMemory)
+              );
+            }
+            window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Web Design visual memory could not be restored", error);
+          window.localStorage.removeItem(visualMemoryStorageKey);
+          window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+        }
 
         try {
           const token = await getAccessToken();
@@ -119,7 +280,10 @@ export default function WebDesignSpecialist() {
             const remote = readSiteDraft(body.draft);
             if (active && remote) {
               setDraft(remote);
-              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+              window.localStorage.setItem(
+                draftStorageKey,
+                JSON.stringify(remote)
+              );
               setMessage("Am restaurat draftul sincronizat din ORBYVEN.");
             }
           }
@@ -140,9 +304,35 @@ export default function WebDesignSpecialist() {
   }, [router]);
 
   useEffect(() => {
-    if (!hydrated || !authorized) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [draft, hydrated, authorized]);
+    if (!hydrated || !authorized || !organizationId) return;
+    window.localStorage.setItem(
+      workspaceStorageKey(STORAGE_KEY, organizationId),
+      JSON.stringify(draft)
+    );
+  }, [draft, hydrated, authorized, organizationId]);
+
+  useEffect(() => {
+    if (!hydrated || !authorized || !organizationId) return;
+    const key = workspaceStorageKey(INTERVIEW_QUEUE_KEY, organizationId);
+    if (interviewQuestions.length) {
+      window.localStorage.setItem(key, JSON.stringify(interviewQuestions));
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  }, [interviewQuestions, hydrated, authorized, organizationId]);
+
+  useEffect(() => {
+    if (!hydrated || !authorized || !organizationId) return;
+    const key = workspaceStorageKey(INTERVIEW_FACTS_KEY, organizationId);
+    if (interviewFacts.length) {
+      window.localStorage.setItem(
+        key,
+        JSON.stringify(interviewFacts.slice(-8))
+      );
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  }, [interviewFacts, hydrated, authorized, organizationId]);
 
   const saveRemote = async (
     next: EditableSite,
@@ -178,15 +368,25 @@ export default function WebDesignSpecialist() {
   const commitDraft = (
     next: EditableSite,
     source: "local" | "preset",
-    lastPrompt?: string
+    lastPrompt?: string,
+    preserveInterview = false
   ) => {
     if (JSON.stringify(next) === JSON.stringify(draft)) return;
     setHistory((current) => [...current.slice(-29), draft]);
     setDraft(next);
+    setQualityScore(null);
+    setReadinessScore(null);
+    if (!preserveInterview) {
+      setInterviewQuestions([]);
+      setInterviewAnswer("");
+    }
     void saveRemote(next, source, lastPrompt);
   };
 
-  const generateWithAi = async (request: string) => {
+  const generateWithAi = async (
+    request: string,
+    factOverride?: WebDesignInterviewFact[]
+  ) => {
     if (!organizationId || !canEdit || aiBusy) return false;
     setAiBusy(true);
     setMessage("ORBYVEN construiește o variantă nouă din componente validate…");
@@ -203,6 +403,8 @@ export default function WebDesignSpecialist() {
           organizationId,
           prompt: request,
           currentDraft: draft,
+          recentDrafts: visualMemory.slice(-4),
+          interviewFacts: (factOverride ?? interviewFacts).slice(-8),
         }),
       });
 
@@ -213,10 +415,77 @@ export default function WebDesignSpecialist() {
       if (!next) throw new Error("Generatorul a returnat un draft invalid.");
 
       setHistory((current) => [...current.slice(-29), draft]);
+      setVisualMemory((current) => {
+        const nextMemory = [...current, draft].slice(-4);
+        if (organizationId) {
+          window.localStorage.setItem(
+            workspaceStorageKey(VISUAL_MEMORY_KEY, organizationId),
+            JSON.stringify(nextMemory)
+          );
+        }
+        return nextMemory;
+      });
       setDraft(next);
       setSuggestions((body.suggestions ?? []).slice(0, 4));
+      const nextInterviewQuestions = readWebDesignInterviewQuestions(
+        body.briefGaps?.gaps
+      );
+      setInterviewQuestions(nextInterviewQuestions);
+      if (!nextInterviewQuestions.length) setInterviewAnswer("");
+      const nextQualityScore =
+        typeof body.quality?.score === "number"
+          ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
+          : null;
+      setQualityScore(nextQualityScore);
+      const nextReadinessScore =
+        typeof body.readiness?.score === "number"
+          ? Math.max(0, Math.min(100, Math.round(body.readiness.score)))
+          : null;
+      setReadinessScore(nextReadinessScore);
+      const blockerCount = Array.isArray(body.readiness?.blockers)
+        ? body.readiness.blockers.length
+        : 0;
+      const autonomousPasses =
+        body.refinement?.attempted && typeof body.refinement.passes === "number"
+          ? body.refinement.passes
+          : 0;
+      const candidateCount =
+        typeof body.selection?.evaluatedCandidates === "number"
+          ? body.selection.evaluatedCandidates
+          : 1;
+      const lockedTargets =
+        body.refineScope?.strict && Array.isArray(body.refineScope.targets)
+          ? body.refineScope.targets.slice(0, 4)
+          : [];
+      const revertedClaimCount = Array.isArray(body.evidence?.revertedFields)
+        ? body.evidence.revertedFields.length
+        : 0;
+      const briefGapLabels = Array.isArray(body.briefGaps?.labels)
+        ? body.briefGaps.labels.slice(0, 2)
+        : [];
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (briefGapLabels.length > 0
+            ? ` · lipsesc: ${briefGapLabels.join(", ")}`
+            : "") +
+          (revertedClaimCount > 0
+            ? ` · ${revertedClaimCount} afirmații neverificate retrase`
+            : "") +
+          (lockedTargets.length > 0
+            ? ` · editare izolată: ${lockedTargets.join(", ")}`
+            : "") +
+          (candidateCount > 1
+            ? ` · selectată din ${candidateCount} variante interne`
+            : "") +
+          (body.refinement?.improved && autonomousPasses > 0
+            ? ` · rafinată automat în ${autonomousPasses} ${autonomousPasses === 1 ? "pas" : "pași"}`
+            : "") +
+          (typeof body.quality?.fixesApplied === "number" && body.quality.fixesApplied > 0
+            ? ` · ${body.quality.fixesApplied} corecții automate`
+            : "") +
+          (blockerCount > 0
+            ? ` · ${blockerCount} elemente de completat înainte de publicare`
+            : "") +
           (typeof body.remainingToday === "number"
             ? ` · ${body.remainingToday} generări rămase astăzi`
             : "")
@@ -268,8 +537,77 @@ export default function WebDesignSpecialist() {
     void applyPrompt();
   };
 
+  const activeInterviewQuestion = interviewQuestions[0] ?? null;
+
+  const submitInterview = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activeInterviewQuestion || aiBusy || !canEdit) return;
+
+    const fact: WebDesignInterviewFact = {
+      id: activeInterviewQuestion.id,
+      question: activeInterviewQuestion.question,
+      answer: interviewAnswer.trim().slice(0, 1200),
+    };
+    const nextFacts = readWebDesignInterviewFacts([
+      ...interviewFacts,
+      fact,
+    ]);
+    setInterviewFacts(nextFacts);
+
+    const localResult = applyWebDesignInterviewAnswerLocally(
+      draft,
+      activeInterviewQuestion,
+      interviewAnswer
+    );
+    if (localResult) {
+      commitDraft(
+        localResult.draft,
+        "local",
+        `interview:${activeInterviewQuestion.id}`,
+        true
+      );
+      setInterviewQuestions((current) => current.slice(1));
+      setInterviewAnswer("");
+      setSuggestions([]);
+      setMessage(localResult.message);
+      return;
+    }
+
+    const interviewPrompt = buildWebDesignInterviewPrompt(
+      activeInterviewQuestion,
+      interviewAnswer
+    );
+    if (!interviewPrompt) {
+      setMessage("Răspunsul este prea scurt sau prea lung pentru a fi aplicat.");
+      return;
+    }
+
+    const generated = await generateWithAi(interviewPrompt, nextFacts);
+    if (generated) setInterviewAnswer("");
+  };
+
+  const skipInterviewQuestion = () => {
+    setInterviewQuestions((current) => current.slice(1));
+    setInterviewAnswer("");
+  };
+
   const selectPreset = (preset: SitePresetId) => {
     const next = SITE_PRESETS[preset];
+    setVisualMemory([]);
+    setInterviewQuestions([]);
+    setInterviewFacts([]);
+    setInterviewAnswer("");
+    if (organizationId) {
+      window.localStorage.removeItem(
+        workspaceStorageKey(VISUAL_MEMORY_KEY, organizationId)
+      );
+      window.localStorage.removeItem(
+        workspaceStorageKey(INTERVIEW_QUEUE_KEY, organizationId)
+      );
+      window.localStorage.removeItem(
+        workspaceStorageKey(INTERVIEW_FACTS_KEY, organizationId)
+      );
+    }
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
@@ -281,12 +619,31 @@ export default function WebDesignSpecialist() {
     setDraft(previous);
     setHistory((current) => current.slice(0, -1));
     setSuggestions([]);
+    setQualityScore(null);
+    setReadinessScore(null);
+    setInterviewQuestions([]);
+    setInterviewAnswer("");
     setMessage("Am revenit la versiunea anterioară.");
     void saveRemote(previous, "local", "undo");
   };
 
   const reset = () => {
     const next = SITE_PRESETS[draft.preset];
+    setVisualMemory([]);
+    setInterviewQuestions([]);
+    setInterviewFacts([]);
+    setInterviewAnswer("");
+    if (organizationId) {
+      window.localStorage.removeItem(
+        workspaceStorageKey(VISUAL_MEMORY_KEY, organizationId)
+      );
+      window.localStorage.removeItem(
+        workspaceStorageKey(INTERVIEW_QUEUE_KEY, organizationId)
+      );
+      window.localStorage.removeItem(
+        workspaceStorageKey(INTERVIEW_FACTS_KEY, organizationId)
+      );
+    }
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
@@ -333,6 +690,22 @@ export default function WebDesignSpecialist() {
             <span className="text-[9px] text-white/35">
               {saveState === "saving" ? "Se salvează…" : saveState === "saved" ? "Salvat în cloud" : "Draft sincronizat"}
             </span>
+            {qualityScore !== null ? (
+              <span
+                title="Scor tehnic intern pentru structură, contrast, densitate și CTA"
+                className="rounded-full border border-[#7897ff]/20 bg-[#7897ff]/[0.08] px-2.5 py-1.5 text-[9px] font-semibold text-[#b9c5ff]"
+              >
+                Quality {qualityScore}
+              </span>
+            ) : null}
+            {readinessScore !== null ? (
+              <span
+                title="Grad de pregătire pentru publicare: placeholders, structură și calitate"
+                className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1.5 text-[9px] font-semibold text-emerald-200/80"
+              >
+                Ready {readinessScore}
+              </span>
+            ) : null}
             <button
               type="button"
               disabled={!history.length || aiBusy}
@@ -417,6 +790,52 @@ export default function WebDesignSpecialist() {
               </button>
             ))}
           </div>
+
+          {activeInterviewQuestion ? (
+            <form
+              onSubmit={submitInterview}
+              className="mt-4 rounded-[14px] border border-[#7897ff]/20 bg-[#7897ff]/[0.055] p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#aebcff]">
+                  Întrebare utilă
+                </p>
+                <span className="text-[9px] text-white/30">
+                  1 / {interviewQuestions.length}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-white/78">
+                {activeInterviewQuestion.question}
+              </p>
+              <textarea
+                value={interviewAnswer}
+                disabled={aiBusy || !canEdit}
+                onChange={(event) =>
+                  setInterviewAnswer(event.target.value.slice(0, 1200))
+                }
+                rows={3}
+                placeholder="Răspunde scurt, cu informația reală."
+                className="mt-3 w-full resize-none rounded-[11px] border border-white/10 bg-black/20 px-3 py-2.5 text-[10px] leading-5 outline-none placeholder:text-white/25 focus:border-[#7897ff]/40 disabled:opacity-40"
+              />
+              <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                <button
+                  type="submit"
+                  disabled={aiBusy || !canEdit || interviewAnswer.trim().length < 2}
+                  className="h-9 rounded-[10px] bg-white px-3 text-[10px] font-semibold text-black disabled:opacity-35"
+                >
+                  Aplică răspunsul
+                </button>
+                <button
+                  type="button"
+                  disabled={aiBusy}
+                  onClick={skipInterviewQuestion}
+                  className="h-9 rounded-[10px] border border-white/10 px-3 text-[10px] font-semibold text-white/55 disabled:opacity-35"
+                >
+                  Mai târziu
+                </button>
+              </div>
+            </form>
+          ) : null}
 
           {suggestions.length ? (
             <div className="mt-4 border-t border-white/10 pt-4">

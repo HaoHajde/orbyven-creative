@@ -1,9 +1,18 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
 
-import { getSiteUrl } from "@/lib/site-config";
+import {
+  publicLocaleForHost,
+  publicOriginForLocale,
+} from "@/lib/domain-locale";
 
-export default function robots(): MetadataRoute.Robots {
-  const siteUrl = getSiteUrl();
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host");
+  const locale = publicLocaleForHost(host);
+  const siteUrl = publicOriginForLocale(locale);
 
   return {
     rules: [
