@@ -462,7 +462,25 @@ export default function TasksModule({
     setSaving(true);
     setError("");
     try {
-      replaceTask(await setWorkTaskProgress(organizationId, task.id, progress));
+      const updated = await setWorkTaskProgress(organizationId, task.id, progress);
+      replaceTask(updated);
+      if (progress === 100 && enabledModules.includes("calendar")) {
+        try {
+          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncWarning(
+            sync.futureScheduled > 0
+              ? `Lucrarea este la 100%, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
+              : sync.completedEvents > 0
+                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+                : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Lucrarea este la 100%, dar programările trecute nu au putut fi sincronizate automat.");
+        }
+      } else {
+        setSyncWarning("");
+      }
     } catch (progressError) {
       console.error(progressError);
       setError("Progresul nu a putut fi actualizat.");
