@@ -496,3 +496,27 @@ test("new estimates cannot target closed work while historical revisions keep co
   const estimates = read("components/modules/EstimatesModule.tsx");
   assert.match(estimates, /tasks\.filter\(\(task\) => revisionSource \|\| !\["done","cancelled"\]\.includes\(task\.status\)\)/);
 });
+
+
+test("client lifecycle drives the CRM primary action", () => {
+  const leads = read("components/modules/LeadsModule.tsx");
+  assert.match(leads, /selectedLifecycle\?\.state === "overdue"/);
+  assert.match(leads, /Follow-up ajuns la termen/);
+  assert.match(leads, /selectedLifecycle\?\.needsReactivation/);
+  assert.match(leads, /Planifică revenire →/);
+  assert.match(leads, /data-client-follow-up="true"/);
+  assert.match(leads, /Alte acțiuni/);
+});
+
+test("sending an estimate refreshes CRM contact recency", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /export async function syncCrmAfterEstimateSent/);
+  assert.match(sync, /last_contact_at: now/);
+  assert.match(sync, /Devizul.*a fost marcat trimis/);
+  assert.match(sync, /lead\.stage === "lost"/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /syncCrmAfterEstimateSent/);
+  assert.match(estimates, /status === "sent" && next\.client_id/);
+  assert.match(estimates, /ultima interacțiune pentru oferta trimisă/);
+});
