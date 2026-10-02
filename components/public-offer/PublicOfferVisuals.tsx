@@ -123,7 +123,7 @@ function FeatureScene({
     feature;
 
   return (
-    <div className="absolute inset-[5%] z-50 overflow-hidden rounded-[28px] border border-[#b396ff]/55 bg-[#08090f]/98 p-4 text-white shadow-[0_42px_130px_rgba(0,0,0,.72),0_0_60px_rgba(128,84,255,.20)] backdrop-blur-2xl sm:p-5">
+    <div className="orbyven-feature-scene absolute inset-[4%] z-50 overflow-hidden rounded-[28px] border border-[#b396ff]/62 bg-[#08090f]/98 p-4 text-white shadow-[0_42px_130px_rgba(0,0,0,.74),0_0_66px_rgba(128,84,255,.23)] backdrop-blur-2xl sm:p-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-[13px] border border-[#a78bff]/35 bg-[#8f6cff]/14 text-[#c8b8ff]">
@@ -224,7 +224,13 @@ function BrowserShell({ children }: { children: ReactNode }) {
   );
 }
 
-function InvitationVisual() {
+function InvitationVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_68%_16%,rgba(176,118,255,.40),transparent_28%),radial-gradient(circle_at_12%_58%,rgba(84,64,205,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
@@ -256,7 +262,12 @@ function InvitationVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Galerie"}
+        onClick={() => onSelect("Galerie")}
+        className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 text-left shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/60 hover:shadow-[0_36px_100px_rgba(0,0,0,.64),0_0_46px_rgba(126,93,255,.22)] sm:block"
+      >
         <div className="overflow-hidden rounded-[27px] bg-[radial-gradient(circle_at_50%_0%,rgba(255,235,220,.10),transparent_24%),linear-gradient(180deg,#17141d,#0c0b10)] px-4 py-5 text-center text-white">
           <p className="font-serif text-[12px] tracking-[.2em]">A | M</p>
           <p className="mt-7 text-[6px] tracking-[.3em] text-white/42">SAVE THE DATE</p>
@@ -266,21 +277,32 @@ function InvitationVisual() {
             {["Locație","Program","Poveste","Galerie"].map((x)=><div key={x} className="rounded-[12px] border border-white/8 bg-white/[.035] px-2 py-3 text-[6px] text-white/65">{x}</div>)}
           </div>
         </div>
-      </div>
+      </button>
 
-      <div className="absolute left-[-2%] top-[32%] hidden w-[158px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "RSVP"}
+        onClick={() => onSelect("RSVP")}
+        className="orbyven-float-a absolute left-[-2%] top-[32%] hidden w-[158px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#c2b2ff]"><Glyph kind="RSVP" /></div>
         <p className="mt-3 text-[10px] font-semibold">RSVP live</p>
         <div className="mt-3 flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emerald-400" />
           <span className="text-[7px] text-white/42">confirmări instant</span>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
 
-function WebVisual() {
+function WebVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_16%,rgba(95,110,255,.40),transparent_28%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
@@ -308,7 +330,12 @@ function WebVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[1%] right-[1%] hidden w-[194px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Dashboard"}
+        onClick={() => onSelect("Dashboard")}
+        className="absolute bottom-[1%] right-[1%] hidden w-[194px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 text-left shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/60 hover:shadow-[0_36px_100px_rgba(0,0,0,.64),0_0_46px_rgba(126,93,255,.22)] sm:block"
+      >
         <div className="overflow-hidden rounded-[27px] bg-[#0d0e14] p-4 text-white">
           <div className="flex items-center justify-between"><span className="text-[8px] font-semibold">Dashboard</span><span className="h-5 w-5 rounded-full bg-[#a58bff]/35" /></div>
           <div className="mt-5 grid grid-cols-2 gap-2">
@@ -320,21 +347,32 @@ function WebVisual() {
           </div>
           <div className="mt-3 space-y-2">{["Website nou","Client contactat","Task finalizat"].map(x=><div key={x} className="rounded-[10px] bg-white/[.035] px-3 py-2 text-[6px] text-white/55">{x}</div>)}</div>
         </div>
-      </div>
+      </button>
 
-      <div className="absolute left-[-2%] top-[30%] hidden w-[164px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Website"}
+        onClick={() => onSelect("Website")}
+        className="orbyven-float-a absolute left-[-2%] top-[30%] hidden w-[164px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_28px_88px_rgba(0,0,0,.54),0_0_30px_rgba(151,111,255,.14)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="flex items-center justify-between">
           <span className="text-[#c2b2ff]"><Glyph kind="Website" /></span>
           <span className="rounded-full bg-[#8f6cff]/16 px-2 py-1 text-[6px] font-bold text-[#cdbfff]">LIVE</span>
         </div>
         <p className="mt-3 text-[10px] font-semibold">Website</p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[86%] rounded-full bg-[#8f6cff]" /></div>
-      </div>
+      </button>
     </div>
   );
 }
 
-function AdvancedVisual() {
+function AdvancedVisual({
+  onSelect,
+  activeFeature,
+}: {
+  onSelect: (feature: string) => void;
+  activeFeature: string | null;
+}) {
   return (
     <div className="relative min-h-[540px] sm:min-h-[590px] lg:min-h-[445px] xl:min-h-[470px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_74%_16%,rgba(155,103,255,.44),transparent_28%),radial-gradient(circle_at_15%_64%,rgba(83,68,190,.23),transparent_35%),linear-gradient(180deg,rgba(81,52,160,.05),transparent)]" />
@@ -375,15 +413,44 @@ function AdvancedVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute left-[-3%] top-[22%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      <button
+        type="button"
+        aria-pressed={activeFeature === "CRM"}
+        onClick={() => onSelect("CRM")}
+        className="orbyven-float-a absolute left-[-3%] top-[22%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="CRM"/></div><p className="mt-3 text-[10px] font-semibold">CRM</p><p className="mt-1 text-[6px] text-white/35">Clienți & lead-uri</p>
-      </div>
-      <div className="absolute bottom-[7%] left-[0%] hidden w-[160px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      </button>
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Task-uri"}
+        onClick={() => onSelect("Task-uri")}
+        className="orbyven-float-b absolute bottom-[7%] left-[0%] hidden w-[160px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="Task-uri"/></div><p className="mt-3 text-[10px] font-semibold">Task-uri</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[62%] rounded-full bg-[#8f6cff]" /></div>
-      </div>
-      <div className="absolute right-[-3%] top-[20%] hidden w-[162px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl md:block">
+      </button>
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Calendar"}
+        onClick={() => onSelect("Calendar")}
+        className="orbyven-float-b absolute right-[-3%] top-[20%] hidden w-[162px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
+      >
         <div className="text-[#bcaaff]"><Glyph kind="Calendar"/></div><p className="mt-3 text-[10px] font-semibold">Calendar</p><p className="mt-1 text-[6px] text-white/35">Programări</p>
-      </div>
+      </button>
+
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Custom"}
+        onClick={() => onSelect("Custom")}
+        className="orbyven-float-a absolute bottom-[8%] right-[2%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] lg:block"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[#bcaaff]"><Glyph kind="Custom" /></span>
+          <span className="rounded-full border border-[#a98dff]/24 bg-[#8f6cff]/12 px-2 py-1 text-[6px] font-bold text-[#d3c8ff]">CUSTOM</span>
+        </div>
+        <p className="mt-3 text-[10px] font-semibold">Module custom</p>
+        <p className="mt-1 text-[6px] text-white/35">adaptate business-ului</p>
+      </button>
     </div>
   );
 }
@@ -392,14 +459,20 @@ export function HeroVisual({
   offerId,
   activeFeature,
   onCloseFeature,
+  onSelectFeature,
 }: {
   offerId: PublicOfferId;
   activeFeature: string | null;
   onCloseFeature: () => void;
+  onSelectFeature: (feature: string) => void;
 }) {
   return (
     <div className="relative">
-      {offerId === "invitation" ? <InvitationVisual /> : offerId === "web" ? <WebVisual /> : <AdvancedVisual />}
+      {offerId === "invitation"
+        ? <InvitationVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+        : offerId === "web"
+          ? <WebVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+          : <AdvancedVisual onSelect={onSelectFeature} activeFeature={activeFeature} />}
       {activeFeature ? <FeatureScene offerId={offerId} feature={activeFeature} onClose={onCloseFeature} /> : null}
     </div>
   );
