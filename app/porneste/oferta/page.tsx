@@ -152,17 +152,34 @@ function CheckoutPanel({
         {[
           ["1", "Alegi", "Devize"],
           ["2", "Confirmi", "Task-uri"],
-          ["3", "Stripe Checkout", "Website"],
-        ].map(([step, label, icon], index) => (
-          <div key={step} className="flex shrink-0 items-center">
-            <div className="relative flex h-[82px] w-[168px] items-center gap-3 rounded-[18px] border border-white/11 bg-[#0f1017] px-4 shadow-[0_14px_34px_rgba(0,0,0,.24)]">
-              <span className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold ${index === 0 ? "border-[#8f6cff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.5)]" : "border-[#8f6cff]/50 bg-[#16101f] text-[#bdaaff]"}`}>{step}</span>
-              <span className="mt-2 text-[#b39aff]"><Glyph kind={icon} /></span>
-              <span className="mt-2 text-[11px] font-medium">{label}</span>
+          ["3", "Stripe", "Website"],
+        ].map(([step, label, icon], index) => {
+          const completed = index === 0 || (confirmed && index === 1);
+          const active = (!confirmed && index === 1) || (confirmed && index === 2);
+          const ready = confirmed && index === 2;
+
+          return (
+            <div key={step} className="flex shrink-0 items-center">
+              <div
+                className={`relative flex h-[82px] w-[168px] items-center gap-3 rounded-[18px] border px-4 shadow-[0_14px_34px_rgba(0,0,0,.24)] transition-all duration-300 ${active ? "border-[#a88bff]/48 bg-[#8f6cff]/10 shadow-[0_0_28px_rgba(126,93,255,.12)]" : completed ? "border-emerald-400/14 bg-emerald-400/[.035]" : "border-white/9 bg-[#0f1017]"}`}
+              >
+                <span
+                  className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold transition-all duration-300 ${completed ? "border-emerald-400/35 bg-emerald-400/12 text-emerald-300" : active ? "border-[#a98dff] bg-[#8f6cff] text-white shadow-[0_0_26px_rgba(143,108,255,.52)]" : "border-white/12 bg-[#16101f] text-white/25"}`}
+                >
+                  {completed ? "✓" : step}
+                </span>
+                <span className={`mt-2 transition ${active ? "text-white" : completed ? "text-emerald-300/80" : "text-[#8f849f]"}`}><Glyph kind={icon} /></span>
+                <div className="mt-2">
+                  <span className={`block text-[11px] font-medium ${active ? "text-white" : completed ? "text-white/74" : "text-white/35"}`}>{label}</span>
+                  {ready ? <span className="mt-0.5 block text-[6px] font-bold uppercase tracking-[.12em] text-[#b8a4ff]">READY</span> : null}
+                </div>
+              </div>
+              {index < 2 ? (
+                <span className={`mx-3 text-[14px] transition-all duration-300 ${index === 0 || confirmed ? "text-[#9f7cff] drop-shadow-[0_0_8px_rgba(143,108,255,.7)]" : "text-white/14"}`}>→</span>
+              ) : null}
             </div>
-            {index < 2 ? <span className="mx-3 text-[#8f6cff]">→</span> : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="border-t border-white/8 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
@@ -186,7 +203,7 @@ function CheckoutPanel({
           }}
           className={`mt-2 flex h-[48px] w-full items-center justify-center gap-4 rounded-[15px] text-[13px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#b66fff_0%,#7b54ff_52%,#5b8dff_100%)] text-white shadow-[0_0_46px_rgba(122,76,255,.46)] ring-1 ring-white/15 hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
         >
-          <span>Confirmă și continuă</span><span>→</span>
+          <span>{confirmed ? "Continuă în Stripe" : "Confirmă și continuă"}</span><span>→</span>
         </Link>
         <div className="mt-3 flex items-center justify-center gap-2 text-[8px] text-white/30">
           <span>▣</span><span>Stripe Checkout</span>
