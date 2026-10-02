@@ -10,6 +10,7 @@ import {
   BILLING_PLANS,
   LEGAL_DOCUMENT_VERSION,
   PUBLIC_PRICE_TAX_LABEL,
+  isBillingPlanId,
   type BillingPlanId,
 } from "@/lib/billing/public-config";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
@@ -46,8 +47,10 @@ function themeVars(theme:Theme){
 function WebDesignStartContent(){
   const searchParams=useSearchParams();
   const mode:Mode=searchParams.get("mode")==="ecosystem"?"ecosystem":"web";
+  const requestedPlan=searchParams.get("plan");
+  const initialPlanId:BillingPlanId=isBillingPlanId(requestedPlan)?requestedPlan:"business";
   const [theme,setTheme]=useState<Theme>("light");
-  const [planId,setPlanId]=useState<BillingPlanId>("business");
+  const [planId,setPlanId]=useState<BillingPlanId>(initialPlanId);
   const [accountState,setAccountState]=useState<AccountState>("checking");
   const [workspace,setWorkspace]=useState<OrbyvenWorkspace|null>(null);
   const [accepted,setAccepted]=useState(false);
@@ -98,7 +101,7 @@ function WebDesignStartContent(){
     return next;
   });
 
-  const query=`?plan=${planId}&checkout=1&product=web-design-dashboard`;
+  const query=`?plan=${planId}&checkout=1&product=web-design-dashboard&mode=${mode}`;
   const registerHref=`/workspace/register${query}`;
   const loginHref=`/workspace/login${query}`;
   const onboardingHref=`/workspace/onboarding${query}`;
