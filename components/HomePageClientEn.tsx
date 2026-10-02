@@ -6,8 +6,8 @@ import HomeInvitationPreview from "@/components/HomeInvitationPreview";
 import HomeTemplatePreviewFrame from "@/components/HomeTemplatePreviewFrame";
 import { featuredTemplates } from "@/lib/featured-templates";
 import OrbitalSystem from "@/components/OrbitalSystem";
-import SiteFooter from "@/components/SiteFooter";
-import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooterEn";
+import SiteHeader from "@/components/SiteHeaderEn";
 import WarpMenu, { type WarpItem } from "@/components/WarpMenu";
 import { BILLING_PLANS } from "@/lib/billing/public-config";
 import { clientTemplateList } from "@/lib/client-template-catalog";
@@ -23,74 +23,74 @@ const warpItems: WarpItem[] = [
   { id: "intro", label: "Intro", number: "01" },
   { id: "modular", label: "Workspace", number: "02" },
   { id: "templates", label: "Templates", number: "03" },
-  { id: "services", label: "Servicii", number: "04" },
-  { id: "pricing", label: "Prețuri", number: "05" },
+  { id: "services", label: "Services", number: "04" },
+  { id: "pricing", label: "Pricing", number: "05" },
   { id: "start", label: "Start", number: "06" },
 ];
 
 const moduleShowcase = [
   {
-    name: "Clienți",
-    note: "Cereri și contacte într-un singur loc.",
+    name: "Clients",
+    note: "Requests and contacts in one place.",
     eyebrow: "CRM LIGHT",
     glyph: "◎",
     chips: ["Lead-uri", "Istoric", "Follow-up"],
     glow: "radial-gradient(circle at 25% 15%, rgba(83,70,255,.30), transparent 48%)",
   },
   {
-    name: "Lucrări",
-    note: "Ce este de făcut, de cine și până când.",
+    name: "Projects",
+    note: "What needs to be done, by whom and by when.",
     eyebrow: "OPERATIONS",
     glyph: "↗",
-    chips: ["Task-uri", "Responsabili", "Status"],
+    chips: ["Tasks", "Owners", "Status"],
     glow: "radial-gradient(circle at 72% 18%, rgba(82,139,255,.24), transparent 48%)",
   },
   {
     name: "Calendar",
-    note: "Programări și vizite fără agende separate.",
+    note: "Appointments and visits without separate calendars.",
     eyebrow: "SCHEDULE",
     glyph: "◷",
-    chips: ["Vizite", "Termene", "Programări"],
+    chips: ["Visits", "Deadlines", "Appointments"],
     glow: "radial-gradient(circle at 35% 20%, rgba(117,83,255,.27), transparent 50%)",
   },
   {
-    name: "Oferte",
-    note: "Devize legate direct de client și lucrare.",
+    name: "Quotes",
+    note: "Quotes connected directly to the client and project.",
     eyebrow: "SALES",
     glyph: "≡",
-    chips: ["Devize", "Valori", "Conversie"],
+    chips: ["Quotes", "Values", "Conversion"],
     glow: "radial-gradient(circle at 75% 24%, rgba(170,76,255,.23), transparent 48%)",
   },
   {
-    name: "Documente",
-    note: "Fișierele rămân lângă contextul lor.",
+    name: "Documents",
+    note: "Files stay connected to their context.",
     eyebrow: "FILES",
     glyph: "□",
-    chips: ["Fișiere", "Context", "Acces rapid"],
+    chips: ["Files", "Context", "Quick access"],
     glow: "radial-gradient(circle at 28% 20%, rgba(76,151,255,.22), transparent 50%)",
   },
   {
-    name: "Cheltuieli",
-    note: "Costuri operaționale urmărite simplu.",
+    name: "Expenses",
+    note: "Operational costs tracked simply.",
     eyebrow: "FINANCE",
     glyph: "∑",
-    chips: ["Costuri", "Categorii", "Istoric"],
+    chips: ["Costs", "Categories", "History"],
     glow: "radial-gradient(circle at 70% 18%, rgba(92,82,255,.27), transparent 48%)",
   },
   {
-    name: "Echipă",
-    note: "Oamenii din teren și rolul lor operațional.",
+    name: "Team",
+    note: "Your people and their operational roles.",
     eyebrow: "PEOPLE",
     glyph: "◇",
-    chips: ["Roluri", "Echipă", "Responsabilitate"],
+    chips: ["Roles", "Team", "Ownership"],
     glow: "radial-gradient(circle at 38% 15%, rgba(132,73,255,.25), transparent 48%)",
   },
   {
     name: "Overview",
-    note: "Ce necesită atenție acum, nu grafice de decor.",
+    note: "What needs attention now, not decorative charts.",
     eyebrow: "CONTROL",
     glyph: "⌁",
-    chips: ["Priorități", "Semnale", "Acțiuni"],
+    chips: ["Priorities", "Signals", "Actions"],
     glow: "radial-gradient(circle at 72% 22%, rgba(74,91,255,.30), transparent 48%)",
   },
 ];
@@ -99,25 +99,25 @@ const services = [
   {
     number: "01",
     title: "Website",
-    note: "Prezență clară, rapidă și construită în jurul afacerii tale.",
+    note: "A clear, fast presence built around your business.",
     glow: "radial-gradient(circle at 18% 12%, rgba(92,73,255,.28), transparent 48%)",
   },
   {
     number: "02",
     title: "Landing page",
-    note: "O ofertă, o direcție și un traseu simplu către conversie.",
+    note: "One offer, one direction and a simple path to conversion.",
     glow: "radial-gradient(circle at 82% 16%, rgba(65,126,255,.24), transparent 48%)",
   },
   {
     number: "03",
     title: "Redesign",
-    note: "Păstrăm ce funcționează și reconstruim experiența care te ține în urmă.",
+    note: "We keep what works and rebuild what slows you down.",
     glow: "radial-gradient(circle at 28% 78%, rgba(137,72,255,.25), transparent 52%)",
   },
   {
     number: "04",
-    title: "Experiență digitală",
-    note: "Microsite-uri, invitații și interacțiuni făcute special pentru context.",
+    title: "Digital experience",
+    note: "Microsites, invitations and interactions designed for the right context.",
     glow: "radial-gradient(circle at 80% 78%, rgba(88,71,255,.28), transparent 52%)",
   },
 ];
@@ -125,18 +125,18 @@ const services = [
 const planMeta = {
   start: {
     eyebrow: "ESSENTIAL",
-    audience: "Pentru firme care vor fundația digitală și primele instrumente.",
-    badge: "Start simplu",
+    audience: "For businesses that need a strong digital foundation and essential tools.",
+    badge: "Simple start",
   },
   business: {
     eyebrow: "MOST BALANCED",
-    audience: "Pentru firme care lucrează zilnic cu clienți, lucrări și programări.",
-    badge: "Recomandat",
+    audience: "For businesses working daily with clients, projects and appointments.",
+    badge: "Recommended",
   },
   pro: {
     eyebrow: "FULL SYSTEM",
-    audience: "Pentru echipe care vor întregul workspace ORBYVEN disponibil.",
-    badge: "Tot ecosistemul",
+    audience: "For teams that want the complete ORBYVEN workspace.",
+    badge: "Full ecosystem",
   },
 } as const;
 
@@ -288,17 +288,17 @@ export default function HomePage() {
           <h1 className="contents">
             <span className="block overflow-hidden pb-2">
               <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.05, delay: 0.16, ease: easeOut }} className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
-                Construim
+                We build
               </motion.span>
             </span>
             <span className="block overflow-hidden pb-4">
               <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.12, delay: 0.27, ease: easeOut }} className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
-                ce rămâne în minte.
+                what gets remembered.
               </motion.span>
             </span>
           </h1>
           <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.65, ease: easeOut }} className="mt-7 max-w-2xl text-balance text-sm leading-6 text-[var(--muted)] sm:mt-9 sm:text-base">
-            ORBYVEN CREATIVE creează website-uri pentru afaceri și invitații digitale personalizate de nuntă, botez și majorat. Web design, modele interactive și instrumente simple, în același studio.
+            ORBYVEN builds premium websites, digital experiences and business tools in one connected ecosystem.
           </motion.p>
         </motion.div>
       </section>
@@ -308,9 +308,9 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-[1500px]">
           <div className="grid gap-9 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:gap-16">
             <div>
-              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Un singur spațiu. Totul conectat.</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
-              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Activezi <span className="relative z-10 -mx-[0.03em] text-[var(--home-violet)]">doar</span> ce folosești.</h2>
-              <p className="mt-5 max-w-md text-[15px] font-medium leading-7 text-[var(--home-violet)]">Modulele nu sunt pagini lipite una lângă alta. Își păstrează contextul și lucrează împreună.</p>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>One workspace. Everything connected.</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-4 max-w-xl text-[44px] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[62px]">Enable <span className="relative z-10 -mx-[0.03em] text-[var(--home-violet)]">only</span> what you use.</h2>
+              <p className="mt-5 max-w-md text-[15px] font-medium leading-7 text-[var(--home-violet)]">Modules are not disconnected pages. They share context and work together.</p>
               <Link href="/workspace" className="mt-7 inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60">Dashboard →</Link>
             </div>
 
@@ -407,12 +407,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1500px]">
           <div className="flex items-end justify-between gap-5">
             <div>
-              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Colecția ORBYVEN</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
-              <h2 className="mt-3 text-[38px] font-semibold tracking-[-0.055em] sm:text-[52px]">Vezi. <span className="relative z-10 -mx-[0.045em] inline-block text-[var(--home-violet)]">Glisează.</span> Alege.</h2>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>The ORBYVEN collection</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-3 text-[38px] font-semibold tracking-[-0.055em] sm:text-[52px]">See it. <span className="relative z-10 -mx-[0.045em] inline-block text-[var(--home-violet)]">Explore it.</span> Choose it.</h2>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={previousTemplate} aria-label="Template anterior" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
-              <button type="button" onClick={nextTemplate} aria-label="Template următor" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">→</button>
+              <button type="button" onClick={previousTemplate} aria-label="Previous template" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">←</button>
+              <button type="button" onClick={nextTemplate} aria-label="Next template" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--bg)]">→</button>
             </div>
           </div>
 
@@ -438,23 +438,23 @@ export default function HomePage() {
           <div className="mt-5 flex items-center justify-between gap-4">
             <div className="flex gap-2">
               {homepageTemplates.map((template, index) => (
-                <button key={template.source === "featured" ? template.href : template.slug} type="button" onClick={() => setActiveTemplateIndex(index)} aria-label={`Arată ${template.title}`} className={`h-1.5 rounded-full transition-all ${index === activeTemplateIndex ? "w-10 bg-[var(--text)]" : "w-5 bg-[var(--border-strong)]"}`} />
+                <button key={template.source === "featured" ? template.href : template.slug} type="button" onClick={() => setActiveTemplateIndex(index)} aria-label={`Show ${template.title}`} className={`h-1.5 rounded-full transition-all ${index === activeTemplateIndex ? "w-10 bg-[var(--text)]" : "w-5 bg-[var(--border-strong)]"}`} />
               ))}
             </div>
-            <Link href="/templates" className="text-xs font-semibold">Toate →</Link>
+            <Link href="/templates" className="text-xs font-semibold">View all →</Link>
           </div>
         </div>
       </section>
 
       <section aria-labelledby="invitatii-orbyven" className="orbyven-home-soft border-b border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-20">
         <div className="mx-auto max-w-[1500px]">
-          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Momente care rămân</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
-          <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Momente <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">personale.</span> Un link memorabil.</h2>
+          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Moments that stay</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+          <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Personal <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">moments.</span> One memorable link.</h2>
           <div className="orbyven-home-invite-grid mt-10">
             {[
-              { href: "/invitatii-nunta", title: "Invitații de nuntă", label: "O poveste în doi", kind: "wedding" as const },
-              { href: "/invitatii-botez", title: "Invitații de botez", label: "Un nou început", kind: "baptism" as const },
-              { href: "/invitatii-majorat", title: "Invitații de majorat", label: "Un nou capitol", kind: "birthday" as const },
+              { href: "/invitatii-nunta", title: "Wedding invitations", label: "A story for two", kind: "wedding" as const },
+              { href: "/invitatii-botez", title: "Christening invitations", label: "A new beginning", kind: "baptism" as const },
+              { href: "/invitatii-majorat", title: "Celebration invitations", label: "A new chapter", kind: "birthday" as const },
             ].map((item, index) => (
               <Link key={item.href} href={item.href} className="orbyven-home-invite-card group relative isolate block overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-2)] hover:border-[var(--home-violet)] focus-visible:border-[var(--home-violet)]">
                 <HomeInvitationPreview kind={item.kind} />
@@ -475,10 +475,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1500px]">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Ideile tale, în formă digitală</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
-              <h2 className="mt-4 text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Construim <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">ce ai nevoie.</span></h2>
+              <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Your ideas, made digital</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+              <h2 className="mt-4 text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">We build <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">what you need.</span></h2>
             </div>
-            <Link href="/servicii" className="text-sm font-semibold">Detalii →</Link>
+            <Link href="/servicii" className="text-sm font-semibold">Details →</Link>
           </div>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -511,10 +511,10 @@ export default function HomePage() {
       <section id="pricing" className="orbyven-home-soft relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[30%] h-[460px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--accent-soft-2)] blur-[160px]" />
         <div className="relative mx-auto max-w-[1500px]">
-          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Alegi ritmul în care crești</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
+          <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Grow at your own pace</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Simplu <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">de ales.</span></h2>
-            <p className="max-w-md text-sm leading-6 text-[var(--muted)]">Trei niveluri clare. Începi cu cât ai nevoie și păstrezi aceeași experiență ORBYVEN.</p>
+            <h2 className="text-[42px] font-semibold tracking-[-0.055em] sm:text-[58px]">Simple <span className="relative z-10 -mx-[0.02em] text-[var(--home-violet)]">to choose.</span></h2>
+            <p className="max-w-md text-sm leading-6 text-[var(--muted)]">Three clear levels. Start with what you need and keep the same ORBYVEN experience as you grow.</p>
           </div>
 
           <div className="orbyven-home-price-grid mt-10 grid gap-4 lg:grid-cols-3">
@@ -547,13 +547,13 @@ export default function HomePage() {
 
                     <div className="mt-10 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="text-[58px] font-semibold leading-none tracking-[-0.07em] sm:text-[66px]">{plan.priceLei}</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-[var(--muted)]">lei / lună</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-[var(--muted)]">RON / month</span>
                     </div>
                     <p className="mt-5 max-w-sm text-[13px] leading-6 text-[var(--muted)]">{meta.audience}</p>
 
                     <div className="mt-7 border-t border-[var(--border)] pt-5">
                       <div className="flex items-center justify-between gap-4 text-xs">
-                        <span className="text-[var(--muted-2)]">Module incluse</span>
+                        <span className="text-[var(--muted-2)]">Included modules</span>
                         <span className="font-semibold">{plan.entitlements.length}</span>
                       </div>
                       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--bg)]">
@@ -569,7 +569,7 @@ export default function HomePage() {
 
                     <div className="mt-auto pt-8">
                       <Link href={`/contact?plan=${plan.id}&source=homepage`} className={`inline-flex h-12 w-full items-center justify-between rounded-full border px-5 text-sm font-semibold transition duration-300 group-hover:translate-y-[-1px] ${featured ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)]"}`}>
-                        <span>Alege {plan.name}</span>
+                        <span>Choose {plan.name}</span>
                         <span aria-hidden="true">→</span>
                       </Link>
                     </div>
@@ -585,8 +585,8 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12 md:py-18">
           <p className="text-[10px] uppercase tracking-[0.18em] opacity-50">Start</p>
           <div className="mt-4 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[62px]">Spune-ne ce vrei să rezolvi.</h2>
-            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Începe →</Link>
+            <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[62px]">Tell us what you want to solve.</h2>
+            <Link href="/cerere" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-sm font-semibold text-[var(--text)]">Get started →</Link>
           </div>
         </div>
       </section>

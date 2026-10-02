@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import HomePageClient from "@/components/HomePageClient";
-import { siteConfig } from "@/lib/site-config";
+import HomePageClient from "@/components/HomePageClientEn";
+import { siteConfigEn as siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
+  alternates: { canonical: "https://www.orbyven.com/" },
   openGraph: {
     type: "website",
-    locale: "ro_RO",
+    locale: "en_US",
     siteName: siteConfig.name,
-    url: "/",
-    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
+    url: "https://www.orbyven.com/",
+    title: "ORBYVEN — Web Design, AI & Business Workspace",
     description: siteConfig.description,
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: siteConfig.name }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ORBYVEN CREATIVE — Web Design & Invitații Digitale",
+    title: "ORBYVEN — Web Design, AI & Business Workspace",
     description: siteConfig.description,
     images: ["/opengraph-image"],
   },

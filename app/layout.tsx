@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import CookieConsent from "@/components/legal/CookieConsent";
@@ -8,7 +9,11 @@ import PublicCommerceLinkRouter from "@/components/PublicCommerceLinkRouter";
 import AppModeRuntime from "@/components/pwa/AppModeRuntime";
 import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import StructuredData from "@/components/StructuredData";
-import { getSiteUrl, siteConfig } from "@/lib/site-config";
+import {
+  publicLocaleForHost,
+  publicOriginForLocale,
+} from "@/lib/domain-locale";
+import { siteConfig, siteConfigEn } from "@/lib/site-config";
 
 import "./globals.css";
 
@@ -22,79 +27,106 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
+async function requestLocale() {
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host");
 
-  title: {
-    default: "ORBYVEN — Web Design, AI & Business Workspace",
-    template: "%s | ORBYVEN CREATIVE",
-  },
+  return publicLocaleForHost(host);
+}
 
-  description: siteConfig.description,
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await requestLocale();
+  const config = locale === "en" ? siteConfigEn : siteConfig;
+  const origin = publicOriginForLocale(locale);
 
-  applicationName: siteConfig.name,
+  const title =
+    locale === "en"
+      ? "ORBYVEN — Web Design, AI & Business Workspace"
+      : "ORBYVEN CREATIVE — Web Design & Invitații Digitale";
 
-  keywords: [
-    "ORBYVEN",
-    "ORBYVEN CREATIVE",
-    "web design",
-    "website development",
-    "business website",
-    "website business",
-    "landing page",
-    "redesign website",
-    "digital experiences",
-    "digital wedding invitations",
-    "digital christening invitations",
-    "custom digital invitations",
-  ],
+  const keywords =
+    locale === "en"
+      ? [
+          "ORBYVEN",
+          "ORBYVEN CREATIVE",
+          "web design",
+          "website development",
+          "business website",
+          "landing page",
+          "website redesign",
+          "digital experiences",
+          "digital wedding invitations",
+          "digital christening invitations",
+          "custom digital invitations",
+        ]
+      : [
+          "ORBYVEN",
+          "ORBYVEN CREATIVE",
+          "web design România",
+          "creare website",
+          "site prezentare",
+          "website business",
+          "landing page",
+          "redesign website",
+          "experiențe digitale",
+          "invitații nuntă digitale",
+          "invitații botez digitale",
+          "invitații online personalizate",
+        ];
 
-  authors: [{ name: siteConfig.name }],
-  creator: siteConfig.name,
-  publisher: siteConfig.name,
-  category: "technology",
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+  return {
+    metadataBase: new URL(origin),
+    title: {
+      default: title,
+      template: "%s | ORBYVEN CREATIVE",
+    },
+    description: config.description,
+    applicationName: config.name,
+    keywords,
+    authors: [{ name: config.name }],
+    creator: config.name,
+    publisher: config.name,
+    category: "technology",
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
-
-  manifest: "/manifest.webmanifest",
-
-  appleWebApp: {
-    capable: true,
-    title: "ORBYVEN",
-    statusBarStyle: "black-translucent",
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    images: ["/opengraph-image"],
-  },
-
-  icons: {
-    icon: [
-      { url: "/branding/orbyven-favicon-96.png", type: "image/png", sizes: "96x96" },
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
-      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
-    ],
-    shortcut: "/branding/orbyven-favicon-96.png",
-    apple: [
-      {
-        url: "/branding/orbyven-app-icon.png",
-        type: "image/png",
-        sizes: "1024x1024",
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
       },
-    ],
-  },
-};
+    },
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      title: "ORBYVEN",
+      statusBarStyle: "black-translucent",
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: ["/opengraph-image"],
+    },
+    icons: {
+      icon: [
+        { url: "/branding/orbyven-favicon-96.png", type: "image/png", sizes: "96x96" },
+        { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+        { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
+      ],
+      shortcut: "/branding/orbyven-favicon-96.png",
+      apple: [
+        {
+          url: "/branding/orbyven-app-icon.png",
+          type: "image/png",
+          sizes: "1024x1024",
+        },
+      ],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -113,18 +145,21 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const locale = await requestLocale();
+  const siteUrl = publicOriginForLocale(locale);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <StructuredData />
+        <StructuredData locale={locale} siteUrl={siteUrl} />
         <PublicCommerceLinkRouter />
         <ServiceWorkerRegistration />
         <AppModeRuntime />
