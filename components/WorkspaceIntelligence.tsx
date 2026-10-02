@@ -80,6 +80,7 @@ function splitStoredFocus(facts: Array<{ label: string; value: string }>) {
 
 function splitStoredDecision(facts: Array<{ label: string; value: string }>) {
   const subject = facts.find((fact) => fact.label === "Decision · Context")?.value;
+  const handoffAvailable = facts.find((fact) => fact.label === "Decision · Handoff")?.value === "yes";
   const optionFacts = facts
     .filter((fact) => /^Decision · [1-3]$/.test(fact.label))
     .sort((left, right) => left.label.localeCompare(right.label));
@@ -94,7 +95,7 @@ function splitStoredDecision(facts: Array<{ label: string; value: string }>) {
   return {
     facts: facts.filter((fact) => !fact.label.startsWith("Decision · ")),
     decision: subject && options.length
-      ? { subject, options, confidence: "high" as const }
+      ? { subject, options, handoffAvailable, confidence: "high" as const }
       : undefined,
   };
 }
@@ -980,14 +981,16 @@ export default function WorkspaceIntelligence({
                                         <p className="mt-2 text-[10px] leading-4 text-[var(--text)]">{option.impact}</p>
                                         <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Compromis: {option.tradeoff}</p>
                                         <p className="mt-1 text-[9px] leading-4 text-[var(--muted-2)]">Potrivit când: {option.whenToUse}</p>
-                                        <button
-                                          type="button"
-                                          disabled={decisionBusy}
-                                          onClick={() => void chooseDecision(message.decision!, index)}
-                                          className="mt-2 rounded-full border border-[#7897ff]/25 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
-                                        >
-                                          {decisionBusy ? "Se pregătește…" : "Pregătește planul"}
-                                        </button>
+                                        {message.decision?.handoffAvailable ? (
+                                          <button
+                                            type="button"
+                                            disabled={decisionBusy}
+                                            onClick={() => void chooseDecision(message.decision!, index)}
+                                            className="mt-2 rounded-full border border-[#7897ff]/25 bg-[#7897ff]/10 px-3 py-1.5 text-[9px] font-semibold text-[#c7d0ff] transition hover:bg-[#7897ff]/15 disabled:opacity-40"
+                                          >
+                                            {decisionBusy ? "Se pregătește…" : "Pregătește planul"}
+                                          </button>
+                                        ) : null}
                                       </div>
                                     ))}
                                   </div>
