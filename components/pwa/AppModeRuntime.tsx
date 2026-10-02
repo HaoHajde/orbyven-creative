@@ -14,6 +14,7 @@ type OrbyvenNativeRuntime = {
 
 type WindowWithNativeRuntime = Window & {
   __ORBYVEN_NATIVE__?: OrbyvenNativeRuntime;
+  ReactNativeWebView?: { postMessage: (message: string) => void };
 };
 
 function isStandaloneMode() {
@@ -57,6 +58,19 @@ export default function AppModeRuntime() {
       }
     };
 
+    const postWebReady = () => {
+      const bridge = (window as WindowWithNativeRuntime).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:web-ready",
+        href: window.location.href,
+      }));
+    };
+
+    const handlePageShow = () => {
+      resume();
+      postWebReady();
+    };
+
     const syncNativeNetwork = (event: Event) => {
       const online = (event as CustomEvent<{ online?: boolean }>).detail?.online;
       if (typeof online !== "boolean") return;
@@ -64,18 +78,19 @@ export default function AppModeRuntime() {
     };
 
     syncMode();
+    postWebReady();
     media.addEventListener("change", syncMode);
     window.addEventListener("orbyven:native-ready", syncMode);
     window.addEventListener("orbyven:native-network-change", syncNativeNetwork);
     document.addEventListener("visibilitychange", resume);
-    window.addEventListener("pageshow", resume);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       media.removeEventListener("change", syncMode);
       window.removeEventListener("orbyven:native-ready", syncMode);
       window.removeEventListener("orbyven:native-network-change", syncNativeNetwork);
       document.removeEventListener("visibilitychange", resume);
-      window.removeEventListener("pageshow", resume);
+      window.removeEventListener("pageshow", handlePageShow);
       delete document.documentElement.dataset.appMode;
       delete document.documentElement.dataset.nativePlatform;
       delete document.documentElement.dataset.nativeVersion;
