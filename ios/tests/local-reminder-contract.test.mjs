@@ -5,11 +5,11 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.6 preserves Expo local notifications and config plugin", () => {
+test("Alpha 0.7 preserves Expo local notifications and config plugin", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
 
-  assert.equal(pkg.version, "0.6.0");
+  assert.equal(pkg.version, "0.7.0");
   assert.equal(pkg.dependencies["expo-notifications"], "~57.0.21");
   assert.ok(
     config.expo.plugins.some((entry) =>
