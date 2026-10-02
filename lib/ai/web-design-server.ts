@@ -27,6 +27,10 @@ import {
   webDesignRefineScopeInstruction,
   type WebDesignRefineScope,
 } from "@/lib/ai/web-design-refine-locks";
+import {
+  guardWebDesignEvidence,
+  type WebDesignEvidenceGuardReport,
+} from "@/lib/ai/web-design-evidence";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -64,6 +68,7 @@ export type WebDesignGenerationResult = {
   refinement: WebDesignAutonomousRefinementReport;
   selection: WebDesignCandidateSelectionReport;
   refineScope: WebDesignRefineScope;
+  evidence: WebDesignEvidenceGuardReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -617,8 +622,19 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
-    const selectedResult = selectBestWebDesignCandidate(
+    const evidenceResult = guardWebDesignEvidence(
       scopedDraft,
+      current,
+      prompt
+    );
+    const evidenceDraft = readSiteDraft(evidenceResult.draft);
+    if (!evidenceDraft) {
+      await finishQuota(quota.requestId, false, usage, "EVIDENCE_INVALID");
+      throw new Error("WEB_DESIGN_DRAFT_INVALID");
+    }
+
+    const selectedResult = selectBestWebDesignCandidate(
+      evidenceDraft,
       current,
       strategy,
       prompt,
@@ -648,6 +664,7 @@ export async function generateWebDesignForActor(
       refinement: selectedResult.refinement,
       selection: selectedResult.selection,
       refineScope,
+      evidence: evidenceResult.report,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
