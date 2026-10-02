@@ -50,22 +50,18 @@ function getThemeVars(theme: Theme) {
 }
 
 function PaymentBadges() {
+  const methods = ["Apple Pay", "Google Pay", "Visa", "Mastercard"];
+
   return (
     <div className="flex flex-wrap items-center gap-2.5">
-      <span className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-semibold text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
-        <span className="text-[17px] leading-none"></span> Pay
-      </span>
-      <span className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-semibold text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
-        <span className="font-black tracking-[-.08em] text-[#4285f4]">G</span> Pay
-      </span>
-      <span className="inline-flex h-9 items-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[11px] font-black italic tracking-[-.04em] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">VISA</span>
-      <span className="inline-flex h-9 items-center gap-2 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[10px] font-semibold text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
-        <span className="relative inline-flex w-6 items-center">
-          <span className="h-3.5 w-3.5 rounded-full bg-[#eb001b]" />
-          <span className="-ml-1.5 h-3.5 w-3.5 rounded-full bg-[#f79e1b] opacity-90" />
+      {methods.map((method) => (
+        <span
+          key={method}
+          className="inline-flex h-10 items-center rounded-[12px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-3.5 text-[11px] font-semibold tracking-[-.02em] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,.035)] backdrop-blur-xl"
+        >
+          {method}
         </span>
-        Mastercard
-      </span>
+      ))}
     </div>
   );
 }
@@ -205,29 +201,29 @@ function ContactPageContent() {
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
-            ? "radial-gradient(1100px 720px at 24% -8%, rgba(117,81,255,.20), transparent 72%), radial-gradient(900px 620px at 88% 30%, rgba(78,61,164,.14), transparent 72%), radial-gradient(760px 560px at 12% 72%, rgba(49,91,156,.07), transparent 74%), linear-gradient(180deg,#0c0916 0%,#0a0911 38%,#09090d 100%)"
-            : "radial-gradient(1100px 720px at 24% -8%, rgba(117,81,255,.12), transparent 72%), radial-gradient(900px 620px at 88% 30%, rgba(78,61,164,.07), transparent 72%), linear-gradient(180deg,#fbfaff 0%,#f8f8fb 45%,#f6f6fa 100%)",
+            ? "linear-gradient(180deg,#0b0912 0%,#0a0910 34%,#09090d 68%,#09090d 100%)"
+            : "linear-gradient(180deg,#fbfaff 0%,#f8f8fb 38%,#f7f7fa 72%,#f6f6fa 100%)",
       }}
       className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute inset-x-0 top-0 h-[78rem] opacity-[.42]"
+          className="absolute inset-0 opacity-[.34]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.024) 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-            maskImage: "linear-gradient(to bottom, black 0%, rgba(0,0,0,.72) 48%, transparent 100%)",
+              "linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+            maskImage: "linear-gradient(to bottom, black 0%, rgba(0,0,0,.72) 62%, transparent 100%)",
           }}
         />
-        <div className="absolute left-[8%] top-[-18rem] h-[50rem] w-[50rem] rounded-full bg-[rgba(126,93,255,.13)] blur-[145px]" />
-        <div className="absolute right-[-14rem] top-[18rem] h-[46rem] w-[46rem] rounded-full bg-[rgba(91,70,185,.11)] blur-[150px]" />
-        <div className="absolute left-[18%] top-[42rem] h-[30rem] w-[60rem] rounded-full bg-[rgba(66,95,155,.055)] blur-[150px]" />
+        <div className="absolute left-1/2 top-[-24rem] h-[58rem] w-[72rem] max-w-[86vw] -translate-x-1/2 rounded-full bg-[rgba(126,93,255,.11)] blur-[170px]" />
+        <div className="absolute right-[-18rem] top-[34rem] h-[46rem] w-[46rem] rounded-full bg-[rgba(91,70,185,.07)] blur-[180px]" />
+        <div className="absolute left-[-20rem] top-[70rem] h-[44rem] w-[44rem] rounded-full bg-[rgba(58,88,148,.045)] blur-[190px]" />
       </div>
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
-      <section className="relative z-10 px-5 pb-10 pt-28 sm:px-6 md:px-10 md:pb-14 md:pt-36">
+      <section className="relative z-10 px-5 pb-8 pt-28 sm:px-6 md:px-10 md:pb-10 md:pt-36">
         <div className="mx-auto max-w-[1540px]">
           <div className="grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <div>
@@ -270,14 +266,8 @@ function ContactPageContent() {
       </section>
 
       <section className="relative z-10 px-5 pb-24 sm:px-6 md:px-10 md:pb-32">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-[-10rem] h-[34rem] w-[82vw] max-w-[1600px] -translate-x-1/2 rounded-[50%] opacity-70 blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(126,93,255,.13) 0%, rgba(126,93,255,.035) 44%, transparent 72%)" }}
-        />
-
         <div className="relative mx-auto grid max-w-[1540px] gap-5 lg:grid-cols-[1.08fr_.92fr]">
-          <section className="rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-6 shadow-[0_34px_100px_rgba(0,0,0,.16),inset_0_1px_0_rgba(255,255,255,.045)] backdrop-blur-2xl sm:p-8 lg:p-10">
+          <section className="rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_86%,transparent)] p-6 shadow-[0_30px_90px_rgba(0,0,0,.14),inset_0_1px_0_rgba(255,255,255,.04)] backdrop-blur-2xl sm:p-8 lg:p-10">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">01 · ALEGE PLANUL</p>
@@ -363,7 +353,7 @@ function ContactPageContent() {
             </div>
           </section>
 
-          <aside className="relative overflow-hidden rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_95%,transparent)] p-6 shadow-[0_34px_100px_rgba(0,0,0,.22),inset_0_1px_0_rgba(255,255,255,.055)] backdrop-blur-2xl sm:p-8 lg:p-10">
+          <aside className="relative overflow-hidden rounded-[34px] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-6 shadow-[0_30px_90px_rgba(0,0,0,.18),inset_0_1px_0_rgba(255,255,255,.045)] backdrop-blur-2xl sm:p-8 lg:p-10">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[rgba(126,93,255,.12)] blur-[100px]"
