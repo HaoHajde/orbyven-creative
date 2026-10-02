@@ -39,7 +39,7 @@ const DEMO_DRAFT: EditableSite = {
   benefitsTitle: "Control without complexity",
   benefits: [
     { title: "Preview live", description: "See the direction immediately before publishing." },
-    { title: "Design DNA", description: "Alternative suficient de diferite, nu doar texte schimbate." },
+    { title: "Design DNA", description: "Meaningfully different alternatives, not just rewritten text." },
     { title: "Safe by design", description: "The model returns validated data, not arbitrary code." },
   ],
   aboutTitle: "AI that works within clear boundaries",
@@ -167,11 +167,11 @@ export default function AiWebDesignEntry() {
               ORBYVEN · AI WEB DESIGN
             </p>
             <h1 className="mt-6 max-w-[760px] text-[clamp(54px,7vw,112px)] font-semibold leading-[.86] tracking-[-.074em]">
-              Website-ul începe cu o <span className="text-[#9f8dff]">conversation.</span>
+              Your website starts with a <span className="text-[#9f8dff]">conversation.</span>
             </h1>
             <p className="mt-7 max-w-xl text-[14px] leading-7 text-[var(--muted)] sm:text-[15px]">
-              Descrii business-ul, obiectivul și direcția dorită. ORBYVEN Web Design AI construiește,
-              rafinează și propune alternative într-un sistem vizual controlat.
+              Describe your business, goal and desired direction. ORBYVEN Web Design AI builds,
+              refines and proposes alternatives within a controlled visual system.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -179,13 +179,13 @@ export default function AiWebDesignEntry() {
                 href="/workspace/login?next=ai-web-design"
                 className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--button)] px-6 text-[12px] font-semibold text-[var(--button-text)] transition hover:-translate-y-0.5"
               >
-                Deschide AI Web Design →
+                Open AI Web Design →
               </Link>
               <Link
                 href="/templates"
                 className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-[12px] font-semibold"
               >
-                Vezi Templates
+                View Templates
               </Link>
             </div>
 
@@ -227,7 +227,7 @@ export default function AiWebDesignEntry() {
 
       <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">
-          CUM LUCREAZĂ
+          HOW IT WORKS
         </p>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {[
@@ -264,14 +264,14 @@ export default function AiWebDesignEntry() {
                 ORBYVEN WEB DESIGN INTELLIGENCE
               </p>
               <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,64px)] font-semibold leading-[.94] tracking-[-.06em]">
-                Spune ce vrei să construiești.
+                Tell us what you want to build.
               </h2>
             </div>
             <Link
               href="/workspace/login?next=ai-web-design"
               className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]"
             >
-              Intră în AI Web Design →
+              Enter AI Web Design →
             </Link>
           </div>
         </div>
