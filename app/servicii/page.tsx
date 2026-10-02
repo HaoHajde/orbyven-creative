@@ -32,45 +32,45 @@ const services: Service[] = [
   {
     number: "01",
     title: "Website",
-    line: "A clear, fast presence built around your business.",
+    line: "Prezență clară, rapidă și construită în jurul afacerii.",
     href: "/creare-site",
-    linkLabel: "Business website design",
-    tags: ["Responsive", "SEO", "Forms"],
+    linkLabel: "Creare site pentru firme",
+    tags: ["Responsive", "SEO", "Formulare"],
     gradient: "radial-gradient(circle at 16% 18%, rgba(135,102,255,.34), transparent 31%), radial-gradient(circle at 82% 78%, rgba(67,46,130,.30), transparent 37%), linear-gradient(140deg,#0d0918,#17102a 58%,#08070d)",
   },
   {
     number: "02",
     title: "Landing page",
-    line: "One offer, one direction and a simple path to conversion.",
+    line: "O ofertă, o direcție și un traseu simplu către conversie.",
     href: "/site-prezentare",
-    linkLabel: "Business websites and landing pages",
-    tags: ["Campaigns", "Conversion", "Analytics"],
+    linkLabel: "Site de prezentare și landing pages",
+    tags: ["Campanii", "Conversie", "Analytics"],
     gradient: "radial-gradient(circle at 76% 18%, rgba(82,126,255,.31), transparent 31%), radial-gradient(circle at 16% 78%, rgba(89,61,176,.28), transparent 36%), linear-gradient(140deg,#090b18,#10162e 58%,#07080d)",
   },
   {
     number: "03",
     title: "Redesign",
-    line: "We keep what works and rebuild what slows you down.",
+    line: "Păstrăm ce funcționează și reconstruim experiența care te încetinește.",
     href: "/redesign-site",
-    linkLabel: "Website redesign service",
-    tags: ["UI", "UX", "Performance"],
+    linkLabel: "Serviciu de redesign website",
+    tags: ["UI", "UX", "Performanță"],
     gradient: "radial-gradient(circle at 22% 24%, rgba(190,88,255,.25), transparent 31%), radial-gradient(circle at 82% 72%, rgba(92,49,147,.28), transparent 36%), linear-gradient(140deg,#110914,#201027 58%,#09070b)",
   },
   {
     number: "04",
-    title: "Digital experience",
-    line: "Invitations, microsites and interactions built for context.",
+    title: "Experiență digitală",
+    line: "Invitații, microsite-uri și interacțiuni construite pentru contextul.",
     href: "/invitatii-nunta",
-    linkLabel: "Invitations and digital experiences",
+    linkLabel: "Invitații și experiențe digitale",
     tags: ["RSVP", "Microsite", "Custom"],
     gradient: "radial-gradient(circle at 76% 24%, rgba(75,70,238,.36), transparent 34%), radial-gradient(circle at 22% 76%, rgba(161,91,255,.20), transparent 36%), linear-gradient(140deg,#0a0914,#171326 55%,#07070b)",
   },
   {
     number: "05",
     title: "AI Web Design",
-    line: "Describe your business and direction. ORBYVEN generates, refines and compares website directions.",
+    line: "Descrii business-ul și direcția. ORBYVEN generează, rafinează și compară variante de site.",
     href: "/ai-web-design",
-    linkLabel: "Open ORBYVEN AI Web Design",
+    linkLabel: "Deschide AI Web Design ORBYVEN",
     tags: ["AI", "Preview live", "Design DNA"],
     gradient: "radial-gradient(circle at 18% 18%, rgba(116,92,255,.42), transparent 32%), radial-gradient(circle at 82% 74%, rgba(61,114,255,.25), transparent 38%), linear-gradient(140deg,#0b0916,#161126 56%,#08070d)",
   },
@@ -81,41 +81,41 @@ const modulePreviews: ModulePreview[] = [
     id: "overview",
     label: "Overview",
     eyebrow: "CONTROL",
-    title: "What needs attention now.",
-    note: "Signals and actions, not decorative charts.",
-    rows: ["New requests", "Projects nearing deadline", "Quotes to follow up"],
+    title: "Ce cere atenție acum.",
+    note: "Semnale și acțiuni, nu grafice de decor.",
+    rows: ["Cereri noi", "Lucrări apropiate de termen", "Oferte de urmărit"],
   },
   {
     id: "clients",
-    label: "Clients",
+    label: "Clienți",
     eyebrow: "CRM LIGHT",
-    title: "History stays connected to the client.",
-    note: "Request, contact, project and follow-up in one context.",
-    rows: ["New lead · WhatsApp", "Visit scheduled", "Quote sent"],
+    title: "Istoricul rămâne lângă client.",
+    note: "Cerere, contact, lucrare și follow-up în același contextul.",
+    rows: ["Lead nou · WhatsApp", "Vizită programată", "Ofertă trimisă"],
   },
   {
     id: "work",
-    label: "Projects",
+    label: "Lucrări",
     eyebrow: "OPERATIONS",
-    title: "From request to delivery.",
-    note: "Owners, status and next step without separate spreadsheets.",
-    rows: ["Installation · in progress", "Handover · scheduled", "Materials · checked"],
+    title: "De la cerere la execuție.",
+    note: "Responsabili, status și următorul pas fără foi separate.",
+    rows: ["Montaj · în lucru", "Recepție · programată", "Materiale · verificate"],
   },
   {
     id: "calendar",
     label: "Calendar",
     eyebrow: "SCHEDULE",
-    title: "Scheduling with context.",
-    note: "Every visit keeps the client, project and people connected.",
-    rows: ["09:30 · assessment", "12:00 · installation", "16:30 · handover"],
+    title: "Programări cu contextul.",
+    note: "Fiecare vizită știe clientul, lucrarea și oamenii implicați.",
+    rows: ["09:30 · evaluare", "12:00 · montaj", "16:30 · recepție"],
   },
   {
     id: "offers",
-    label: "Quotes",
+    label: "Oferte",
     eyebrow: "COMMERCIAL",
-    title: "The quote continues the workflow.",
-    note: "The estimate is no longer disconnected from the client and project.",
-    rows: ["Draft ready", "Sent to client", "Accepted → project"],
+    title: "Oferta continuă fluxul.",
+    note: "Devizul nu mai este un document izolat de client și lucrare.",
+    rows: ["Draft pregătit", "Trimis clientului", "Acceptat → lucrare"],
   },
 ];
 
@@ -166,7 +166,7 @@ function ModuleWorkspacePreview({
       <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
         <div>
           <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ORBYVEN / WORKSPACE</p>
-          <p className="mt-1 text-[12px] font-semibold">Operational context</p>
+          <p className="mt-1 text-[12px] font-semibold">Context operațional</p>
         </div>
         <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">DEMO UI</span>
       </div>
@@ -194,7 +194,7 @@ function ModuleWorkspacePreview({
             <div className="flex items-center gap-3">
               <span className="text-[8px] font-bold uppercase tracking-[.18em] text-[#a58bff]">{active.eyebrow}</span>
               <span className="h-px w-8 bg-[var(--border-strong)]" />
-              <span className="text-[8px] font-semibold text-[var(--muted-2)]">Active</span>
+              <span className="text-[8px] font-semibold text-[var(--muted-2)]">Activ</span>
             </div>
             <h3 className="mt-5 max-w-xl text-[clamp(28px,4vw,46px)] font-semibold leading-[.96] tracking-[-.055em]">{active.title}</h3>
             <p className="mt-4 max-w-lg text-[12px] leading-6 text-[var(--muted)]">{active.note}</p>
@@ -218,7 +218,7 @@ function ModuleWorkspacePreview({
             </div>
 
             <div className="mt-5 grid grid-cols-3 gap-2">
-              {["Client", "Context", "Action"].map((item, index) => (
+              {["Client", "Context", "Acțiune"].map((item, index) => (
                 <div key={item} className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
                   <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[var(--muted-2)]">0{index + 1}</p>
                   <p className="mt-2 text-[10px] font-semibold">{item}</p>
@@ -237,10 +237,10 @@ function SeatingPreview() {
     <div className="overflow-hidden rounded-[30px] border border-[var(--border-strong)] bg-[var(--panel)] shadow-[0_28px_100px_rgba(0,0,0,.12)]">
       <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">EVENT / DASHBOARD</p>
-          <p className="mt-1 text-[12px] font-semibold">Guest seating</p>
+          <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">EVENIMENT / DASHBOARD</p>
+          <p className="mt-1 text-[12px] font-semibold">Poziționare invitați</p>
         </div>
-        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">VISUAL EXAMPLE</span>
+        <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">EXEMPLU VIZUAL</span>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_235px]">
@@ -254,9 +254,9 @@ function SeatingPreview() {
               backgroundSize: "28px 28px",
             }}
           />
-          <div className="absolute left-[5%] top-[5%] rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">ROOM A</div>
+          <div className="absolute left-[5%] top-[5%] rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">SALON A</div>
           <div className="absolute bottom-[6%] left-1/2 -translate-x-1/2 rounded-[15px] border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] px-6 py-3 text-center">
-            <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[#a58bff]">Main table</p>
+            <p className="text-[7px] font-bold uppercase tracking-[.15em] text-[#a58bff]">Masa mirilor</p>
             <p className="mt-1 text-[10px] font-semibold">Diana & Florin</p>
           </div>
 
@@ -281,16 +281,16 @@ function SeatingPreview() {
           <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">RSVP / DEMO</p>
           <div className="mt-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5">
             <p className="text-[36px] font-semibold leading-none tracking-[-.06em]">84</p>
-            <p className="mt-2 text-[10px] text-[var(--muted)]">confirmations out of 96</p>
+            <p className="mt-2 text-[10px] text-[var(--muted)]">confirmări din 96</p>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
               <div className="h-full w-[87%] rounded-full bg-[#a58bff]" />
             </div>
           </div>
           <div className="mt-3 grid gap-2">
             {[
-              ["Unassigned", "7"],
-              ["Children", "9"],
-              ["Full tables", "4"],
+              ["Fără masă", "7"],
+              ["Copii", "9"],
+              ["Mese complete", "4"],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between rounded-[14px] border border-[var(--border)] px-4 py-3">
                 <span className="text-[9px] text-[var(--muted)]">{label}</span>
@@ -300,7 +300,7 @@ function SeatingPreview() {
           </div>
           <div className="mt-4 rounded-[16px] border border-[rgba(165,139,255,.28)] bg-[var(--accent-soft)] p-4">
             <p className="text-[8px] font-bold uppercase tracking-[.14em] text-[#a58bff]">Context</p>
-            <p className="mt-2 text-[10px] leading-5 text-[var(--muted)]">RSVP data can power event organization, not just a list.</p>
+            <p className="mt-2 text-[10px] leading-5 text-[var(--muted)]">Confirmarea participării poate alimenta organizarea evenimentului, nu doar o listă.</p>
           </div>
         </div>
       </div>
@@ -316,7 +316,7 @@ function AiPreview() {
           <span className="grid h-8 w-8 place-items-center rounded-full border border-[rgba(165,139,255,.35)] bg-[var(--accent-soft)] text-[12px] text-[#a58bff]">✦</span>
           <div>
             <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ORBYVEN AI</p>
-            <p className="mt-1 text-[12px] font-semibold">Context engine</p>
+            <p className="mt-1 text-[12px] font-semibold">Motor contextual</p>
           </div>
         </div>
         <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[8px] font-semibold text-[var(--muted)]">PREVIEW</span>
@@ -325,15 +325,15 @@ function AiPreview() {
       <div className="grid min-h-[430px] lg:grid-cols-[1.02fr_.98fr]">
         <div className="border-b border-[var(--border)] p-5 sm:p-7 lg:border-b-0 lg:border-r">
           <div className="max-w-[88%] rounded-[20px] rounded-bl-[6px] bg-[var(--surface)] px-4 py-4 text-[11px] leading-5">
-            I want the homepage to feel more premium without changing the dashboard.
+            Vreau homepage-ul mai premium, dar fără să ating dashboard-ul.
           </div>
           <div className="ml-auto mt-4 max-w-[92%] rounded-[20px] rounded-br-[6px] border border-[rgba(165,139,255,.28)] bg-[var(--accent-soft)] px-4 py-4">
             <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">ORBYVEN AI</p>
-            <p className="mt-2 text-[11px] leading-5 text-[var(--text)]">I isolated the request to the public webwebsite. Authentication, modules and operational logic remain unchanged.</p>
+            <p className="mt-2 text-[11px] leading-5 text-[var(--text)]">I isolated the request to the public website. Authentication, modules and operational logic remain unchanged.</p>
           </div>
 
           <div className="mt-6 grid grid-cols-4 gap-2">
-            {["Intent", "Context", "Plan", "Preview"].map((item, index) => (
+            {["Intenție", "Context", "Plan", "Preview"].map((item, index) => (
               <motion.div
                 key={item}
                 className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-center"
@@ -350,13 +350,13 @@ function AiPreview() {
         <div className="relative overflow-hidden p-5 sm:p-7">
           <div aria-hidden="true" className="absolute -right-24 top-10 h-64 w-64 rounded-full bg-[var(--accent-soft)] blur-[85px]" />
           <div className="relative">
-            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">ACTION PLAN</p>
+            <p className="text-[8px] font-bold uppercase tracking-[.18em] text-[var(--muted-2)]">PLAN DE ACȚIUNE</p>
             <div className="mt-5 grid gap-2">
               {[
                 ["Hero", "rafinez mesajul + ritmul vizual", "modific"],
-                ["Workspace", "keep authentication and modules", "protejat"],
+                ["Workspace", "păstrez autentificarea și modulele", "protejat"],
                 ["Templates", "folosesc catalogul existent", "context"],
-                ["Publicare", "preview before changes", "control"],
+                ["Publicare", "preview înainte de schimbare", "control"],
               ].map(([title, note, state], index) => (
                 <div key={title} className="rounded-[17px] border border-[var(--border)] bg-[var(--surface)] p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -374,8 +374,8 @@ function AiPreview() {
             </div>
             <div className="mt-4 flex items-center justify-between rounded-[16px] bg-[var(--button)] px-4 py-4 text-[var(--button-text)]">
               <div>
-                <p className="text-[8px] font-bold uppercase tracking-[.12em] opacity-45">Next step</p>
-                <p className="mt-1 text-[10px] font-semibold">Generate preview</p>
+                <p className="text-[8px] font-bold uppercase tracking-[.12em] opacity-45">Următorul pas</p>
+                <p className="mt-1 text-[10px] font-semibold">Generează preview</p>
               </div>
               <span className="text-lg">→</span>
             </div>
@@ -388,7 +388,7 @@ function AiPreview() {
 
 export default function ServicesPage() {
   const [theme, setTheme] = useState<Theme>("light");
-  const [activeModule, setActiveeModule] = useState("overview");
+  const [activeModule, setActiveModule] = useState("overview");
   const reduceMotion = useHydrationSafeReducedMotion();
 
   useEffect(() => {
@@ -480,7 +480,7 @@ export default function ServicesPage() {
         <div className="relative mx-auto grid w-full max-w-[1500px] gap-14 lg:grid-cols-[.92fr_1.08fr] lg:items-end">
           <div>
             <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={reduceMotion ? undefined : { opacity: 1, y: 0 }} transition={{ duration: .65 }}>
-              <Chapter>ORBYVEN · Services</Chapter>
+              <Chapter>ORBYVEN · Servicii</Chapter>
             </motion.div>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 32 }}
@@ -488,13 +488,13 @@ export default function ServicesPage() {
               transition={{ duration: .95, delay: .06, ease: easeOut }}
               className="mt-7 max-w-[980px] text-[clamp(58px,8.2vw,128px)] font-semibold leading-[.82] tracking-[-.074em]"
             >
-              We build.
+              Construim.
               <br />
-              We connect.
+              Conectăm.
               <br />
-              <span className="text-[#a58bff]">We automate.</span>
+              <span className="text-[#a58bff]">Automatizăm.</span>
             </motion.h1>
-            <p className="mt-7 max-w-lg text-[14px] leading-7 text-white/58 sm:text-[15px]">Websites, workspaces and digital experiences built to grow together.</p>
+            <p className="mt-7 max-w-lg text-[14px] leading-7 text-white/58 sm:text-[15px]">Website, workspace și experiențe digitale care pot crește împreună.</p>
           </div>
 
           <motion.div
@@ -512,22 +512,22 @@ export default function ServicesPage() {
               <div className="absolute left-[7%] top-[12%] w-[37%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
                 <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">01 / PUBLIC</p>
                 <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Website</p>
-                <p className="mt-2 text-[9px] leading-4 text-white/42">Attract. Explain. Convert.</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">Atrage. Explică. Convertește.</p>
               </div>
               <div className="absolute right-[6%] top-[18%] w-[39%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
                 <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">02 / OPERATIONS</p>
                 <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Workspace</p>
-                <p className="mt-2 text-[9px] leading-4 text-white/42">Clients. Projects. Calendar.</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">Clienți. Lucrări. Calendar.</p>
               </div>
               <div className="absolute bottom-[10%] left-[16%] w-[35%] rounded-[20px] border border-white/10 bg-white/[.055] p-5">
                 <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#a58bff]">03 / EXPERIENCE</p>
                 <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">Custom</p>
-                <p className="mt-2 text-[9px] leading-4 text-white/42">RSVP. Configurators. Workflows.</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/42">RSVP. Configuratoare. Fluxuri.</p>
               </div>
               <div className="absolute bottom-[12%] right-[8%] w-[35%] rounded-[20px] border border-[#a58bff]/30 bg-[#a58bff]/10 p-5">
                 <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#cbbaff]">04 / CONTEXT</p>
                 <p className="mt-4 text-[24px] font-semibold tracking-[-.05em]">ORBYVEN AI</p>
-                <p className="mt-2 text-[9px] leading-4 text-white/46">Understands intent and context.</p>
+                <p className="mt-2 text-[9px] leading-4 text-white/46">Înțelege intenția și contextul.</p>
               </div>
               <svg aria-hidden="true" className="absolute inset-0 h-full w-full opacity-45" viewBox="0 0 700 400" preserveAspectRatio="none">
                 <path d="M220 105 C330 80 330 80 438 115" fill="none" stroke="#a58bff" strokeWidth="1.3" strokeDasharray="5 7" />
@@ -541,12 +541,12 @@ export default function ServicesPage() {
       </section>
 
       <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <Chapter>What we build</Chapter>
+        <Chapter>Ce construim</Chapter>
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <h2 className="max-w-4xl text-[clamp(40px,5.5vw,72px)] font-semibold leading-[.92] tracking-[-.06em]">
-            Five directions. <span className="text-[var(--home-violet)]">One ecosystem.</span>
+            Cinci direcții. <span className="text-[var(--home-violet)]">Un singur ecosistem.</span>
           </h2>
-          <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">Start simple. Add only what solves a real problem.</p>
+          <p className="max-w-sm text-[12px] leading-6 text-[var(--muted)]">Pornim simplu. Adăugăm doar ce rezolvă ceva real.</p>
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
@@ -584,33 +584,33 @@ export default function ServicesPage() {
       </section>
 
       <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <Chapter>Modular workspace</Chapter>
+        <Chapter>Workspace modular</Chapter>
         <div className="mt-5 grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
           <div>
-            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">The website does not stop at the <span className="text-[var(--home-violet)]">website.</span></h2>
-            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clients, projects, calendar and quotes can stay connected to the same context.</p>
+            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Site-ul nu se oprește la <span className="text-[var(--home-violet)]">site.</span></h2>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">Clienți, lucrări, calendar și oferte pot rămâne legate de același contextul.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
-            <Link href="/cerere?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Build the system →</Link>
+            <Link href="/cerere?source=services-workspace" className="inline-flex h-11 items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-5 text-[10px] font-semibold">Construiește sistemul →</Link>
           </div>
         </div>
         <div className="mt-9">
-          <ModuleWorkspacePreview activeId={activeModule} onChange={setActiveeModule} />
+          <ModuleWorkspacePreview activeId={activeModule} onChange={setActiveModule} />
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <Chapter>Digital events</Chapter>
+        <Chapter>Evenimente digitale</Chapter>
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="max-w-4xl text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">The invitation can continue beyond <span className="text-[var(--home-violet)]">RSVP.</span></h2>
-            <p className="mt-5 max-w-lg text-[12px] leading-6 text-[var(--muted)]">An example of how RSVPs can become event operations, not just rows in a table.</p>
+            <h2 className="max-w-4xl text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Invitația poate continua după <span className="text-[var(--home-violet)]">RSVP.</span></h2>
+            <p className="mt-5 max-w-lg text-[12px] leading-6 text-[var(--muted)]">Un exemplu de cum confirmările pot deveni organizare, nu doar răspunsuri într-un tabel.</p>
           </div>
-          <nav aria-label="Invitation services" className="flex flex-wrap gap-2">
+          <nav aria-label="Servicii de invitații" className="flex flex-wrap gap-2">
             {[
-              ["/invitatii-nunta", "Wedding"],
-              ["/invitatii-botez", "Christening"],
-              ["/invitatii-majorat", "Celebration"],
+              ["/invitatii-nunta", "Nuntă"],
+              ["/invitatii-botez", "Botez"],
+              ["/invitatii-majorat", "Majorat"],
             ].map(([href, label]) => (
               <Link key={href} href={href} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[9px] font-semibold transition hover:border-[var(--border-strong)]">{label} ↗</Link>
             ))}
@@ -625,8 +625,8 @@ export default function ServicesPage() {
         <Chapter>ORBYVEN AI</Chapter>
         <div className="mt-5 grid gap-8 lg:grid-cols-[.74fr_1.26fr] lg:items-end">
           <div>
-            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">State the intent. The system keeps the <span className="text-[var(--home-violet)]">context.</span></h2>
-            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">AI Web Design is an ORBYVEN product: brief, structure, live preview, alternatives and controlled refinement.</p>
+            <h2 className="text-[clamp(40px,5.2vw,68px)] font-semibold leading-[.93] tracking-[-.06em]">Spui intenția. Sistemul păstrează <span className="text-[var(--home-violet)]">contextul.</span></h2>
+            <p className="mt-5 max-w-md text-[12px] leading-6 text-[var(--muted)]">AI Web Design este disponibil ca produs ORBYVEN: brief, structură, preview live, alternative și rafinare controlată.</p>
           </div>
           <div className="flex justify-start lg:justify-end">
             <Link
@@ -643,18 +643,18 @@ export default function ServicesPage() {
       </section>
 
       <section aria-labelledby="web-design-orbyven" className="relative z-10 mx-auto max-w-[1500px] px-5 py-16 sm:px-6 md:px-10 md:py-24">
-        <Chapter>Web design · Global</Chapter>
+        <Chapter>Web design · România</Chapter>
         <div className="mt-5 grid gap-8 rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[0_24px_80px_rgba(0,0,0,.07)] md:grid-cols-[.9fr_1.1fr] md:p-8">
           <div>
-            <h2 id="web-design-orbyven" className="max-w-xl text-[34px] font-semibold leading-[.98] tracking-[-.055em] sm:text-[44px]">Clear up front. <span className="text-[var(--home-violet)]">Powerful underneath.</span></h2>
+            <h2 id="web-design-orbyven" className="max-w-xl text-[34px] font-semibold leading-[.98] tracking-[-.055em] sm:text-[44px]">Clar în față. <span className="text-[var(--home-violet)]">Puternic în spate.</span></h2>
           </div>
           <div>
-            <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">A project can start as a business website and later add landing pages, forms, operational modules or custom experiences. We add only what makes sense for the business.</p>
-            <nav aria-label="Learn more about web design" className="mt-6 flex flex-wrap gap-2">
+            <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">Un proiect poate începe ca site de prezentare și poate primi ulterior landing pages, formulare, module operaționale sau experiențe custom. Alegem doar ce are sens pentru business.</p>
+            <nav aria-label="Află mai mult despre web design" className="mt-6 flex flex-wrap gap-2">
               {[
                 { href: "/creare-site", label: "Creare site" },
                 { href: "/site-prezentare", label: "Site de prezentare" },
-                { href: "/web-design-bucuresti", label: "Web design Bucharest" },
+                { href: "/web-design-bucuresti", label: "Web design București" },
                 { href: "/redesign-site", label: "Redesign" },
                 { href: "/ai-web-design", label: "AI Web Design" },
                 { href: "/studii-de-caz", label: "Studii de caz" },
@@ -670,10 +670,10 @@ export default function ServicesPage() {
         <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12">
           <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[8px] font-bold uppercase tracking-[.18em] opacity-45">From here, it becomes yours</p>
-              <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,62px)] font-semibold leading-[.96] tracking-[-.055em]">Tell us what you want to solve.</h2>
+              <p className="text-[8px] font-bold uppercase tracking-[.18em] opacity-45">De aici devine al tău</p>
+              <h2 className="mt-4 max-w-4xl text-[clamp(38px,5vw,62px)] font-semibold leading-[.96] tracking-[-.055em]">Spune-ne ce vrei să rezolvi.</h2>
             </div>
-            <Link href="/cerere?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]">Get started →</Link>
+            <Link href="/cerere?source=services" className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] px-6 text-[11px] font-semibold text-[var(--text)]">Începe →</Link>
           </div>
         </div>
       </section>
