@@ -485,3 +485,14 @@ test("inventory becomes the single procurement status source when enabled", () =
   assert.match(estimates, /inventoryEnabled=\{enabledModules\.includes\("inventory"\)\}/);
   assert.match(estimates, /onOpenInventory=\{selected\.task_id/);
 });
+
+
+test("new estimates cannot target closed work while historical revisions keep context", () => {
+  const estimatesData = read("lib/modules/estimates.ts");
+  assert.match(estimatesData, /!input\.sourceEstimateId && \["done", "cancelled"\]\.includes\(task\.status\)/);
+  assert.match(estimatesData, /Lucrarea este închisă/);
+  assert.match(estimatesData, /Devizul acceptat nu poate porni o lucrare deja finalizată sau anulată/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /tasks\.filter\(\(task\) => revisionSource \|\| !\["done","cancelled"\]\.includes\(task\.status\)\)/);
+});
