@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "reac
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
 import {
   BILLING_PLANS,
   LEGAL_DOCUMENT_VERSION,
@@ -193,7 +194,7 @@ function WebDesignStartContent(){
                   </div>
 
                   <div className="mt-auto pt-8">
-                    <Link href="/cerere?service=web-design&dashboard_trial=30&trial_users=1&first_purchase=1&source=porneste-web" className="flex h-14 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)]">
+                    <Link href="/porneste/plata?offer=web" className="flex h-14 w-full items-center justify-between rounded-[18px] bg-[var(--button)] px-5 text-[14px] font-semibold text-[var(--button-text)]">
                       <span>Pornește proiectul de web design</span><span>→</span>
                     </Link>
                   </div>
