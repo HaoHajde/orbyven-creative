@@ -14,6 +14,8 @@ import {
   type DocumentTaskLink,
 } from "@/lib/modules/documents";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
+import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleNextAction, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
@@ -23,6 +25,8 @@ type Props = {
   organizationId: string;
   locale: string;
   role: OrbyvenWorkspace["membership"]["role"];
+  enabledModules: OrbyvenModuleId[];
+  onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialRecordId?: string;
   initialTaskId?: string;
@@ -60,7 +64,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -84,16 +88,17 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
   const cameraPickerRef = useRef<HTMLInputElement>(null);
 
   const canWrite = role !== "viewer";
+  const focusedDocumentId =
+    initialRecordId && documents.some((document) => document.id === initialRecordId)
+      ? initialRecordId
+      : null;
   useWorkspaceLiveContext({
     clientId: clientId || undefined,
     taskId: taskId || scopeTaskId || undefined,
     estimateId: estimateId || undefined,
     purchaseOrderId: purchaseOrderId || undefined,
+    documentId: focusedDocumentId || undefined,
   });
-  const focusedDocumentId =
-    initialRecordId && documents.some((document) => document.id === initialRecordId)
-      ? initialRecordId
-      : null;
   useWorkspaceRecordFocus(initialRecordId, focusedDocumentId, loading);
   useWorkspaceCreateFocus(uploadOpen);
   const canDelete = role === "owner" || role === "admin" || role === "manager";
@@ -405,9 +410,32 @@ export default function DocumentsModule({ organizationId, locale, role, initialC
                 </div>
                 {document.note ? <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{document.note}</p> : null}
 
-                <div className="mt-5 flex gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {document.category === "receipt" && canDelete && enabledModules.includes("expenses") ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenModule("expenses", {
+                        create: true,
+                        clientId: document.client_id ?? undefined,
+                        taskId: document.task_id ?? undefined,
+                        estimateId: document.estimate_id ?? undefined,
+                        purchaseOrderId: document.purchase_order_id ?? undefined,
+                        documentId: document.id,
+                      })}
+                      className="h-10 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]"
+                    >
+                      Înregistrează cheltuiala →
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => void openDocument(document)} className="h-10 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide</button>
-                  {canDelete ? <button type="button" disabled={saving} onClick={() => void removeDocument(document)} className="h-10 rounded-full px-4 text-xs font-semibold text-red-500 disabled:opacity-40">Șterge</button> : null}
+                  {canDelete ? (
+                    <details className="relative">
+                      <summary className="flex h-10 cursor-pointer list-none items-center rounded-full border border-[var(--border)] px-4 text-xs font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Mai multe</summary>
+                      <div className="absolute bottom-12 right-0 z-20 min-w-[150px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl">
+                        <button type="button" disabled={saving} onClick={() => void removeDocument(document)} className="w-full rounded-[9px] px-3 py-2 text-left text-[11px] font-semibold text-red-500 hover:bg-[var(--surface-2)] disabled:opacity-40">Șterge</button>
+                      </div>
+                    </details>
+                  ) : null}
                 </div>
               </article>
             ))}
