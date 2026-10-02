@@ -358,9 +358,9 @@ export async function loadWorkspaceActivity(
       actionLabel:
         action.rule === "post_service_recovery"
           ? "Rezolvă"
-          : action.rule === "post_service_review"
+          : action.rule.startsWith("post_service_review")
             ? "Review"
-            : action.rule === "post_service_referral"
+            : action.rule.startsWith("post_service_referral")
               ? "Recomandare"
               : action.rule === "post_service_upsell"
                 ? "Ofertă nouă"
@@ -482,10 +482,7 @@ export async function loadWorkspaceActivity(
         purchaseOrderId,
         create: true,
         title: "Cost furnizor neînregistrat · " + order.reference,
-        meta:
-          money(receivedWithoutCost, order.currency, locale) +
-          " recepționat · " +
-          order.supplier_name,
+        meta: money(receivedWithoutCost, order.currency, locale) + " recepționat · " + order.supplier_name,
         level: order.status === "received" ? "urgent" : "attention",
         sortAt,
         actionLabel: "Înregistrează cost",
@@ -522,11 +519,7 @@ export async function loadWorkspaceActivity(
         taskId: order.task_id ?? undefined,
         purchaseOrderId,
         title: "Cost peste PO · " + order.reference,
-        meta:
-          "+" +
-          money(varianceCents, order.currency, locale) +
-          " față de comandă · " +
-          order.supplier_name,
+        meta: "+" + money(varianceCents, order.currency, locale) + " față de comandă · " + order.supplier_name,
         level: "attention",
         sortAt,
         actionLabel: "Verifică diferența",
