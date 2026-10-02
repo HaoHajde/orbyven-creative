@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
+import type { OrbyvenModuleDefinition, OrbyvenModuleId } from "@/lib/orbyven-modules";
 
 export let orbyvenSupabase: SupabaseClient;
 
@@ -25,6 +25,7 @@ export type DesktopUiManifest = {
   };
   navGroups: Array<{ label: string; ids: OrbyvenModuleId[] }>;
   createModules: OrbyvenModuleId[];
+  modules: OrbyvenModuleDefinition[];
 };
 
 const ORBYVEN_ORIGIN = "https://orbyven.ro";
@@ -59,6 +60,22 @@ export async function initializeDesktopClient() {
     },
   });
   return orbyvenSupabase;
+}
+
+export async function desktopApiFetch(path: string, init: RequestInit = {}) {
+  const { data, error } = await orbyvenSupabase.auth.getSession();
+  if (error || !data.session?.access_token) throw new Error("Sesiunea a expirat. Reautentifică-te.");
+
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", "Bearer " + data.session.access_token);
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+  return fetch(ORBYVEN_ORIGIN + path, {
+    ...init,
+    headers,
+    credentials: "omit",
+    cache: "no-store",
+  });
 }
 
 export async function fetchDesktopUiManifest() {

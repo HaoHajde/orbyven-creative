@@ -37,6 +37,7 @@ export type AutomationEvent = {
   assignee: string | null;
   clientId: string | null;
   taskId: string | null;
+  resourceCount?: number;
 };
 
 export type AutomationSignal = {
@@ -52,6 +53,7 @@ export type AutomationSignal = {
     | "accepted_estimate_needs_schedule"
     | "estimate_expiring"
     | "estimate_follow_up"
+    | "appointment_needs_resources"
     | "appointment_upcoming"
     | "calendar_conflict";
   module: OrbyvenModuleId;
@@ -398,6 +400,31 @@ export function buildBusinessAutomationSignals(input: {
 
   for (const event of input.events) {
     if (event.status === "cancelled" || event.startAt < nowIso || event.startAt > tomorrowIso) continue;
+
+    const operation = event.taskId ? operations.get(event.taskId) : null;
+    if (
+      operation &&
+      (operation.kind === "work" || operation.kind === "order") &&
+      event.resourceCount === 0
+    ) {
+      signals.push({
+        key: "event-resources:" + event.id,
+        rule: "appointment_needs_resources",
+        module: "calendar",
+        title: "Programare fără resurse · " + event.title,
+        meta: dateLabel(event.startAt) + " · alocă om / echipă / vehicul / utilaj",
+        level: "attention",
+        sortAt: event.startAt,
+        actionLabel: "Alocă",
+        open: {
+          recordId: event.id,
+          clientId: event.clientId ?? undefined,
+          taskId: event.taskId ?? undefined,
+        },
+      });
+      continue;
+    }
+
     signals.push({
       key: "event:" + event.id,
       rule: "appointment_upcoming",

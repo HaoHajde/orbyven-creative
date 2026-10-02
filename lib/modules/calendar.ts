@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { normalizeResourceIds, schedulerErrorMessage } from "@/lib/modules/resource-core";
 
 export type CalendarEventType = "appointment" | "work" | "follow_up" | "internal";
 export type CalendarEventStatus = "scheduled" | "completed" | "cancelled";
@@ -49,6 +50,7 @@ export type CreateCalendarEventInput = {
   location?: string;
   notes?: string;
   reminderMinutes?: number | null;
+  resourceIds?: string[];
 };
 
 export type UpdateCalendarEventInput = Partial<{
@@ -181,28 +183,38 @@ export async function createCalendarEvent(
     if (clientError || !client) throw new Error("Clientul nu există în această firmă.");
   }
 
-  const { data: authData } = await orbyvenSupabase.auth.getUser();
+  const resourceIds = normalizeResourceIds(input.resourceIds);
+  const { data: createdId, error: createError } = await orbyvenSupabase.rpc(
+    "calendar_create_event_with_resources",
+    {
+      p_organization_id: organizationId,
+      p_title: title,
+      p_event_type: input.eventType ?? "appointment",
+      p_start_at: startAt.toISOString(),
+      p_end_at: endAt.toISOString(),
+      p_all_day: input.allDay ?? false,
+      p_client_id: linkedClientId,
+      p_task_id: input.taskId || null,
+      p_assignee: cleanOptional(input.assignee),
+      p_location: cleanOptional(input.location),
+      p_notes: cleanOptional(input.notes),
+      p_reminder_minutes: normalizeReminder(input.reminderMinutes),
+      p_resource_ids: resourceIds,
+    }
+  );
+
+  if (createError || !createdId) {
+    throw new Error(schedulerErrorMessage(createError ?? new Error("Programarea nu a fost creată.")));
+  }
+
   const { data, error } = await orbyvenSupabase
     .from("calendar_events")
-    .insert({
-      organization_id: organizationId,
-      event_type: input.eventType ?? "appointment",
-      title,
-      start_at: startAt.toISOString(),
-      end_at: endAt.toISOString(),
-      all_day: input.allDay ?? false,
-      client_id: linkedClientId,
-      task_id: input.taskId || null,
-      assignee: cleanOptional(input.assignee),
-      location: cleanOptional(input.location),
-      notes: cleanOptional(input.notes),
-      reminder_minutes: normalizeReminder(input.reminderMinutes),
-      created_by: authData.user?.id ?? null,
-    })
     .select(EVENT_FIELDS)
+    .eq("organization_id", organizationId)
+    .eq("id", createdId)
     .single();
 
-  if (error) throw error;
+  if (error || !data) throw error ?? new Error("Programarea creată nu a putut fi reîncărcată.");
   return data as CalendarEvent;
 }
 

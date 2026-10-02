@@ -1,7 +1,7 @@
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
-export const WORKSPACE_UI_REVISION = "2026.09.30.2";
-export const CURRENT_DESKTOP_VERSION = "0.4.0";
+export const WORKSPACE_UI_REVISION = "2026.10.01.2";
+export const CURRENT_DESKTOP_VERSION = "0.8.0";
 
 export const WORKSPACE_THEME = {
   dark: {

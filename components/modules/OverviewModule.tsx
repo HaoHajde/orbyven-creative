@@ -3,6 +3,8 @@
 import { ModuleError } from "@/components/modules/ModuleKit";
 import { loadOverviewSnapshot, type OverviewSnapshot } from "@/lib/modules/overview";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
+import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
+import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
@@ -25,7 +27,11 @@ type Attention = {
   recordId: string;
   title: string;
   meta: string;
-  level: "urgent" | "normal";
+  level: "urgent" | "attention";
+  sortAt: string;
+  rule?: string;
+  taskId?: string;
+  clientId?: string;
 };
 
 type QuickAction = {
@@ -137,20 +143,57 @@ export default function OverviewModule({
     const monthCashFlow = monthIncome - monthExpenses;
 
     const attention: Attention[] = [];
-    for (const lead of activeLeads) {
-      if (
-        lead.next_follow_up_at &&
-        new Date(lead.next_follow_up_at).getTime() < snapshotNow
-      ) {
-        attention.push({
-          key: `lead-${lead.id}`,
-          module: "leads",
-          recordId: lead.id,
-          title: `${lead.name} așteaptă follow-up`,
-          meta: "Termenul de revenire a trecut.",
-          level: "urgent",
-        });
-      }
+    const followUpContacts = snapshot.leads.filter((lead) => {
+      if (!lead.next_follow_up_at) return false;
+      if (new Date(lead.next_follow_up_at).getTime() >= snapshotNow) return false;
+      if (lead.kind === "client") return true;
+      return !["won", "lost"].includes(lead.stage);
+    });
+
+    for (const contact of followUpContacts) {
+      const retention = contact.kind === "client";
+      attention.push({
+        key: `${retention ? "client-retention" : "lead"}-${contact.id}`,
+        module: "leads",
+        recordId: contact.id,
+        title: retention
+          ? `${contact.name} așteaptă revenire`
+          : `${contact.name} așteaptă follow-up`,
+        meta: retention
+          ? "Revenirea post-vânzare este scadentă."
+          : "Termenul de revenire a trecut.",
+        level: "urgent",
+        sortAt: contact.next_follow_up_at as string,
+        rule: retention ? "client_retention_follow_up" : "lead_follow_up",
+        clientId: contact.id,
+      });
+    }
+
+    for (const client of snapshot.leads.filter((lead) => lead.kind === "client")) {
+      const lifecycle = evaluateClientLifecycle({
+        id: client.id,
+        name: client.name,
+        kind: "client",
+        lastContactAt: client.last_contact_at,
+        nextFollowUpAt: client.next_follow_up_at,
+        convertedAt: client.converted_at,
+        createdAt: client.created_at,
+      }, new Date(snapshotNow));
+      if (!lifecycle?.needsReactivation) continue;
+
+      attention.push({
+        key: `client-reactivation-${client.id}`,
+        module: "leads",
+        recordId: client.id,
+        clientId: client.id,
+        title: lifecycle.state === "dormant"
+          ? `${client.name} poate fi reactivat`
+          : `${client.name} intră în răcire`,
+        meta: lifecycle.detail,
+        level: "attention",
+        sortAt: lifecycle.lastTouchAt,
+        rule: "client_reactivation",
+      });
     }
 
     const operations: AutomationOperation[] = openTasks.map((task) => ({
@@ -212,7 +255,11 @@ export default function OverviewModule({
         recordId: signal.open.recordId,
         title: signal.title,
         meta: signal.meta,
-        level: signal.level === "urgent" ? "urgent" : "normal",
+        level: signal.level === "urgent" ? "urgent" : "attention",
+        sortAt: signal.sortAt,
+        rule: signal.rule,
+        taskId: signal.open.taskId,
+        clientId: signal.open.clientId,
       });
     }
 
@@ -230,6 +277,10 @@ export default function OverviewModule({
         title: task.title,
         meta: "Prioritate urgentă.",
         level: "urgent",
+        sortAt: task.due_at ?? task.scheduled_at ?? task.created_at,
+        rule: "user_urgent_priority",
+        taskId: task.id,
+        clientId: task.client_id ?? undefined,
       });
     }
 
@@ -294,7 +345,10 @@ export default function OverviewModule({
         estimates: trend(snapshot.trendDates.estimates),
       },
       todayQueue,
-      attention: attention.filter((item) => enabledModules.includes(item.module)).sort((left, right) => (left.level === right.level ? 0 : left.level === "urgent" ? -1 : 1)),
+      attention: rankNextBestActions(
+        attention.filter((item) => enabledModules.includes(item.module)),
+        { dedupeContext: true }
+      ),
     };
   }, [snapshot, snapshotNow, timeZone, enabledModules, locale]);
 

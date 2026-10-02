@@ -16,6 +16,14 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import {
+  listOperationalResources,
+  listCalendarResourceAssignments,
+  setCalendarEventResources,
+  type OperationalResource,
+  type CalendarResourceAssignment,
+} from "@/lib/modules/resources";
+import { RESOURCE_TYPE_LABELS, schedulerErrorMessage } from "@/lib/modules/resource-core";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
 import {
   useCallback,
@@ -55,6 +63,7 @@ type CreateForm = {
   location: string;
   reminderMinutes: string;
   notes: string;
+  resourceIds: string[];
 };
 
 const emptyForm: CreateForm = {
@@ -70,6 +79,7 @@ const emptyForm: CreateForm = {
   location: "",
   reminderMinutes: "30",
   notes: "",
+  resourceIds: [],
 };
 
 const typeLabels: Record<CalendarEventType, string> = {
@@ -91,31 +101,6 @@ const typeStyles: Record<CalendarEventType, string> = {
   follow_up: "bg-amber-500/10 text-amber-600",
   internal: "bg-emerald-500/10 text-emerald-600",
 };
-
-type NativeBridgeWindow = Window & {
-  ReactNativeWebView?: {
-    postMessage: (message: string) => void;
-  };
-};
-
-function postCalendarReminderBridge(
-  action: "schedule" | "cancel",
-  calendarEvent: CalendarEvent
-) {
-  const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
-  if (!bridge) return;
-
-  bridge.postMessage(JSON.stringify({
-    type: action === "schedule"
-      ? "orbyven:schedule-calendar-reminder"
-      : "orbyven:cancel-calendar-reminder",
-    eventId: calendarEvent.id,
-    title: calendarEvent.title,
-    startAt: calendarEvent.start_at,
-    reminderMinutes: calendarEvent.reminder_minutes,
-    location: calendarEvent.location,
-  }));
-}
 
 function dateKeyInTimeZone(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -247,6 +232,9 @@ export default function CalendarModule({
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [clients, setClients] = useState<CalendarClient[]>([]);
   const [tasks, setTasks] = useState<CalendarTask[]>([]);
+  const [resources, setResources] = useState<OperationalResource[]>([]);
+  const [resourceAssignments, setResourceAssignments] = useState<CalendarResourceAssignment[]>([]);
+  const [resourceDrafts, setResourceDrafts] = useState<Record<string, string[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(initialRecordId ?? null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -259,6 +247,7 @@ export default function CalendarModule({
     clientId: initialClientId ?? "",
     taskId: initialTaskId ?? "",
     eventType: initialTaskId ? "work" : emptyForm.eventType,
+    resourceIds: [],
   }));
 
   const canWrite = role !== "viewer";
@@ -293,14 +282,21 @@ export default function CalendarModule({
     try {
       const rangeStart = zonedWallTimeToIso(weekStartKey, "00:00", timeZone);
       const rangeEnd = zonedWallTimeToIso(addDateKeyDays(weekStartKey, 7), "00:00", timeZone);
-      const [nextEvents, nextClients, nextTasks] = await Promise.all([
+      const [nextEvents, nextClients, nextTasks, nextResources] = await Promise.all([
         listCalendarEvents(organizationId, rangeStart, rangeEnd),
         listCalendarClients(organizationId),
         listCalendarTasks(organizationId),
+        listOperationalResources(organizationId, { activeOnly: false }),
       ]);
+      const nextAssignments = await listCalendarResourceAssignments(
+        organizationId,
+        nextEvents.map((event) => event.id)
+      );
       setEvents(nextEvents);
       setClients(nextClients);
       setTasks(nextTasks);
+      setResources(nextResources);
+      setResourceAssignments(nextAssignments);
       if (initialCreate && (initialTaskId || initialClientId)) {
         const task = nextTasks.find((item) => item.id === initialTaskId);
         const client = nextClients.find((item) => item.id === (task?.client_id || initialClientId));
@@ -338,6 +334,32 @@ export default function CalendarModule({
     () => new Map(tasks.map((task) => [task.id, task])),
     [tasks]
   );
+  const resourceById = useMemo(
+    () => new Map(resources.map((resource) => [resource.id, resource])),
+    [resources]
+  );
+  const resourceIdsByEvent = useMemo(() => {
+    const next = new Map<string, string[]>();
+    for (const assignment of resourceAssignments) {
+      const list = next.get(assignment.event_id) ?? [];
+      list.push(assignment.resource_id);
+      next.set(assignment.event_id, list);
+    }
+    return next;
+  }, [resourceAssignments]);
+  const resourceLabelForEvent = useCallback(
+    (eventId: string) => {
+      const names = (resourceIdsByEvent.get(eventId) ?? [])
+        .map((id) => resourceById.get(id)?.name)
+        .filter((name): name is string => Boolean(name));
+      return names.join(", ");
+    },
+    [resourceById, resourceIdsByEvent]
+  );
+  const activeResources = useMemo(
+    () => resources.filter((resource) => resource.active),
+    [resources]
+  );
   const selectedEvent = useMemo(
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
@@ -364,8 +386,14 @@ export default function CalendarModule({
       : 0;
     const completed = events.filter((calendarEvent) => calendarEvent.status === "completed").length;
     const linked = events.filter((calendarEvent) => calendarEvent.client_id || calendarEvent.task_id).length;
-    return { scheduled, today, completed, linked };
-  }, [events, timeZone, todayKey]);
+    const needsResources = events.filter(
+      (calendarEvent) =>
+        calendarEvent.status === "scheduled" &&
+        calendarEvent.event_type === "work" &&
+        (resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0) === 0
+    ).length;
+    return { scheduled, today, completed, linked, needsResources };
+  }, [events, timeZone, todayKey, resourceIdsByEvent]);
 
   const openCreate = (dateKey?: string) => {
     setForm({
@@ -417,18 +445,30 @@ export default function CalendarModule({
         allDay: form.allDay,
         clientId: form.clientId || null,
         taskId: form.taskId || null,
-        assignee: form.assignee,
+        assignee:
+          form.resourceIds
+            .map((id) => resourceById.get(id))
+            .filter((resource): resource is OperationalResource => Boolean(resource))
+            .filter((resource) => resource.resource_type === "person" || resource.resource_type === "crew")
+            .map((resource) => resource.name)
+            .join(", ") || form.assignee,
         location: form.location,
         notes: form.notes,
         reminderMinutes: form.reminderMinutes ? Number(form.reminderMinutes) : null,
+        resourceIds: form.resourceIds,
       });
       setEvents((current) =>
         [...current, created].sort((a, b) => a.start_at.localeCompare(b.start_at))
       );
+      const createdAssignments = await listCalendarResourceAssignments(
+        organizationId,
+        [created.id]
+      );
+      setResourceAssignments((current) => [
+        ...current.filter((assignment) => assignment.event_id !== created.id),
+        ...createdAssignments,
+      ]);
       setSelectedId(created.id);
-      if (created.status === "scheduled" && created.reminder_minutes !== null) {
-        postCalendarReminderBridge("schedule", created);
-      }
       setCreateOpen(false);
       setForm(emptyForm);
     } catch (createError) {
@@ -459,13 +499,40 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
-      postCalendarReminderBridge(
-        updated.status === "scheduled" ? "schedule" : "cancel",
-        updated
-      );
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveEventResources = async (calendarEvent: CalendarEvent) => {
+    if (!canWrite || saving) return;
+    const desired =
+      resourceDrafts[calendarEvent.id] ??
+      resourceIdsByEvent.get(calendarEvent.id) ??
+      [];
+    setSaving(true);
+    setError("");
+    try {
+      await setCalendarEventResources(organizationId, calendarEvent.id, desired);
+      const nextAssignments = await listCalendarResourceAssignments(
+        organizationId,
+        [calendarEvent.id]
+      );
+      setResourceAssignments((current) => [
+        ...current.filter((assignment) => assignment.event_id !== calendarEvent.id),
+        ...nextAssignments,
+      ]);
+      setResourceDrafts((current) => {
+        const next = { ...current };
+        delete next[calendarEvent.id];
+        return next;
+      });
+    } catch (resourceError) {
+      console.error(resourceError);
+      setError(schedulerErrorMessage(resourceError));
     } finally {
       setSaving(false);
     }
@@ -477,7 +544,6 @@ export default function CalendarModule({
     setError("");
     try {
       await deleteCalendarEvent(organizationId, calendarEvent.id);
-      postCalendarReminderBridge("cancel", calendarEvent);
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
     } catch (deleteError) {
@@ -494,7 +560,7 @@ export default function CalendarModule({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Calendar · Live</p>
           <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.055em] sm:text-[42px]">Programări</h1>
-          <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">Programări, lucrări și follow-up-uri într-un singur loc, legate de clienții și taskurile firmei.</p>
+          <p className="mt-2.5 max-w-2xl text-[13px] leading-5 text-[var(--muted)]">Programări, lucrări și resurse într-un singur scheduler, cu protecție la suprapuneri.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setViewMode("week")} className={`h-11 rounded-full px-5 text-sm font-semibold ${viewMode === "week" ? "bg-[var(--button)] text-[var(--button-text)]" : "border border-[var(--border-strong)]"}`}>Săptămână</button>
@@ -506,7 +572,7 @@ export default function CalendarModule({
       <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Programate" value={String(metrics.scheduled)} note="în săptămâna curentă" />
         <Metric label="Astăzi" value={String(metrics.today)} note="evenimente active" />
-        <Metric label="Finalizate" value={String(metrics.completed)} note="în săptămâna afișată" />
+        <Metric label="Fără resurse" value={String(metrics.needsResources)} note="lucrări de alocat" />
         <Metric label="Conectate" value={String(metrics.linked)} note="la client sau lucrare" />
       </section>
 
@@ -538,7 +604,33 @@ export default function CalendarModule({
             <Field label="Data"><input required type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="calendar-input" /></Field>
             <Field label="Client"><select value={form.clientId} disabled={Boolean(taskById.get(form.taskId)?.client_id)} onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))} className="calendar-input disabled:opacity-60"><option value="">Fără client asociat</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company || client.name}</option>)}</select></Field>
             <Field label="Lucrare / task"><select value={form.taskId} onChange={(event) => handleTaskSelection(event.target.value)} className="calendar-input"><option value="">Fără lucrare asociată</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></Field>
-            <Field label="Responsabil"><input value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="Ex. Andrei" className="calendar-input" /></Field>
+            <Field label="Resurse" className="md:col-span-2 xl:col-span-2">
+              <div className="grid min-h-11 gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-2 sm:grid-cols-2">
+                {activeResources.length ? activeResources.map((resource) => {
+                  const checked = form.resourceIds.includes(resource.id);
+                  return (
+                    <label key={resource.id} className={`flex cursor-pointer items-center gap-2 rounded-[10px] px-2 py-2 text-xs ${checked ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => setForm((current) => ({
+                          ...current,
+                          resourceIds: event.target.checked
+                            ? [...current.resourceIds, resource.id]
+                            : current.resourceIds.filter((id) => id !== resource.id),
+                        }))}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold">{resource.name}</span>
+                        <span className="block truncate text-[10px] opacity-70">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
+                      </span>
+                    </label>
+                  );
+                }) : (
+                  <span className="px-2 py-2 text-xs text-[var(--muted)]">Nicio resursă activă. Adaugă oameni/resurse în modulul Echipă.</span>
+                )}
+              </div>
+            </Field>
             <Field label="Locație"><input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Adresă / online / sediu" className="calendar-input" /></Field>
             <Field label="Ora început"><input type="time" disabled={form.allDay} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
             <Field label="Ora final"><input type="time" disabled={form.allDay} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="calendar-input disabled:opacity-40" /></Field>
@@ -563,7 +655,7 @@ export default function CalendarModule({
                   <div><p className="text-xs font-semibold">{formatDayKey(dayKey, locale)}</p>{isToday && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">Astăzi</p>}</div>
                   {canWrite && <button type="button" onClick={() => openCreate(dayKey)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg)] text-sm">+</button>}
                 </div>
-                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
+                <div className="mt-3 space-y-2">{dayEvents.length ? dayEvents.map((calendarEvent) => <EventCard key={calendarEvent.id} event={calendarEvent} locale={locale} timeZone={timeZone} resourceCount={resourceIdsByEvent.get(calendarEvent.id)?.length ?? 0} active={calendarEvent.id === selectedId} onSelect={() => setSelectedId(calendarEvent.id)} />) : <p className="rounded-[16px] border border-dashed border-[var(--border)] px-3 py-5 text-center text-[11px] text-[var(--muted)]">Liber</p>}</div>
               </article>
             );
           })}
@@ -574,7 +666,7 @@ export default function CalendarModule({
             <button key={calendarEvent.id} type="button" onClick={() => setSelectedId(calendarEvent.id)} className="grid w-full gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left last:border-b-0 hover:bg-[var(--surface-2)] sm:grid-cols-[1.35fr_0.9fr_0.8fr_0.8fr]">
               <div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{calendarEvent.title}</p><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] ${typeStyles[calendarEvent.event_type]}`}>{typeLabels[calendarEvent.event_type]}</span></div><p className="mt-1 text-xs text-[var(--muted)]">{calendarEvent.client_id ? clientById.get(calendarEvent.client_id)?.company || clientById.get(calendarEvent.client_id)?.name || "Client" : "Fără client"}</p></div>
               <ListValue label="Când" value={calendarEvent.all_day ? formatDayKey(dateKeyInTimeZone(calendarEvent.start_at, timeZone), locale) : formatDateTime(calendarEvent.start_at, locale, timeZone)} />
-              <ListValue label="Responsabil" value={calendarEvent.assignee || "Nealocat"} />
+              <ListValue label="Resurse" value={resourceLabelForEvent(calendarEvent.id) || calendarEvent.assignee || "Nealocat"} />
               <ListValue label="Status" value={statusLabels[calendarEvent.status]} />
             </button>
           )) : <div className="p-10 text-center text-sm text-[var(--muted)]">Nu există evenimente pentru filtrul ales.</div>}
@@ -586,6 +678,52 @@ export default function CalendarModule({
           {enabledModules.includes("leads") && selectedEvent.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedEvent.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>}
           {enabledModules.includes("tasks") && selectedEvent.task_id && <button type="button" onClick={() => onOpenModule("tasks", { recordId: selectedEvent.task_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide lucrarea ↗</button>}
         </div>
+      )}
+      {selectedEvent && (
+        <section className="mt-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Scheduler · Resurse</p>
+              <p className="mt-1 text-sm font-semibold">Alocări pentru această programare</p>
+            </div>
+            {canWrite ? (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => void saveEventResources(selectedEvent)}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40"
+              >
+                Salvează resursele
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {activeResources.length ? activeResources.map((resource) => {
+              const baseline = resourceIdsByEvent.get(selectedEvent.id) ?? [];
+              const selected = (resourceDrafts[selectedEvent.id] ?? baseline).includes(resource.id);
+              return (
+                <label key={resource.id} className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs ${selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
+                  <input
+                    type="checkbox"
+                    disabled={!canWrite}
+                    checked={selected}
+                    onChange={(event) => setResourceDrafts((current) => {
+                      const base = current[selectedEvent.id] ?? baseline;
+                      const nextIds = event.target.checked
+                        ? [...base, resource.id]
+                        : base.filter((id) => id !== resource.id);
+                      return { ...current, [selectedEvent.id]: nextIds };
+                    })}
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{resource.name}</span>
+                    <span className="block truncate text-[10px] text-[var(--muted)]">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
+                  </span>
+                </label>
+              );
+            }) : <p className="text-xs text-[var(--muted)]">Nu există resurse active.</p>}
+          </div>
+        </section>
       )}
       {selectedEvent && (
         <div
@@ -601,8 +739,9 @@ export default function CalendarModule({
   );
 }
 
-function EventCard({ event, locale, timeZone, active, onSelect }: { event: CalendarEvent; locale: string; timeZone: string; active: boolean; onSelect: () => void }) {
-  return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
+function EventCard({ event, locale, timeZone, resourceCount, active, onSelect }: { event: CalendarEvent; locale: string; timeZone: string; resourceCount: number; active: boolean; onSelect: () => void }) {
+  const missingResources = event.status === "scheduled" && event.event_type === "work" && resourceCount === 0;
+  return <button type="button" onClick={onSelect} className={`w-full rounded-[18px] border p-3 text-left transition ${active ? "border-[var(--accent)] bg-[var(--bg)]" : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]"}`}><div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.07em] ${typeStyles[event.event_type]}`}>{typeLabels[event.event_type]}</span><span className="text-[10px] text-[var(--muted)]">{event.all_day ? "Toată ziua" : formatTime(event.start_at, locale, timeZone)}</span></div><p className={`mt-3 text-[13px] font-semibold leading-5 ${event.status === "cancelled" ? "text-[var(--muted)] line-through" : ""}`}>{event.title}</p>{missingResources ? <p className="mt-2 text-[10px] font-semibold text-amber-400">Necesită alocare resurse</p> : resourceCount > 0 ? <p className="mt-2 text-[10px] text-emerald-400">{resourceCount} {resourceCount === 1 ? "resursă alocată" : "resurse alocate"}</p> : null}{event.location && <p className="mt-2 truncate text-[10px] text-[var(--muted)]">{event.location}</p>}</button>;
 }
 
 function EventDetail({ event, client, task, locale, timeZone, canWrite, canDelete, saving, onStatus, onDelete }: { event: CalendarEvent; client?: CalendarClient; task?: CalendarTask; locale: string; timeZone: string; canWrite: boolean; canDelete: boolean; saving: boolean; onStatus: (status: CalendarEventStatus) => void; onDelete: () => void }) {

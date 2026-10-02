@@ -15,8 +15,8 @@ test("Workspace warp uses sticky-header offset, retries and smooth viewport scro
   assert.match(source, /fallbackSelector/);
 });
 
-test("ClientWorkspace chooses exact navigation target before module fallback", () => {
-  const source = read("components/ClientWorkspace.tsx");
+test("WorkspaceShell chooses exact navigation target before module fallback", () => {
+  const source = read("components/WorkspaceShell.tsx");
   assert.match(source, /navigation\.create/);
   assert.match(source, /data-workspace-create-focus/);
   assert.match(source, /navigation\.recordId/);

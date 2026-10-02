@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Scan the real ORBYVEN web workspace components because Desktop 0.6 renders
+   those exact React modules instead of maintaining visual clones. */
+@source "../../components";
+@source "../../lib";
+@source "./";

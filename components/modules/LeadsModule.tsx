@@ -6,6 +6,7 @@ import {
   createCrmLeadActivity,
   listCrmLeadActivities,
   listCrmLeads,
+  scheduleCrmFollowUp,
   updateCrmLead,
   type CrmActivityKind,
   type CrmLead,
@@ -13,6 +14,7 @@ import {
   type CrmLeadKind,
   type CrmLeadStage,
 } from "@/lib/modules/leads";
+import { evaluateClientLifecycle, type ClientLifecycleSnapshot } from "@/lib/automation/client-lifecycle";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
@@ -105,6 +107,7 @@ export default function LeadsModule({
   const [activityKind, setActivityKind] = useState<CrmActivityKind>("note");
   const [activityBody, setActivityBody] = useState("");
   const [followUpLocal, setFollowUpLocal] = useState("");
+  const [lifecycleNowIso, setLifecycleNowIso] = useState("");
 
   const loadLeads = useCallback(async () => {
     setLoading(true);
@@ -112,6 +115,7 @@ export default function LeadsModule({
     try {
       const next = await listCrmLeads(organizationId);
       setLeads(next);
+      setLifecycleNowIso(new Date().toISOString());
       setSelectedLeadId((current) =>
         current && next.some((lead) => lead.id === current)
           ? current
@@ -134,6 +138,29 @@ export default function LeadsModule({
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
   );
+  const lifecycleByClient = useMemo(() => {
+    const now = lifecycleNowIso ? new Date(lifecycleNowIso) : new Date(0);
+    return new Map(
+      leads
+        .filter((lead) => lead.kind === "client")
+        .map((lead) => [
+          lead.id,
+          evaluateClientLifecycle({
+            id: lead.id,
+            name: lead.name,
+            kind: lead.kind,
+            lastContactAt: lead.last_contact_at,
+            nextFollowUpAt: lead.next_follow_up_at,
+            convertedAt: lead.converted_at,
+            createdAt: lead.created_at,
+          }, now),
+        ] as const)
+        .filter((entry): entry is readonly [string, ClientLifecycleSnapshot] => Boolean(entry[1]))
+    );
+  }, [leads, lifecycleNowIso]);
+  const selectedLifecycle = selectedLead?.kind === "client"
+    ? lifecycleByClient.get(selectedLead.id) ?? null
+    : null;
   useWorkspaceRecordFocus(initialRecordId, selectedLeadId, loading);
   useWorkspaceSelectionWarp(selectedLeadId, loading);
 
@@ -195,9 +222,13 @@ export default function LeadsModule({
         (sum, lead) => sum + (lead.estimated_value ?? 0),
         0
       ),
-      followUps: activeLeads.filter((lead) => Boolean(lead.next_follow_up_at)).length,
+      followUps: leads.filter((lead) =>
+        Boolean(lead.next_follow_up_at) &&
+        (lead.kind === "client" || !["won", "lost"].includes(lead.stage))
+      ).length,
+      reactivation: [...lifecycleByClient.values()].filter((item) => item.needsReactivation).length,
     };
-  }, [leads]);
+  }, [leads, lifecycleByClient]);
 
   const money = useMemo(
     () =>
@@ -295,6 +326,7 @@ export default function LeadsModule({
       setLeads((current) =>
         current.map((lead) => (lead.id === updated.id ? updated : lead))
       );
+      setLifecycleNowIso(new Date().toISOString());
       const activity = await createCrmLeadActivity(
         organizationId,
         selectedLead.id,
@@ -320,19 +352,64 @@ export default function LeadsModule({
     setSaving(true);
     setError("");
     try {
-      const updated = await updateCrmLead(organizationId, selectedLead.id, { next_follow_up_at: when });
+      const updated = done
+        ? await updateCrmLead(organizationId, selectedLead.id, {
+            next_follow_up_at: null,
+            last_contact_at: new Date().toISOString(),
+          })
+        : await scheduleCrmFollowUp(
+            organizationId,
+            selectedLead.id,
+            when as string,
+            "Follow-up reprogramat."
+          );
       setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead));
-      try {
-        const note = await createCrmLeadActivity(organizationId, updated.id, "status",
-          done ? "Follow-up marcat ca rezolvat." : "Follow-up reprogramat.");
-        setActivities((current) => [note, ...current]);
-      } catch (historyError) {
-        console.error(historyError);
-        setError("Termenul a fost salvat, dar istoricul nu a putut fi actualizat.");
+      setLifecycleNowIso(new Date().toISOString());
+      if (done) {
+        try {
+          const note = await createCrmLeadActivity(
+            organizationId,
+            updated.id,
+            "status",
+            "Follow-up marcat ca rezolvat."
+          );
+          setActivities((current) => [note, ...current]);
+        } catch (historyError) {
+          console.error(historyError);
+          setError("Contactul a fost actualizat, dar istoricul nu a putut fi completat.");
+        }
       }
     } catch (followUpError) {
       console.error(followUpError);
       setError("Follow-up-ul nu a putut fi actualizat.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const scheduleReactivation = async (days = 7) => {
+    if (!canWrite || !selectedLead || selectedLead.kind !== "client" || saving) return;
+    const when = new Date(Date.now() + days * 86400000).toISOString();
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await scheduleCrmFollowUp(
+        organizationId,
+        selectedLead.id,
+        when,
+        `Reactivare client planificată peste ${days} zile.`
+      );
+      setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead));
+      setLifecycleNowIso(new Date().toISOString());
+      const local = new Date(new Date(updated.next_follow_up_at!).getTime() - new Date(updated.next_follow_up_at!).getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setFollowUpLocal(local);
+      const nextActivities = await listCrmLeadActivities(organizationId, selectedLead.id);
+      setActivities(nextActivities);
+    } catch (reactivationError) {
+      console.error(reactivationError);
+      setError("Reactivarea clientului nu a putut fi programată.");
     } finally {
       setSaving(false);
     }
@@ -352,6 +429,16 @@ export default function LeadsModule({
         activityBody
       );
       setActivities((current) => [created, ...current]);
+      if (activityKind !== "note" && activityKind !== "status") {
+        setLeads((current) =>
+          current.map((lead) =>
+            lead.id === selectedLead.id
+              ? { ...lead, last_contact_at: created.occurred_at }
+              : lead
+          )
+        );
+        setLifecycleNowIso(new Date().toISOString());
+      }
       setActivityBody("");
     } catch (activityError) {
       console.error(activityError);
@@ -442,11 +529,12 @@ export default function LeadsModule({
         </form>
       )}
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Metric label="Cereri active" value={String(metrics.active)} note="în lucru acum" />
         <Metric label="Clienți" value={String(metrics.clients)} note="convertiți din pipeline" />
         <Metric label="Pipeline" value={money.format(metrics.pipeline)} note="valoare estimată" />
         <Metric label="Follow-up" value={String(metrics.followUps)} note="programate" />
+        <Metric label="De reactivat" value={String(metrics.reactivation)} note="relații fără pas următor" />
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -508,7 +596,9 @@ export default function LeadsModule({
                         {lead.company || lead.phone || lead.email || "Fără detalii de contact"}
                       </p>
                     </div>
-                    <StagePill stage={lead.stage} />
+                    {lead.kind === "client" && lifecycleByClient.get(lead.id)
+                      ? <ClientLifecyclePill snapshot={lifecycleByClient.get(lead.id)!} />
+                      : <StagePill stage={lead.stage} />}
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-[var(--muted-2)]">
                     <span>{lead.source || "Sursă nespecificată"}</span>
@@ -577,6 +667,16 @@ export default function LeadsModule({
                   }
                 />
               </div>
+
+              {selectedLifecycle && (
+                <ClientLifecyclePanel
+                  snapshot={selectedLifecycle}
+                  locale={locale}
+                  canWrite={canWrite}
+                  saving={saving}
+                  onSchedule={() => void scheduleReactivation(7)}
+                />
+              )}
 
               <div className="mt-5 rounded-[22px] bg-[var(--bg)] p-4">
                 <div className="flex items-center justify-between gap-4">
@@ -686,6 +786,70 @@ export default function LeadsModule({
           )}
         </article>
       </section>
+    </div>
+  );
+}
+
+function ClientLifecyclePill({ snapshot }: { snapshot: ClientLifecycleSnapshot }) {
+  const tone =
+    snapshot.state === "overdue" || snapshot.state === "dormant"
+      ? "text-rose-500"
+      : snapshot.state === "cooling"
+        ? "text-amber-500"
+        : snapshot.state === "scheduled"
+          ? "text-[var(--accent)]"
+          : "text-emerald-600";
+
+  return (
+    <span className={`shrink-0 rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold ${tone}`}>
+      {snapshot.label}
+    </span>
+  );
+}
+
+function ClientLifecyclePanel({
+  snapshot,
+  locale,
+  canWrite,
+  saving,
+  onSchedule,
+}: {
+  snapshot: ClientLifecycleSnapshot;
+  locale: string;
+  canWrite: boolean;
+  saving: boolean;
+  onSchedule: () => void;
+}) {
+  const lastTouch = new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(snapshot.lastTouchAt));
+
+  return (
+    <div className="mt-5 rounded-[22px] border border-[var(--border)] bg-[var(--surface)]/70 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
+            ORBYVEN · CLIENT LIFECYCLE
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold">{snapshot.label}</p>
+            <span className="text-[10px] text-[var(--muted-2)]">ultima interacțiune · {lastTouch}</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">{snapshot.detail}</p>
+        </div>
+        {canWrite && snapshot.needsReactivation && (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onSchedule}
+            className="h-9 shrink-0 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-50"
+          >
+            Planifică revenire · 7 zile
+          </button>
+        )}
+      </div>
     </div>
   );
 }

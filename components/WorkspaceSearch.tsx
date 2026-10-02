@@ -10,9 +10,10 @@ type Props = {
   organizationId: string;
   enabledModules: OrbyvenModuleId[];
   onOpenModule: (id: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  onOpenCommands?: () => void;
 };
 
-export default function WorkspaceSearch({ organizationId, enabledModules, onOpenModule }: Props) {
+export default function WorkspaceSearch({ organizationId, enabledModules, onOpenModule, onOpenCommands }: Props) {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [open, setOpen] = useState(false);
@@ -122,7 +123,22 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
           className="w-full min-w-0 bg-transparent text-[12px] text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
         />
         {loading && <span className="h-3 w-3 shrink-0 animate-pulse rounded-full bg-[var(--accent)]/65" aria-label="Se caută" />}
-        <span className="hidden rounded-md border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted-2)] sm:inline">⌕</span>
+        {onOpenCommands ? (
+          <button
+            type="button"
+            title="Navigare rapidă între module"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onOpenCommands();
+            }}
+            className="hidden rounded-md border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted-2)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] sm:inline"
+          >
+            Ctrl K
+          </button>
+        ) : (
+          <span className="hidden rounded-md border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted-2)] sm:inline">⌕</span>
+        )}
       </label>
       {open && validQuery && (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[90] max-h-[340px] overflow-y-auto rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface)] p-2 shadow-[0_22px_60px_rgba(0,0,0,0.35)]">

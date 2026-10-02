@@ -6,7 +6,9 @@ export type OverviewLead = {
   name: string;
   kind: "lead" | "client";
   stage: string;
+  last_contact_at: string | null;
   next_follow_up_at: string | null;
+  converted_at: string | null;
   created_at: string;
 };
 
@@ -126,12 +128,14 @@ export async function loadOverviewSnapshot(
   const nearTaskFrom = new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString();
   const nearTaskUntil = new Date(now.getTime() + 36 * 60 * 60 * 1000).toISOString();
   const staleEstimateBefore = new Date(now.getTime() - 3 * DAY_MS).toISOString();
+  const reactivationBefore = new Date(now.getTime() - 90 * DAY_MS).toISOString();
   const [monthStart, nextMonthStart] = monthRange(now, timeZone);
 
   const [
     activeLeadsCount, openTasksCount, sentEstimatesCount,
     stageCounts,
-    recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
+    recentLeads, overdueLeads, staleContactClients, neverContactedClients,
+    recentTasks, overdueTasks, urgentTasks,
     blockedTasks, scheduledNearTasks, dueNearTasks,
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
     events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount, inactiveTeamResult,
@@ -147,12 +151,33 @@ export async function loadOverviewSnapshot(
         .eq("organization_id", organizationId).eq("status", status))
     )),
     orbyvenSupabase.from("crm_leads")
-      .select("id,name,kind,stage,next_follow_up_at,created_at")
+      .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
     orbyvenSupabase.from("crm_leads")
-      .select("id,name,kind,stage,next_follow_up_at,created_at")
-      .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)
+      .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
+      .eq("organization_id", organizationId)
+      .not("next_follow_up_at", "is", null)
+      .or("kind.eq.client,stage.not.in.(won,lost)")
       .lt("next_follow_up_at", nowIso).order("next_follow_up_at").limit(ATTENTION_LIMIT + 1),
+    orbyvenSupabase.from("crm_leads")
+      .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
+      .eq("organization_id", organizationId)
+      .eq("kind", "client")
+      .is("next_follow_up_at", null)
+      .not("last_contact_at", "is", null)
+      .lte("last_contact_at", reactivationBefore)
+      .order("last_contact_at")
+      .limit(ATTENTION_LIMIT + 1),
+    orbyvenSupabase.from("crm_leads")
+      .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
+      .eq("organization_id", organizationId)
+      .eq("kind", "client")
+      .is("next_follow_up_at", null)
+      .is("last_contact_at", null)
+      .not("converted_at", "is", null)
+      .lte("converted_at", reactivationBefore)
+      .order("converted_at")
+      .limit(ATTENTION_LIMIT + 1),
     orbyvenSupabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
@@ -234,13 +259,19 @@ export async function loadOverviewSnapshot(
   ]);
 
   const [planned, inProgress, blocked, done, cancelled] = stageCounts;
-  for (const result of [recentLeads, overdueLeads, recentTasks, overdueTasks, urgentTasks,
-    blockedTasks, scheduledNearTasks, dueNearTasks, recentEstimates, staleEstimates, inactiveTeamResult]) {
+  for (const result of [recentLeads, overdueLeads, staleContactClients, neverContactedClients,
+    recentTasks, overdueTasks, urgentTasks, blockedTasks, scheduledNearTasks, dueNearTasks,
+    recentEstimates, staleEstimates, inactiveTeamResult]) {
     if (result.error) throw result.error;
   }
 
   return {
-    leads: uniqueRecords(recentLeads.data ?? [], (overdueLeads.data ?? []).slice(0, ATTENTION_LIMIT)),
+    leads: uniqueRecords(
+      recentLeads.data ?? [],
+      (overdueLeads.data ?? []).slice(0, ATTENTION_LIMIT),
+      (staleContactClients.data ?? []).slice(0, ATTENTION_LIMIT),
+      (neverContactedClients.data ?? []).slice(0, ATTENTION_LIMIT)
+    ),
     tasks: uniqueRecords(
       recentTasks.data ?? [],
       (overdueTasks.data ?? []).slice(0, ATTENTION_LIMIT),
@@ -262,7 +293,7 @@ export async function loadOverviewSnapshot(
     },
     monthExpensesCents: monthExpenseRows.reduce((sum, row) => sum + Number(row.amount_cents), 0),
     monthIncomeCents: monthIncomeRows.reduce((sum, row) => sum + Number(row.amount_cents), 0),
-    attentionHasMore: [overdueLeads, overdueTasks, urgentTasks, blockedTasks, staleEstimates]
+    attentionHasMore: [overdueLeads, staleContactClients, neverContactedClients, overdueTasks, urgentTasks, blockedTasks, staleEstimates]
       .some((result) => (result.data?.length ?? 0) > ATTENTION_LIMIT),
     documentCount,
     activeTeamCount,

@@ -4,6 +4,7 @@ import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
 import { createMutationIntelligenceResponse } from "@/lib/ai/action-server";
 import { createPlanIntelligenceResponse } from "@/lib/ai/plan-server";
 import { buildBusinessAutomationSignals, type AutomationEstimate, type AutomationEvent, type AutomationOperation } from "@/lib/automation/business-signals";
+import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type {
   IntelligenceAction,
@@ -197,6 +198,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     inactiveAssigneeNames: (inactiveTeamRows.data ?? []).map((member) => member.display_name),
   });
   const actionableSignals = signals.filter((signal) => signal.level !== "upcoming");
+  const nextBestSignals = rankNextBestActions(actionableSignals, { dedupeContext: true, limit: 3 });
   const follow = followUps.data ?? [];
   const overdueFollowUps = follow.filter((item) => item.next_follow_up_at && item.next_follow_up_at < nowIso);
 
@@ -213,7 +215,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
   const attention = actionableSignals.length + overdueFollowUps.length;
 
   const actions: IntelligenceAction[] = [];
-  for (const signal of actionableSignals.slice(0, 3)) {
+  for (const signal of nextBestSignals) {
     actions.push({
       kind: "open_module",
       label: signal.actionLabel,
@@ -237,7 +239,7 @@ async function operationsResponse(actor: BillingActor, available: Set<OrbyvenMod
     actions.push({ kind: "open_module", label: "Deschide lucrările", moduleId: "tasks" });
   }
 
-  const topSignal = actionableSignals[0];
+  const topSignal = nextBestSignals[0];
   const headline = topSignal
     ? "Prioritatea principală: " + topSignal.title + "."
     : overdueFollowUps.length

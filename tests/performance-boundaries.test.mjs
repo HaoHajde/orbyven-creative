@@ -10,7 +10,7 @@ const modules = [
 ];
 const workspace = read("components/WorkspaceContent.tsx");
 const preview = read("components/FeaturedTemplatePreview.tsx");
-const client = read("components/ClientWorkspace.tsx");
+const client = read("components/WorkspaceShell.tsx");
 const registry = read("lib/orbyven-modules.ts");
 
 test("only the active workspace module is imported at runtime", () => {
@@ -43,6 +43,7 @@ test("module switching, deep-link creation and role props remain intact", () => 
   assert.match(registry, /id: "inventory"/);
   assert.match(workspace, /DocumentsModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
   assert.match(workspace, /ThermalPlannerModule[^\n]+initialTaskId=\{intent\?\.taskId\}/);
+  assert.match(workspace, /TasksModule[^\n]+initialEstimateId=\{intent\?\.estimateId\}/);
 });
 
 test("demo iframes wait near the viewport, then keep the existing safe iframe settings", () => {

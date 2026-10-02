@@ -7,9 +7,15 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 const overview = read("lib/modules/overview.ts");
 const dashboard = read("components/modules/OverviewModule.tsx");
 const search = read("components/WorkspaceSearch.tsx");
-const workspace = read("components/ClientWorkspace.tsx");
+const workspace = read("components/WorkspaceShell.tsx");
 const tasksData = read("lib/modules/tasks.ts");
 const tasksUi = read("components/modules/TasksModule.tsx");
+const estimatesData = read("lib/modules/estimates.ts");
+const estimatesUi = read("components/modules/EstimatesModule.tsx");
+const documentsData = read("lib/modules/documents.ts");
+const documentsUi = read("components/modules/DocumentsModule.tsx");
+const expensesData = read("lib/modules/expenses.ts");
+const expensesUi = read("components/modules/ExpensesModule.tsx");
 
 test("exact totals page through 1,000+ records, including the final partial page", async () => {
   const dataset = Array.from({ length: 1203 }, (_, id) => ({ id, amount_cents: id }));
@@ -73,10 +79,38 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksData, /\.from\("calendar_events"\)/);
   assert.match(tasksData, /options\.includeThermal/);
   assert.match(tasksUi, /DOSAR OPERAȚIONAL/);
-  assert.match(tasksUi, /expensesCents/);
+  assert.match(tasksUi, /realOperationalCostCents/);
+  assert.match(tasksData, /inventoryConsumedCents/);
   assert.match(tasksUi, /thermalSketch/);
   assert.match(tasksUi, /evaluateWorkReadiness/);
   assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
+});
+
+test("accepted estimate handoff is organization-scoped and rolls back incomplete work creation", () => {
+  assert.match(estimatesData, /export async function attachAcceptedEstimateToTask/);
+  assert.match(estimatesData, /estimate\.status !== "accepted"/);
+  assert.match(estimatesData, /Statusul final nu se rescrie/);
+  assert.match(estimatesUi, /Pornește lucrarea/);
+  assert.match(tasksUi, /attachAcceptedEstimateToTask/);
+  assert.match(tasksUi, /deleteWorkTask\(organizationId, created\.id\)/);
+});
+
+test("documents inherit and validate client/work/estimate context", () => {
+  assert.match(documentsData, /select\("id,reference,title,client_id,task_id"\)/);
+  assert.match(documentsData, /Lucrarea aleasă nu corespunde devizului/);
+  assert.match(documentsData, /Clientul ales nu corespunde lucrării/);
+  assert.match(documentsUi, /selectEstimateContext/);
+  assert.match(documentsUi, /selectTaskContext/);
+  assert.match(documentsUi, /Contextul este sincronizat automat/);
+});
+
+test("finance surfaces missing evidence and rejects mismatched receipt context", () => {
+  assert.match(expensesData, /Clientul cheltuielii nu corespunde documentului justificativ/);
+  assert.match(expensesData, /Lucrarea cheltuielii nu corespunde documentului justificativ/);
+  assert.match(expensesData, /estimate_id: linkedEstimateId/);
+  assert.match(expensesUi, /missingEvidence/);
+  assert.match(expensesUi, /Doar fără document/);
+  assert.match(expensesUi, /Toate au document/);
 });
 
 test("workspace search is a single responsive control and stale responses cannot leak", () => {

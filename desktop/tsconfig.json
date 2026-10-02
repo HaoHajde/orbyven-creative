@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -12,12 +16,40 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "types": ["vite/client", "node"],
+    "types": [
+      "vite/client",
+      "node"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/lib/orbyven-supabase": ["src/client.ts"],
-      "@/*": ["../*"]
+      "react": [
+        "node_modules/@types/react/index.d.ts"
+      ],
+      "react/jsx-runtime": [
+        "node_modules/@types/react/jsx-runtime.d.ts"
+      ],
+      "react/jsx-dev-runtime": [
+        "node_modules/@types/react/jsx-dev-runtime.d.ts"
+      ],
+      "react-dom": [
+        "node_modules/@types/react-dom/index.d.ts"
+      ],
+      "@/components/BrandLogo": [
+        "src/BrandLogo.tsx"
+      ],
+      "@/lib/orbyven-supabase": [
+        "src/client.ts"
+      ],
+      "next/dynamic": [
+        "src/next-dynamic.tsx"
+      ],
+      "@/*": [
+        "../*"
+      ]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [
+    "src",
+    "vite.config.ts"
+  ]
 }

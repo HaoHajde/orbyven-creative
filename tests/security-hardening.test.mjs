@@ -127,7 +127,7 @@ test("no subscription and no pilot grant never gives default paid module access"
   assert.match(workspace, /validModuleIds\.has\(moduleId\) && entitled\.has\(moduleId\)/);
   assert.match(workspace, /entitledModules:/);
   assert.match(moduleStore, /!entitled \|\| !canManage/);
-  assert.match(read("components/ClientWorkspace.tsx"), /!workspace\.entitledModules\.includes\(id\)/);
+  assert.match(read("components/WorkspaceShell.tsx"), /!workspace\.entitledModules\.includes\(id\)/);
 });
 
 test("public requests cannot bypass the API IP limiter through anonymous RPC", () => {
@@ -175,4 +175,44 @@ test("repository migration filenames match exact production versions for determi
   assert.equal(existsSync(new URL("../supabase/migrations/20260925135500_ai_editor_calls_actor_fk_index.sql", import.meta.url)), false);
   assert.equal(existsSync(new URL("../supabase/migrations/20260927152501_alpha06_material_catalog_revisions.sql", import.meta.url)), true);
   assert.equal(existsSync(new URL("../supabase/migrations/20260925150000_alpha06_material_catalog_revisions.sql", import.meta.url)), false);
+});
+
+
+const bootstrapOrganizationHardening = read("supabase/migrations/20260930181418_bootstrap_organization_atomicity.sql");
+
+test("organization bootstrap serializes concurrent first-tenant creation", () => {
+  assert.match(bootstrapOrganizationHardening, /pg_advisory_xact_lock/);
+  assert.match(bootstrapOrganizationHardening, /hashtextextended\(current_user_id::text, 0\)/);
+  assert.match(bootstrapOrganizationHardening, /array_length\(p_module_ids, 1\)/);
+  assert.match(bootstrapOrganizationHardening, /> 32/);
+  assert.match(bootstrapOrganizationHardening, /auth\.uid\(\)/);
+  assert.match(bootstrapOrganizationHardening, /revoke all on function public\.bootstrap_organization\(text,text,text\[\]\)\s*from public, anon/);
+  assert.match(bootstrapOrganizationHardening, /grant execute on function public\.bootstrap_organization\(text,text,text\[\]\)\s*to authenticated/);
+});
+
+
+const anonSurfaceHardening = read("supabase/migrations/20260930183142_anon_surface_hardening.sql");
+
+test("anonymous Data API grants stay limited to intentional public intake", () => {
+  for (const table of [
+    "billing_accounts",
+    "billing_invoices",
+    "billing_terms_acceptances",
+    "billing_webhook_events",
+    "organization_entitlements",
+    "organization_modules",
+    "organization_profiles",
+    "organizations",
+    "platform_audit_log",
+    "platform_staff",
+    "subscriptions",
+  ]) assert.ok(anonSurfaceHardening.includes(`public.${table}`), table);
+  assert.match(anonSurfaceHardening, /from anon, authenticated/);
+  assert.match(anonSurfaceHardening, /public\.subscriptions[\s\S]*?from anon, authenticated/);
+  assert.match(anonSurfaceHardening, /public\.organizations[\s\S]*?from anon/);
+  assert.doesNotMatch(anonSurfaceHardening, /revoke[\s\S]*?public\.leads/i);
+  assert.match(anonSurfaceHardening, /create or replace function public\.set_updated_at\(\)/);
+  assert.match(anonSurfaceHardening, /set search_path = ''/);
+  assert.match(anonSurfaceHardening, /new\.updated_at = pg_catalog\.now\(\)/);
+  assert.match(anonSurfaceHardening, /from public, anon/);
 });
