@@ -34,8 +34,13 @@ function desktopIntelligenceRequest(path: string, init?: RequestInit) {
 
 function openDesktopOrbyvenPath(href: string) {
   try {
-    const url = new URL(href, "https://orbyven.ro");
-    if (url.protocol !== "https:" || url.hostname !== "orbyven.ro") return;
+    const language = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
+    const base = language === "en" ? "https://www.orbyven.com" : "https://orbyven.ro";
+    const url = new URL(href, base);
+    if (
+      url.protocol !== "https:" ||
+      (url.hostname !== "orbyven.ro" && url.hostname !== "www.orbyven.com")
+    ) return;
     window.open(url.toString(), "_blank", "noopener,noreferrer");
   } catch {
     // Ignore malformed paths emitted by external or stale data.
