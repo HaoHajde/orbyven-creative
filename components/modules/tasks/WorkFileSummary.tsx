@@ -2,6 +2,7 @@ import type { WorkTask, WorkTaskChecklistItem, WorkTaskContext } from "@/lib/mod
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { evaluateWorkReadiness } from "@/lib/automation/work-readiness";
+import { ModuleNextAction } from "@/components/modules/ModuleKit";
 
 export default function WorkFileSummary({
   task,
@@ -62,6 +63,23 @@ export default function WorkFileSummary({
         canAccessFinances,
         now: snapshotIso ? new Date(snapshotIso) : new Date(0),
       })
+    : null;
+
+  const attention = readiness?.checks.find((check) => check.state === "attention") ?? null;
+  const nextAction = attention
+    ? attention.key === "commercial" && enabledModules.includes("estimates")
+      ? { label: "Deschide ofertele", module: "estimates" as OrbyvenModuleId, options: { create: context?.estimatesCount === 0, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+      : attention.key === "schedule" && enabledModules.includes("calendar")
+        ? { label: "Programează", module: "calendar" as OrbyvenModuleId, options: { create: true, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+        : attention.key === "documents" && enabledModules.includes("documents")
+          ? { label: "Adaugă document", module: "documents" as OrbyvenModuleId, options: { create: true, taskId: task.id } as WorkspaceOpenOptions }
+          : attention.key === "materials" && enabledModules.includes("inventory")
+            ? { label: "Rezolvă materialele", module: "inventory" as OrbyvenModuleId, options: { taskId: task.id } as WorkspaceOpenOptions }
+            : attention.key === "costs" && enabledModules.includes("expenses") && canAccessFinances
+              ? { label: "Înregistrează cost", module: "expenses" as OrbyvenModuleId, options: { create: true, taskId: task.id, clientId: task.client_id ?? undefined } as WorkspaceOpenOptions }
+              : attention.key === "ownership" && enabledModules.includes("team")
+                ? { label: "Deschide echipa", module: "team" as OrbyvenModuleId, options: undefined }
+                : null
     : null;
 
   const cards = [
@@ -178,20 +196,53 @@ export default function WorkFileSummary({
           </span>
         </div>
       ) : null}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
-        {cards.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            onClick={() => onOpenModule(card.id, card.options)}
-            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/70 p-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
-          >
-            <span className="block text-[9px] font-semibold uppercase tracking-[0.11em] text-[var(--muted-2)]">{card.label}</span>
-            <span className="mt-1.5 block truncate text-[17px] font-semibold tracking-[-0.03em]">{card.value}</span>
-            <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{card.note}</span>
-          </button>
-        ))}
-      </div>
+      {attention ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Acum"
+            title={attention.label + " · " + readiness!.headline}
+            description="ORBYVEN a ales primul punct care poate bloca sau întârzia lucrarea."
+            action={nextAction ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule(nextAction.module, nextAction.options)}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                {nextAction.label} →
+              </button>
+            ) : undefined}
+          />
+        </div>
+      ) : readiness ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Acum"
+            title={task.status === "done" ? "Dosarul este coerent și lucrarea este finalizată" : "Poți continua execuția"}
+            description={task.status === "done" ? "Contextul rămâne disponibil pentru istoric, costuri și relația cu clientul." : "Nu există un blocaj operațional detectat în datele disponibile."}
+          />
+        </div>
+      ) : null}
+
+      <details className="group mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/45">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+          <span>Dosar complet · {cards.length} legături</span>
+          <span aria-hidden="true" className="transition group-open:rotate-45">+</span>
+        </summary>
+        <div className="grid gap-2 border-t border-[var(--border)] p-3 sm:grid-cols-2 xl:grid-cols-3">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onOpenModule(card.id, card.options)}
+              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]/70 p-3 text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)]"
+            >
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.11em] text-[var(--muted-2)]">{card.label}</span>
+              <span className="mt-1.5 block truncate text-[17px] font-semibold tracking-[-0.03em]">{card.value}</span>
+              <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{card.note}</span>
+            </button>
+          ))}
+        </div>
+      </details>
     </section>
   );
 }
