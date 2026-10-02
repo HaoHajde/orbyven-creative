@@ -104,6 +104,7 @@ export default function EstimatesModule({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [taskMaterialPlan, setTaskMaterialPlan] = useState<InventoryTaskMaterialPlan[] | null>(null);
+  const [taskMaterialPlanTaskId, setTaskMaterialPlanTaskId] = useState<string | null>(null);
   const [taskMaterialPlanLoading, setTaskMaterialPlanLoading] = useState(false);
   const [taskMaterialPlanError, setTaskMaterialPlanError] = useState(false);
 
@@ -167,11 +168,13 @@ export default function EstimatesModule({
       if (!taskId || !inventoryEnabled) {
         if (active) {
           setTaskMaterialPlan(null);
+          setTaskMaterialPlanTaskId(null);
           setTaskMaterialPlanLoading(false);
           setTaskMaterialPlanError(false);
         }
         return;
       }
+      setTaskMaterialPlanTaskId(taskId);
       setTaskMaterialPlanLoading(true);
       setTaskMaterialPlanError(false);
       void loadInventoryTaskMaterialPlan(organizationId, taskId)
@@ -210,6 +213,7 @@ export default function EstimatesModule({
     selected.task_id &&
     inventoryEnabled &&
     (
+      taskMaterialPlanTaskId !== selected.task_id ||
       taskMaterialPlanLoading ||
       taskMaterialPlanError ||
       (taskMaterialPlan && (taskMaterialSummary.unready > 0 || taskMaterialSummary.shortages > 0))
@@ -460,7 +464,7 @@ export default function EstimatesModule({
                   action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id, prefillTitle: selected.title })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
                 />
               </div>
-            ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && taskMaterialPlanLoading ? (
+            ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && (taskMaterialPlanTaskId !== selected.task_id || taskMaterialPlanLoading) ? (
               <div className="mt-4">
                 <ModuleNextAction
                   eyebrow="Readiness"
@@ -488,7 +492,7 @@ export default function EstimatesModule({
                   action={<button type="button" onClick={() => onOpenModule("inventory", { taskId: selected.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pregătește materialele →</button>}
                 />
               </div>
-            ) : selected.status === "accepted" && selected.task_id && canWrite && enabledModules.includes("calendar") ? (
+            ) : selected.status === "accepted" && selected.task_id && canWrite && enabledModules.includes("calendar") && !materialBlocksScheduling ? (
               <div className="mt-4">
                 <ModuleNextAction
                   title="Programează execuția"
