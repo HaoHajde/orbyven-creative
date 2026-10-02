@@ -1287,25 +1287,41 @@ function TaskDetail({
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-2)]">
               Status rapid
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map(
-                (status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={saving || task.status === status}
-                    onClick={() => onStatus(status)}
-                    className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
-                      task.status === status
-                        ? "bg-[var(--button)] text-[var(--button-text)]"
-                        : "border border-[var(--border)]"
-                    }`}
-                  >
-                    {statusLabels[status]}
-                  </button>
-                )
-              )}
-            </div>
+            {task.status === "done" ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onProgress(0)}
+                  className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-xs font-semibold disabled:opacity-50"
+                >
+                  Reactivează lucrarea
+                </button>
+                <span className="text-[10px] text-[var(--muted)]">
+                  Reactivarea revine la „De făcut” și resetează progresul pentru o nouă execuție.
+                </span>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(["planned", "in_progress", "blocked", "done"] as WorkTaskStatus[]).map(
+                  (status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={saving || task.status === status}
+                      onClick={() => onStatus(status)}
+                      className={`h-9 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
+                        task.status === status
+                          ? "bg-[var(--button)] text-[var(--button-text)]"
+                          : "border border-[var(--border)]"
+                      }`}
+                    >
+                      {statusLabels[status]}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
           </div>
         )}
         {canWrite && (
