@@ -16,9 +16,11 @@ import {
 } from "@/lib/ai/local-preview-commands";
 import {
   buildWebDesignInterviewPrompt,
+  prioritizeWebDesignInterviewQuestions,
   readWebDesignInterviewQuestions,
   type WebDesignInterviewQuestion,
 } from "@/lib/ai/web-design-interview";
+import type { WebDesignBriefGapId } from "@/lib/ai/web-design-brief-gaps";
 import {
   getCurrentWorkspace,
   getWorkspaceEntryPath,
@@ -31,6 +33,7 @@ import WebDesignPreview, {
 const STORAGE_KEY = "orbyven-web-design-specialist-draft-v09";
 const LEGACY_STORAGE_KEY = "orbyven-web-design-specialist-draft-v08";
 const VISUAL_MEMORY_KEY = "orbyven-web-design-visual-memory-v01";
+const INTERVIEW_MEMORY_KEY = "orbyven-web-design-interview-memory-v01";
 
 const QUICK = [
   "Creează un site complet pentru o firmă de servicii, modern, premium și foarte clar. Păstrează doar faptele pe care le cunoști.",
@@ -122,6 +125,7 @@ export default function WebDesignSpecialist() {
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [interviewQuestions, setInterviewQuestions] = useState<WebDesignInterviewQuestion[]>([]);
   const [interviewAnswer, setInterviewAnswer] = useState("");
+  const [answeredInterviewIds, setAnsweredInterviewIds] = useState<WebDesignBriefGapId[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -182,6 +186,40 @@ export default function WebDesignSpecialist() {
         } catch (error) {
           console.warn("ORBYVEN Web Design visual memory could not be restored", error);
           window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+        }
+
+        try {
+          const storedInterviewMemory = window.localStorage.getItem(INTERVIEW_MEMORY_KEY);
+          if (storedInterviewMemory) {
+            const parsedInterviewMemory = JSON.parse(storedInterviewMemory);
+            if (Array.isArray(parsedInterviewMemory)) {
+              const validIds = parsedInterviewMemory
+                .filter((item): item is WebDesignBriefGapId =>
+                  typeof item === "string" &&
+                  [
+                    "brand_name",
+                    "hero_offer",
+                    "services_real",
+                    "gallery_real",
+                    "about_real",
+                    "process_real",
+                    "faq_real",
+                    "contact_real",
+                    "conversion_goal",
+                    "claim_evidence",
+                  ].includes(item)
+                )
+                .slice(-10);
+              setAnsweredInterviewIds(validIds);
+              window.localStorage.setItem(
+                INTERVIEW_MEMORY_KEY,
+                JSON.stringify(validIds)
+              );
+            }
+          }
+        } catch (error) {
+          console.warn("ORBYVEN Smart Interview memory could not be restored", error);
+          window.localStorage.removeItem(INTERVIEW_MEMORY_KEY);
         }
 
         try {
@@ -269,7 +307,10 @@ export default function WebDesignSpecialist() {
     void saveRemote(next, source, lastPrompt);
   };
 
-  const generateWithAi = async (request: string) => {
+  const generateWithAi = async (
+    request: string,
+    answeredGapId?: WebDesignBriefGapId
+  ) => {
     if (!organizationId || !canEdit || aiBusy) return false;
     setAiBusy(true);
     setMessage("ORBYVEN construiește o variantă nouă din componente validate…");
@@ -310,8 +351,23 @@ export default function WebDesignSpecialist() {
       const nextInterviewQuestions = readWebDesignInterviewQuestions(
         body.briefGaps?.gaps
       );
-      setInterviewQuestions(nextInterviewQuestions);
-      if (!nextInterviewQuestions.length) setInterviewAnswer("");
+      const nextAnsweredIds = answeredGapId
+        ? [...new Set([...answeredInterviewIds, answeredGapId])].slice(-10)
+        : answeredInterviewIds;
+      if (answeredGapId) {
+        setAnsweredInterviewIds(nextAnsweredIds);
+        window.localStorage.setItem(
+          INTERVIEW_MEMORY_KEY,
+          JSON.stringify(nextAnsweredIds)
+        );
+      }
+      const prioritizedInterviewQuestions =
+        prioritizeWebDesignInterviewQuestions(
+          nextInterviewQuestions,
+          nextAnsweredIds
+        );
+      setInterviewQuestions(prioritizedInterviewQuestions);
+      if (!prioritizedInterviewQuestions.length) setInterviewAnswer("");
       const nextQualityScore =
         typeof body.quality?.score === "number"
           ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
@@ -432,7 +488,10 @@ export default function WebDesignSpecialist() {
       return;
     }
 
-    const generated = await generateWithAi(interviewPrompt);
+    const generated = await generateWithAi(
+      interviewPrompt,
+      activeInterviewQuestion.id
+    );
     if (generated) setInterviewAnswer("");
   };
 
@@ -444,7 +503,9 @@ export default function WebDesignSpecialist() {
   const selectPreset = (preset: SitePresetId) => {
     const next = SITE_PRESETS[preset];
     setVisualMemory([]);
+    setAnsweredInterviewIds([]);
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+    window.localStorage.removeItem(INTERVIEW_MEMORY_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage(`Am încărcat presetul ${SITE_PRESET_LABELS[preset]}.`);
@@ -460,6 +521,8 @@ export default function WebDesignSpecialist() {
     setReadinessScore(null);
     setInterviewQuestions([]);
     setInterviewAnswer("");
+    setAnsweredInterviewIds([]);
+    window.localStorage.removeItem(INTERVIEW_MEMORY_KEY);
     setMessage("Am revenit la versiunea anterioară.");
     void saveRemote(previous, "local", "undo");
   };
@@ -467,7 +530,9 @@ export default function WebDesignSpecialist() {
   const reset = () => {
     const next = SITE_PRESETS[draft.preset];
     setVisualMemory([]);
+    setAnsweredInterviewIds([]);
     window.localStorage.removeItem(VISUAL_MEMORY_KEY);
+    window.localStorage.removeItem(INTERVIEW_MEMORY_KEY);
     commitDraft(next, "preset");
     setSuggestions([]);
     setMessage("Am resetat preview-ul la presetul selectat.");
