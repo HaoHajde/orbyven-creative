@@ -192,7 +192,7 @@ export default function ContactPage() {
                       <span className="text-[58px] font-semibold leading-none tracking-[-.08em]">{PUBLIC_OFFERS.web.priceLei}</span>
                       <span className="pb-1 text-[11px] font-semibold text-white/55">RON now</span>
                     </div>
-                    <p className="mt-2 text-[10px] font-semibold text-[#c9bbff]">apoi {PUBLIC_OFFERS.web.recurringLei} RON/month după 30 zile</p>
+                    <p className="mt-2 text-[10px] font-semibold text-[#c9bbff]">then {PUBLIC_OFFERS.web.recurringLei} RON/month after 30 days</p>
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Your website.
@@ -256,7 +256,7 @@ export default function ContactPage() {
                     <span className="text-[#b9a6ff]">Advanced Dashboard.</span>
                   </h2>
                   <p className="mt-4 max-w-md text-[12px] leading-6 text-white/68">
-                    Conectăm site-ul cu operațiunile firmei și personalizăm modulele în jurul fluxurilor tale.
+                    We connect your website to business operations and tailor modules around your workflows.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
                     View plan <span className="transition-transform group-hover:translate-x-1">→</span>
