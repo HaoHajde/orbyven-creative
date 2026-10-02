@@ -357,3 +357,19 @@ test("tasks keeps the checklist outside the main module ownership budget", () =>
   assert.match(tasks, /<TaskChecklistPanel/);
   assert.match(checklist, /WorkTaskChecklistItem/);
 });
+
+
+test("finance can resolve missing evidence on an existing expense", () => {
+  const expenseData = read("lib/modules/expenses.ts");
+  assert.match(expenseData, /export async function attachExpenseDocument/);
+  assert.match(expenseData, /Documentul este deja folosit ca dovadă pentru altă cheltuială/);
+  assert.match(expenseData, /Documentul aparține altui deviz/);
+  assert.match(expenseData, /update\(\{ document_id: documentId \}\)/);
+
+  const finance = read("components/modules/ExpensesModule.tsx");
+  assert.match(finance, /attachExpenseDocument/);
+  assert.match(finance, /Atașează dovadă/);
+  assert.match(finance, /compatibleEvidenceDocuments/);
+  assert.match(finance, /item\.document_id === document\.id/);
+  assert.match(finance, /\+ Încarcă dovadă/);
+});
