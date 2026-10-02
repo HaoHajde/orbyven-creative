@@ -321,3 +321,12 @@ test("untracked materials remain visible without blocking automated readiness", 
   assert.match(inventory, /Stocul urmărit nu are blocaje/);
   assert.match(inventory, /stoc tracking oprit/);
 });
+
+
+test("inventory shortages remain blockers for roles without procurement rights", () => {
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /taskPlanSummary\.shortages > 0 \? \(/);
+  assert.match(inventory, /Există materiale lipsă/);
+  assert.match(inventory, /Owner, Admin sau Manager/);
+  assert.match(inventory, /canProcure && firstTaskShortage/);
+});
