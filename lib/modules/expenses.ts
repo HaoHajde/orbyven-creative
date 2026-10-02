@@ -69,7 +69,14 @@ export type FinanceInvoiceWithBalance = FinanceInvoice & {
 
 export type ExpenseClientLink = { id: string; name: string };
 export type ExpenseTaskLink = { id: string; title: string; client_id: string | null };
-export type ExpenseDocumentLink = { id: string; name: string; purchase_order_id: string | null };
+export type ExpenseDocumentLink = {
+  id: string;
+  name: string;
+  client_id: string | null;
+  task_id: string | null;
+  estimate_id: string | null;
+  purchase_order_id: string | null;
+};
 export type ExpensePurchaseOrderLink = {
   organization_id: string;
   purchase_order_id: string;
@@ -262,7 +269,7 @@ export async function listExpenseContexts(organizationId: string) {
       .order("updated_at", { ascending: false }),
     orbyvenSupabase
       .from("ops_documents")
-      .select("id,name,purchase_order_id")
+      .select("id,name,client_id,task_id,estimate_id,purchase_order_id")
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false }),
     orbyvenSupabase
