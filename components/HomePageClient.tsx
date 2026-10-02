@@ -42,7 +42,7 @@ const moduleShowcase = [
     note: "What needs to be done, by whom and by when.",
     eyebrow: "OPERATIONS",
     glyph: "↗",
-    chips: ["Task-uri", "Responsabili", "Status"],
+    chips: ["Tasks", "Owners", "Status"],
     glow: "radial-gradient(circle at 72% 18%, rgba(82,139,255,.24), transparent 48%)",
   },
   {
@@ -54,7 +54,7 @@ const moduleShowcase = [
     glow: "radial-gradient(circle at 35% 20%, rgba(117,83,255,.27), transparent 50%)",
   },
   {
-    name: "Oferte",
+    name: "Quotes",
     note: "Quotes connected directly to the client and project.",
     eyebrow: "SALES",
     glyph: "≡",
@@ -297,7 +297,7 @@ export default function HomePage() {
             </span>
           </h1>
           <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.65, ease: easeOut }} className="mt-7 max-w-2xl text-balance text-sm leading-6 text-[var(--muted)] sm:mt-9 sm:text-base">
-            ORBYVEN CREATIVE creează website-uri pentru afaceri și invitații digitale personalizate de nuntă, botez și majorat. Web design, modele interactive și instrumente simple, în același studio.
+            ORBYVEN builds premium websites, digital experiences and business tools in one connected ecosystem.
           </motion.p>
         </motion.div>
       </section>
@@ -568,7 +568,7 @@ export default function HomePage() {
 
                     <div className="mt-auto pt-8">
                       <Link href={`/contact?plan=${plan.id}&source=homepage`} className={`inline-flex h-12 w-full items-center justify-between rounded-full border px-5 text-sm font-semibold transition duration-300 group-hover:translate-y-[-1px] ${featured ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)]"}`}>
-                        <span>Alege {plan.name}</span>
+                        <span>Choose {plan.name}</span>
                         <span aria-hidden="true">→</span>
                       </Link>
                     </div>
