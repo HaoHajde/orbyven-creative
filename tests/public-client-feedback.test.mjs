@@ -11,7 +11,10 @@ test("public feedback storage remains private and tenant scoped", () => {
   assert.match(sql, /alter table public\.crm_feedback_links enable row level security/);
   assert.match(sql, /private\.is_org_member\(organization_id\)/);
   assert.match(sql, /private\.is_billing_module_allowed\(organization_id, 'leads'\)/);
-  assert.match(sql, /m\.access_status = 'active'/);
+  assert.match(sql, /create policy billing_entitlement_guard/);
+  assert.match(sql, /private\.has_module_entitlement\(fl\.organization_id, 'leads'\)/);
+  assert.match(sql, /private\.has_module_entitlement\(v_link\.organization_id, 'leads'\)/);
+  assert.match(sql, /m\.access_status = 'active'/
   assert.match(sql, /revoke all on public\.crm_feedback_links from anon/);
   assert.doesNotMatch(sql, /grant select[^;]+crm_feedback_links to anon/i);
 });
