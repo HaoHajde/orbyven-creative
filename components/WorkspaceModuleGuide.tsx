@@ -53,11 +53,10 @@ export default function WorkspaceModuleGuide({
     module: OrbyvenModuleId;
     context: WorkspaceLiveContext;
   }>({ module: activeModule, context: {} });
-  const liveContext = liveState.module === activeModule ? liveState.context : {};
-  const effectiveContext = useMemo<WorkspaceLiveContext>(
-    () => ({ ...navigationContext, ...liveContext }),
-    [navigationContext, liveContext]
-  );
+  const effectiveContext = useMemo<WorkspaceLiveContext>(() => {
+    const liveContext = liveState.module === activeModule ? liveState.context : {};
+    return { ...navigationContext, ...liveContext };
+  }, [activeModule, liveState, navigationContext]);
 
   useEffect(() => {
     const handleContext = (event: Event) => {
