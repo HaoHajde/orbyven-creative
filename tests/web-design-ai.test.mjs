@@ -758,8 +758,8 @@ test("Generative Web Design applies Refine Locks before candidate selection", ()
   assert.match(server, /webDesignRefineScopeInstruction\(refineScope\)/);
   assert.match(server, /applyWebDesignRefineScope\(strategicDraft, current, refineScope\)/);
   assert.ok(
-    server.indexOf("applyWebDesignRefineScope") <
-      server.indexOf("selectBestWebDesignCandidate")
+    server.indexOf("applyWebDesignRefineScope(strategicDraft") <
+      server.indexOf("selectBestWebDesignCandidate(")
   );
   assert.match(server, /refineScope,/);
   assert.match(locks, /mergeTargetVisibility/);
@@ -852,8 +852,8 @@ test("Generative Web Design runs Evidence Guard before candidate selection", () 
 
   assert.match(server, /guardWebDesignEvidence\(/);
   assert.ok(
-    server.indexOf("guardWebDesignEvidence") <
-      server.indexOf("selectBestWebDesignCandidate")
+    server.indexOf("guardWebDesignEvidence(") <
+      server.indexOf("selectBestWebDesignCandidate(")
   );
   assert.match(server, /evidence: evidenceResult\.report/);
   assert.match(evidence, /unsupportedConcepts/);
@@ -1098,7 +1098,7 @@ test("Web Design editor uses a local Smart Interview fast-path before the protec
     specialist.indexOf("applyWebDesignInterviewAnswerLocally(") <
       specialist.indexOf("buildWebDesignInterviewPrompt(")
   );
-  assert.match(specialist, /generateWithAi\(interviewPrompt\)/);
+  assert.match(specialist, /generateWithAi\(interviewPrompt, nextFacts\)/);
   assert.match(specialist, /INTERVIEW_QUEUE_KEY/);
   assert.match(specialist, /Întrebare utilă/);
   assert.match(specialist, /Aplică răspunsul/);
@@ -1324,9 +1324,9 @@ test("Web Design browser state is isolated per organization with one-time legacy
 
   assert.match(specialist, /function workspaceStorageKey\(base: string, organizationId: string\)/);
   assert.match(specialist, /workspaceStorageKey\(STORAGE_KEY, workspaceId\)/);
-  assert.match(specialist, /workspaceStorageKey\(VISUAL_MEMORY_KEY, workspaceId\)/);
-  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, workspaceId\)/);
-  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_FACTS_KEY, workspaceId\)/);
+  assert.match(specialist, /workspaceStorageKey\(\s*VISUAL_MEMORY_KEY,\s*workspaceId\s*\)/);
+  assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_QUEUE_KEY,\s*workspaceId\s*\)/);
+  assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_FACTS_KEY,\s*workspaceId\s*\)/);
   assert.match(specialist, /removeItem\(STORAGE_KEY\)/);
   assert.match(specialist, /removeItem\(LEGACY_STORAGE_KEY\)/);
   assert.match(specialist, /removeItem\(VISUAL_MEMORY_KEY\)/);
