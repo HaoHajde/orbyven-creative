@@ -13,6 +13,10 @@ const WORK_REF =
   /\b(?:lucrarea|lucrarii)\s+(?:aceea|aceasta|asta|respectiv(?:a)?|de mai sus|anterioara|precedenta|despre care (?:vorbeam|am vorbit))\b/;
 const EXPLICIT_CLIENT = /(?:^|[,;\n]\s*)client\s*:/;
 const EXPLICIT_WORK = /(?:^|[,;\n]\s*)lucrare\s*:/;
+const IMPLICIT_FOLLOW_UP_PREFIX =
+  /^(?:si|iar|dar|atunci|ok|bine|bun|acum)\b/;
+const IMPLICIT_FOLLOW_UP_TOPIC =
+  /\b(?:incas|plat|factur|cost|cheltu|financ|bani|ofert|deviz|programar|calendar|cand|urmator|document|fisier|atasament|istoric|activitat|contact|status|progres)\w*/;
 
 export function normalizeContextEntityText(value: string) {
   return value
@@ -93,4 +97,17 @@ export function detectContextEntityReferences(prompt: string) {
     client: CLIENT_REF.test(normalized) && !EXPLICIT_CLIENT.test(normalized),
     work: WORK_REF.test(normalized) && !EXPLICIT_WORK.test(normalized),
   };
+}
+
+
+export function detectImplicitEntityFollowUp(prompt: string) {
+  const normalized = normalizeContextEntityText(prompt);
+  return (
+    IMPLICIT_FOLLOW_UP_PREFIX.test(normalized) &&
+    IMPLICIT_FOLLOW_UP_TOPIC.test(normalized) &&
+    !EXPLICIT_CLIENT.test(normalized) &&
+    !EXPLICIT_WORK.test(normalized) &&
+    !CLIENT_REF.test(normalized) &&
+    !WORK_REF.test(normalized)
+  );
 }
