@@ -8,6 +8,7 @@ export type WorkspaceOpenOptions = {
   clientId?: string;
   taskId?: string;
   estimateId?: string;
+  purchaseOrderId?: string;
 };
 
 export type WorkspaceNavigationIntent = WorkspaceOpenOptions & {

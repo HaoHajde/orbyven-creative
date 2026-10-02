@@ -1395,7 +1395,7 @@ function WorkFileSummary({
             ? money(context.realOperationalCostCents)
             : "—",
           note: context
-            ? (context.expensesCount ?? 0) + " cheltuieli + " + (context.inventoryMovementsCount ?? 0) + " consumuri stoc"
+            ? (context.expensesCount ?? 0) + " cheltuieli operative + " + (context.inventoryMovementsCount ?? 0) + " consumuri stoc"
             : "se încarcă",
           options: { taskId: task.id },
         }
