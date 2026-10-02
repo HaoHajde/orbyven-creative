@@ -161,6 +161,121 @@ function Glyph({ kind }: { kind: string }) {
   );
 }
 
+function FeatureScene({
+  offerId,
+  feature,
+  onClose,
+}: {
+  offerId: PublicOfferId;
+  feature: string;
+  onClose: () => void;
+}) {
+  const isInvite = offerId === "invitation";
+  const isWeb = offerId === "web";
+
+  const sceneTitle =
+    feature === "RSVP" ? "RSVP live" :
+    feature === "Locații" || feature === "Maps" ? "Locații & Maps" :
+    feature === "Countdown" ? "Countdown" :
+    feature === "Poveste" ? "Poveste" :
+    feature === "Galerie" ? "Galerie" :
+    feature === "Website" ? "Website" :
+    feature === "Responsive" ? "Responsive" :
+    feature === "SEO" ? "SEO" :
+    feature === "Dashboard" ? "Dashboard" :
+    feature;
+
+  return (
+    <div className="absolute inset-[5%] z-50 overflow-hidden rounded-[28px] border border-[#b396ff]/55 bg-[#08090f]/98 p-4 text-white shadow-[0_42px_130px_rgba(0,0,0,.72),0_0_60px_rgba(128,84,255,.20)] backdrop-blur-2xl sm:p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-[13px] border border-[#a78bff]/35 bg-[#8f6cff]/14 text-[#c8b8ff]">
+            <Glyph kind={feature} />
+          </span>
+          <div>
+            <p className="text-[7px] font-bold uppercase tracking-[.18em] text-white/32">{isInvite ? "INVITAȚIE" : isWeb ? "WEB DESIGN" : "ORBYVEN ADVANCED"}</p>
+            <p className="mt-1 text-[14px] font-semibold">{sceneTitle}</p>
+          </div>
+        </div>
+        <button onClick={onClose} type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.035] text-[16px] text-white/55 transition hover:bg-white/[.08] hover:text-white">×</button>
+      </div>
+
+      <div className="mt-4 h-[calc(100%-58px)] overflow-hidden rounded-[22px] border border-white/8 bg-[radial-gradient(circle_at_75%_12%,rgba(126,93,255,.20),transparent_30%),linear-gradient(145deg,#10121a,#08090e)] p-4">
+        {isInvite ? (
+          feature === "Galerie" ? (
+            <div className="grid h-full grid-cols-3 grid-rows-2 gap-2">
+              {[0,1,2,3,4,5].map((i)=><div key={i} className={`rounded-[14px] border border-white/8 bg-[linear-gradient(145deg,rgba(255,255,255,.06),rgba(170,130,255,.08))] ${i===0?"col-span-2 row-span-2":""}`} />)}
+            </div>
+          ) : feature === "RSVP" ? (
+            <div className="grid h-full place-items-center">
+              <div className="w-full max-w-[520px] rounded-[22px] border border-white/10 bg-white/[.035] p-5">
+                <div className="flex items-end justify-between"><div><p className="text-[42px] font-semibold tracking-[-.06em]">38</p><p className="text-[8px] text-white/35">confirmări</p></div><span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[8px] font-bold text-emerald-300">LIVE</span></div>
+                <div className="mt-5 grid grid-cols-3 gap-2">{[["28","Da"],["7","Așteptare"],["3","Nu"]].map(([n,l])=><div key={l} className="rounded-[14px] border border-white/8 bg-white/[.035] p-3 text-center"><p className="text-[18px] font-semibold">{n}</p><p className="mt-1 text-[6px] text-white/35">{l}</p></div>)}</div>
+              </div>
+            </div>
+          ) : feature === "Countdown" ? (
+            <div className="grid h-full place-items-center">
+              <div className="grid grid-cols-4 gap-3">{[["102","Zile"],["14","Ore"],["37","Min"],["21","Sec"]].map(([n,l])=><div key={l} className="grid h-24 w-24 place-items-center rounded-[18px] border border-[#a78bff]/25 bg-[#8f6cff]/10"><div className="text-center"><p className="text-[28px] font-semibold">{n}</p><p className="mt-1 text-[7px] text-white/35">{l}</p></div></div>)}</div>
+            </div>
+          ) : (
+            <div className="grid h-full place-items-center">
+              <div className="relative h-[82%] w-[78%] rounded-[26px] border border-white/10 bg-[#f4eee8] p-5 text-[#33263a] shadow-[0_30px_90px_rgba(0,0,0,.30)]">
+                <div className="absolute inset-4 rounded-[20px] border border-[#5a4562]/10" />
+                <div className="relative mx-auto mt-8 max-w-[360px] text-center">
+                  <p className="text-[7px] font-bold uppercase tracking-[.24em]">{sceneTitle}</p>
+                  <p className="mt-5 font-serif text-[30px] italic">A & M</p>
+                  <div className="mx-auto mt-7 h-20 rounded-[16px] border border-[#5a4562]/10 bg-[#5a4562]/[.035]" />
+                </div>
+              </div>
+            </div>
+          )
+        ) : isWeb ? (
+          feature === "Dashboard" ? (
+            <div className="grid h-full grid-cols-[.23fr_.77fr] gap-3">
+              <div className="rounded-[16px] border border-white/8 bg-white/[.03] p-3">{["Overview","Clienți","Task-uri","Calendar"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${i===0?"bg-[#7655ff]":"text-white/38"}`}>{x}</div>)}</div>
+              <div className="grid grid-cols-2 gap-3">{[["124","Clienți"],["18","Task-uri"],["75%","Progres"],["+45%","Creștere"]].map(([n,l])=><div key={l} className="rounded-[16px] border border-white/8 bg-white/[.035] p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></div>)}</div>
+            </div>
+          ) : feature === "Responsive" ? (
+            <div className="flex h-full items-end justify-center gap-4">
+              <div className="h-[76%] w-[62%] rounded-[24px] border border-white/10 bg-white/[.035] p-4"><div className="h-5 w-20 rounded-full bg-white/14"/><div className="mt-6 h-10 w-[70%] rounded-[8px] bg-white/80"/><div className="mt-3 h-3 w-[80%] rounded-full bg-white/10"/><div className="mt-2 h-3 w-[58%] rounded-full bg-white/8"/></div>
+              <div className="h-[62%] w-[22%] rounded-[28px] border border-[#a78bff]/25 bg-[#0c0d13] p-3"><div className="h-4 w-12 rounded-full bg-white/14"/><div className="mt-7 h-8 rounded-[7px] bg-white/70"/><div className="mt-3 h-16 rounded-[10px] bg-white/[.045]"/></div>
+            </div>
+          ) : feature === "SEO" ? (
+            <div className="grid h-full place-items-center">
+              <div className="w-full max-w-[560px] rounded-[22px] border border-white/8 bg-white/[.03] p-5">
+                <div className="flex items-end gap-2">{[35,52,46,68,81,92].map((h,i)=><div key={i} className="flex-1 rounded-t-[8px] bg-[linear-gradient(180deg,#a987ff,#654bff)]" style={{height:`${h*1.8}px`}} />)}</div>
+                <div className="mt-4 flex justify-between text-[7px] text-white/30"><span>Vizibilitate</span><span className="text-emerald-300">+45%</span></div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid h-full place-items-center">
+              <div className="w-full max-w-[600px] overflow-hidden rounded-[22px] border border-white/9 bg-[#0d1018]">
+                <div className="flex h-9 items-center gap-1.5 border-b border-white/8 px-4"><span className="h-2 w-2 rounded-full bg-white/14"/><span className="h-2 w-2 rounded-full bg-white/14"/><span className="h-2 w-2 rounded-full bg-white/14"/></div>
+                <div className="p-5"><div className="h-2.5 w-24 rounded-full bg-[#a58bff]/65"/><div className="mt-5 h-9 w-[75%] rounded-[8px] bg-white/80"/><div className="mt-2 h-9 w-[55%] rounded-[8px] bg-white/80"/><div className="mt-5 h-2.5 w-[82%] rounded-full bg-white/10"/><div className="mt-2 h-2.5 w-[60%] rounded-full bg-white/8"/></div>
+              </div>
+            </div>
+          )
+        ) : (
+          feature === "Calendar" ? (
+            <div className="grid h-full place-items-center">
+              <div className="w-full max-w-[540px] rounded-[22px] border border-white/8 bg-white/[.03] p-5"><div className="flex items-center justify-between"><p className="text-[15px] font-semibold">Octombrie</p><span className="text-[8px] text-white/35">2026</span></div><div className="mt-5 grid grid-cols-7 gap-2">{Array.from({length:35}).map((_,i)=><div key={i} className={`grid h-10 place-items-center rounded-[10px] text-[8px] ${[12,18,24].includes(i)?"bg-[#7d59ff] text-white":"bg-white/[.035] text-white/45"}`}>{i+1}</div>)}</div></div>
+            </div>
+          ) : feature === "Task-uri" ? (
+            <div className="grid h-full place-items-center"><div className="w-full max-w-[560px] space-y-3">{["Website nou","Trimite oferta","Contactează clientul","Pregătește deviz"].map((x,i)=><div key={x} className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.035] p-4"><span className={`grid h-8 w-8 place-items-center rounded-full ${i<2?"bg-emerald-400/12 text-emerald-300":"bg-[#8f6cff]/12 text-[#c0afff]"}`}>{i<2?"✓":i+1}</span><span className="text-[10px] font-semibold">{x}</span></div>)}</div></div>
+          ) : feature === "AI" || feature === "Automatizări" ? (
+            <div className="grid h-full place-items-center"><div className="flex items-center gap-5">{["CRM","AI","Task-uri"].map((x,i)=><div key={x} className="flex items-center gap-5"><div className={`grid h-24 w-24 place-items-center rounded-[22px] border ${x==="AI"?"border-[#a98dff]/60 bg-[#8f6cff]/18 shadow-[0_0_40px_rgba(126,93,255,.22)]":"border-white/10 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={x}/><p className="mt-2 text-[8px] font-semibold text-white/70">{x}</p></div></div>{i<2?<span className="text-[#9f7cff]">→</span>:null}</div>)}</div></div>
+          ) : (
+            <div className="grid h-full grid-cols-[.22fr_.78fr] gap-3">
+              <div className="rounded-[16px] border border-white/8 bg-white/[.025] p-3">{["Dashboard","CRM","Task-uri","Calendar","Devize","Stoc","AI"].map((x,i)=><div key={x} className={`mb-2 rounded-[9px] px-3 py-2 text-[7px] ${x===feature?"bg-[#7352ff] text-white":"text-white/35"}`}>{x}</div>)}</div>
+              <div className="grid grid-cols-2 gap-3">{[["124","Clienți"],["18","Proiecte"],["12","Task-uri"],["75%","Progres"]].map(([n,l])=><div key={l} className="rounded-[16px] border border-white/8 bg-white/[.035] p-4"><p className="text-[25px] font-semibold">{n}</p><p className="mt-2 text-[7px] text-white/35">{l}</p></div>)}</div>
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 function BrowserShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative rounded-[30px] border border-[#9d7aff]/40 bg-[#05060a] p-3 shadow-[0_38px_120px_rgba(0,0,0,.60),0_0_60px_rgba(112,76,255,.16)] ring-1 ring-white/[.025]">
@@ -174,7 +289,7 @@ function BrowserShell({ children }: { children: ReactNode }) {
 
 function InvitationVisual() {
   return (
-    <div className="relative min-h-[630px] sm:min-h-[720px]">
+    <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_68%_16%,rgba(176,118,255,.40),transparent_28%),radial-gradient(circle_at_12%_58%,rgba(84,64,205,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.055] shadow-[0_0_100px_rgba(111,75,255,.08)]" />
       <div className="absolute inset-x-[8%] bottom-[7%] h-16 rounded-full bg-[#704cff]/20 blur-[36px]" />
@@ -230,7 +345,7 @@ function InvitationVisual() {
 
 function WebVisual() {
   return (
-    <div className="relative min-h-[630px] sm:min-h-[720px]">
+    <div className="relative min-h-[520px] sm:min-h-[570px] lg:min-h-[430px] xl:min-h-[455px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_16%,rgba(95,110,255,.40),transparent_28%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.21),transparent_36%),linear-gradient(180deg,rgba(81,52,160,.04),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.055] shadow-[0_0_100px_rgba(111,75,255,.08)]" />
       <div className="absolute inset-x-[7%] bottom-[7%] h-16 rounded-full bg-[#5b55ff]/20 blur-[38px]" />
@@ -284,7 +399,7 @@ function WebVisual() {
 
 function AdvancedVisual() {
   return (
-    <div className="relative min-h-[650px] sm:min-h-[740px]">
+    <div className="relative min-h-[540px] sm:min-h-[590px] lg:min-h-[445px] xl:min-h-[470px]">
       <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_74%_16%,rgba(155,103,255,.44),transparent_28%),radial-gradient(circle_at_15%_64%,rgba(83,68,190,.23),transparent_35%),linear-gradient(180deg,rgba(81,52,160,.05),transparent)]" />
       <div className="absolute -inset-5 rounded-[48px] border border-[#8f6cff]/[.06] shadow-[0_0_110px_rgba(111,75,255,.10)]" />
       <div className="absolute inset-x-[6%] bottom-[7%] h-16 rounded-full bg-[#704cff]/24 blur-[40px]" />
@@ -336,13 +451,32 @@ function AdvancedVisual() {
   );
 }
 
-function HeroVisual({ offerId }: { offerId: PublicOfferId }) {
-  if (offerId === "invitation") return <InvitationVisual />;
-  if (offerId === "web") return <WebVisual />;
-  return <AdvancedVisual />;
+function HeroVisual({
+  offerId,
+  activeFeature,
+  onCloseFeature,
+}: {
+  offerId: PublicOfferId;
+  activeFeature: string | null;
+  onCloseFeature: () => void;
+}) {
+  return (
+    <div className="relative">
+      {offerId === "invitation" ? <InvitationVisual /> : offerId === "web" ? <WebVisual /> : <AdvancedVisual />}
+      {activeFeature ? <FeatureScene offerId={offerId} feature={activeFeature} onClose={onCloseFeature} /> : null}
+    </div>
+  );
 }
 
-function QuickModules({ offerId }: { offerId: PublicOfferId }) {
+function QuickModules({
+  offerId,
+  activeFeature,
+  onSelect,
+}: {
+  offerId: PublicOfferId;
+  activeFeature: string | null;
+  onSelect: (feature: string) => void;
+}) {
   const items =
     offerId === "invitation"
       ? ["RSVP", "Locații", "Countdown", "Galerie"]
@@ -353,34 +487,48 @@ function QuickModules({ offerId }: { offerId: PublicOfferId }) {
   return (
     <div className="mt-9 flex max-w-[620px] flex-wrap gap-3">
       {items.map((item) => (
-        <div
+        <button
+          type="button"
           key={item}
-          className="group flex h-[58px] items-center gap-3 rounded-[17px] border border-[#9c78ff]/36 bg-[#0b0c12]/96 px-4 text-white shadow-[0_14px_36px_rgba(0,0,0,.30),0_0_18px_rgba(126,93,255,.04)] transition hover:-translate-y-0.5 hover:border-[#b39cff]/70 hover:bg-[#161126] hover:shadow-[0_18px_42px_rgba(0,0,0,.32),0_0_24px_rgba(126,93,255,.12)]"
+          onClick={() => onSelect(item)}
+          className={`group flex h-[52px] items-center gap-3 rounded-[16px] border px-3.5 text-white shadow-[0_12px_30px_rgba(0,0,0,.28)] transition hover:-translate-y-0.5 ${activeFeature === item ? "border-[#b49aff]/78 bg-[#8f6cff]/18 shadow-[0_0_28px_rgba(126,93,255,.18)]" : "border-[#9c78ff]/30 bg-[#0b0c12]/96 hover:border-[#b39cff]/68 hover:bg-[#161126]"}`}
         >
-          <span className="text-[#b9a6ff] transition group-hover:text-white"><Glyph kind={item} /></span>
-          <span className="text-[10px] font-semibold text-white/78">{item}</span>
-        </div>
+          <span className={`transition ${activeFeature === item ? "text-white" : "text-[#b9a6ff] group-hover:text-white"}`}><Glyph kind={item} /></span>
+          <span className="text-[9px] font-semibold text-white/78">{item}</span>
+        </button>
       ))}
     </div>
   );
 }
 
-function ModulesStrip({ offerId }: { offerId: PublicOfferId }) {
+function ModulesStrip({
+  offerId,
+  activeFeature,
+  onSelect,
+}: {
+  offerId: PublicOfferId;
+  activeFeature: string | null;
+  onSelect: (feature: string) => void;
+}) {
   const modules = VISUAL_META[offerId].modules;
   return (
     <div className="relative overflow-x-auto rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3.5 text-white shadow-[0_30px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.08)] ring-1 ring-white/[.02] [scrollbar-width:none]">
       <div className="relative flex min-w-max items-center gap-2">
-        <div className="flex h-[86px] w-[220px] shrink-0 items-center gap-3 px-4">
+        <div className="flex h-[64px] w-[190px] shrink-0 items-center gap-3 px-3">
           <span className="grid h-10 w-10 place-items-center rounded-full bg-[#8d68ff]/12 text-[#b9a6ff]"><Glyph kind={offerId === "invitation" ? "RSVP" : offerId === "web" ? "Website" : "Dashboard"} /></span>
           <span className="text-[13px] font-semibold">Module incluse</span>
         </div>
         {modules.map((module, index) => (
           <div key={module} className="flex items-center">
             <span className="mx-1 h-[2px] w-6 bg-[linear-gradient(90deg,transparent,#9e7aff,#6c5cff,#9e7aff,transparent)] shadow-[0_0_10px_rgba(143,108,255,.65)]" />
-            <div className={`flex h-[86px] min-w-[145px] items-center justify-center gap-3 rounded-[20px] border px-5 transition ${offerId === "web" && module === "Dashboard" ? "border-[#a789ff]/90 bg-[#8f6cff]/20 shadow-[0_0_46px_rgba(128,89,255,.28)]" : "border-white/11 bg-[#0e0f16] hover:border-[#aa8dff]/55 hover:bg-[#171224] hover:shadow-[0_0_28px_rgba(126,93,255,.10)]"}`}>
+            <button
+              type="button"
+              onClick={() => onSelect(module)}
+              className={`flex h-[64px] min-w-[132px] items-center justify-center gap-3 rounded-[18px] border px-4 transition ${activeFeature === module || (offerId === "web" && module === "Dashboard" && !activeFeature) ? "border-[#a789ff]/90 bg-[#8f6cff]/20 shadow-[0_0_38px_rgba(128,89,255,.22)]" : "border-white/11 bg-[#0e0f16] hover:border-[#aa8dff]/55 hover:bg-[#171224]"}`}
+            >
               <span className="text-[#a78dff]"><Glyph kind={module} /></span>
-              <span className="text-[11px] font-medium">{module}</span>
-            </div>
+              <span className="text-[10px] font-medium">{module}</span>
+            </button>
             {index === modules.length - 1 ? <span className="w-2" /> : null}
           </div>
         ))}
@@ -399,7 +547,7 @@ function CheckoutPanel({
   onToggle: () => void;
 }) {
   return (
-    <div className="grid gap-4 rounded-[32px] border border-[#a183ff]/30 bg-[#07080d]/98 p-4.5 text-white shadow-[0_34px_110px_rgba(0,0,0,.46),0_0_48px_rgba(126,93,255,.075)] ring-1 ring-white/[.02] lg:grid-cols-[1.08fr_.92fr]">
+    <div className="grid gap-3 rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3 text-white shadow-[0_28px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.07)] ring-1 ring-white/[.02] lg:grid-cols-[1.08fr_.92fr]">
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none]">
         {[
           ["1", "Alegi", "Devize"],
@@ -407,7 +555,7 @@ function CheckoutPanel({
           ["3", "Stripe Checkout", "Website"],
         ].map(([step, label, icon], index) => (
           <div key={step} className="flex shrink-0 items-center">
-            <div className="relative flex h-[118px] w-[194px] items-center gap-3 rounded-[21px] border border-white/11 bg-[#0f1017] px-5 shadow-[0_18px_44px_rgba(0,0,0,.26)]">
+            <div className="relative flex h-[82px] w-[168px] items-center gap-3 rounded-[18px] border border-white/11 bg-[#0f1017] px-4 shadow-[0_14px_34px_rgba(0,0,0,.24)]">
               <span className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold ${index === 0 ? "border-[#8f6cff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.5)]" : "border-[#8f6cff]/50 bg-[#16101f] text-[#bdaaff]"}`}>{step}</span>
               <span className="mt-2 text-[#b39aff]"><Glyph kind={icon} /></span>
               <span className="mt-2 text-[11px] font-medium">{label}</span>
@@ -436,7 +584,7 @@ function CheckoutPanel({
           onClick={(event) => {
             if (!confirmed) event.preventDefault();
           }}
-          className={`mt-3 flex h-[62px] w-full items-center justify-center gap-4 rounded-[18px] text-[15px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#b66fff_0%,#7b54ff_52%,#5b8dff_100%)] text-white shadow-[0_0_52px_rgba(122,76,255,.50)] ring-1 ring-white/15 hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
+          className={`mt-2 flex h-[48px] w-full items-center justify-center gap-4 rounded-[15px] text-[13px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#b66fff_0%,#7b54ff_52%,#5b8dff_100%)] text-white shadow-[0_0_46px_rgba(122,76,255,.46)] ring-1 ring-white/15 hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
         >
           <span>Confirmă și continuă</span><span>→</span>
         </Link>
@@ -454,6 +602,7 @@ function OfferPageContent() {
   const offerId: PublicOfferId | null = isPublicOfferId(rawOffer) ? rawOffer : null;
   const [theme, setTheme] = useState<Theme>("dark");
   const [confirmed, setConfirmed] = useState(false);
+  const [activeFeature, setActiveFeature] = useState<string | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -483,6 +632,7 @@ function OfferPageContent() {
 
   useEffect(() => {
     setConfirmed(false);
+    setActiveFeature(null);
   }, [offerId]);
 
   if (!offerId) {
@@ -521,22 +671,22 @@ function OfferPageContent() {
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
-      <section className="relative z-10 px-5 pb-16 pt-28 sm:px-6 md:px-10 md:pb-20 md:pt-34">
+      <section className="relative z-10 px-5 pb-8 pt-24 sm:px-6 md:px-10 lg:h-[calc(100svh-18px)] lg:overflow-hidden lg:pb-4 lg:pt-20">
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
-          <div className="mt-6 overflow-visible rounded-[36px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-4 shadow-[0_50px_160px_rgba(0,0,0,.42),0_0_90px_rgba(100,62,220,.07)] ring-1 ring-white/[.018] sm:p-6 lg:p-7">
-            <div className="grid min-h-[700px] items-center gap-5 lg:grid-cols-[.56fr_1.44fr] xl:min-h-[760px] xl:gap-7">
-              <div className="relative z-20 min-w-0 self-center py-8 lg:-mr-10 xl:py-10">
+          <div className="mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
+            <div className="grid items-center gap-3 lg:min-h-[430px] lg:grid-cols-[.56fr_1.44fr] xl:min-h-[455px] xl:gap-5">
+              <div className="relative z-20 min-w-0 self-center py-3 lg:-mr-8 xl:py-4">
                 <span className="inline-flex rounded-full border border-[#9f7cff]/65 bg-[#8f6cff]/14 px-5 py-2.5 text-[9px] font-bold tracking-[.20em] text-[#d1c5ff] shadow-[0_0_34px_rgba(137,94,255,.16)]">{meta.eyebrow}</span>
 
-                <h1 className="mt-7 max-w-[760px] text-[clamp(56px,6.2vw,104px)] font-semibold leading-[.86] tracking-[-.08em] text-white drop-shadow-[0_12px_34px_rgba(0,0,0,.36)]">
+                <h1 className="mt-4 max-w-[760px] text-[clamp(46px,5.2vw,82px)] font-semibold leading-[.86] tracking-[-.08em] text-white drop-shadow-[0_12px_34px_rgba(0,0,0,.36)]">
                   {meta.titleTop}
                   <br />
                   <span className="bg-[linear-gradient(90deg,#a876ff_0%,#c783ff_48%,#8d7dff_100%)] bg-clip-text text-transparent drop-shadow-[0_0_26px_rgba(157,105,255,.12)]">{meta.titleAccent}</span>
                 </h1>
 
-                <div className="mt-9">
+                <div className="mt-5">
                   <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
                     <span className="text-[clamp(50px,5vw,80px)] font-semibold leading-none tracking-[-.08em] text-white">{offer.priceLei}</span>
                     <span className="pb-1.5 text-[clamp(18px,1.8vw,30px)] font-medium text-[#b7a2ff]">{meta.priceSuffix}</span>
@@ -544,19 +694,19 @@ function OfferPageContent() {
                   {meta.priceDetail ? <p className="mt-3 text-[15px] font-medium text-white/42">{meta.priceDetail}</p> : null}
                 </div>
 
-                <QuickModules offerId={offerId} />
+                <QuickModules offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
               </div>
 
               <div className="relative min-w-0 lg:-mr-8 xl:-mr-12">
                 <div className="pointer-events-none absolute left-[10%] right-[2%] top-[8%] h-[70%] rounded-full bg-[#6d4cff]/12 blur-[70px]" />
-                <div className="relative origin-center lg:scale-[1.08] xl:scale-[1.12]">
-                  <HeroVisual offerId={offerId} />
+                <div className="relative origin-center lg:scale-[1.02] xl:scale-[1.05]">
+                  <HeroVisual offerId={offerId} activeFeature={activeFeature} onCloseFeature={() => setActiveFeature(null)} />
                 </div>
               </div>
             </div>
 
             <div className="relative z-20 mt-1">
-              <ModulesStrip offerId={offerId} />
+              <ModulesStrip offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
             </div>
           </div>
 
