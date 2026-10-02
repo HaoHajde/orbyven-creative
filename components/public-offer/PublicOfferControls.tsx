@@ -4,6 +4,12 @@ import Link from "next/link";
 import { PUBLIC_CHECKOUT_IS_DEMO, type PublicOfferId } from "@/lib/commerce/public-offers";
 import { Glyph } from "@/components/public-offer/PublicOfferVisuals";
 
+const OFFER_MODULES: Record<PublicOfferId, string[]> = {
+  invitation: ["RSVP", "Locații", "Countdown", "Poveste", "Galerie", "Maps"],
+  web: ["Website", "Responsive", "SEO", "Dashboard", "Clienți", "Task-uri"],
+  advanced: ["CRM", "Task-uri", "Calendar", "Devize", "Stoc", "Automatizări", "Custom"],
+};
+
 export function QuickModules({
   offerId,
   activeFeature,
@@ -46,7 +52,7 @@ export function ModulesStrip({
   activeFeature: string | null;
   onSelect: (feature: string) => void;
 }) {
-  const modules = VISUAL_META[offerId].modules;
+  const modules = OFFER_MODULES[offerId];
   return (
     <div className="relative overflow-x-auto rounded-[28px] border border-[#a183ff]/30 bg-[#07080d]/98 p-3.5 text-white shadow-[0_30px_90px_rgba(0,0,0,.42),0_0_42px_rgba(126,93,255,.08)] ring-1 ring-white/[.02] [scrollbar-width:none]">
       <div className="relative flex min-w-max items-center gap-2">
