@@ -107,7 +107,7 @@ export default function ContactPage() {
 
           <div className="orbyven-start-cards mt-6">
             <Link
-              href="/porneste/plata?offer=invitation"
+              href="/porneste/oferta?offer=invitation"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#120d17] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_10%,rgba(234,201,255,.22),transparent_28%),radial-gradient(circle_at_86%_22%,rgba(137,93,255,.18),transparent_30%),linear-gradient(155deg,#201322_0%,#100c16_48%,#09090d_100%)]" />
@@ -149,14 +149,14 @@ export default function ContactPage() {
                     Design, RSVP, locații și experiență construită în jurul evenimentului.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/porneste/plata?offer=web"
+              href="/porneste/oferta?offer=web"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#0b0d14] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_8%,rgba(70,112,255,.25),transparent_30%),radial-gradient(circle_at_15%_52%,rgba(71,70,238,.12),transparent_35%),linear-gradient(155deg,#0d1322_0%,#0a0c13_56%,#08090d_100%)]" />
@@ -203,14 +203,14 @@ export default function ContactPage() {
                     La prima achiziție de web design, primul utilizator testează ORBYVEN Dashboard timp de 30 de zile.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
             </Link>
 
             <Link
-              href="/porneste/plata?offer=advanced"
+              href="/porneste/oferta?offer=advanced"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-[#a58bff]/26 bg-[#0d0a17] text-white shadow-[0_30px_110px_rgba(71,48,160,.24)]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.30),transparent_30%),radial-gradient(circle_at_20%_64%,rgba(75,70,238,.18),transparent_36%),linear-gradient(155deg,#17102b_0%,#0e0b18_54%,#09090d_100%)]" />
@@ -259,7 +259,7 @@ export default function ContactPage() {
                     Conectăm site-ul cu operațiunile firmei și personalizăm modulele în jurul fluxurilor tale.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Vezi planul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
