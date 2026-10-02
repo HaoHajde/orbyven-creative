@@ -30,11 +30,14 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [language, setLanguage] = useState<"ro" | "en">("ro");
 
   useEffect(() => {
     if (!optionalCookiesEnabled) return;
 
     const frame = window.requestAnimationFrame(() => {
+      const hostname = window.location.hostname.toLowerCase();
+      setLanguage(hostname === "orbyven.com" || hostname === "www.orbyven.com" ? "en" : "ro");
       setVisible(!window.localStorage.getItem(STORAGE_KEY));
     });
     const open = () => {
@@ -58,6 +61,8 @@ export default function CookieConsent() {
 
   if (!optionalCookiesEnabled || !visible) return null;
 
+  const english = language === "en";
+
   const decide = (analytics: boolean, marketing: boolean) => {
     saveConsent(analytics, marketing);
     setVisible(false);
@@ -65,17 +70,19 @@ export default function CookieConsent() {
 
   return (
     <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-2xl rounded-[26px] border border-black/[0.1] bg-white/95 p-5 text-[#1d1d1f] shadow-2xl backdrop-blur-2xl dark:border-white/[0.12] dark:bg-[#111113]/95 dark:text-[#f5f5f7] sm:p-6">
-      <p className="text-sm font-semibold">Preferințe cookies</p>
+      <p className="text-sm font-semibold">{english ? "Cookie preferences" : "Preferințe cookies"}</p>
       <p className="mt-2 text-xs leading-5 text-[#6e6e73] dark:text-[#a1a1a6]">
-        Cookie-urile strict necesare rămân active. Cookie-urile opționale sunt folosite numai după acordul tău. Vezi detalii în{" "}
+        {english
+          ? "Strictly necessary cookies remain active. Optional cookies are used only after your consent. See details in the "
+          : "Cookie-urile strict necesare rămân active. Cookie-urile opționale sunt folosite numai după acordul tău. Vezi detalii în "}
         <Link href="/legal/cookies" className="underline underline-offset-4">
-          Politica Cookies
+          {english ? "Cookie Policy" : "Politica Cookies"}
         </Link>
         .
       </p>
       <div className="mt-5 grid gap-3 rounded-xl border border-current/10 p-3 text-xs">
-        <label className="flex items-center justify-between gap-4"><span>Statistici opționale</span><input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} /></label>
-        <label className="flex items-center justify-between gap-4"><span>Marketing opțional</span><input type="checkbox" checked={marketing} onChange={(event) => setMarketing(event.target.checked)} /></label>
+        <label className="flex items-center justify-between gap-4"><span>{english ? "Optional analytics" : "Statistici opționale"}</span><input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} /></label>
+        <label className="flex items-center justify-between gap-4"><span>{english ? "Optional marketing" : "Marketing opțional"}</span><input type="checkbox" checked={marketing} onChange={(event) => setMarketing(event.target.checked)} /></label>
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-3">
         <button
@@ -83,16 +90,16 @@ export default function CookieConsent() {
           onClick={() => decide(false, false)}
           className="h-11 rounded-full border border-current/15 px-5 text-sm font-medium"
         >
-          Refuz opționale
+          {english ? "Reject optional" : "Refuz opționale"}
         </button>
         <button
           type="button"
           onClick={() => decide(true, true)}
           className="h-11 rounded-full bg-[#1d1d1f] px-5 text-sm font-medium text-white dark:bg-[#f5f5f7] dark:text-black"
         >
-          Accept opționale
+          {english ? "Accept optional" : "Accept opționale"}
         </button>
-        <button type="button" onClick={() => decide(analytics, marketing)} className="h-11 rounded-full border border-current/15 px-3 text-sm font-medium">Salvează alegerea</button>
+        <button type="button" onClick={() => decide(analytics, marketing)} className="h-11 rounded-full border border-current/15 px-3 text-sm font-medium">{english ? "Save choice" : "Salvează alegerea"}</button>
       </div>
     </div>
   );

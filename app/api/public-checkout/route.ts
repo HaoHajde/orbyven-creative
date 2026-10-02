@@ -1,18 +1,32 @@
 import { NextResponse } from "next/server";
 
 import { isPublicOfferId } from "@/lib/commerce/public-offers";
+import { getSiteUrl } from "@/lib/site-config";
 import { createPublicOfferCheckoutSession } from "@/lib/billing/stripe-rest";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { offer?: unknown };
+    const body = await request.json() as { offer?: unknown; locale?: unknown };
+    const locale = body.locale === "en" ? "en" : "ro";
     if (!isPublicOfferId(body.offer)) {
       return NextResponse.json({ error: "Oferta selectată nu este validă." }, { status: 400 });
     }
 
-    const session = await createPublicOfferCheckoutSession(body.offer);
+    const requestOrigin = new URL(request.url).origin;
+    const configuredSiteUrl = getSiteUrl();
+    const allowedReturnOrigins = new Set([
+      configuredSiteUrl,
+      "https://orbyven.com",
+      "https://www.orbyven.com",
+    ]);
+    const returnSiteUrl = allowedReturnOrigins.has(requestOrigin) ? requestOrigin : configuredSiteUrl;
+
+    const session = await createPublicOfferCheckoutSession(body.offer, {
+      locale,
+      siteUrl: returnSiteUrl,
+    });
     if (!session.url) {
       throw new Error("Stripe Checkout did not return a redirect URL.");
     }

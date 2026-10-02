@@ -153,15 +153,22 @@ function setInlinePrice(
   params.set(`line_items[${index}][quantity]`, "1");
 }
 
-export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
+export async function createPublicOfferCheckoutSession(
+  offerId: PublicOfferId,
+  options?: { locale?: "ro" | "en"; siteUrl?: string }
+) {
   requirePublicCheckoutReady();
   const params = new URLSearchParams();
-  const siteUrl = getSiteUrl();
+  const locale = options?.locale === "en" ? "en" : "ro";
+  const siteUrl = options?.siteUrl?.replace(/\/+$/, "") || getSiteUrl();
 
-  params.set("locale", "ro");
+  params.set("locale", locale);
   params.set("billing_address_collection", "auto");
   params.set("allow_promotion_codes", "false");
-  params.set("success_url", `${siteUrl}/porneste/succes?offer=${offerId}&session_id={CHECKOUT_SESSION_ID}`);
+  params.set(
+    "success_url",
+    `${siteUrl}${locale === "en" ? "/success" : "/porneste/succes"}?offer=${offerId}&session_id={CHECKOUT_SESSION_ID}`
+  );
   params.set("cancel_url", `${siteUrl}/contact?checkout=cancelled`);
   params.set("metadata[public_offer]", offerId);
   params.set("metadata[merchant_key]", commercialIdentity.entityKey || "prelaunch");
@@ -173,8 +180,11 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
     params.set("submit_type", "pay");
     setInlinePrice(params, 0, {
       amountLei: invitationOffer.priceLei,
-      name: "Invitație online personalizată ORBYVEN",
-      description: "Design personalizat, RSVP și experiență online pentru eveniment.",
+      name: locale === "en" ? "Custom ORBYVEN digital invitation" : "Invitație online personalizată ORBYVEN",
+      description:
+        locale === "en"
+          ? "Custom design, RSVP and an online experience built for the event."
+          : "Design personalizat, RSVP și experiență online pentru eveniment.",
     });
   }
 
@@ -184,13 +194,19 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
     params.set("submit_type", "subscribe");
     setInlinePrice(params, 0, {
       amountLei: webOffer.priceLei,
-      name: "Web design ORBYVEN",
-      description: "Website personalizat. Include 30 de zile ORBYVEN Dashboard pentru primul utilizator.",
+      name: "ORBYVEN Web Design",
+      description:
+        locale === "en"
+          ? "Custom website. Includes 30 days of ORBYVEN Dashboard for the first user."
+          : "Website personalizat. Include 30 de zile ORBYVEN Dashboard pentru primul utilizator.",
     });
     setInlinePrice(params, 1, {
       amountLei: webOffer.recurringLei,
       name: "ORBYVEN Dashboard",
-      description: "Pachetul continuă după perioada inclusă de 30 de zile.",
+      description:
+        locale === "en"
+          ? "The package continues after the included 30-day period."
+          : "Pachetul continuă după perioada inclusă de 30 de zile.",
       recurring: true,
     });
     params.set("subscription_data[trial_period_days]", String(webOffer.trialDays));
@@ -200,7 +216,9 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
     params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
     params.set(
       "custom_text[submit][message]",
-      "Plătești 399 lei pentru web design. Dashboard-ul este inclus 30 de zile, apoi abonamentul continuă la 499 lei/lună până la anulare."
+      locale === "en"
+        ? "You pay 399 RON for web design. Dashboard is included for 30 days, then the subscription continues at 499 RON/month until cancellation."
+        : "Plătești 399 lei pentru web design. Dashboard-ul este inclus 30 de zile, apoi abonamentul continuă la 499 lei/lună până la anulare."
     );
   }
 
@@ -211,7 +229,10 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
     setInlinePrice(params, 0, {
       amountLei: advancedOffer.recurringLei,
       name: "ORBYVEN Advanced",
-      description: "Web design + Dashboard + module personalizabile pentru fluxurile firmei.",
+      description:
+        locale === "en"
+          ? "Web design + Dashboard + customizable modules for your business workflows."
+          : "Web design + Dashboard + module personalizabile pentru fluxurile firmei.",
       recurring: true,
     });
     params.set("subscription_data[metadata][public_offer]", offerId);
@@ -220,7 +241,9 @@ export async function createPublicOfferCheckoutSession(offerId: PublicOfferId) {
     params.set("subscription_data[metadata][merchant_type]", commercialIdentity.entityType);
     params.set(
       "custom_text[submit][message]",
-      "Abonament de 599 lei/lună pentru website, Dashboard și module personalizabile."
+      locale === "en"
+        ? "599 RON/month subscription for website, Dashboard and customizable modules."
+        : "Abonament de 599 lei/lună pentru website, Dashboard și module personalizabile."
     );
   }
 
