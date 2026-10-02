@@ -8,7 +8,7 @@ import type {
 } from "@/lib/ai/site-editor";
 import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
 
-type DesignDna = {
+export type DesignDna = {
   id: string;
   layout: SiteLayout;
   headlineSize: EditableSite["headlineSize"];
@@ -147,7 +147,7 @@ function hash(value: string) {
   return result >>> 0;
 }
 
-function distanceFromCurrent(current: EditableSite, dna: DesignDna) {
+export function distanceFromCurrent(current: EditableSite, dna: DesignDna) {
   let score = 0;
   if (current.layout !== dna.layout) score += 3;
   if (current.headlineSize !== dna.headlineSize) score += 1;
@@ -173,16 +173,47 @@ function currentFingerprint(current: EditableSite) {
   ].join("|");
 }
 
+export function getAlternativeDesignDnaCandidates(
+  current: EditableSite,
+  prompt: string,
+  limit = 3
+): DesignDna[] {
+  const ranked = [...DESIGN_DNA].sort((left, right) => {
+    const distance =
+      distanceFromCurrent(current, right) - distanceFromCurrent(current, left);
+    if (distance !== 0) return distance;
+
+    const seed = hash(
+      `${normalize(prompt)}|${currentFingerprint(current)}|${left.id}|${right.id}`
+    );
+    return seed % 2 === 0 ? left.id.localeCompare(right.id) : right.id.localeCompare(left.id);
+  });
+
+  return ranked.slice(0, Math.max(1, Math.min(limit, ranked.length)));
+}
+
 export function selectAlternativeDesignDna(
   current: EditableSite,
   prompt: string
 ): DesignDna {
-  const ranked = [...DESIGN_DNA].sort(
-    (left, right) => distanceFromCurrent(current, right) - distanceFromCurrent(current, left)
-  );
-  const pool = ranked.slice(0, Math.min(3, ranked.length));
+  const pool = getAlternativeDesignDnaCandidates(current, prompt, 3);
   const seed = hash(`${normalize(prompt)}|${currentFingerprint(current)}`);
   return pool[seed % pool.length] ?? DESIGN_DNA[0]!;
+}
+
+export function applySpecificDesignDna(
+  draft: EditableSite,
+  dna: DesignDna
+): EditableSite {
+  return {
+    ...draft,
+    layout: dna.layout,
+    headlineSize: dna.headlineSize,
+    visualTone: dna.visualTone,
+    density: dna.density,
+    radius: dna.radius,
+    variants: { ...dna.variants },
+  };
 }
 
 export function applyDesignDna(
@@ -193,16 +224,10 @@ export function applyDesignDna(
 ): EditableSite {
   if (strategy.mode !== "alternative") return draft;
 
-  const dna = selectAlternativeDesignDna(current, prompt);
-  return {
-    ...draft,
-    layout: dna.layout,
-    headlineSize: dna.headlineSize,
-    visualTone: dna.visualTone,
-    density: dna.density,
-    radius: dna.radius,
-    variants: { ...dna.variants },
-  };
+  return applySpecificDesignDna(
+    draft,
+    selectAlternativeDesignDna(current, prompt)
+  );
 }
 
 export function designDnaInstruction(
