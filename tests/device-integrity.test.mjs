@@ -14,8 +14,8 @@ test("touch devices use focus-safe form control sizing", () => {
 test("workspace fixed mobile controls respect dynamic viewport and safe area", () => {
   const source = read("components/WorkspaceShell.tsx");
   assert.match(source, /min-h-\[100dvh\]/);
-  assert.match(source, /bottom-\[max\(1rem,env\(safe-area-inset-bottom\)\)\]/);
-  assert.match(source, /max-h-\[min\(68dvh,560px\)\]/);
+  assert.match(source, /bottom-\[max\(0\.45rem,env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(source, /max-h-\[min\(62dvh,520px\)\]/);
   assert.match(source, /max-h-\[calc\(100dvh-2rem\)\]/);
 });
 
