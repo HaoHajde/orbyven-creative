@@ -74,9 +74,11 @@ export default function AiWebDesignEntry() {
     const nextTheme: Theme =
       saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
 
-    setTheme(nextTheme);
-    document.documentElement.style.colorScheme = nextTheme;
-    document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+    const themeFrame = window.requestAnimationFrame(() => {
+      setTheme(nextTheme);
+      document.documentElement.style.colorScheme = nextTheme;
+      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+    });
 
     void orbyvenSupabase.auth.getSession().then(({ data }) => {
       if (!active) return;
@@ -88,6 +90,7 @@ export default function AiWebDesignEntry() {
 
     return () => {
       active = false;
+      window.cancelAnimationFrame(themeFrame);
     };
   }, []);
 
