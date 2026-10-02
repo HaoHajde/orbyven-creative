@@ -652,7 +652,7 @@ export default function ServicesPage() {
             <p className="max-w-2xl text-[12px] leading-6 text-[var(--muted)]">A project can start as a business website and later add landing pages, forms, operational modules or custom experiences. We add only what makes sense for the business.</p>
             <nav aria-label="Learn more about web design" className="mt-6 flex flex-wrap gap-2">
               {[
-                { href: "/contact?service=website", label: "Creare site" },
+                { href: "/contact?service=website", label: "Website design" },
                 { href: "/contact?service=landing-page", label: "Site de prezentare" },
                 { href: "/contact?service=website", label: "Web design" },
                 { href: "/contact?service=redesign", label: "Redesign" },
