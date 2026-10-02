@@ -27,6 +27,7 @@ export type WorkspaceActivityItem = {
   clientId?: string;
   taskId?: string;
   estimateId?: string;
+  purchaseOrderId?: string;
   create?: boolean;
   actionLabel?: string;
   rule?: string;
@@ -83,6 +84,7 @@ export async function loadWorkspaceActivity(
     invoicesResult,
     inventoryGapsResult,
     purchaseOrdersResult,
+    procurementFinanceResult,
     teamResult,
   ] = await Promise.all([
       enabledModules.includes("leads")
@@ -187,6 +189,17 @@ export async function loadWorkspaceActivity(
             .order("expected_on")
             .limit(10)
         : Promise.resolve({ data: [], error: null }),
+      canAccessFinances &&
+      enabledModules.includes("inventory") &&
+      enabledModules.includes("expenses")
+        ? orbyvenSupabase
+            .from("ops_purchase_order_finance_status")
+            .select("purchase_order_id,reference,supplier_name,task_id,status,currency,ordered_on,ordered_cents,received_cents,recorded_expense_cents,document_count,variance_to_order_cents,received_without_recorded_expense_cents")
+            .eq("organization_id", organizationId)
+            .in("status", ["ordered", "partially_received", "received"])
+            .order("ordered_on", { ascending: false, nullsFirst: false })
+            .limit(30)
+        : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("team")
         ? orbyvenSupabase
             .from("people_team_members")
@@ -208,6 +221,7 @@ export async function loadWorkspaceActivity(
     invoicesResult.error ??
     inventoryGapsResult.error ??
     purchaseOrdersResult.error ??
+    procurementFinanceResult.error ??
     teamResult.error;
   if (firstError) throw firstError;
 
@@ -439,6 +453,7 @@ export async function loadWorkspaceActivity(
       key: "purchase-order:" + order.id,
       module: "inventory",
       taskId: order.task_id ?? undefined,
+      purchaseOrderId: order.id,
       title: overdue ? "PO întârziată · " + order.reference : "PO ajunge curând · " + order.reference,
       meta: (overdue ? "Livrare estimată depășită " : "Livrare estimată ") + dateLabel(order.expected_on, locale, timeZone),
       level: overdue ? "urgent" : "upcoming",
@@ -446,6 +461,78 @@ export async function loadWorkspaceActivity(
       actionLabel: "Deschide",
       rule: "purchase_order_due",
     });
+  }
+
+  for (const order of procurementFinanceResult.data ?? []) {
+    const orderedCents = Number(order.ordered_cents || 0);
+    const recordedCents = Number(order.recorded_expense_cents || 0);
+    const receivedWithoutCost = Number(order.received_without_recorded_expense_cents || 0);
+    const documentCount = Number(order.document_count || 0);
+    const varianceCents = Number(order.variance_to_order_cents || 0);
+    const purchaseOrderId = order.purchase_order_id;
+    const sortAt = order.ordered_on
+      ? order.ordered_on + "T12:00:00.000Z"
+      : nowIso;
+
+    if (receivedWithoutCost > 0) {
+      items.push({
+        key: "procurement-cost:" + purchaseOrderId,
+        module: "expenses",
+        taskId: order.task_id ?? undefined,
+        purchaseOrderId,
+        create: true,
+        title: "Cost furnizor neînregistrat · " + order.reference,
+        meta:
+          money(receivedWithoutCost, order.currency, locale) +
+          " recepționat · " +
+          order.supplier_name,
+        level: order.status === "received" ? "urgent" : "attention",
+        sortAt,
+        actionLabel: "Înregistrează cost",
+        rule: "procurement_cost_missing",
+      });
+    }
+
+    if (order.status === "received" && documentCount === 0) {
+      const documentsEnabled = enabledModules.includes("documents");
+      items.push({
+        key: "procurement-evidence:" + purchaseOrderId,
+        module: documentsEnabled ? "documents" : "expenses",
+        taskId: order.task_id ?? undefined,
+        purchaseOrderId,
+        create: documentsEnabled,
+        title: "Dovadă furnizor lipsă · " + order.reference,
+        meta: order.supplier_name + " · comanda este recepționată fără document atașat",
+        level: "attention",
+        sortAt,
+        actionLabel: documentsEnabled ? "Adaugă dovadă" : "Verifică",
+        rule: "procurement_evidence_missing",
+      });
+    }
+
+    const varianceThreshold = Math.max(5000, Math.round(orderedCents * 0.05));
+    if (
+      order.status === "received" &&
+      recordedCents > orderedCents &&
+      varianceCents > varianceThreshold
+    ) {
+      items.push({
+        key: "procurement-variance:" + purchaseOrderId,
+        module: "expenses",
+        taskId: order.task_id ?? undefined,
+        purchaseOrderId,
+        title: "Cost peste PO · " + order.reference,
+        meta:
+          "+" +
+          money(varianceCents, order.currency, locale) +
+          " față de comandă · " +
+          order.supplier_name,
+        level: "attention",
+        sortAt,
+        actionLabel: "Verifică diferența",
+        rule: "procurement_cost_variance",
+      });
+    }
   }
 
   const invoices = invoicesResult.data ?? [];
