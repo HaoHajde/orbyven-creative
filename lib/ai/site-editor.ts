@@ -1,6 +1,6 @@
 /**
  * Typed, bounded website draft.
- * Generative AI returns data that is validated here; it never returns executable code.
+ * AI returns data, never executable code. Generative output is validated here before rendering.
  * Presets are starting points only and do not modify pilot websites.
  */
 export type SitePresetId = "studio" | "instalatii" | "detailing" | "florarie";
