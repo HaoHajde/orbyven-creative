@@ -60,6 +60,7 @@ export type WorkTaskContext = {
   inventoryMovementsCount: number | null;
   inventoryConsumedCents: number | null;
   inventoryRequiredLines: number | null;
+  inventoryUntrackedLines: number | null;
   inventoryUnreadyLines: number | null;
   inventoryShortageLines: number | null;
   realOperationalCostCents: number | null;
@@ -253,6 +254,7 @@ export async function loadWorkTaskContext(
     inventoryMovementsCount: inventoryResult?.count ?? null,
     inventoryConsumedCents,
     inventoryRequiredLines: inventoryResult?.requiredLines ?? null,
+    inventoryUntrackedLines: inventoryResult?.untrackedLines ?? null,
     inventoryUnreadyLines: inventoryResult?.unreadyLines ?? null,
     inventoryShortageLines: inventoryResult?.shortageLines ?? null,
     realOperationalCostCents,
