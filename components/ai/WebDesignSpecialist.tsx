@@ -49,6 +49,16 @@ type GenerationBody = {
     placeholderCount?: number;
     blockers?: Array<{ code?: string; message?: string }>;
   };
+  refinement?: {
+    attempted?: boolean;
+    passes?: number;
+    improved?: boolean;
+    initialQuality?: number;
+    finalQuality?: number;
+    initialReadiness?: number;
+    finalReadiness?: number;
+    remainingActions?: string[];
+  };
   error?: string;
   code?: string;
 };
@@ -243,8 +253,15 @@ export default function WebDesignSpecialist() {
       const blockerCount = Array.isArray(body.readiness?.blockers)
         ? body.readiness.blockers.length
         : 0;
+      const autonomousPasses =
+        body.refinement?.attempted && typeof body.refinement.passes === "number"
+          ? body.refinement.passes
+          : 0;
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (body.refinement?.improved && autonomousPasses > 0
+            ? ` · rafinată automat în ${autonomousPasses} ${autonomousPasses === 1 ? "pas" : "pași"}`
+            : "") +
           (typeof body.quality?.fixesApplied === "number" && body.quality.fixesApplied > 0
             ? ` · ${body.quality.fixesApplied} corecții automate`
             : "") +

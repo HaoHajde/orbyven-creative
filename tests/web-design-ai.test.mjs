@@ -20,6 +20,7 @@ import {
   selectAlternativeDesignDna,
 } from "../lib/ai/web-design-variation.ts";
 import { evaluateWebDesignReadiness } from "../lib/ai/web-design-readiness.ts";
+import { autonomouslyRefineWebDesign } from "../lib/ai/web-design-autorefine.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -330,20 +331,23 @@ test("Web Design quality critic does not override an explicit CTA during refine"
   assert.equal(result.report.issues.some((issue) => issue.code === "GENERIC_CTA"), false);
 });
 
-test("Generative Web Design runs quality critic before cloud persistence", () => {
+test("Generative Web Design runs autonomous quality refinement before cloud persistence", () => {
   const server = read("lib/ai/web-design-server.ts");
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
   const quality = read("lib/ai/web-design-quality.ts");
+  const autorefine = read("lib/ai/web-design-autorefine.ts");
 
-  assert.match(server, /critiqueWebDesign\(strategicDraft, strategy\)/);
-  assert.match(server, /quality: qualityResult\.report/);
+  assert.match(server, /autonomouslyRefineWebDesign/);
+  assert.match(server, /quality: autonomousResult\.quality/);
+  assert.match(server, /refinement: autonomousResult\.refinement/);
   assert.match(server, /saveWebDesignDraft\(actor, nextDraft, "ai", prompt\)/);
   assert.match(specialist, /Quality \{qualityScore\}/);
-  assert.match(specialist, /corecții automate/);
+  assert.match(specialist, /rafinată automat/);
   assert.match(quality, /contrastRatio/);
   assert.match(quality, /visibleSectionCount/);
   assert.match(quality, /repeatedCopy/);
-  assert.doesNotMatch(quality, /fetch\(/);
+  assert.match(autorefine, /MAX_PASSES = 2/);
+  assert.doesNotMatch(autorefine, /fetch\(/);
 });
 
 
@@ -389,7 +393,7 @@ test("Design DNA leaves compose and refine drafts untouched", () => {
   assert.deepEqual(result, SITE_PRESETS.instalatii);
 });
 
-test("Generative Web Design applies Design DNA before Quality Critic", () => {
+test("Generative Web Design applies Design DNA before autonomous quality refinement", () => {
   const server = read("lib/ai/web-design-server.ts");
   const variation = read("lib/ai/web-design-variation.ts");
 
@@ -397,7 +401,7 @@ test("Generative Web Design applies Design DNA before Quality Critic", () => {
   assert.match(server, /applyDesignDna\(strategicDraft, current, strategy, prompt\)/);
   assert.ok(
     server.indexOf("applyDesignDna(strategicDraft") <
-      server.indexOf("critiqueWebDesign(variedDraft")
+      server.indexOf("autonomouslyRefineWebDesign")
   );
   assert.match(variation, /distanceFromCurrent/);
   assert.match(variation, /currentFingerprint/);
@@ -459,12 +463,82 @@ test("Generative Web Design returns publish readiness beside technical quality",
   const server = read("lib/ai/web-design-server.ts");
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
   const readiness = read("lib/ai/web-design-readiness.ts");
+  const autorefine = read("lib/ai/web-design-autorefine.ts");
 
-  assert.match(server, /evaluateWebDesignReadiness/);
-  assert.match(server, /readiness,/);
+  assert.match(server, /readiness: autonomousResult\.readiness/);
+  assert.match(autorefine, /evaluateWebDesignReadiness/);
   assert.match(specialist, /Ready \{readinessScore\}/);
   assert.match(specialist, /elemente de completat înainte de publicare/);
   assert.match(readiness, /PLACEHOLDER_COPY/);
   assert.match(readiness, /DEMO_BRAND/);
   assert.doesNotMatch(readiness, /fetch\(/);
+});
+
+
+test("Autonomous refinement rechecks deterministic fixes until quality stabilizes", () => {
+  const strategy = buildWebDesignStrategy(
+    "Florărie cu produse și comenzi online. Vreau să vindem direct.",
+    SITE_PRESETS.florarie
+  );
+  const draft = {
+    ...SITE_PRESETS.florarie,
+    brand: "Flora Nova",
+    headline: "O colecție foarte lungă care explică în prea multe cuvinte toate produsele și serviciile disponibile pentru fiecare ocazie specială",
+    headlineSize: "large",
+    cta: "Află mai mult",
+    background: "#ffffff",
+    surface: "#ffffff",
+    textColor: "#d9d9d9",
+    density: "compact",
+    hiddenSections: [],
+  };
+
+  const result = autonomouslyRefineWebDesign(draft, strategy);
+
+  assert.equal(result.refinement.attempted, true);
+  assert.ok(result.refinement.passes >= 1);
+  assert.equal(result.refinement.improved, true);
+  assert.ok(result.refinement.finalQuality > result.refinement.initialQuality);
+  assert.equal(result.draft.cta, "Vezi produsele");
+  assert.equal(result.draft.headlineSize, "normal");
+  assert.equal(result.draft.textColor, "#17171b");
+  assert.ok(result.quality.score >= 90);
+});
+
+test("Autonomous refinement restores strategy structure only for compose or alternative", () => {
+  const composeStrategy = buildWebDesignStrategy(
+    "Firmă de instalații. Vreau cereri de ofertă.",
+    SITE_PRESETS.instalatii
+  );
+  const tooThin = {
+    ...SITE_PRESETS.instalatii,
+    hiddenSections: ["services", "benefits", "about", "gallery", "process", "faq", "contact"],
+  };
+
+  const composed = autonomouslyRefineWebDesign(tooThin, composeStrategy);
+  assert.equal(
+    composed.readiness.blockers.some((item) => item.code === "TOO_FEW_READY_SECTIONS"),
+    false
+  );
+  assert.ok(composed.refinement.changes.includes("restored_strategy_structure"));
+
+  const refineStrategy = buildWebDesignStrategy(
+    "Fă hero-ul mai premium și păstrează restul.",
+    tooThin
+  );
+  const refined = autonomouslyRefineWebDesign(tooThin, refineStrategy);
+  assert.deepEqual(refined.draft.hiddenSections, tooThin.hiddenSections);
+});
+
+test("Autonomous refinement never fabricates facts to clear publish blockers", () => {
+  const strategy = buildWebDesignStrategy(
+    "Creează un site pentru o firmă de servicii.",
+    SITE_PRESETS.studio
+  );
+  const result = autonomouslyRefineWebDesign(SITE_PRESETS.studio, strategy);
+
+  assert.ok(result.readiness.blockers.some((item) => item.code === "DEMO_BRAND"));
+  assert.ok(result.readiness.blockers.some((item) => item.code === "PLACEHOLDER_COPY"));
+  assert.ok(result.refinement.remainingActions.length > 0);
+  assert.equal(result.draft.brand, SITE_PRESETS.studio.brand);
 });
