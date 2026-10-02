@@ -17,7 +17,7 @@ function WorkspaceAuthCallbackPageContent() {
     : "";
   const checkoutDestination = checkoutProduct
     ? `/porneste/web-design${checkoutQuery}`
-    : checkoutDestination;
+    : `/contact${checkoutQuery}`;
   const [message, setMessage] = useState("Se confirmă contul...");
 
   useEffect(() => {
@@ -59,7 +59,7 @@ function WorkspaceAuthCallbackPageContent() {
       window.clearTimeout(timeout);
       listener.subscription.unsubscribe();
     };
-  }, [checkoutPlan, checkoutQuery, router]);
+  }, [checkoutDestination, checkoutPlan, checkoutQuery, router]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#fbfbfd] px-6 text-center text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">
