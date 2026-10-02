@@ -175,3 +175,28 @@ test("Business Brief Focus Mode stays bounded, tenant-scoped and read-only", () 
   assert.match(brief, /rankCandidates/);
   assert.doesNotMatch(brief, /\.(insert|update|delete|upsert)\s*\(/);
 });
+
+
+test("Focus explainability is structured, compact and persisted without a schema change", () => {
+  const types = read("lib/ai/intelligence-types.ts");
+  const brief = read("lib/ai/business-briefing.ts");
+  const conversation = read("lib/ai/conversation-server.ts");
+  const panel = read("components/WorkspaceIntelligence.tsx");
+
+  assert.match(types, /export type IntelligenceFocusInsight/);
+  assert.match(types, /focus\?: IntelligenceFocusInsight/);
+  assert.match(brief, /function focusInsight/);
+  assert.match(brief, /reason: "blocked"/);
+  assert.match(brief, /reason: "overdue"/);
+  assert.match(brief, /reason: "lead_followup"/);
+  assert.match(brief, /consequence:/);
+  assert.match(brief, /nextStep:/);
+  assert.match(conversation, /Focus · De ce/);
+  assert.match(conversation, /Focus · Risc/);
+  assert.match(conversation, /Focus · Pas/);
+  assert.match(panel, /data-orbyven-focus-explanation="true"/);
+  assert.match(panel, />De ce</);
+  assert.match(panel, />Risc</);
+  assert.match(panel, />Următor</);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.21/);
+});
