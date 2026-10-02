@@ -40,6 +40,7 @@ import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelection
 import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import WorkFileSummary from "@/components/modules/tasks/WorkFileSummary";
 import TaskChecklistPanel from "@/components/modules/tasks/TaskChecklistPanel";
+import { completeElapsedWorkEventsForTask } from "@/lib/automation/status-sync";
 import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
@@ -165,6 +166,7 @@ export default function TasksModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(initialRecordId ? "list" : "board");
@@ -428,7 +430,23 @@ export default function TasksModule({
     setSaving(true);
     setError("");
     try {
-      replaceTask(await setWorkTaskStatus(organizationId, task.id, status));
+      const updated = await setWorkTaskStatus(organizationId, task.id, status);
+      replaceTask(updated);
+      if (status === "done" && enabledModules.includes("calendar")) {
+        try {
+          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+          setSyncWarning(
+            sync.completedEvents > 0
+              ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+              : ""
+          );
+        } catch (syncError) {
+          console.error(syncError);
+          setSyncWarning("Lucrarea este finalizată, dar programările trecute nu au putut fi sincronizate automat.");
+        }
+      } else {
+        setSyncWarning("");
+      }
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul nu a putut fi actualizat.");
@@ -708,6 +726,11 @@ export default function TasksModule({
           {error}
         </div>
       )}
+      {syncWarning ? (
+        <p className="mt-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-[11px] leading-5 text-amber-300">
+          {syncWarning}
+        </p>
+      ) : null}
 
       {createOpen && canWrite && (
         <form
