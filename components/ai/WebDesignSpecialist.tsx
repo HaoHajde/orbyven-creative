@@ -59,6 +59,13 @@ type GenerationBody = {
     finalReadiness?: number;
     remainingActions?: string[];
   };
+  selection?: {
+    evaluatedCandidates?: number;
+    selectedDna?: string | null;
+    selectedScore?: number;
+    selectedDistance?: number;
+    styleAffinity?: number;
+  };
   error?: string;
   code?: string;
 };
@@ -257,8 +264,15 @@ export default function WebDesignSpecialist() {
         body.refinement?.attempted && typeof body.refinement.passes === "number"
           ? body.refinement.passes
           : 0;
+      const candidateCount =
+        typeof body.selection?.evaluatedCandidates === "number"
+          ? body.selection.evaluatedCandidates
+          : 1;
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
+          (candidateCount > 1
+            ? ` · selectată din ${candidateCount} variante interne`
+            : "") +
           (body.refinement?.improved && autonomousPasses > 0
             ? ` · rafinată automat în ${autonomousPasses} ${autonomousPasses === 1 ? "pas" : "pași"}`
             : "") +
