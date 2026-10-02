@@ -99,7 +99,7 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
 
   return (
     <div ref={root} className="relative w-full max-w-[430px]">
-      <label className="flex h-10 items-center gap-2.5 rounded-[11px] border border-[var(--border-strong)] bg-[var(--surface-2)]/75 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] focus-within:border-[var(--accent)]">
+      <label className="flex h-9 items-center gap-2.5 rounded-[11px] border border-[var(--border-strong)] bg-[var(--surface-2)]/75 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] focus-within:border-[var(--accent)] sm:h-10">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4 shrink-0 text-[var(--muted)]"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m16 16 4.4 4.4" /></svg>
         <span className="sr-only">Caută în firma ta</span>
         <input
