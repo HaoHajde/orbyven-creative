@@ -8,6 +8,7 @@ import {
   type AutomationEvent,
   type AutomationOperation,
 } from "@/lib/automation/business-signals";
+import { evaluateClientLifecycle } from "@/lib/automation/client-lifecycle";
 import { rankNextBestActions } from "@/lib/automation/next-best-action";
 
 export type WorkspaceActivityLevel = "urgent" | "attention" | "upcoming";
@@ -63,19 +64,27 @@ export async function loadWorkspaceActivity(
   const tomorrowDate = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
   const items: WorkspaceActivityItem[] = [];
 
-  const [leadsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
+  const [leadsResult, reactivationClientsResult, tasksResult, eventsResult, estimatesResult, invoicesResult, inventoryGapsResult, purchaseOrdersResult, teamResult] =
     await Promise.all([
       enabledModules.includes("leads")
         ? orbyvenSupabase
             .from("crm_leads")
-            .select("id,name,stage,next_follow_up_at")
+            .select("id,name,kind,stage,next_follow_up_at")
             .eq("organization_id", organizationId)
-            .eq("kind", "lead")
-            .not("stage", "in", '("won","lost")')
             .not("next_follow_up_at", "is", null)
             .lte("next_follow_up_at", tomorrow)
             .order("next_follow_up_at")
-            .limit(10)
+            .limit(14)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.includes("leads")
+        ? orbyvenSupabase
+            .from("crm_leads")
+            .select("id,name,kind,last_contact_at,next_follow_up_at,converted_at,created_at")
+            .eq("organization_id", organizationId)
+            .eq("kind", "client")
+            .is("next_follow_up_at", null)
+            .order("converted_at", { ascending: true, nullsFirst: true })
+            .limit(80)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("tasks")
         ? orbyvenSupabase
@@ -149,6 +158,7 @@ export async function loadWorkspaceActivity(
 
   const firstError =
     leadsResult.error ??
+    reactivationClientsResult.error ??
     tasksResult.error ??
     eventsResult.error ??
     estimatesResult.error ??
@@ -179,19 +189,65 @@ export async function loadWorkspaceActivity(
 
   for (const lead of leadsResult.data ?? []) {
     if (!lead.next_follow_up_at) continue;
+    if (lead.kind === "lead" && ["won", "lost"].includes(lead.stage)) continue;
     const overdue = lead.next_follow_up_at < nowIso;
+    const retention = lead.kind === "client";
     items.push({
-      key: "lead:" + lead.id,
+      key: (retention ? "client-retention:" : "lead:") + lead.id,
       module: "leads",
       recordId: lead.id,
-      title: overdue ? "Follow-up întârziat · " + lead.name : "Follow-up · " + lead.name,
+      clientId: retention ? lead.id : undefined,
+      title: retention
+        ? overdue
+          ? "Revenire client restantă · " + lead.name
+          : "Revenire client · " + lead.name
+        : overdue
+          ? "Follow-up întârziat · " + lead.name
+          : "Follow-up · " + lead.name,
       meta:
         (overdue ? "Trebuia contactat " : "De contactat ") +
         dateLabel(lead.next_follow_up_at, locale, timeZone),
       level: overdue ? "urgent" : "upcoming",
       sortAt: lead.next_follow_up_at,
-      actionLabel: "Deschide",
-      rule: "lead_follow_up",
+      actionLabel: retention ? "Reia relația" : "Deschide",
+      rule: retention ? "client_retention_follow_up" : "lead_follow_up",
+    });
+  }
+
+  const reactivationCandidates = (reactivationClientsResult.data ?? [])
+    .map((client) => ({
+      client,
+      lifecycle: evaluateClientLifecycle({
+        id: client.id,
+        name: client.name,
+        kind: "client",
+        lastContactAt: client.last_contact_at,
+        nextFollowUpAt: client.next_follow_up_at,
+        convertedAt: client.converted_at,
+        createdAt: client.created_at,
+      }, now),
+    }))
+    .filter((entry) => entry.lifecycle?.needsReactivation)
+    .sort((left, right) =>
+      (right.lifecycle?.inactiveDays ?? 0) - (left.lifecycle?.inactiveDays ?? 0)
+    )
+    .slice(0, 8);
+
+  for (const entry of reactivationCandidates) {
+    const lifecycle = entry.lifecycle!;
+    items.push({
+      key: "client-reactivation:" + entry.client.id,
+      module: "leads",
+      recordId: entry.client.id,
+      clientId: entry.client.id,
+      title: lifecycle.state === "dormant"
+        ? "Client de reactivat · " + entry.client.name
+        : "Relație în răcire · " + entry.client.name,
+      meta: lifecycle.detail,
+      level: "attention",
+      sortAt: lifecycle.lastTouchAt,
+      actionLabel: "Planifică revenire",
+      rule: "client_reactivation",
     });
   }
 
