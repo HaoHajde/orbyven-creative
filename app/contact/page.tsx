@@ -5,7 +5,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
+import { PUBLIC_CHECKOUT_IS_DEMO, PUBLIC_OFFERS } from "@/lib/commerce/public-offers";
 
 type Theme = "light" | "dark";
 
@@ -95,7 +95,17 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="orbyven-start-cards mt-12">
+          {PUBLIC_CHECKOUT_IS_DEMO ? (
+            <div className="mt-8 flex flex-col gap-3 rounded-[22px] border border-amber-300/20 bg-amber-300/[.06] px-5 py-4 text-[11px] leading-5 text-amber-100/80 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold uppercase tracking-[.14em] text-amber-200">MOD TEST / DEMO</p>
+                <p className="mt-1 text-white/58">Nu se încasează bani reali și nu se încheie o comandă comercială. Folosește doar datele de test Stripe.</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-[9px] font-bold text-amber-100">SANDBOX</span>
+            </div>
+          ) : null}
+
+          <div className="orbyven-start-cards mt-6">
             <Link
               href="/porneste/plata?offer=invitation"
               className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#120d17] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
@@ -119,7 +129,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">01 · EVENIMENT</span>
-                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">PERSONALIZAT</span>
+                  <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · TEST" : "PERSONALIZAT"}</span>
                 </div>
 
                 <div className="max-w-[420px]">
@@ -139,7 +149,7 @@ export default function ContactPage() {
                     Design, RSVP, locații și experiență construită în jurul evenimentului.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
@@ -170,7 +180,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">02 · WEB DESIGN</span>
-                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">30 ZILE GRATUIT</span>
+                  <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · 30 ZILE" : "30 ZILE GRATUIT"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
@@ -193,7 +203,7 @@ export default function ContactPage() {
                     La prima achiziție de web design, primul utilizator testează ORBYVEN Dashboard timp de 30 de zile.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
@@ -229,7 +239,7 @@ export default function ContactPage() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">03 · ECOSISTEM</span>
-                  <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">ADVANCED</span>
+                  <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">{PUBLIC_CHECKOUT_IS_DEMO ? "DEMO · ADVANCED" : "ADVANCED"}</span>
                 </div>
 
                 <div className="max-w-[470px]">
@@ -249,7 +259,7 @@ export default function ContactPage() {
                     Conectăm site-ul cu operațiunile firmei și personalizăm modulele în jurul fluxurilor tale.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold">
-                    Mergi direct la plată <span className="transition-transform group-hover:translate-x-1">→</span>
+                    Testează checkout-ul <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
               </div>
