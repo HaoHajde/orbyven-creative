@@ -10,7 +10,7 @@ import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import { clientTemplateList, type ClientTemplateConfig } from "@/lib/client-template-catalog";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
