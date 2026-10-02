@@ -162,7 +162,7 @@ test("AI Web Design has a public route and authenticated editor handoff", () => 
 
 test("AI Web Design is discoverable from primary navigation, Services and Dashboard", () => {
   const header = read("components/SiteHeader.tsx");
-  const services = read("app/servicii/page.tsx");
+  const services = read("lib/public-service-catalog.ts");
   const workspace = read("components/WorkspaceShell.tsx");
   const sitemap = read("app/sitemap.ts");
 
