@@ -1,6 +1,6 @@
 "use client";
 
-export function OfferGlyph({ kind }: { kind: string }) {
+export default function OfferGlyph({ kind }: { kind: string }) {
   const common = "h-5 w-5";
   if (kind === "RSVP" || kind === "CRM" || kind === "Clienți") {
     return (
