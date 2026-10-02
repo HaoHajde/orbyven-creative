@@ -148,7 +148,9 @@ export async function persistAssistantResponse(
 ) {
   const focusFacts = response.focus
     ? [
-        { label: "Focus · Motiv", value: response.focus.reason },
+        ...(response.focus.reason
+          ? [{ label: "Focus · Motiv", value: response.focus.reason }]
+          : []),
         { label: "Focus · De ce", value: response.focus.why },
         { label: "Focus · Risc", value: response.focus.consequence },
         { label: "Focus · Pas", value: response.focus.nextStep },
