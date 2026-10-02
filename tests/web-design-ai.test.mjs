@@ -1317,3 +1317,14 @@ test("Rejected claim answers do not turn the interview question into positive ev
   assert.doesNotMatch(evidence, /garan/i);
   assert.doesNotMatch(evidence, /autoriz/i);
 });
+
+test("Smart Interview local fast-path advances exactly one queued question", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+  const localBlock =
+    specialist.match(/if \(localResult\) \{[\s\S]*?setMessage\(localResult\.message\);[\s\S]*?return;[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.ok(localBlock.length > 0);
+  assert.match(localBlock, /commitDraft\(/);
+  assert.match(localBlock, /setInterviewQuestions\(interviewQuestions\.slice\(1\)\)/);
+  assert.doesNotMatch(localBlock, /setInterviewQuestions\(\(current\) => current\.slice\(1\)\)/);
+});

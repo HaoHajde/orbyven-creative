@@ -519,7 +519,10 @@ export default function WebDesignSpecialist() {
         "local",
         `interview:${activeInterviewQuestion.id}`
       );
-      setInterviewQuestions((current) => current.slice(1));
+      // commitDraft clears transient interview UI state. Restore the
+      // remaining queue from this submission's snapshot so a local fast-path
+      // answer advances exactly one question instead of dropping the queue.
+      setInterviewQuestions(interviewQuestions.slice(1));
       setInterviewAnswer("");
       setSuggestions([]);
       setMessage(localResult.message);
