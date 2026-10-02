@@ -22,7 +22,7 @@ import {
   type ResourceUnavailability,
 } from "@/lib/modules/resources";
 import { RESOURCE_TYPE_LABELS, type OperationalResourceType } from "@/lib/modules/resource-core";
-import { Field, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, moduleInputClass } from "@/components/modules/ModuleKit";
+import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type Props = {
@@ -371,12 +371,15 @@ export default function TeamModule({ organizationId, role }: Props) {
 
       <div className="mt-8"><ModuleError message={error} /></div>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <ModuleMetric label="Echipă activă" value={String(activeCount)} note="oameni operaționali" />
-        <ModuleMetric label="Total" value={String(members.length)} note="activi + inactivi" />
-        <ModuleMetric label="Conturi legate" value={String(linkedCount)} note="au acces în workspace" />
-        <ModuleMetric label="Resurse active" value={String(activeResourceCount)} note="oameni + operaționale" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-8"
+        primary={<>
+          <ModuleMetric label="Echipă activă" value={String(activeCount)} note="oameni operaționali" />
+          <ModuleMetric label="Resurse active" value={String(activeResourceCount)} note="oameni + operaționale" />
+          <ModuleMetric label="Conturi legate" value={String(linkedCount)} note="au acces în workspace" />
+        </>}
+        secondary={<ModuleMetric label="Total" value={String(members.length)} note="activi + inactivi" />}
+      />
 
       {createOpen && canWrite ? (
         <form onSubmit={handleCreate} className="mt-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
@@ -384,16 +387,15 @@ export default function TeamModule({ organizationId, role }: Props) {
             <Field label="Nume *"><input value={form.displayName} onChange={(e) => setForm((c) => ({ ...c, displayName: e.target.value }))} className={moduleInputClass} placeholder="Nume și prenume" /></Field>
             <Field label="Rol în firmă"><input value={form.jobTitle} onChange={(e) => setForm((c) => ({ ...c, jobTitle: e.target.value }))} className={moduleInputClass} placeholder="Instalator, coordonator…" /></Field>
             <Field label="Telefon"><input value={form.phone} onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))} className={moduleInputClass} placeholder="07…" /></Field>
-            <Field label="Email contact"><input type="email" value={form.contactEmail} onChange={(e) => setForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} placeholder="nume@firma.ro" /></Field>
-            <Field label="Status"><select value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as TeamMemberStatus }))} className={moduleInputClass}><option value="active">Activ</option><option value="inactive">Inactiv</option></select></Field>
-            <Field label="Leagă de cont ORBYVEN">
-              <select value={form.linkedUserId} onChange={(e) => setForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}>
-                <option value="">Fără cont legat</option>
-                {accessMembers.filter((item) => !linkedIds.has(item.user_id)).map((item) => <option key={item.user_id} value={item.user_id}>{roleLabels[item.role]} · {item.user_id.slice(0, 8)}… · {item.access_status}</option>)}
-              </select>
-            </Field>
           </div>
-          <Field label="Note" className="mt-4"><textarea value={form.notes} onChange={(e) => setForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-20 resize-y`} placeholder="Responsabilități, zonă, observații…" /></Field>
+          <ModuleAdvancedFields label="Acces și detalii">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="Email contact"><input type="email" value={form.contactEmail} onChange={(e) => setForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} placeholder="nume@firma.ro" /></Field>
+              <Field label="Status"><select value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as TeamMemberStatus }))} className={moduleInputClass}><option value="active">Activ</option><option value="inactive">Inactiv</option></select></Field>
+              <Field label="Leagă de cont ORBYVEN"><select value={form.linkedUserId} onChange={(e) => setForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}><option value="">Fără cont legat</option>{accessMembers.filter((item) => !linkedIds.has(item.user_id)).map((item) => <option key={item.user_id} value={item.user_id}>{roleLabels[item.role]} · {item.user_id.slice(0, 8)}… · {item.access_status}</option>)}</select></Field>
+              <Field label="Note" className="sm:col-span-2 lg:col-span-3"><textarea value={form.notes} onChange={(e) => setForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-20 resize-y`} placeholder="Responsabilități, zonă, observații…" /></Field>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex justify-end"><button disabled={saving} className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Adaugă în echipă"}</button></div>
         </form>
       ) : null}
@@ -427,20 +429,19 @@ export default function TeamModule({ organizationId, role }: Props) {
           {selected ? (
             <form onSubmit={saveSelected}>
               <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">Profil operațional</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.display_name}</h2></div>{selected.linked_user_id ? <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[10px] font-semibold text-[var(--accent)]">Cont legat</span> : null}</div>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Field label="Nume"><input disabled={!canWrite} value={editForm.displayName} onChange={(e) => updateEditForm((c) => ({ ...c, displayName: e.target.value }))} className={moduleInputClass} /></Field>
                 <Field label="Rol în firmă"><input disabled={!canWrite} value={editForm.jobTitle} onChange={(e) => updateEditForm((c) => ({ ...c, jobTitle: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Telefon"><input disabled={!canWrite} value={editForm.phone} onChange={(e) => updateEditForm((c) => ({ ...c, phone: e.target.value }))} className={moduleInputClass} /></Field>
-                <Field label="Email contact"><input disabled={!canWrite} type="email" value={editForm.contactEmail} onChange={(e) => updateEditForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} /></Field>
                 <Field label="Status"><select disabled={!canWrite} value={editForm.status} onChange={(e) => updateEditForm((c) => ({ ...c, status: e.target.value as TeamMemberStatus }))} className={moduleInputClass}><option value="active">Activ</option><option value="inactive">Inactiv</option></select></Field>
-                <Field label="Cont ORBYVEN">
-                  <select disabled={!canWrite} value={editForm.linkedUserId} onChange={(e) => updateEditForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}>
-                    <option value="">Fără cont legat</option>
-                    {accessMembers.filter((item) => item.user_id === selected.linked_user_id || !linkedIds.has(item.user_id)).map((item) => <option key={item.user_id} value={item.user_id}>{roleLabels[item.role]} · {item.user_id.slice(0, 8)}… · {item.access_status}</option>)}
-                  </select>
-                </Field>
               </div>
-              <Field label="Note" className="mt-4"><textarea disabled={!canWrite} value={editForm.notes} onChange={(e) => updateEditForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-24 resize-y`} /></Field>
+              <ModuleAdvancedFields label="Contact, acces și note">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Telefon"><input disabled={!canWrite} value={editForm.phone} onChange={(e) => updateEditForm((c) => ({ ...c, phone: e.target.value }))} className={moduleInputClass} /></Field>
+                  <Field label="Email contact"><input disabled={!canWrite} type="email" value={editForm.contactEmail} onChange={(e) => updateEditForm((c) => ({ ...c, contactEmail: e.target.value }))} className={moduleInputClass} /></Field>
+                  <Field label="Cont ORBYVEN" className="sm:col-span-2"><select disabled={!canWrite} value={editForm.linkedUserId} onChange={(e) => updateEditForm((c) => ({ ...c, linkedUserId: e.target.value }))} className={moduleInputClass}><option value="">Fără cont legat</option>{accessMembers.filter((item) => item.user_id === selected.linked_user_id || !linkedIds.has(item.user_id)).map((item) => <option key={item.user_id} value={item.user_id}>{roleLabels[item.role]} · {item.user_id.slice(0, 8)}… · {item.access_status}</option>)}</select></Field>
+                  <Field label="Note" className="sm:col-span-2"><textarea disabled={!canWrite} value={editForm.notes} onChange={(e) => updateEditForm((c) => ({ ...c, notes: e.target.value }))} className={`${moduleInputClass} min-h-24 resize-y`} /></Field>
+                </div>
+              </ModuleAdvancedFields>
               <div className="mt-6 flex flex-wrap justify-end gap-2">
                 {canDelete ? <button type="button" disabled={saving} onClick={() => void removeSelected()} className="h-11 rounded-full px-5 text-xs font-semibold text-red-500 disabled:opacity-40">Șterge profilul</button> : null}
                 {canWrite ? <button disabled={saving} className="h-11 rounded-full bg-[var(--button)] px-6 text-sm font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Salvează"}</button> : null}
@@ -467,14 +468,18 @@ export default function TeamModule({ organizationId, role }: Props) {
 
         {resourceCreateOpen && canWrite ? (
           <form onSubmit={handleCreateResource} className="mt-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Nume *"><input value={resourceForm.name} onChange={(event) => setResourceForm((current) => ({ ...current, name: event.target.value }))} className={moduleInputClass} placeholder="Ex. BMW X5 / Echipa 2" /></Field>
               <Field label="Tip"><select value={resourceForm.resourceType} onChange={(event) => setResourceForm((current) => ({ ...current, resourceType: event.target.value as ResourceForm["resourceType"] }))} className={moduleInputClass}><option value="crew">Echipă</option><option value="vehicle">Vehicul</option><option value="equipment">Utilaj / echipament</option><option value="space">Spațiu / post</option></select></Field>
-              <Field label="Cod / număr"><input value={resourceForm.code} onChange={(event) => setResourceForm((current) => ({ ...current, code: event.target.value }))} className={moduleInputClass} placeholder="B-00-ORB / UTIL-02" /></Field>
-              <Field label="Capacitate"><input type="number" min="1" max="100" value={resourceForm.capacity} onChange={(event) => setResourceForm((current) => ({ ...current, capacity: event.target.value }))} className={moduleInputClass} /></Field>
-              <Field label="Locație"><input value={resourceForm.location} onChange={(event) => setResourceForm((current) => ({ ...current, location: event.target.value }))} className={moduleInputClass} placeholder="Sediu / depozit / punct lucru" /></Field>
-              <Field label="Note"><input value={resourceForm.notes} onChange={(event) => setResourceForm((current) => ({ ...current, notes: event.target.value }))} className={moduleInputClass} placeholder="Detalii utile" /></Field>
             </div>
+            <ModuleAdvancedFields label="Detalii resursă">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Cod / număr"><input value={resourceForm.code} onChange={(event) => setResourceForm((current) => ({ ...current, code: event.target.value }))} className={moduleInputClass} placeholder="B-00-ORB / UTIL-02" /></Field>
+                <Field label="Capacitate"><input type="number" min="1" max="100" value={resourceForm.capacity} onChange={(event) => setResourceForm((current) => ({ ...current, capacity: event.target.value }))} className={moduleInputClass} /></Field>
+                <Field label="Locație"><input value={resourceForm.location} onChange={(event) => setResourceForm((current) => ({ ...current, location: event.target.value }))} className={moduleInputClass} placeholder="Sediu / depozit / punct lucru" /></Field>
+                <Field label="Note"><input value={resourceForm.notes} onChange={(event) => setResourceForm((current) => ({ ...current, notes: event.target.value }))} className={moduleInputClass} placeholder="Detalii utile" /></Field>
+              </div>
+            </ModuleAdvancedFields>
             <div className="mt-4 flex justify-end"><button disabled={saving} className="h-10 rounded-full bg-[var(--button)] px-5 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40">{saving ? "Se salvează…" : "Adaugă resursa"}</button></div>
           </form>
         ) : null}
