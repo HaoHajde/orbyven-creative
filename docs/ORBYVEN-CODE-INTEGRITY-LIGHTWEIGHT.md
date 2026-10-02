@@ -72,3 +72,12 @@ Source size is normalized to LF before measuring, so Windows CRLF checkout canno
 Before changing a shared file, compare current `main` and active PRs. Compose overlapping changes; never replace newer code with an older branch snapshot.
 
 Security, legal, billing and schema migrations remain independently gated. Passing this architecture guard never authorizes a database or commercial deployment.
+
+
+## v6 — hotspot freeze + workspace chunking
+
+The guard now also freezes explicit ceilings for today's largest files. This is stricter than a global file-count limit: a hotspot that is already large may not quietly grow up to the global hard cap. When one of these files needs substantial new behavior, extract a coherent responsibility instead of raising its ceiling.
+
+The dashboard module boundary is also structural: Calendar, Documents, Estimates, Expenses, Inventory, Leads, Overview, Tasks, Team and Thermal Planner must remain loaded through `next/dynamic` in `WorkspaceContent.tsx`. This keeps inactive modules out of the initial dashboard client path and prevents future feature work from accidentally turning the workspace back into one large JavaScript bundle.
+
+These checks protect architecture, not just byte counts. A budget increase must remain an explicit reviewed code change.
