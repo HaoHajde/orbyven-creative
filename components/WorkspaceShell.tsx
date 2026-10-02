@@ -32,6 +32,10 @@ import {
 
 type Theme = "light" | "dark";
 type Panel = "workspace" | "modules";
+type TextScale = 0.9 | 1 | 1.1 | 1.2 | 1.3;
+
+const TEXT_SCALE_STEPS: TextScale[] = [0.9, 1, 1.1, 1.2, 1.3];
+const DEFAULT_TEXT_SCALE: TextScale = 1.1;
 
 type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
@@ -69,6 +73,7 @@ export default function WorkspaceShell({
   const [actionError, setActionError] = useState("");
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
+  const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
 
 
   const loadWorkspace = useCallback(async () => {
@@ -108,15 +113,21 @@ export default function WorkspaceShell({
       savedTheme === "dark" || savedTheme === "light"
         ? savedTheme
         : "dark";
+    const savedTextScale = Number(window.localStorage.getItem("orbyven-dashboard-text-scale"));
+    const nextTextScale = TEXT_SCALE_STEPS.includes(savedTextScale as TextScale)
+      ? savedTextScale as TextScale
+      : DEFAULT_TEXT_SCALE;
 
     document.documentElement.style.colorScheme = nextTheme;
     const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
+    const textScaleTimer = window.setTimeout(() => setTextScale(nextTextScale), 0);
     const workspaceTimer = window.setTimeout(() => {
       if (!initialWorkspace) void loadWorkspace();
     }, 0);
 
     return () => {
       window.clearTimeout(themeTimer);
+      window.clearTimeout(textScaleTimer);
       window.clearTimeout(workspaceTimer);
     };
   }, [initialWorkspace, loadWorkspace]);
@@ -168,6 +179,24 @@ export default function WorkspaceShell({
       document.documentElement.style.colorScheme = next;
       return next;
     });
+  };
+
+  const changeTextScale = (direction: -1 | 1) => {
+    setTextScale((current) => {
+      const currentIndex = TEXT_SCALE_STEPS.indexOf(current);
+      const nextIndex = Math.min(
+        TEXT_SCALE_STEPS.length - 1,
+        Math.max(0, currentIndex + direction)
+      );
+      const next = TEXT_SCALE_STEPS[nextIndex];
+      window.localStorage.setItem("orbyven-dashboard-text-scale", String(next));
+      return next;
+    });
+  };
+
+  const resetTextScale = () => {
+    window.localStorage.setItem("orbyven-dashboard-text-scale", "1");
+    setTextScale(1);
   };
 
   const openModule = useCallback((id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) => {
@@ -308,7 +337,10 @@ export default function WorkspaceShell({
     await onSignedOut();
   };
 
-  const vars = themeToCssVars(theme) as CSSProperties;
+  const vars = {
+    ...themeToCssVars(theme),
+    "--orbyven-text-scale": textScale,
+  } as CSSProperties;
 
   if (loading) {
     return <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />;
@@ -331,12 +363,13 @@ export default function WorkspaceShell({
 
   return (
     <main
+      data-orbyven-text-scale={textScale}
       style={{
         ...vars,
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
+      className="orbyven-workspace-text-scale relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased transition-colors duration-300"
     >
       {theme === "dark" ? (
         <WorkspaceOrbitBackground fixed />
@@ -383,6 +416,7 @@ export default function WorkspaceShell({
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
               themeVars={vars}
+              textScale={textScale}
               onOpenModule={openModule}
               onOpenPath={onOpenPath}
               request={intelligenceRequest}
@@ -437,7 +471,40 @@ export default function WorkspaceShell({
             );
           })}
 
-          <div className="mt-auto pt-6">
+          <div className="mt-auto space-y-2 pt-6">
+            <div className="rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold text-[var(--muted)]">Dimensiune text</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => changeTextScale(-1)}
+                    disabled={textScale === TEXT_SCALE_STEPS[0]}
+                    aria-label="Micșorează textul"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] text-[12px] font-semibold disabled:opacity-30"
+                  >
+                    A−
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetTextScale}
+                    title="Revino la 100%"
+                    className="min-w-[44px] rounded-full px-1.5 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
+                  >
+                    {Math.round(textScale * 100)}%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeTextScale(1)}
+                    disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
+                    aria-label="Mărește textul"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] text-[12px] font-semibold disabled:opacity-30"
+                  >
+                    A+
+                  </button>
+                </div>
+              </div>
+            </div>
             <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
               <span className="block text-[var(--text)]">{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</span>
               <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</span>
@@ -536,6 +603,38 @@ export default function WorkspaceShell({
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2">
+              <span className="text-[11px] font-semibold text-[var(--muted)]">Text {Math.round(textScale * 100)}%</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(-1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[0]}
+                  aria-label="Micșorează textul"
+                  className="flex h-8 min-w-8 items-center justify-center rounded-full border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A−
+                </button>
+                <button
+                  type="button"
+                  onClick={resetTextScale}
+                  className="h-8 rounded-full px-2 text-[9px] font-semibold text-[var(--muted-2)]"
+                  title="Revino la 100%"
+                >
+                  100%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
+                  aria-label="Mărește textul"
+                  className="flex h-8 min-w-8 items-center justify-center rounded-full border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A+
+                </button>
+              </div>
             </div>
 
             <button
