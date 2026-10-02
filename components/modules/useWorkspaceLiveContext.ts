@@ -13,6 +13,7 @@ export function useWorkspaceLiveContext(context: WorkspaceLiveContext) {
       taskId: context.taskId,
       estimateId: context.estimateId,
       purchaseOrderId: context.purchaseOrderId,
+      documentId: context.documentId,
     };
     window.dispatchEvent(
       new CustomEvent<WorkspaceLiveContext>(WORKSPACE_LIVE_CONTEXT_EVENT, {
@@ -24,5 +25,6 @@ export function useWorkspaceLiveContext(context: WorkspaceLiveContext) {
     context.taskId,
     context.estimateId,
     context.purchaseOrderId,
+    context.documentId,
   ]);
 }
