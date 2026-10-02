@@ -163,12 +163,12 @@ test("web and desktop release metadata are aligned", () => {
   assert.equal(config.version, "0.8.0");
   assert.equal(manifest.version, "0.8.0");
   assert.match(visual, /CURRENT_DESKTOP_VERSION = "0\.8\.0"/);
-  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.01\.2"/);
+  assert.match(visual, /WORKSPACE_UI_REVISION = "2026\.10\.02\.1"/);
 });
 
 test("canonical shell carries the exact responsive web layout", () => {
   assert.match(shell, /max-w-\[1520px\]/);
-  assert.match(shell, /md:grid-cols-\[206px_minmax\(0,1fr\)\]/);
+  assert.match(shell, /md:grid-cols-\[var\(--workspace-sidebar-width\)_minmax\(0,1fr\)\]/);
   assert.match(shell, /md:hidden/);
   assert.match(shell, /mobileModuleMenuOpen/);
   assert.equal(config.app.windows[0].resizable, true);
