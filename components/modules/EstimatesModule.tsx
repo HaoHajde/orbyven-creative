@@ -447,7 +447,7 @@ export default function EstimatesModule({
                 <ModuleNextAction
                   title="Pornește lucrarea din oferta acceptată"
                   description="Clientul, devizul și contextul comercial sunt transferate automat."
-                  action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
+                  action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id, prefillTitle: selected.title })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
                 />
               </div>
             ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && taskMaterialPlanLoading ? (
