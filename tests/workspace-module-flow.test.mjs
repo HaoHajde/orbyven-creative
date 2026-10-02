@@ -577,3 +577,27 @@ test("closing work releases inventory reservations atomically at the database la
   const reservations = read("supabase/migrations/20261001232500_wave4_inventory_reservations.sql");
   assert.match(reservations, /ops_inventory_reservations_task_fk[\s\S]*on delete cascade/);
 });
+
+
+test("cancelling work atomically cancels internal work calendar without auto-cancelling supplier orders", () => {
+  const calendarClose = read("supabase/migrations/20261002094500_wave6_task_calendar_close_sync.sql");
+  assert.match(calendarClose, /new\.scheduled_at := null/);
+  assert.match(calendarClose, /new\.status = 'cancelled'/);
+  assert.match(calendarClose, /update public\.calendar_events/);
+  assert.match(calendarClose, /e\.event_type = 'work'/);
+  assert.match(calendarClose, /e\.status = 'scheduled'/);
+  assert.doesNotMatch(calendarClose, /ops_purchase_orders/);
+
+  const readiness = read("lib/automation/work-readiness.ts");
+  assert.match(readiness, /openPurchaseOrdersCount/);
+  assert.match(readiness, /comenzi furnizor sunt încă deschise pentru o operațiune închisă/);
+});
+
+test("inventory focuses open purchase orders for incoming work context", () => {
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /purchaseOrderTaskScope/);
+  assert.match(inventory, /visiblePurchaseOrders/);
+  assert.match(inventory, /order\.task_id === purchaseOrderTaskScope/);
+  assert.match(inventory, /data-inventory-procurement-scope="true"/);
+  assert.match(inventory, /Toate comenzile/);
+});
