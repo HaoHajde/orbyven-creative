@@ -3,9 +3,9 @@ export const siteConfig = {
   shortName: "ORBYVEN",
   description:
     "ORBYVEN builds premium websites, AI-assisted digital experiences and modular business workspaces. Explore templates, services and the ORBYVEN ecosystem.",
-  defaultUrl: "https://orbyven.ro",
+  defaultUrl: "https://orbyven.com",
   locale: "en_US",
-  language: "ro",
+  language: "en",
 } as const;
 
 export function getSiteUrl() {
