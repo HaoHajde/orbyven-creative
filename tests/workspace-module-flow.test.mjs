@@ -297,3 +297,27 @@ test("work dossier routes checklist attention locally and finance after completi
   const tasks = read("components/modules/TasksModule.tsx");
   assert.match(tasks, /data-task-checklist="true"/);
 });
+
+
+test("untracked materials remain visible without blocking automated readiness", () => {
+  const inventoryData = read("lib/modules/inventory.ts");
+  assert.match(inventoryData, /untrackedLines: plan\.filter/);
+  assert.match(inventoryData, /item\.stock_tracked &&[\s\S]*item\.reserved_quantity < item\.outstanding_quantity/);
+
+  const taskData = read("lib/modules/tasks.ts");
+  assert.match(taskData, /inventoryUntrackedLines: number \| null/);
+  assert.match(taskData, /inventoryUntrackedLines: inventoryResult\?\.untrackedLines \?\? null/);
+
+  const readiness = read("lib/automation/work-readiness.ts");
+  assert.match(readiness, /const untrackedLines = context\.inventoryUntrackedLines \?\? 0/);
+  assert.match(readiness, /verificarea lor rămâne manuală/);
+  assert.match(readiness, /state: untrackedLines > 0 \? "info" : "good"/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /untracked: active\.filter\(\(item\) => !item\.stock_tracked\)/);
+  assert.match(estimates, /ORBYVEN nu le blochează automat/);
+
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /Stocul urmărit nu are blocaje/);
+  assert.match(inventory, /stoc tracking oprit/);
+});
