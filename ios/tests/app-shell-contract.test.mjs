@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.10 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.11 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.10.0");
+  assert.equal(pkg.version, "0.11.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -38,10 +38,10 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 });
 
 
-test("Alpha 0.10 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+test("Alpha 0.11 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.10\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.11\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
@@ -65,7 +65,7 @@ test("native workspace navigation can request bounded selection haptics", () => 
 });
 
 
-test("Alpha 0.10 preserves in-flight workspace state across short network interruptions", () => {
+test("Alpha 0.11 preserves in-flight workspace state across short network interruptions", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"state-preserving-reconnect"/);
@@ -82,7 +82,7 @@ test("Alpha 0.10 preserves in-flight workspace state across short network interr
 });
 
 
-test("Alpha 0.10 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
+test("Alpha 0.11 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"stateful-deep-links"/);
@@ -102,7 +102,7 @@ test("Alpha 0.10 keeps trusted deep links stateful and limits full remounts to h
 });
 
 
-test("Alpha 0.10 waits for explicit web and workspace readiness before replaying pending intents", () => {
+test("Alpha 0.11 waits for explicit web and workspace readiness before replaying pending intents", () => {
   const app = read("App.tsx");
   const runtime = read("../components/pwa/AppModeRuntime.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
@@ -121,4 +121,29 @@ test("Alpha 0.10 waits for explicit web and workspace readiness before replaying
   assert.match(runtime, /type: "orbyven:web-ready"/);
   assert.match(runtime, /ReactNativeWebView/);
   assert.match(workspace, /type: "orbyven:workspace-ready"/);
+});
+
+
+test("Alpha 0.11 routes work deadline notifications through the ready workspace", () => {
+  const app = read("App.tsx");
+  const workspace = read("../components/WorkspaceShell.tsx");
+  const tasks = read("../components/modules/TasksModule.tsx");
+
+  assert.match(app, /"work-deadline-reminders"/);
+  assert.match(app, /scheduleWorkReminder/);
+  assert.match(app, /cancelWorkReminder/);
+  assert.match(app, /data\?\.kind === "work-task"/);
+  assert.match(app, /openWorkTask\(data\.taskId\)/);
+  assert.match(app, /flushPendingWorkTaskIntent/);
+  assert.match(app, /orbyven:native-task-record/);
+  assert.match(app, /orbyven:native-task-opened/);
+
+  assert.match(workspace, /orbyven:native-task-record/);
+  assert.match(workspace, /openModule\("tasks", \{ recordId: taskId \}\)/);
+  assert.match(workspace, /orbyven:native-task-opened/);
+
+  assert.match(tasks, /postWorkReminderBridge/);
+  assert.match(tasks, /syncNativeWorkReminder/);
+  assert.match(tasks, /orbyven:schedule-work-reminder/);
+  assert.match(tasks, /orbyven:cancel-work-reminder/);
 });
