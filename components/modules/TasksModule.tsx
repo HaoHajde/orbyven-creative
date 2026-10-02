@@ -37,7 +37,9 @@ import {
   type PostServiceGrowthState,
 } from "@/lib/automation/post-service-growth";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus, useWorkspaceSelectionWarp } from "@/components/modules/useWorkspaceRecordFocus";
+import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
 import WorkFileSummary from "@/components/modules/tasks/WorkFileSummary";
+import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
   useEffect,
@@ -220,6 +222,7 @@ export default function TasksModule({
     () => tasks.find((task) => task.id === selectedId) ?? null,
     [selectedId, tasks]
   );
+  useWorkspaceLiveContext({ taskId: selectedTask?.id, clientId: selectedTask?.client_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
   useWorkspaceSelectionWarp(selectedId, loading);
 
@@ -684,12 +687,15 @@ export default function TasksModule({
         </div>
       </section>
 
-      <section className="mt-9 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Active" value={String(metrics.active)} note="de făcut sau în lucru" />
-        <Metric label="Astăzi" value={String(metrics.today)} note="programate sau scadente" />
-        <Metric label="Atenție" value={String(metrics.urgent)} note="urgente sau întârziate" />
-        <Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />
-      </section>
+      <ModuleProgressiveMetrics
+        className="mt-9"
+        primary={<>
+          <Metric label="Active" value={String(metrics.active)} note="de făcut sau în lucru" />
+          <Metric label="Astăzi" value={String(metrics.today)} note="programate sau scadente" />
+          <Metric label="Atenție" value={String(metrics.urgent)} note="urgente sau întârziate" />
+        </>}
+        secondary={<Metric label="Finalizate" value={String(metrics.done)} note="istoric păstrat" />}
+      />
 
       {error && (
         <div className="mt-4 rounded-[18px] border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-500">
@@ -746,6 +752,25 @@ export default function TasksModule({
                 <option value="task">Task</option>
               </select>
             </Field>
+            <Field label="Client">
+              <select
+                value={form.clientId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, clientId: event.target.value }))
+                }
+                className="input"
+              >
+                <option value="">Fără client asociat</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company || client.name} · {client.kind === "client" ? "client" : "lead"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <ModuleAdvancedFields label="Planificare și responsabilitate">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Prioritate">
               <select
                 value={form.priority}
@@ -761,22 +786,6 @@ export default function TasksModule({
                 <option value="normal">Normală</option>
                 <option value="high">Ridicată</option>
                 <option value="urgent">Urgentă</option>
-              </select>
-            </Field>
-            <Field label="Client">
-              <select
-                value={form.clientId}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, clientId: event.target.value }))
-                }
-                className="input"
-              >
-                <option value="">Fără client asociat</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.company || client.name} · {client.kind === "client" ? "client" : "lead"}
-                  </option>
-                ))}
               </select>
             </Field>
             <Field label="Responsabil">
@@ -852,7 +861,8 @@ export default function TasksModule({
                 className="input min-h-[98px] py-3"
               />
             </Field>
-          </div>
+            </div>
+          </ModuleAdvancedFields>
           <div className="mt-5 flex justify-end">
             <button
               disabled={saving}
@@ -960,20 +970,36 @@ export default function TasksModule({
         </div>
       )}
 
-      {selectedTask && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {enabledModules.includes("leads") && selectedTask.client_id && (
-            <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Deschide clientul ↗</button>
-          )}
-          {canDelete && enabledModules.includes("expenses") && (
-            <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială asociată</button>
-          )}
-          {canWrite && selectedTask.kind !== "task" && enabledModules.includes("estimates") && (
-            <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă asociată</button>
-          )}
-          {canWrite && enabledModules.includes("calendar") && (
-            <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare asociată</button>
-          )}
+      {selectedTask && canWrite ? (
+        <div className="mt-4">
+          {selectedTask.kind !== "task" && enabledModules.includes("estimates") && (workContext?.acceptedEstimatesCount ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Pregătește sau validează oferta"
+              description="Execuția rămâne legată de o ofertă acceptată."
+              action={<button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Ofertă</button>}
+            />
+          ) : enabledModules.includes("inventory") && (workContext?.inventoryUnreadyLines ?? 0) > 0 ? (
+            <ModuleNextAction
+              title="Rezolvă materialele înainte de execuție"
+              description={`${workContext?.inventoryUnreadyLines ?? 0} poziții necesită rezervare sau aprovizionare.`}
+              action={<button type="button" onClick={() => onOpenModule("inventory", { taskId: selectedTask.id })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide stocul →</button>}
+            />
+          ) : enabledModules.includes("calendar") && selectedTask.status !== "done" && selectedTask.status !== "cancelled" && (workContext?.upcomingEventsCount ?? 0) === 0 ? (
+            <ModuleNextAction
+              title="Programează lucrarea"
+              description="Clientul și lucrarea sunt completate automat în calendar."
+              action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
+            />
+          ) : null}
+          <details className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+            <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">Alte acțiuni</summary>
+            <div className="flex flex-wrap gap-2 border-t border-[var(--border)] p-3">
+              {enabledModules.includes("leads") && selectedTask.client_id && <button type="button" onClick={() => onOpenModule("leads", { recordId: selectedTask.client_id! })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">Client ↗</button>}
+              {canAccessFinances && enabledModules.includes("expenses") && <button type="button" onClick={() => onOpenModule("expenses", { create: true, clientId: selectedTask.client_id ?? undefined, taskId: selectedTask.id })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Cheltuială</button>}
+              {selectedTask.kind !== "task" && enabledModules.includes("estimates") && <button type="button" onClick={() => onOpenModule("estimates", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Ofertă</button>}
+              {enabledModules.includes("calendar") && <button type="button" onClick={() => onOpenModule("calendar", { create: true, taskId: selectedTask.id, clientId: selectedTask.client_id ?? undefined })} className="h-9 rounded-full border border-[var(--border-strong)] px-4 text-xs font-semibold">+ Programare</button>}
+            </div>
+          </details>
         </div>
       )}
       {selectedTask &&
