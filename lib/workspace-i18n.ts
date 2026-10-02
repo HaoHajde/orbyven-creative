@@ -35,6 +35,11 @@ export const workspaceShellCopy = {
     moduleRequiresPlan: "Acest modul necesită un abonament sau acces pilot aprobat.",
     moduleUpdateError: "Modulul nu a putut fi actualizat. Modificarea a fost anulată.",
     businessWorkspace: "Business workspace",
+    new: "Nou",
+    more: "Mai multe",
+    openModules: "Deschide meniul modulelor",
+    closeModules: "Închide meniul modulelor",
+    mobileNavigation: "Navigare mobilă ORBYVEN",
   },
   en: {
     workspaceActive: "Active workspace",
@@ -66,6 +71,11 @@ export const workspaceShellCopy = {
     moduleRequiresPlan: "This module requires a subscription or approved pilot access.",
     moduleUpdateError: "The module could not be updated. The change was reverted.",
     businessWorkspace: "Business workspace",
+    new: "New",
+    more: "More",
+    openModules: "Open modules menu",
+    closeModules: "Close modules menu",
+    mobileNavigation: "ORBYVEN mobile navigation",
   },
 } as const;
 
