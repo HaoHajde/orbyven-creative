@@ -146,10 +146,51 @@ export async function persistAssistantResponse(
   conversationId: string,
   response: IntelligenceResponse
 ) {
+  const focusFacts = response.focus
+    ? [
+        ...(response.focus.reason
+          ? [{ label: "Focus · Motiv", value: response.focus.reason }]
+          : []),
+        { label: "Focus · De ce", value: response.focus.why },
+        { label: "Focus · Risc", value: response.focus.consequence },
+        { label: "Focus · Pas", value: response.focus.nextStep },
+      ]
+    : [];
+  const decisionFacts = response.decision
+    ? [
+        { label: "Decision · Context", value: response.decision.subject },
+        { label: "Decision · Handoff", value: response.decision.handoffAvailable ? "yes" : "no" },
+        ...response.decision.options.slice(0, 3).map((option, index) => ({
+          label: `Decision · ${index + 1}`,
+          value: [option.label, option.impact, option.tradeoff, option.whenToUse].join("¦"),
+        })),
+      ]
+    : [];
+
+  const outcomeFacts = response.outcome
+    ? [
+        { label: "Outcome · Plan", value: response.outcome.planId },
+        { label: "Outcome · Status", value: response.outcome.status },
+        ...(response.outcome.previousFocus
+          ? [{ label: "Outcome · Previous", value: response.outcome.previousFocus }]
+          : []),
+        ...(response.outcome.currentFocus
+          ? [{ label: "Outcome · Current", value: response.outcome.currentFocus }]
+          : []),
+        { label: "Outcome · Summary", value: response.outcome.summary },
+      ]
+    : [];
+
+  const baseFacts = response.decision
+    ? response.facts.slice(0, 4)
+    : response.outcome
+      ? response.facts.slice(0, 3)
+      : response.facts;
+
   await appendAssistantConversationMessage(actor, conversationId, {
     specialist: response.specialist,
     content: response.answer,
-    facts: response.facts,
+    facts: [...baseFacts, ...focusFacts, ...decisionFacts, ...outcomeFacts].slice(0, 12),
   });
 }
 
