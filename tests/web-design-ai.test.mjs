@@ -1317,3 +1317,44 @@ test("Rejected claim answers do not turn the interview question into positive ev
   assert.doesNotMatch(evidence, /garan/i);
   assert.doesNotMatch(evidence, /autoriz/i);
 });
+
+
+test("Web Design browser state is isolated per organization with one-time legacy migration", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(specialist, /function workspaceStorageKey\(base: string, organizationId: string\)/);
+  assert.match(specialist, /workspaceStorageKey\(STORAGE_KEY, workspaceId\)/);
+  assert.match(specialist, /workspaceStorageKey\(VISUAL_MEMORY_KEY, workspaceId\)/);
+  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, workspaceId\)/);
+  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_FACTS_KEY, workspaceId\)/);
+  assert.match(specialist, /removeItem\(STORAGE_KEY\)/);
+  assert.match(specialist, /removeItem\(LEGACY_STORAGE_KEY\)/);
+  assert.match(specialist, /removeItem\(VISUAL_MEMORY_KEY\)/);
+  assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /removeItem\(INTERVIEW_FACTS_KEY\)/);
+  assert.match(
+    specialist,
+    /workspaceStorageKey\(STORAGE_KEY, organizationId\)/
+  );
+});
+
+test("Smart Interview local fast-path preserves the remaining question queue", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(
+    specialist,
+    /preserveInterview = false/
+  );
+  assert.match(
+    specialist,
+    /if \(!preserveInterview\) \{[\s\S]*setInterviewQuestions\(\[\]\)/
+  );
+  assert.match(
+    specialist,
+    /interview:\$\{activeInterviewQuestion\.id\}[\s\S]*true/
+  );
+  assert.match(
+    specialist,
+    /setInterviewQuestions\(\(current\) => current\.slice\(1\)\)/
+  );
+});
