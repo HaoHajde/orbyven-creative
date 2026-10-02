@@ -23,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.7.0";
+const APP_VERSION = "0.8.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -34,6 +34,7 @@ const NATIVE_RUNTIME = {
   version: APP_VERSION,
   capabilities: [
     "biometric-lock",
+    "connection-continuity",
     "deep-links",
     "documents",
     "haptics",
@@ -41,6 +42,7 @@ const NATIVE_RUNTIME = {
     "navigation-haptics",
     "network-recovery",
     "push-registration",
+    "resume-refresh",
   ],
 } as const;
 
@@ -185,6 +187,7 @@ export default function App() {
   const dark = (webTheme ?? colorScheme) !== "light";
 
   const [connection, setConnection] = useState<ConnectionState>("loading");
+  const [loadProgress, setLoadProgress] = useState(0.08);
   const [currentUrl, setCurrentUrl] = useState(WORKSPACE_URL);
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
@@ -197,6 +200,7 @@ export default function App() {
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
+  const webHadLoadError = useRef(false);
   const pendingCalendarEventId = useRef<string | null>(null);
 
   const openNativeLink = useCallback((url: string | null) => {
@@ -319,8 +323,17 @@ export default function App() {
 
       if (definitelyOnline && previousReachability.current === false) {
         previousReachability.current = true;
-        setConnection("loading");
-        webRef.current?.reload();
+
+        if (webHadLoadError.current) {
+          setConnection("loading");
+          setLoadProgress(0.08);
+          webRef.current?.reload();
+        } else {
+          setConnection("online");
+          webRef.current?.injectJavaScript(
+            "window.dispatchEvent(new Event('online')); window.dispatchEvent(new Event('orbyven:native-network-restored')); true;",
+          );
+        }
         return;
       }
 
@@ -623,17 +636,33 @@ export default function App() {
           onNavigationStateChange={onNavigationStateChange}
           onShouldStartLoadWithRequest={shouldStart}
           onMessage={handleWebMessage}
-          onLoadStart={() => setConnection("loading")}
+          onLoadStart={() => {
+            setConnection("loading");
+            setLoadProgress(0.08);
+          }}
+          onLoadProgress={({ nativeEvent }) => {
+            setLoadProgress(Math.max(0.08, Math.min(1, nativeEvent.progress)));
+          }}
           onLoadEnd={() => {
+            webHadLoadError.current = false;
+            setLoadProgress(1);
             setConnection("online");
             setTimeout(flushPendingCalendarIntent, 0);
           }}
-          onError={() => setConnection("offline")}
+          onError={() => {
+            webHadLoadError.current = true;
+            setConnection("offline");
+          }}
           onHttpError={({ nativeEvent }) => {
-            if (nativeEvent.statusCode >= 500) setConnection("offline");
+            if (nativeEvent.statusCode >= 500) {
+              webHadLoadError.current = true;
+              setConnection("offline");
+            }
           }}
           onContentProcessDidTerminate={() => {
+            webHadLoadError.current = true;
             setConnection("loading");
+            setLoadProgress(0.08);
             webRef.current?.reload();
           }}
           startInLoadingState
@@ -674,6 +703,31 @@ export default function App() {
           mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
         />
       </View>
+
+      {webAppOwnsChrome && connection === "loading" && !deviceOffline ? (
+        <View pointerEvents="none" style={styles.progressTrack}>
+          <View style={[styles.progressBar, { flex: Math.max(0.08, loadProgress) }]} />
+          <View style={{ flex: Math.max(0, 1 - loadProgress) }} />
+        </View>
+      ) : null}
+
+      {webAppOwnsChrome && deviceOffline ? (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.connectivityPill,
+            {
+              backgroundColor: dark ? "rgba(71,35,39,0.96)" : "rgba(255,239,241,0.98)",
+              borderColor: dark ? "rgba(255,139,151,0.25)" : "rgba(171,48,67,0.20)",
+            },
+          ]}
+        >
+          <View style={styles.connectivityDot} />
+          <Text style={[styles.connectivityText, { color: dark ? "#ffd8dc" : "#8f2638" }]}>
+            Offline · reconectare automată
+          </Text>
+        </View>
+      ) : null}
 
       {!webAppOwnsChrome ? (
       <View style={[styles.toolbar, { backgroundColor: surface, borderTopColor: border }]}>
@@ -785,6 +839,46 @@ const styles = StyleSheet.create({
   statusLoading: { backgroundColor: "#332b55" },
   statusText: { color: "#ffffff", fontWeight: "800", fontSize: 9, letterSpacing: 0.8 },
   content: { flex: 1 },
+  progressTrack: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 40,
+    height: 2,
+    flexDirection: "row",
+    backgroundColor: "transparent",
+  },
+  progressBar: {
+    height: 2,
+    backgroundColor: "#7897ff",
+  },
+  connectivityPill: {
+    position: "absolute",
+    top: 8,
+    alignSelf: "center",
+    zIndex: 45,
+    minHeight: 30,
+    maxWidth: "86%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  connectivityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: "#ff7f8e",
+  },
+  connectivityText: {
+    flexShrink: 1,
+    fontSize: 10,
+    fontWeight: "700",
+  },
   loader: {
     position: "absolute",
     top: 0,
