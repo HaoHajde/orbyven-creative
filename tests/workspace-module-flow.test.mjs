@@ -284,3 +284,16 @@ test("inventory continues ready work into calendar", () => {
   assert.match(inventory, /taskId: planTaskId/);
   assert.match(inventory, /clientId: taskById\.get\(planTaskId\)\?\.client_id/);
 });
+
+
+test("work dossier routes checklist attention locally and finance after completion", () => {
+  const summary = read("components/modules/tasks/WorkFileSummary.tsx");
+  assert.match(summary, /attention\.key === "checklist"/);
+  assert.match(summary, /data-task-checklist="true"/);
+  assert.match(summary, /Închide financiar/);
+  assert.match(summary, /task\.status === "done"/);
+  assert.match(summary, /module: "expenses"/);
+
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /data-task-checklist="true"/);
+});
