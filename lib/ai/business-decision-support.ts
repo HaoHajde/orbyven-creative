@@ -239,6 +239,7 @@ export async function answerDecisionSupport(
     focus,
     decision: {
       subject,
+      handoffAvailable: available.has("tasks"),
       options: OPTIONS[focus.reason].map((option) => ({
         ...option,
         ...(available.has("tasks")
