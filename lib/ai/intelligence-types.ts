@@ -110,6 +110,7 @@ export type IntelligenceDecisionSupport = {
 };
 
 export type IntelligenceOutcome = {
+  planId: string;
   status: "resolved" | "shifted" | "still_priority";
   previousFocus?: string;
   currentFocus?: string;
