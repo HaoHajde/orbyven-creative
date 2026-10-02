@@ -28,12 +28,13 @@ export default function WorkspaceStateScreen({
 }: Props) {
   return (
     <main
+      data-orbyven-theme={theme}
       style={{
         ...vars,
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       }}
-      className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased"
+      className="orbyven-theme-shell min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased"
     >
       <div className="mx-auto flex min-h-screen max-w-[1200px] flex-col px-6 py-6 md:px-10">
         <BrandLogo compact theme={theme} />
