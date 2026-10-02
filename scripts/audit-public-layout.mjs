@@ -7,13 +7,22 @@ if (!chromePath) {
   process.exit(1);
 }
 
-const themeRoutes = new Set(["/", "/servicii", "/contact", "/templates"]);
+const themeRoutes = new Set([
+  "/",
+  "/servicii",
+  "/contact",
+  "/templates",
+  "/porneste/invitatie",
+  "/porneste/web-design",
+]);
 
 const routes = [
   "/",
   "/servicii",
   "/contact",
   "/templates",
+  "/porneste/invitatie",
+  "/porneste/web-design",
   "/workspace/login",
   "/workspace/register",
   "/workspace/forgot-password",
