@@ -202,6 +202,19 @@ function ambiguityResponse(
   };
 }
 
+function unavailableEntityModule(kind: "client" | "work"): IntelligenceResponse {
+  return {
+    specialist: "operations",
+    answer:
+      kind === "client"
+        ? "Nu pot căuta clientul deoarece modulul Clienți nu este activ în acest workspace."
+        : "Nu pot căuta lucrarea deoarece modulul Lucrări nu este activ în acest workspace.",
+    facts: [{ label: "Modul necesar", value: kind === "client" ? "Clienți" : "Lucrări" }],
+    actions: [{ kind: "open_module", label: "Vezi workspace-ul", moduleId: "overview" }],
+    generatedBy: "orbyven_core",
+  };
+}
+
 function missingResponse(kind: "client" | "work", value: string): IntelligenceResponse {
   return {
     specialist: "operations",
@@ -573,7 +586,7 @@ export async function answerEntityIntelligenceQuery(
   if (!query) return null;
 
   if (query.kind === "client") {
-    if (!available.has("leads")) return null;
+    if (!available.has("leads")) return unavailableEntityModule("client");
     const candidates = await findClientCandidates(actor, query.value);
     if (!candidates.length) return missingResponse("client", query.value);
     if (candidates.length > 1) {
@@ -585,7 +598,7 @@ export async function answerEntityIntelligenceQuery(
     return clientOverview(actor, available, candidates[0]);
   }
 
-  if (!available.has("tasks")) return null;
+  if (!available.has("tasks")) return unavailableEntityModule("work");
   const candidates = await findWorkCandidates(actor, query.value);
   if (!candidates.length) return missingResponse("work", query.value);
   if (candidates.length > 1) {
