@@ -16,6 +16,7 @@ export default function WorkFileSummary({
   enabledModules,
   canAccessFinances,
   onOpenModule,
+  onCompleteTask,
 }: {
   task: WorkTask;
   context: WorkTaskContext | null;
@@ -28,6 +29,7 @@ export default function WorkFileSummary({
   enabledModules: OrbyvenModuleId[];
   canAccessFinances: boolean;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
+  onCompleteTask?: () => void;
 }) {
   const money = (cents: number) =>
     new Intl.NumberFormat(locale, {
@@ -66,6 +68,15 @@ export default function WorkFileSummary({
     : null;
 
   const attention = readiness?.checks.find((check) => check.state === "attention") ?? null;
+  const operationalCloseReady = Boolean(
+    !attention &&
+    task.status === "in_progress" &&
+    context &&
+    context.upcomingEventsCount === 0 &&
+    checklist.length > 0 &&
+    checklist.every((item) => item.done) &&
+    (!enabledModules.includes("documents") || context.documentsCount > 0)
+  );
   const completionFinanceAction =
     !attention &&
     task.status === "done" &&
@@ -240,10 +251,20 @@ export default function WorkFileSummary({
         <div className="mt-3">
           <ModuleNextAction
             eyebrow="Acum"
-            title={task.status === "done" ? "Dosarul operațional este coerent" : "Poți continua execuția"}
-            description={task.status === "done"
-              ? "Lucrarea este finalizată. Următorul pas este verificarea încasării, facturii și costurilor asociate."
-              : "Nu există un blocaj operațional detectat în datele disponibile."}
+            title={
+              task.status === "done"
+                ? "Dosarul operațional este coerent"
+                : operationalCloseReady
+                  ? "Lucrarea este pregătită pentru închidere"
+                  : "Poți continua execuția"
+            }
+            description={
+              task.status === "done"
+                ? "Lucrarea este finalizată. Următorul pas este verificarea încasării, facturii și costurilor asociate."
+                : operationalCloseReady
+                  ? "Nu mai există programări viitoare, checklist-ul este complet și dosarul are documentație asociată."
+                  : "Nu există un blocaj operațional detectat în datele disponibile."
+            }
             action={completionFinanceAction ? (
               <button
                 type="button"
@@ -251,6 +272,14 @@ export default function WorkFileSummary({
                 className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
               >
                 {completionFinanceAction.label} →
+              </button>
+            ) : operationalCloseReady && onCompleteTask ? (
+              <button
+                type="button"
+                onClick={onCompleteTask}
+                className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]"
+              >
+                Finalizează lucrarea →
               </button>
             ) : undefined}
           />
