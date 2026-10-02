@@ -69,23 +69,23 @@ export default function InvitationServiceLanding({
         navAria: "Navigație",
         models: "Modele",
         contact: "Contact",
-        viewModels: "{copy.viewModels}",
-        request: "{copy.request}",
-        simple: "{copy.simple}",
-        yours: "{copy.yours}",
-        examples: "{copy.examples}",
-        direction: "{copy.direction}",
-        interactive: "{copy.interactive}",
-        more: "{copy.more}",
-        collection: "{copy.collection}",
-        other: "{copy.other}",
-        faq: "{copy.faq}",
-        know: "{copy.know}",
-        finalTitle: "{copy.finalTitle}",
-        finalCopy: "{copy.finalCopy}",
-        finalCta: "{copy.finalCta}",
+        viewModels: "Vezi modelele ↓",
+        request: "Solicită personalizare ↗",
+        simple: "Simplu și personal",
+        yours: "Invitația voastră, nu un model generic.",
+        examples: "Exemple de invitații digitale",
+        direction: "Descoperă o direcție vizuală.",
+        interactive: "Model interactiv",
+        more: "Cauți și alte opțiuni?",
+        collection: "Colecția ORBYVEN",
+        other: "Alte tipuri de invitații digitale.",
+        faq: "Întrebări frecvente",
+        know: "Ce merită să știi înainte să alegi.",
+        finalTitle: "Vrei ceva creat pentru evenimentul tău?",
+        finalCopy: "Spune-ne ce ai în minte și stabilim împreună aspectul și funcțiile invitației.",
+        finalCta: "Discută cu ORBYVEN ↗",
         otherServices: "Alte servicii",
-        privacy: "{copy.privacy}",
+        privacy: "Confidențialitate",
       };
 
   return (
@@ -197,9 +197,9 @@ export default function InvitationServiceLanding({
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 border-t border-white/10 px-5 py-8 text-sm text-white/55 sm:px-8">
         <Link href="/">© 2026 ORBYVEN CREATIVE</Link>
         <nav aria-label={copy.otherServices} className="flex flex-wrap gap-5">
-          <Link href="/invitatii-nunta">Invitații de nuntă</Link>
-          <Link href="/invitatii-botez">Invitații de botez</Link>
-          <Link href="/invitatii-majorat">Invitații de majorat</Link>
+          {categories.map((item) => (
+            <Link key={item.href} href={item.href}>{item.label}</Link>
+          ))}
           <Link href="/servicii">Web design</Link>
           <Link href="/legal/privacy">{copy.privacy}</Link>
         </nav>
