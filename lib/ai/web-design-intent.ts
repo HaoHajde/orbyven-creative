@@ -2,7 +2,7 @@ import {
   SECTION_IDS,
   type EditableSite,
   type SiteSectionId,
-} from "@/lib/ai/site-editor";
+} from "./site-editor.ts";
 
 export type WebDesignRequestMode = "compose" | "refine" | "alternative";
 export type WebDesignBusinessArchetype =
