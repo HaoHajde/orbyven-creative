@@ -163,18 +163,20 @@ function Glyph({ kind }: { kind: string }) {
 
 function BrowserShell({ children }: { children: ReactNode }) {
   return (
-    <div className="relative rounded-[28px] border border-white/12 bg-[#08090d] p-3 shadow-[0_34px_100px_rgba(0,0,0,.45)]">
-      <div className="absolute left-1/2 top-1.5 h-2.5 w-20 -translate-x-1/2 rounded-b-xl bg-black/55" />
-      <div className="overflow-hidden rounded-[20px] border border-white/8 bg-[#0c0d13]">{children}</div>
-      <div className="mx-auto mt-2.5 h-1.5 w-[28%] rounded-full bg-white/10" />
+    <div className="relative rounded-[30px] border border-[#9d7aff]/40 bg-[#05060a] p-3 shadow-[0_38px_120px_rgba(0,0,0,.60),0_0_60px_rgba(112,76,255,.16)] ring-1 ring-white/[.025]">
+      <div className="pointer-events-none absolute -inset-px rounded-[30px] bg-[linear-gradient(135deg,rgba(181,156,255,.22),transparent_28%,transparent_70%,rgba(104,69,255,.18))] opacity-70" />
+      <div className="absolute left-1/2 top-1.5 z-20 h-2.5 w-20 -translate-x-1/2 rounded-b-xl bg-black/75" />
+      <div className="relative overflow-hidden rounded-[21px] border border-white/10 bg-[#090a10]">{children}</div>
+      <div className="mx-auto mt-2.5 h-1.5 w-[30%] rounded-full bg-[linear-gradient(90deg,transparent,rgba(167,141,255,.55),transparent)]" />
     </div>
   );
 }
 
 function InvitationVisual() {
   return (
-    <div className="relative min-h-[500px] sm:min-h-[570px]">
-      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_70%_20%,rgba(150,101,255,.22),transparent_30%),radial-gradient(circle_at_16%_52%,rgba(78,70,200,.10),transparent_34%)]" />
+    <div className="relative min-h-[540px] sm:min-h-[610px]">
+      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_68%_18%,rgba(164,112,255,.30),transparent_28%),radial-gradient(circle_at_12%_58%,rgba(84,64,205,.15),transparent_36%)]" />
+      <div className="absolute inset-x-[8%] bottom-[7%] h-16 rounded-full bg-[#704cff]/20 blur-[36px]" />
       <div className="absolute left-[4%] right-[7%] top-[6%]">
         <BrowserShell>
           <div className="relative min-h-[390px] overflow-hidden bg-[radial-gradient(circle_at_20%_80%,rgba(255,230,211,.18),transparent_26%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,.08),transparent_24%),linear-gradient(145deg,#17141d,#0f0d14_62%,#09090d)]">
@@ -201,7 +203,7 @@ function InvitationVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[2%] right-[1%] hidden w-[185px] rounded-[34px] border border-white/16 bg-[#090a0f] p-2 shadow-[0_24px_80px_rgba(0,0,0,.5)] sm:block">
+      <div className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
         <div className="overflow-hidden rounded-[27px] bg-[radial-gradient(circle_at_50%_0%,rgba(255,235,220,.10),transparent_24%),linear-gradient(180deg,#17141d,#0c0b10)] px-4 py-5 text-center text-white">
           <p className="font-serif text-[12px] tracking-[.2em]">A | M</p>
           <p className="mt-7 text-[6px] tracking-[.3em] text-white/42">SAVE THE DATE</p>
@@ -212,14 +214,24 @@ function InvitationVisual() {
           </div>
         </div>
       </div>
+
+      <div className="absolute left-[1%] top-[36%] hidden w-[150px] rounded-[19px] border border-[#a98dff]/26 bg-[#100c18]/92 p-4 text-white shadow-[0_24px_70px_rgba(0,0,0,.44)] backdrop-blur-xl md:block">
+        <div className="text-[#c2b2ff]"><Glyph kind="RSVP" /></div>
+        <p className="mt-3 text-[10px] font-semibold">RSVP live</p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span className="text-[7px] text-white/42">confirmări instant</span>
+        </div>
+      </div>
     </div>
   );
 }
 
 function WebVisual() {
   return (
-    <div className="relative min-h-[500px] sm:min-h-[570px]">
-      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_18%,rgba(85,105,255,.24),transparent_30%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.10),transparent_36%)]" />
+    <div className="relative min-h-[540px] sm:min-h-[610px]">
+      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_72%_18%,rgba(95,110,255,.30),transparent_28%),radial-gradient(circle_at_15%_60%,rgba(126,93,255,.15),transparent_36%)]" />
+      <div className="absolute inset-x-[7%] bottom-[7%] h-16 rounded-full bg-[#5b55ff]/20 blur-[38px]" />
       <div className="absolute left-[2%] right-[12%] top-[7%]">
         <BrowserShell>
           <div className="relative min-h-[390px] overflow-hidden bg-[radial-gradient(circle_at_78%_20%,rgba(112,95,255,.18),transparent_26%),linear-gradient(145deg,#111522,#0b0d14_62%,#09090d)] p-6 text-white">
@@ -242,7 +254,7 @@ function WebVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute bottom-[1%] right-[1%] hidden w-[190px] rounded-[34px] border border-white/16 bg-[#090a0f] p-2 shadow-[0_24px_80px_rgba(0,0,0,.5)] sm:block">
+      <div className="absolute bottom-[1%] right-[1%] hidden w-[194px] rounded-[34px] border border-[#a98dff]/32 bg-[#07080c] p-2 shadow-[0_30px_90px_rgba(0,0,0,.58),0_0_38px_rgba(126,93,255,.13)] sm:block">
         <div className="overflow-hidden rounded-[27px] bg-[#0d0e14] p-4 text-white">
           <div className="flex items-center justify-between"><span className="text-[8px] font-semibold">Dashboard</span><span className="h-5 w-5 rounded-full bg-[#a58bff]/35" /></div>
           <div className="mt-5 grid grid-cols-2 gap-2">
@@ -255,14 +267,24 @@ function WebVisual() {
           <div className="mt-3 space-y-2">{["Website nou","Client contactat","Task finalizat"].map(x=><div key={x} className="rounded-[10px] bg-white/[.035] px-3 py-2 text-[6px] text-white/55">{x}</div>)}</div>
         </div>
       </div>
+
+      <div className="absolute left-[1%] top-[34%] hidden w-[156px] rounded-[19px] border border-[#a98dff]/26 bg-[#100c18]/92 p-4 text-white shadow-[0_24px_70px_rgba(0,0,0,.44)] backdrop-blur-xl md:block">
+        <div className="flex items-center justify-between">
+          <span className="text-[#c2b2ff]"><Glyph kind="Website" /></span>
+          <span className="rounded-full bg-[#8f6cff]/16 px-2 py-1 text-[6px] font-bold text-[#cdbfff]">LIVE</span>
+        </div>
+        <p className="mt-3 text-[10px] font-semibold">Website</p>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[86%] rounded-full bg-[#8f6cff]" /></div>
+      </div>
     </div>
   );
 }
 
 function AdvancedVisual() {
   return (
-    <div className="relative min-h-[500px] sm:min-h-[570px]">
-      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_75%_18%,rgba(132,92,255,.28),transparent_30%),radial-gradient(circle_at_16%_62%,rgba(83,68,190,.12),transparent_34%)]" />
+    <div className="relative min-h-[560px] sm:min-h-[630px]">
+      <div className="absolute inset-0 rounded-[42px] bg-[radial-gradient(circle_at_74%_18%,rgba(145,98,255,.34),transparent_28%),radial-gradient(circle_at_15%_64%,rgba(83,68,190,.17),transparent_35%)]" />
+      <div className="absolute inset-x-[6%] bottom-[7%] h-16 rounded-full bg-[#704cff]/24 blur-[40px]" />
       <div className="absolute left-[5%] right-[5%] top-[5%]">
         <BrowserShell>
           <div className="min-h-[400px] bg-[#0c0d13] p-4 text-white">
@@ -298,13 +320,13 @@ function AdvancedVisual() {
         </BrowserShell>
       </div>
 
-      <div className="absolute left-0 top-[28%] hidden w-[138px] rounded-[18px] border border-[#a58bff]/20 bg-[#151123]/90 p-4 text-white shadow-[0_22px_60px_rgba(0,0,0,.38)] backdrop-blur-xl md:block">
+      <div className="absolute left-0 top-[27%] hidden w-[142px] rounded-[19px] border border-[#a98dff]/30 bg-[#100c18]/94 p-4 text-white shadow-[0_26px_80px_rgba(0,0,0,.50),0_0_28px_rgba(126,93,255,.10)] backdrop-blur-xl md:block">
         <div className="text-[#bcaaff]"><Glyph kind="CRM"/></div><p className="mt-3 text-[10px] font-semibold">CRM</p><p className="mt-1 text-[6px] text-white/35">Clienți & lead-uri</p>
       </div>
-      <div className="absolute bottom-[10%] left-[2%] hidden w-[148px] rounded-[18px] border border-[#a58bff]/20 bg-[#151123]/90 p-4 text-white shadow-[0_22px_60px_rgba(0,0,0,.38)] backdrop-blur-xl md:block">
+      <div className="absolute bottom-[9%] left-[2%] hidden w-[152px] rounded-[19px] border border-[#a98dff]/30 bg-[#100c18]/94 p-4 text-white shadow-[0_26px_80px_rgba(0,0,0,.50),0_0_28px_rgba(126,93,255,.10)] backdrop-blur-xl md:block">
         <div className="text-[#bcaaff]"><Glyph kind="Task-uri"/></div><p className="mt-3 text-[10px] font-semibold">Task-uri</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[62%] rounded-full bg-[#8f6cff]" /></div>
       </div>
-      <div className="absolute right-0 top-[24%] hidden w-[148px] rounded-[18px] border border-[#a58bff]/20 bg-[#151123]/90 p-4 text-white shadow-[0_22px_60px_rgba(0,0,0,.38)] backdrop-blur-xl md:block">
+      <div className="absolute right-0 top-[23%] hidden w-[152px] rounded-[19px] border border-[#a98dff]/30 bg-[#100c18]/94 p-4 text-white shadow-[0_26px_80px_rgba(0,0,0,.50),0_0_28px_rgba(126,93,255,.10)] backdrop-blur-xl md:block">
         <div className="text-[#bcaaff]"><Glyph kind="Calendar"/></div><p className="mt-3 text-[10px] font-semibold">Calendar</p><p className="mt-1 text-[6px] text-white/35">Programări</p>
       </div>
     </div>
@@ -317,10 +339,33 @@ function HeroVisual({ offerId }: { offerId: PublicOfferId }) {
   return <AdvancedVisual />;
 }
 
+function QuickModules({ offerId }: { offerId: PublicOfferId }) {
+  const items =
+    offerId === "invitation"
+      ? ["RSVP", "Locații", "Countdown", "Galerie"]
+      : offerId === "web"
+        ? ["Website", "Responsive", "SEO", "Dashboard"]
+        : ["CRM", "Task-uri", "Calendar", "AI", "Custom"];
+
+  return (
+    <div className="mt-8 flex flex-wrap gap-2.5">
+      {items.map((item) => (
+        <div
+          key={item}
+          className="group flex h-12 items-center gap-2.5 rounded-[15px] border border-[#9c78ff]/24 bg-[#0e0c16]/92 px-3.5 text-white shadow-[0_10px_28px_rgba(0,0,0,.20)] transition hover:-translate-y-0.5 hover:border-[#a98dff]/55 hover:bg-[#151024]"
+        >
+          <span className="text-[#b9a6ff] transition group-hover:text-white"><Glyph kind={item} /></span>
+          <span className="text-[9px] font-semibold text-white/68">{item}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ModulesStrip({ offerId }: { offerId: PublicOfferId }) {
   const modules = VISUAL_META[offerId].modules;
   return (
-    <div className="relative overflow-x-auto rounded-[28px] border border-white/10 bg-[#0c0c12]/92 p-3 text-white shadow-[0_20px_70px_rgba(0,0,0,.18)] [scrollbar-width:none]">
+    <div className="relative overflow-x-auto rounded-[28px] border border-[#9d7aff]/22 bg-[#090a10]/96 p-3 text-white shadow-[0_26px_80px_rgba(0,0,0,.34),0_0_34px_rgba(126,93,255,.055)] ring-1 ring-white/[.018] [scrollbar-width:none]">
       <div className="relative flex min-w-max items-center gap-2">
         <div className="flex h-[74px] w-[210px] shrink-0 items-center gap-3 px-4">
           <span className="grid h-10 w-10 place-items-center rounded-full bg-[#8d68ff]/12 text-[#b9a6ff]"><Glyph kind={offerId === "invitation" ? "RSVP" : offerId === "web" ? "Website" : "Dashboard"} /></span>
@@ -329,7 +374,7 @@ function ModulesStrip({ offerId }: { offerId: PublicOfferId }) {
         {modules.map((module, index) => (
           <div key={module} className="flex items-center">
             <span className="mx-1 h-px w-5 bg-[linear-gradient(90deg,transparent,#8f6cff,transparent)]" />
-            <div className={`flex h-[74px] min-w-[136px] items-center justify-center gap-3 rounded-[20px] border px-5 ${offerId === "web" && module === "Dashboard" ? "border-[#8f6cff]/70 bg-[#8f6cff]/14 shadow-[0_0_34px_rgba(128,89,255,.20)]" : "border-white/8 bg-white/[.025]"}`}>
+            <div className={`flex h-[74px] min-w-[136px] items-center justify-center gap-3 rounded-[20px] border px-5 transition ${offerId === "web" && module === "Dashboard" ? "border-[#9e7aff]/78 bg-[#8f6cff]/17 shadow-[0_0_38px_rgba(128,89,255,.24)]" : "border-white/10 bg-[#11121a] hover:border-[#9d7aff]/36 hover:bg-[#151221]"}`}>
               <span className="text-[#a78dff]"><Glyph kind={module} /></span>
               <span className="text-[11px] font-medium">{module}</span>
             </div>
@@ -351,7 +396,7 @@ function CheckoutPanel({
   onToggle: () => void;
 }) {
   return (
-    <div className="grid gap-3 rounded-[30px] border border-white/10 bg-[#0c0c12]/94 p-4 text-white shadow-[0_22px_70px_rgba(0,0,0,.2)] lg:grid-cols-[1.05fr_.95fr]">
+    <div className="grid gap-3 rounded-[30px] border border-[#9d7aff]/24 bg-[#090a10]/96 p-4 text-white shadow-[0_30px_90px_rgba(0,0,0,.38),0_0_38px_rgba(126,93,255,.06)] ring-1 ring-white/[.018] lg:grid-cols-[1.05fr_.95fr]">
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none]">
         {[
           ["1", "Alegi", "Devize"],
@@ -359,7 +404,7 @@ function CheckoutPanel({
           ["3", "Stripe Checkout", "Website"],
         ].map(([step, label, icon], index) => (
           <div key={step} className="flex shrink-0 items-center">
-            <div className="relative flex h-[104px] w-[180px] items-center gap-3 rounded-[20px] border border-white/8 bg-white/[.025] px-5">
+            <div className="relative flex h-[104px] w-[180px] items-center gap-3 rounded-[20px] border border-white/10 bg-[#11121a] px-5 shadow-[0_14px_34px_rgba(0,0,0,.18)]">
               <span className={`absolute -top-3 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border text-[11px] font-bold ${index === 0 ? "border-[#8f6cff] bg-[#8f6cff] text-white shadow-[0_0_24px_rgba(143,108,255,.5)]" : "border-[#8f6cff]/50 bg-[#16101f] text-[#bdaaff]"}`}>{step}</span>
               <span className="mt-2 text-[#b39aff]"><Glyph kind={icon} /></span>
               <span className="mt-2 text-[11px] font-medium">{label}</span>
@@ -388,7 +433,7 @@ function CheckoutPanel({
           onClick={(event) => {
             if (!confirmed) event.preventDefault();
           }}
-          className={`mt-3 flex h-14 w-full items-center justify-center gap-4 rounded-[17px] text-[14px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#9a67ff,#673dff)] text-white shadow-[0_0_36px_rgba(122,76,255,.35)] hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
+          className={`mt-3 flex h-14 w-full items-center justify-center gap-4 rounded-[17px] text-[14px] font-semibold transition ${confirmed ? "bg-[linear-gradient(90deg,#aa6dff,#6f52ff_52%,#5987ff)] text-white shadow-[0_0_44px_rgba(122,76,255,.42)] hover:brightness-110" : "cursor-not-allowed bg-white/[.045] text-white/25"}`}
         >
           <span>Confirmă și continuă</span><span>→</span>
         </Link>
@@ -459,14 +504,15 @@ function OfferPageContent() {
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
-            ? "radial-gradient(circle at 78% 12%,rgba(83,54,180,.12),transparent 30%),linear-gradient(180deg,#09090e 0%,#08080c 100%)"
-            : "radial-gradient(circle at 78% 12%,rgba(112,78,255,.08),transparent 30%),linear-gradient(180deg,#fbfaff 0%,#f7f7fa 100%)",
+            ? "radial-gradient(circle at 74% 8%,rgba(102,65,235,.18),transparent 28%),radial-gradient(circle at 20% 24%,rgba(71,48,160,.10),transparent 24%),linear-gradient(180deg,#05060a 0%,#07070b 48%,#05060a 100%)"
+            : "radial-gradient(circle at 78% 12%,rgba(112,78,255,.10),transparent 28%),linear-gradient(180deg,#fbfaff 0%,#f5f5f8 100%)",
       }}
       className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[720px] overflow-hidden">
-        <div className="absolute left-[-12rem] top-[-16rem] h-[38rem] w-[38rem] rounded-full border-[68px] border-[#7c5cff]/[.055]" />
-        <div className="absolute right-[4%] top-[8rem] h-[28rem] w-[28rem] rounded-full bg-[#704cff]/[.06] blur-[100px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[820px] overflow-hidden">
+        <div className="absolute left-[-15rem] top-[-18rem] h-[42rem] w-[42rem] rounded-full border-[70px] border-[#7c5cff]/[.065]" />
+        <div className="absolute right-[2%] top-[4rem] h-[34rem] w-[34rem] rounded-full bg-[#704cff]/[.085] blur-[110px]" />
+        <div className="absolute left-[46%] top-[9rem] h-px w-[44%] bg-[linear-gradient(90deg,transparent,rgba(151,118,255,.45),transparent)] shadow-[0_0_24px_rgba(126,93,255,.28)]" />
       </div>
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
@@ -475,7 +521,7 @@ function OfferPageContent() {
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
-          <div className="mt-6 grid items-center gap-8 lg:grid-cols-[.72fr_1.28fr] xl:gap-10">
+          <div className="mt-6 grid items-center gap-8 lg:grid-cols-[.66fr_1.34fr] xl:gap-12">
             <div className="min-w-0">
               <span className="inline-flex rounded-full border border-[#8f6cff]/45 bg-[#8f6cff]/10 px-5 py-2.5 text-[9px] font-bold tracking-[.18em] text-[#b9a6ff] shadow-[0_0_28px_rgba(126,93,255,.12)]">{meta.eyebrow}</span>
 
@@ -492,6 +538,8 @@ function OfferPageContent() {
                 </div>
                 {meta.priceDetail ? <p className="mt-3 text-[14px] font-medium text-[var(--muted)]">{meta.priceDetail}</p> : null}
               </div>
+
+              <QuickModules offerId={offerId} />
             </div>
 
             <div className="min-w-0">
