@@ -48,6 +48,7 @@ type Props = {
   initialTaskId?: string;
   initialEstimateId?: string;
   initialPurchaseOrderId?: string;
+  initialDocumentId?: string;
 };
 
 type Tab = "overview" | "expenses" | "income" | "invoices" | "procurement";
@@ -188,6 +189,7 @@ export default function ExpensesModule({
     clientId: initialClientId ?? "",
     taskId: initialTaskId ?? "",
     purchaseOrderId: initialPurchaseOrderId ?? "",
+    documentId: initialDocumentId ?? "",
   }));
   const [incomeForm, setIncomeForm] = useState<IncomeForm>(() => ({
     ...emptyIncomeForm(),
@@ -211,6 +213,7 @@ export default function ExpensesModule({
     taskId: scopeTaskId || expenseForm.taskId || incomeForm.taskId || undefined,
     estimateId: initialEstimateId,
     purchaseOrderId: expenseForm.purchaseOrderId || initialPurchaseOrderId,
+    documentId: expenseForm.documentId || initialDocumentId,
   });
 
   const load = useCallback(async () => {
