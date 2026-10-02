@@ -7,8 +7,7 @@ import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { HeroVisual } from "@/components/public-offer/PublicOfferVisuals";
 import { CheckoutPanel, ModulesStrip, QuickModules } from "@/components/public-offer/PublicOfferControls";
-import {
-  PUBLIC_OFFERS,
+import {  PUBLIC_OFFERS,
   isPublicOfferId,
   type PublicOfferId,
 } from "@/lib/commerce/public-offers";
@@ -91,6 +90,18 @@ function OfferPageContent() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  const selectFeature = (feature: string) => {
+    setActiveFeature((current) => (current === feature ? null : feature));
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveFeature(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
@@ -145,11 +156,48 @@ function OfferPageContent() {
 
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 
+      <style>{`
+        @keyframes orbyven-feature-in {
+          0% { opacity: 0; transform: scale(.965) translateY(8px); filter: blur(8px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+        @keyframes orbyven-float-a {
+          0%,100% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,-7px,0); }
+        }
+        @keyframes orbyven-float-b {
+          0%,100% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,6px,0); }
+        }
+        @keyframes orbyven-sweep {
+          0% { transform: translateX(-140%); opacity: 0; }
+          20% { opacity: .8; }
+          70% { opacity: .25; }
+          100% { transform: translateX(220%); opacity: 0; }
+        }
+        .orbyven-feature-scene { animation: orbyven-feature-in .34s cubic-bezier(.16,1,.3,1) both; }
+        .orbyven-float-a { animation: orbyven-float-a 6s ease-in-out infinite; }
+        .orbyven-float-b { animation: orbyven-float-b 7s ease-in-out infinite; }
+        .orbyven-stage-sweep { animation: orbyven-sweep 8s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .orbyven-feature-scene, .orbyven-float-a, .orbyven-float-b, .orbyven-stage-sweep { animation: none !important; }
+        }
+        @media (min-width: 1024px) and (max-height: 820px) {
+          .orbyven-offer-stage { transform: scale(.91); transform-origin: top center; width: 109.89%; margin-left: -4.945%; }
+        }
+        @media (min-width: 1024px) and (max-height: 740px) {
+          .orbyven-offer-stage { transform: scale(.83); width: 120.48%; margin-left: -10.24%; }
+        }
+      `}</style>
+
       <section className="relative z-10 px-5 pb-8 pt-24 sm:px-6 md:px-10 lg:h-[calc(100svh-18px)] lg:overflow-hidden lg:pb-4 lg:pt-20">
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
-          <div className="mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
+          <div className="orbyven-offer-stage relative mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-[32px]">
+              <div className="orbyven-stage-sweep absolute -top-[20%] h-[140%] w-[14%] rotate-[16deg] bg-[linear-gradient(90deg,transparent,rgba(183,151,255,.10),transparent)] blur-[6px]" />
+            </div>
             <div className="grid items-center gap-3 lg:min-h-[430px] lg:grid-cols-[.56fr_1.44fr] xl:min-h-[455px] xl:gap-5">
               <div className="relative z-20 min-w-0 self-center py-3 lg:-mr-8 xl:py-4">
                 <span className="inline-flex rounded-full border border-[#9f7cff]/65 bg-[#8f6cff]/14 px-5 py-2.5 text-[9px] font-bold tracking-[.20em] text-[#d1c5ff] shadow-[0_0_34px_rgba(137,94,255,.16)]">{meta.eyebrow}</span>
@@ -168,19 +216,24 @@ function OfferPageContent() {
                   {meta.priceDetail ? <p className="mt-3 text-[15px] font-medium text-white/42">{meta.priceDetail}</p> : null}
                 </div>
 
-                <QuickModules offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
+                <QuickModules offerId={offerId} activeFeature={activeFeature} onSelect={selectFeature} />
               </div>
 
               <div className="relative min-w-0 lg:-mr-8 xl:-mr-12">
                 <div className="pointer-events-none absolute left-[10%] right-[2%] top-[8%] h-[70%] rounded-full bg-[#6d4cff]/12 blur-[70px]" />
                 <div className="relative origin-center lg:scale-[1.02] xl:scale-[1.05]">
-                  <HeroVisual offerId={offerId} activeFeature={activeFeature} onCloseFeature={() => setActiveFeature(null)} />
+                  <HeroVisual
+                    offerId={offerId}
+                    activeFeature={activeFeature}
+                    onCloseFeature={() => setActiveFeature(null)}
+                    onSelectFeature={selectFeature}
+                  />
                 </div>
               </div>
             </div>
 
             <div className="relative z-20 mt-1">
-              <ModulesStrip offerId={offerId} activeFeature={activeFeature} onSelect={setActiveFeature} />
+              <ModulesStrip offerId={offerId} activeFeature={activeFeature} onSelect={selectFeature} />
             </div>
           </div>
 
