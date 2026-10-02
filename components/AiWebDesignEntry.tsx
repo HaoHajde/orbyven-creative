@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import WebDesignPreview from "@/components/ai/WebDesignPreview";
 import WebDesignSpecialist from "@/components/ai/WebDesignSpecialist";
 import { SITE_PRESETS, type EditableSite } from "@/lib/ai/site-editor";
+import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 
 type Theme = "light" | "dark";
@@ -77,7 +78,7 @@ export default function AiWebDesignEntry() {
     const themeFrame = window.requestAnimationFrame(() => {
       setTheme(nextTheme);
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(nextTheme);
     });
 
     void orbyvenSupabase.auth.getSession().then(({ data }) => {
@@ -99,7 +100,7 @@ export default function AiWebDesignEntry() {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(next);
       return next;
     });
   };
@@ -109,25 +110,19 @@ export default function AiWebDesignEntry() {
   }
 
   const vars = {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#101014" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171d" : "#f1f1f5",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#74747e" : "#868690",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
+    ...publicThemeVars(theme),
     "--accent": "#745cff",
-    "--accent-soft": theme === "dark" ? "rgba(116,92,255,.16)" : "rgba(116,92,255,.09)",
-  } as CSSProperties;
+    "--accent-soft": theme === "dark"
+      ? "rgba(116,92,255,.16)"
+      : "rgba(116,92,255,.11)",
+  };
 
   if (mode === "checking") {
     return (
       <main
+        data-orbyven-theme={theme}
         style={vars}
-        className="grid min-h-screen place-items-center bg-[var(--bg)] text-[var(--text)]"
+        className="orbyven-theme-shell grid min-h-screen place-items-center bg-[var(--bg)] text-[var(--text)]"
       >
         <div className="text-center">
           <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#9f8dff]">
@@ -141,12 +136,13 @@ export default function AiWebDesignEntry() {
 
   return (
     <main
+      data-orbyven-theme={theme}
       style={{
         ...vars,
         fontFamily:
           "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
       }}
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
+      className="orbyven-theme-shell relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)] antialiased"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-26rem] h-[64rem] w-[78rem] max-w-[96vw] -translate-x-1/2 rounded-full bg-[rgba(116,92,255,.18)] blur-[180px]" />
