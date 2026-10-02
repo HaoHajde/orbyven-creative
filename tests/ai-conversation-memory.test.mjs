@@ -43,7 +43,7 @@ test("Conversation messages persist transcript only, never reusable Agent Action
   const server = read("lib/ai/conversation-server.ts");
   assert.match(migration, /Action buttons\/proposal payloads are intentionally not stored here/);
   assert.match(server, /content: response\.answer/);
-  assert.match(server, /facts: response\.facts/);
+  assert.match(server, /facts: \[\.\.\.baseFacts, \.\.\.focusFacts, \.\.\.decisionFacts/);
   assert.doesNotMatch(server, /response\.actions/);
 });
 
