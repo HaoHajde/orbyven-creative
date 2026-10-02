@@ -22,6 +22,7 @@ export type BusinessDocument = {
   task_id: string | null;
   estimate_id: string | null;
   note: string | null;
+  portal_visible: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -76,7 +77,7 @@ async function validateDocumentFile(file: File) {
   }
 }
 const FIELDS =
-  "id,organization_id,name,category,storage_path,mime_type,size_bytes,client_id,task_id,estimate_id,note,created_by,created_at,updated_at";
+  "id,organization_id,name,category,storage_path,mime_type,size_bytes,client_id,task_id,estimate_id,note,portal_visible,created_by,created_at,updated_at";
 
 function requireOrganizationId(organizationId: string) {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
@@ -218,6 +219,28 @@ export async function uploadDocument(
 
   if (error) {
     await orbyvenSupabase.storage.from(BUCKET).remove([path]);
+    throw error;
+  }
+  return data as BusinessDocument;
+}
+
+export async function setDocumentPortalVisible(
+  organizationId: string,
+  documentId: string,
+  visible: boolean
+): Promise<BusinessDocument> {
+  requireOrganizationId(organizationId);
+  const { data, error } = await orbyvenSupabase
+    .from("ops_documents")
+    .update({ portal_visible: visible })
+    .eq("organization_id", organizationId)
+    .eq("id", documentId)
+    .select(FIELDS)
+    .single();
+  if (error) {
+    if (String(error.message || "").includes("ops_documents_portal_visible_client_check")) {
+      throw new Error("Leagă documentul de un client înainte să îl publici în portal.");
+    }
     throw error;
   }
   return data as BusinessDocument;

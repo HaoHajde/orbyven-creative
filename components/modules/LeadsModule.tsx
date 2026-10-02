@@ -654,10 +654,7 @@ export default function LeadsModule({
               </div>}
 
               {selectedLead.kind === "client" && canManagePortal ? (
-                <CustomerPortalSharePanel
-                  organizationId={organizationId}
-                  clientId={selectedLead.id}
-                />
+                <CustomerPortalSharePanel organizationId={organizationId} clientId={selectedLead.id} />
               ) : null}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
