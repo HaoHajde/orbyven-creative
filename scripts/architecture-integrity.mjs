@@ -112,7 +112,25 @@ function checkWorkspaceChunking() {
       errors.push(`Static workspace module import detected: ${moduleName}. Use next/dynamic at module scope.`);
     }
   }
+  const shellFile = join(repoRoot, "components/ClientWorkspace.tsx");
+  if (existsSync(shellFile)) {
+    const shell = readFileSync(shellFile, "utf8");
+    for (const componentName of budgets.structure?.workspaceShellDynamicComponents ?? []) {
+      const dynamicPattern = new RegExp(`const\\s+${componentName}\\s*=\\s*dynamic\\(`);
+      if (!dynamicPattern.test(shell)) {
+        errors.push(`Heavy workspace shell component is no longer dynamically split: ${componentName}.`);
+      }
+      const staticPattern = new RegExp(`import\\s+${componentName}\\s+from\\s+["'][^"']*${componentName}["']`);
+      if (staticPattern.test(shell)) {
+        errors.push(`Static heavy workspace import detected: ${componentName}.`);
+      }
+    }
+  } else {
+    errors.push("ClientWorkspace.tsx missing; cannot verify workspace shell chunking.");
+  }
+
   notes.push(`workspace dynamic modules: ${(budgets.structure?.workspaceDynamicModules ?? []).length} guarded`);
+  notes.push(`workspace shell dynamic components: ${(budgets.structure?.workspaceShellDynamicComponents ?? []).length} guarded`);
 }
 
 function checkDependencies() {
