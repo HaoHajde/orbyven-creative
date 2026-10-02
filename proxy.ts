@@ -42,5 +42,7 @@ export const config = {
     "/invitatii-majorat",
     "/legal/privacy",
     "/legal/terms",
+    "/porneste/oferta",
+    "/porneste/plata",
   ],
 };
