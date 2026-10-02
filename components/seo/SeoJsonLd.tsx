@@ -1,18 +1,20 @@
 import type { SeoCaseStudy, SeoGuide, SeoLandingPage, SeoLink } from "@/lib/seo-foundation";
 import { getSiteUrl } from "@/lib/site-config";
+import { publicOriginForLocale } from "@/lib/domain-locale";
 
 type Props =
-  | { kind: "landing"; page: SeoLandingPage; breadcrumbs: SeoLink[] }
-  | { kind: "case-study"; page: SeoCaseStudy; breadcrumbs: SeoLink[] }
-  | { kind: "guide"; page: SeoGuide; breadcrumbs: SeoLink[] };
+  | { kind: "landing"; page: SeoLandingPage; breadcrumbs: SeoLink[]; locale?: "ro" | "en" }
+  | { kind: "case-study"; page: SeoCaseStudy; breadcrumbs: SeoLink[]; locale?: "ro" | "en" }
+  | { kind: "guide"; page: SeoGuide; breadcrumbs: SeoLink[]; locale?: "ro" | "en" };
 
 export default function SeoJsonLd(props: Props) {
-  const siteUrl = getSiteUrl();
+  const locale = props.locale ?? "ro";
+  const siteUrl = locale === "en" ? publicOriginForLocale("en") : getSiteUrl();
   const pageUrl = `${siteUrl}${props.page.path}`;
   const breadcrumbList = {
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Acasă", item: siteUrl },
+      { "@type": "ListItem", position: 1, name: locale === "ro" ? "Acasă" : "Home", item: siteUrl },
       ...props.breadcrumbs.map((item, index) => ({
         "@type": "ListItem",
         position: index + 2,
@@ -31,7 +33,7 @@ export default function SeoJsonLd(props: Props) {
       description: props.page.description,
       url: pageUrl,
       provider: { "@id": `${siteUrl}/#organization` },
-      areaServed: { "@type": "Country", name: "Romania" },
+      areaServed: locale === "ro" ? { "@type": "Country", name: "Romania" } : undefined,
     };
   } else if (props.kind === "case-study") {
     content = {
@@ -42,7 +44,7 @@ export default function SeoJsonLd(props: Props) {
       url: pageUrl,
       author: { "@id": `${siteUrl}/#organization` },
       publisher: { "@id": `${siteUrl}/#organization` },
-      inLanguage: "ro",
+      inLanguage: locale,
     };
   } else {
     content = {
@@ -56,7 +58,7 @@ export default function SeoJsonLd(props: Props) {
       dateModified: "2026-09-18",
       author: { "@id": `${siteUrl}/#organization` },
       publisher: { "@id": `${siteUrl}/#organization` },
-      inLanguage: "ro",
+      inLanguage: locale,
     };
   }
 

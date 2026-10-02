@@ -23,21 +23,20 @@ export const ENGLISH_PUBLIC_PATHS = new Set([
   "/templates",
   "/contact",
   "/ai-web-design",
-]);
-
-
-const ROMANIAN_ONLY_PUBLIC_PATHS = new Set([
-  "/cerere",
-  "/creare-site",
-  "/site-prezentare",
-  "/redesign-site",
-  "/invitatii-nunta",
-  "/invitatii-botez",
-  "/invitatii-majorat",
   "/solutii",
   "/studii-de-caz",
   "/ghid",
   "/despre",
+  "/creare-site",
+  "/site-prezentare",
+  "/redesign-site",
+]);
+
+const ROMANIAN_ONLY_PUBLIC_PATHS = new Set([
+  "/cerere",
+  "/invitatii-nunta",
+  "/invitatii-botez",
+  "/invitatii-majorat",
 ]);
 
 const ROMANIAN_ONLY_PUBLIC_PREFIXES = [
