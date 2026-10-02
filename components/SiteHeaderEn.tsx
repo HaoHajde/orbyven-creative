@@ -2,6 +2,7 @@
 
 import BackToTop from "@/components/BackToTop";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -125,6 +126,8 @@ export default function SiteHeader({
               <Link href="/contact" className="hidden h-10 touch-manipulation items-center justify-center rounded-full bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99] md:transition-transform md:hover:scale-[1.02] sm:inline-flex">
                 Start a project
               </Link>
+
+              <LanguageSwitcher locale="en" />
 
               <button
                 type="button"
