@@ -1,3 +1,4 @@
+import type { EditableSite } from "./site-editor.ts";
 import type {
   WebDesignBriefGap,
   WebDesignBriefGapId,
@@ -145,4 +146,95 @@ export function buildWebDesignInterviewPrompt(
   const trimmed = answer.trim();
   if (trimmed.length < 2 || trimmed.length > 1200) return null;
   return promptForGap(gap.id, trimmed, gap.question);
+}
+
+
+export type WebDesignInterviewLocalResult = {
+  draft: EditableSite;
+  message: string;
+};
+
+function ctaFromInterviewAnswer(answer: string) {
+  const value = normalize(answer);
+  if (/\b(programare|programeaza|rezervare|rezerva|booking|appointment)\b/.test(value)) {
+    return { cta: "Programează-te", title: "Programează-te" };
+  }
+  if (/\b(comanda|cumpara|vanzare|checkout|cos|buy|order)\b/.test(value)) {
+    return { cta: "Comandă acum", title: "Comandă" };
+  }
+  if (/\b(oferta|deviz|estimare|cotatie|quote)\b/.test(value)) {
+    return { cta: "Cere o ofertă", title: "Cere o ofertă" };
+  }
+  if (/\b(portofoliu|proiecte|lucrari|portfolio|gallery)\b/.test(value)) {
+    return { cta: "Vezi proiectele", title: "Vezi proiectele" };
+  }
+  if (/\b(contact|mesaj|telefon|whatsapp|email|scrie)\b/.test(value)) {
+    return { cta: "Contactează-ne", title: "Hai să vorbim" };
+  }
+  return null;
+}
+
+export function applyWebDesignInterviewAnswerLocally(
+  draft: EditableSite,
+  gap: WebDesignInterviewQuestion,
+  answer: string
+): WebDesignInterviewLocalResult | null {
+  const fact = answer.trim();
+  if (fact.length < 2 || fact.length > 1200) return null;
+
+  if (gap.id === "brand_name") {
+    const brand = fact.slice(0, 70).trim();
+    if (!brand) return null;
+    return {
+      draft: { ...draft, brand },
+      message: `Am setat numele real al brandului: ${brand}.`,
+    };
+  }
+
+  if (gap.id === "hero_offer") {
+    const description = fact.slice(0, 420).trim();
+    if (!description) return null;
+    return {
+      draft: { ...draft, description },
+      message: "Am aplicat oferta principală în hero fără să modific restul site-ului.",
+    };
+  }
+
+  if (gap.id === "about_real") {
+    const aboutDescription = fact.slice(0, 420).trim();
+    if (!aboutDescription) return null;
+    return {
+      draft: { ...draft, aboutDescription },
+      message: "Am înlocuit descrierea demonstrativă cu informația reală despre firmă.",
+    };
+  }
+
+  if (gap.id === "contact_real") {
+    const intent = ctaFromInterviewAnswer(fact);
+    const contactDescription = fact.slice(0, 420).trim();
+    if (!contactDescription) return null;
+    return {
+      draft: {
+        ...draft,
+        contactDescription,
+        ...(intent ? { cta: intent.cta, contactTitle: intent.title } : {}),
+      },
+      message: "Am actualizat traseul de contact folosind răspunsul real furnizat.",
+    };
+  }
+
+  if (gap.id === "conversion_goal") {
+    const intent = ctaFromInterviewAnswer(fact);
+    if (!intent) return null;
+    return {
+      draft: {
+        ...draft,
+        cta: intent.cta,
+        contactTitle: intent.title,
+      },
+      message: `Am setat obiectivul principal al site-ului: ${intent.cta}.`,
+    };
+  }
+
+  return null;
 }
