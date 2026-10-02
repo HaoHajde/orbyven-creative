@@ -85,6 +85,227 @@ iframe {
   outline-offset: 3px;
 }
 
+
+/* =========================================================
+   ORBYVEN DASHBOARD TEXT SCALE
+   Persistent 90–130% accessibility/density control.
+   Scoped to the authenticated workspace and its AI portal only.
+   ========================================================= */
+
+.orbyven-workspace-text-scale {
+  --orbyven-text-8: 8px;
+  --orbyven-text-9: 9px;
+  --orbyven-text-10: 10px;
+  --orbyven-text-11: 11px;
+  --orbyven-text-12: 12px;
+  --orbyven-text-13: 13px;
+  --orbyven-text-14: 14px;
+  --orbyven-text-15: 15px;
+  --orbyven-text-16: 16px;
+  --orbyven-text-17: 17px;
+  --orbyven-text-18: 18px;
+  --orbyven-text-19: 19px;
+  --orbyven-text-20: 20px;
+  --orbyven-text-21: 21px;
+  --orbyven-text-22: 22px;
+  --orbyven-text-24: 24px;
+  --orbyven-text-26: 26px;
+  --orbyven-text-28: 28px;
+  --orbyven-text-30: 30px;
+  --orbyven-text-32: 32px;
+  --orbyven-text-36: 36px;
+  --orbyven-text-40: 40px;
+  --orbyven-text-48: 48px;
+  --orbyven-text-xs: 12px;
+  --orbyven-text-sm: 14px;
+  --orbyven-text-base: 16px;
+  --orbyven-text-lg: 18px;
+  --orbyven-text-xl: 20px;
+  --orbyven-text-2xl: 24px;
+  --orbyven-text-3xl: 30px;
+  --orbyven-text-4xl: 36px;
+  --orbyven-text-5xl: 48px;
+}
+
+.orbyven-workspace-text-scale[data-orbyven-text-scale="0.9"] {
+  --orbyven-text-8: 7.2px;
+  --orbyven-text-9: 8.1px;
+  --orbyven-text-10: 9px;
+  --orbyven-text-11: 9.9px;
+  --orbyven-text-12: 10.8px;
+  --orbyven-text-13: 11.7px;
+  --orbyven-text-14: 12.6px;
+  --orbyven-text-15: 13.5px;
+  --orbyven-text-16: 14.4px;
+  --orbyven-text-17: 15.3px;
+  --orbyven-text-18: 16.2px;
+  --orbyven-text-19: 17.1px;
+  --orbyven-text-20: 18px;
+  --orbyven-text-21: 18.9px;
+  --orbyven-text-22: 19.8px;
+  --orbyven-text-24: 21.6px;
+  --orbyven-text-26: 23.4px;
+  --orbyven-text-28: 25.2px;
+  --orbyven-text-30: 27px;
+  --orbyven-text-32: 28.8px;
+  --orbyven-text-36: 32.4px;
+  --orbyven-text-40: 36px;
+  --orbyven-text-48: 43.2px;
+  --orbyven-text-xs: 10.8px;
+  --orbyven-text-sm: 12.6px;
+  --orbyven-text-base: 14.4px;
+  --orbyven-text-lg: 16.2px;
+  --orbyven-text-xl: 18px;
+  --orbyven-text-2xl: 21.6px;
+  --orbyven-text-3xl: 27px;
+  --orbyven-text-4xl: 32.4px;
+  --orbyven-text-5xl: 43.2px;
+}
+
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.1"] {
+  --orbyven-text-8: 8.8px;
+  --orbyven-text-9: 9.9px;
+  --orbyven-text-10: 11px;
+  --orbyven-text-11: 12.1px;
+  --orbyven-text-12: 13.2px;
+  --orbyven-text-13: 14.3px;
+  --orbyven-text-14: 15.4px;
+  --orbyven-text-15: 16.5px;
+  --orbyven-text-16: 17.6px;
+  --orbyven-text-17: 18.7px;
+  --orbyven-text-18: 19.8px;
+  --orbyven-text-19: 20.9px;
+  --orbyven-text-20: 22px;
+  --orbyven-text-21: 23.1px;
+  --orbyven-text-22: 24.2px;
+  --orbyven-text-24: 26.4px;
+  --orbyven-text-26: 28.6px;
+  --orbyven-text-28: 30.8px;
+  --orbyven-text-30: 33px;
+  --orbyven-text-32: 35.2px;
+  --orbyven-text-36: 39.6px;
+  --orbyven-text-40: 44px;
+  --orbyven-text-48: 52.8px;
+  --orbyven-text-xs: 13.2px;
+  --orbyven-text-sm: 15.4px;
+  --orbyven-text-base: 17.6px;
+  --orbyven-text-lg: 19.8px;
+  --orbyven-text-xl: 22px;
+  --orbyven-text-2xl: 26.4px;
+  --orbyven-text-3xl: 33px;
+  --orbyven-text-4xl: 39.6px;
+  --orbyven-text-5xl: 52.8px;
+}
+
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.2"] {
+  --orbyven-text-8: 9.6px;
+  --orbyven-text-9: 10.8px;
+  --orbyven-text-10: 12px;
+  --orbyven-text-11: 13.2px;
+  --orbyven-text-12: 14.4px;
+  --orbyven-text-13: 15.6px;
+  --orbyven-text-14: 16.8px;
+  --orbyven-text-15: 18px;
+  --orbyven-text-16: 19.2px;
+  --orbyven-text-17: 20.4px;
+  --orbyven-text-18: 21.6px;
+  --orbyven-text-19: 22.8px;
+  --orbyven-text-20: 24px;
+  --orbyven-text-21: 25.2px;
+  --orbyven-text-22: 26.4px;
+  --orbyven-text-24: 28.8px;
+  --orbyven-text-26: 31.2px;
+  --orbyven-text-28: 33.6px;
+  --orbyven-text-30: 36px;
+  --orbyven-text-32: 38.4px;
+  --orbyven-text-36: 43.2px;
+  --orbyven-text-40: 48px;
+  --orbyven-text-48: 57.6px;
+  --orbyven-text-xs: 14.4px;
+  --orbyven-text-sm: 16.8px;
+  --orbyven-text-base: 19.2px;
+  --orbyven-text-lg: 21.6px;
+  --orbyven-text-xl: 24px;
+  --orbyven-text-2xl: 28.8px;
+  --orbyven-text-3xl: 36px;
+  --orbyven-text-4xl: 43.2px;
+  --orbyven-text-5xl: 57.6px;
+}
+
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.3"] {
+  --orbyven-text-8: 10.4px;
+  --orbyven-text-9: 11.7px;
+  --orbyven-text-10: 13px;
+  --orbyven-text-11: 14.3px;
+  --orbyven-text-12: 15.6px;
+  --orbyven-text-13: 16.9px;
+  --orbyven-text-14: 18.2px;
+  --orbyven-text-15: 19.5px;
+  --orbyven-text-16: 20.8px;
+  --orbyven-text-17: 22.1px;
+  --orbyven-text-18: 23.4px;
+  --orbyven-text-19: 24.7px;
+  --orbyven-text-20: 26px;
+  --orbyven-text-21: 27.3px;
+  --orbyven-text-22: 28.6px;
+  --orbyven-text-24: 31.2px;
+  --orbyven-text-26: 33.8px;
+  --orbyven-text-28: 36.4px;
+  --orbyven-text-30: 39px;
+  --orbyven-text-32: 41.6px;
+  --orbyven-text-36: 46.8px;
+  --orbyven-text-40: 52px;
+  --orbyven-text-48: 62.4px;
+  --orbyven-text-xs: 15.6px;
+  --orbyven-text-sm: 18.2px;
+  --orbyven-text-base: 20.8px;
+  --orbyven-text-lg: 23.4px;
+  --orbyven-text-xl: 26px;
+  --orbyven-text-2xl: 31.2px;
+  --orbyven-text-3xl: 39px;
+  --orbyven-text-4xl: 46.8px;
+  --orbyven-text-5xl: 62.4px;
+}
+
+.orbyven-workspace-text-scale [class~="text-[8px]"] { font-size: var(--orbyven-text-8) !important; }
+.orbyven-workspace-text-scale [class~="text-[9px]"] { font-size: var(--orbyven-text-9) !important; }
+.orbyven-workspace-text-scale [class~="text-[10px]"] { font-size: var(--orbyven-text-10) !important; }
+.orbyven-workspace-text-scale [class~="text-[11px]"] { font-size: var(--orbyven-text-11) !important; }
+.orbyven-workspace-text-scale [class~="text-[12px]"] { font-size: var(--orbyven-text-12) !important; }
+.orbyven-workspace-text-scale [class~="text-[13px]"] { font-size: var(--orbyven-text-13) !important; }
+.orbyven-workspace-text-scale [class~="text-[14px]"] { font-size: var(--orbyven-text-14) !important; }
+.orbyven-workspace-text-scale [class~="text-[15px]"] { font-size: var(--orbyven-text-15) !important; }
+.orbyven-workspace-text-scale [class~="text-[16px]"] { font-size: var(--orbyven-text-16) !important; }
+.orbyven-workspace-text-scale [class~="text-[17px]"] { font-size: var(--orbyven-text-17) !important; }
+.orbyven-workspace-text-scale [class~="text-[18px]"] { font-size: var(--orbyven-text-18) !important; }
+.orbyven-workspace-text-scale [class~="text-[19px]"] { font-size: var(--orbyven-text-19) !important; }
+.orbyven-workspace-text-scale [class~="text-[20px]"] { font-size: var(--orbyven-text-20) !important; }
+.orbyven-workspace-text-scale [class~="text-[21px]"] { font-size: var(--orbyven-text-21) !important; }
+.orbyven-workspace-text-scale [class~="text-[22px]"] { font-size: var(--orbyven-text-22) !important; }
+.orbyven-workspace-text-scale [class~="text-[24px]"] { font-size: var(--orbyven-text-24) !important; }
+.orbyven-workspace-text-scale [class~="text-[26px]"] { font-size: var(--orbyven-text-26) !important; }
+.orbyven-workspace-text-scale [class~="text-[28px]"] { font-size: var(--orbyven-text-28) !important; }
+.orbyven-workspace-text-scale [class~="text-[30px]"] { font-size: var(--orbyven-text-30) !important; }
+.orbyven-workspace-text-scale [class~="text-[32px]"] { font-size: var(--orbyven-text-32) !important; }
+.orbyven-workspace-text-scale [class~="text-[36px]"] { font-size: var(--orbyven-text-36) !important; }
+.orbyven-workspace-text-scale [class~="text-[40px]"] { font-size: var(--orbyven-text-40) !important; }
+.orbyven-workspace-text-scale [class~="text-[48px]"] { font-size: var(--orbyven-text-48) !important; }
+.orbyven-workspace-text-scale .text-xs { font-size: var(--orbyven-text-xs) !important; }
+.orbyven-workspace-text-scale .text-sm { font-size: var(--orbyven-text-sm) !important; }
+.orbyven-workspace-text-scale .text-base { font-size: var(--orbyven-text-base) !important; }
+.orbyven-workspace-text-scale .text-lg { font-size: var(--orbyven-text-lg) !important; }
+.orbyven-workspace-text-scale .text-xl { font-size: var(--orbyven-text-xl) !important; }
+.orbyven-workspace-text-scale .text-2xl { font-size: var(--orbyven-text-2xl) !important; }
+.orbyven-workspace-text-scale .text-3xl { font-size: var(--orbyven-text-3xl) !important; }
+.orbyven-workspace-text-scale .text-4xl { font-size: var(--orbyven-text-4xl) !important; }
+.orbyven-workspace-text-scale .text-5xl { font-size: var(--orbyven-text-5xl) !important; }
+
+/* Fixed line-height utilities need a little more room at 120–130%. */
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.2"] .leading-4,
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.3"] .leading-4 { line-height: 1.35rem !important; }
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.2"] .leading-5,
+.orbyven-workspace-text-scale[data-orbyven-text-scale="1.3"] .leading-5 { line-height: 1.55rem !important; }
+
 /* =========================================================
    ORBYVEN ORBIT SYSTEM
    Flat 2D solar-system language for hero + selected headings.
