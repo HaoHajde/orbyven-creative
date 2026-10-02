@@ -23,11 +23,12 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.7.0";
+const APP_VERSION = "0.8.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
 type NativeTheme = "light" | "dark";
+type NetworkNotice = "offline" | "online" | null;
 
 const NATIVE_RUNTIME = {
   platform: "ios",
@@ -40,6 +41,8 @@ const NATIVE_RUNTIME = {
     "local-notifications",
     "navigation-haptics",
     "network-recovery",
+    "network-state-bridge",
+    "state-preserving-reconnect",
     "push-registration",
   ],
 } as const;
@@ -193,11 +196,14 @@ export default function App() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [deviceOffline, setDeviceOffline] = useState(false);
+  const [networkNotice, setNetworkNotice] = useState<NetworkNotice>(null);
 
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
   const pendingCalendarEventId = useRef<string | null>(null);
+  const webFailedRef = useRef(false);
+  const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openNativeLink = useCallback((url: string | null) => {
     if (!url) return;
@@ -299,6 +305,30 @@ export default function App() {
     return () => subscription.remove();
   }, [authenticateToUnlock]);
 
+  const emitNativeNetworkState = useCallback((online: boolean) => {
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-network-change',{detail:{online:" +
+        (online ? "true" : "false") +
+        "}})); true;",
+    );
+  }, []);
+
+  const showNetworkNotice = useCallback((notice: Exclude<NetworkNotice, null>) => {
+    if (networkNoticeTimerRef.current) {
+      clearTimeout(networkNoticeTimerRef.current);
+      networkNoticeTimerRef.current = null;
+    }
+
+    setNetworkNotice(notice);
+
+    if (notice === "online") {
+      networkNoticeTimerRef.current = setTimeout(() => {
+        setNetworkNotice(null);
+        networkNoticeTimerRef.current = null;
+      }, 1800);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -313,19 +343,34 @@ export default function App() {
       setDeviceOffline(definitelyOffline);
 
       if (definitelyOffline) {
+        const wasOnline = previousReachability.current !== false;
         previousReachability.current = false;
+        setConnection("offline");
+        emitNativeNetworkState(false);
+        if (wasOnline) showNetworkNotice("offline");
         return;
       }
 
       if (definitelyOnline && previousReachability.current === false) {
         previousReachability.current = true;
-        setConnection("loading");
-        webRef.current?.reload();
+        setDeviceOffline(false);
+        emitNativeNetworkState(true);
+        showNetworkNotice("online");
+        void Haptics.selectionAsync().catch(() => undefined);
+
+        if (webFailedRef.current) {
+          webFailedRef.current = false;
+          setConnection("loading");
+          webRef.current?.reload();
+        } else {
+          setConnection("online");
+        }
         return;
       }
 
       if (definitelyOnline) {
         previousReachability.current = true;
+        emitNativeNetworkState(true);
       }
     };
 
@@ -338,8 +383,12 @@ export default function App() {
     return () => {
       mounted = false;
       subscription.remove();
+      if (networkNoticeTimerRef.current) {
+        clearTimeout(networkNoticeTimerRef.current);
+        networkNoticeTimerRef.current = null;
+      }
     };
-  }, []);
+  }, [emitNativeNetworkState, showNetworkNotice]);
 
   const onNavigationStateChange = useCallback((state: WebViewNavigation) => {
     setCurrentUrl(state.url);
@@ -589,6 +638,35 @@ export default function App() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]}>
       <StatusBar barStyle={dark ? "light-content" : "dark-content"} />
+
+      {networkNotice ? (
+        <View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={[
+            styles.networkNotice,
+            networkNotice === "offline"
+              ? styles.networkNoticeOffline
+              : styles.networkNoticeOnline,
+          ]}
+        >
+          <View
+            style={[
+              styles.networkNoticeDot,
+              {
+                backgroundColor:
+                  networkNotice === "offline" ? "#ff7b7b" : "#6fe0ae",
+              },
+            ]}
+          />
+          <Text style={styles.networkNoticeText}>
+            {networkNotice === "offline"
+              ? "Fără internet · păstrăm ecranul curent"
+              : "Conexiune restabilită"}
+          </Text>
+        </View>
+      ) : null}
+
       {!webAppOwnsChrome ? (
       <View style={[styles.header, { backgroundColor: surface, borderBottomColor: border }]}>
         <View style={styles.brandRow}>
@@ -625,12 +703,20 @@ export default function App() {
           onMessage={handleWebMessage}
           onLoadStart={() => setConnection("loading")}
           onLoadEnd={() => {
+            webFailedRef.current = false;
             setConnection("online");
+            emitNativeNetworkState(true);
             setTimeout(flushPendingCalendarIntent, 0);
           }}
-          onError={() => setConnection("offline")}
+          onError={() => {
+            webFailedRef.current = true;
+            setConnection("offline");
+          }}
           onHttpError={({ nativeEvent }) => {
-            if (nativeEvent.statusCode >= 500) setConnection("offline");
+            if (nativeEvent.statusCode >= 500) {
+              webFailedRef.current = true;
+              setConnection("offline");
+            }
           }}
           onContentProcessDidTerminate={() => {
             setConnection("loading");
@@ -755,6 +841,46 @@ function ToolbarButton({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  networkNotice: {
+    position: "absolute",
+    top: 8,
+    left: 18,
+    right: 18,
+    zIndex: 120,
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    shadowColor: "#000000",
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  networkNoticeOffline: {
+    backgroundColor: "rgba(57,24,31,0.96)",
+    borderColor: "rgba(255,123,123,0.34)",
+  },
+  networkNoticeOnline: {
+    backgroundColor: "rgba(18,60,49,0.96)",
+    borderColor: "rgba(111,224,174,0.34)",
+  },
+  networkNoticeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  networkNoticeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+  },
   header: {
     minHeight: 66,
     borderBottomWidth: StyleSheet.hairlineWidth,
