@@ -148,16 +148,26 @@ export async function persistAssistantResponse(
 ) {
   const focusFacts = response.focus
     ? [
+        { label: "Focus · Motiv", value: response.focus.reason },
         { label: "Focus · De ce", value: response.focus.why },
         { label: "Focus · Risc", value: response.focus.consequence },
         { label: "Focus · Pas", value: response.focus.nextStep },
+      ]
+    : [];
+  const decisionFacts = response.decision
+    ? [
+        { label: "Decision · Context", value: response.decision.subject },
+        ...response.decision.options.slice(0, 3).map((option, index) => ({
+          label: `Decision · ${index + 1}`,
+          value: [option.label, option.impact, option.tradeoff, option.whenToUse].join("¦"),
+        })),
       ]
     : [];
 
   await appendAssistantConversationMessage(actor, conversationId, {
     specialist: response.specialist,
     content: response.answer,
-    facts: [...response.facts, ...focusFacts].slice(0, 12),
+    facts: [...response.facts, ...focusFacts, ...decisionFacts].slice(0, 12),
   });
 }
 
