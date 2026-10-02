@@ -1,54 +1,85 @@
-import { getSiteUrl, siteConfig } from "@/lib/site-config";
+import { siteConfig, siteConfigEn } from "@/lib/site-config";
+import type { PublicLocale } from "@/lib/domain-locale";
 
-export default function StructuredData() {
-  const siteUrl = getSiteUrl();
+export default function StructuredData({
+  locale = "ro",
+  siteUrl,
+}: {
+  locale?: PublicLocale;
+  siteUrl?: string;
+}) {
+  const config = locale === "en" ? siteConfigEn : siteConfig;
+  const resolvedSiteUrl = siteUrl ?? config.defaultUrl;
+
+  const offerCatalog =
+    locale === "en"
+      ? {
+          name: "ORBYVEN CREATIVE Services",
+          items: [
+            ["Web design and website development", "/servicii"],
+            ["Digital wedding invitations", "/invitatii-nunta"],
+            ["Digital christening invitations", "/invitatii-botez"],
+            ["Digital event invitations", "/invitatii-majorat"],
+          ],
+        }
+      : {
+          name: "Servicii ORBYVEN CREATIVE",
+          items: [
+            ["Web design și creare website", "/servicii"],
+            ["Invitații de nuntă digitale", "/invitatii-nunta"],
+            ["Invitații de botez digitale", "/invitatii-botez"],
+            ["Invitații de majorat digitale", "/invitatii-majorat"],
+          ],
+        };
 
   const data = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": `${siteUrl}/#organization`,
-        name: siteConfig.name,
-        alternateName: siteConfig.shortName,
-        description: siteConfig.description,
-        url: siteUrl,
-        logo: `${siteUrl}/branding/orbyven-logo-dark.png`,
+        "@id": `${resolvedSiteUrl}/#organization`,
+        name: config.name,
+        alternateName: config.shortName,
+        description: config.description,
+        url: resolvedSiteUrl,
+        logo: `${resolvedSiteUrl}/branding/orbyven-logo-dark.png`,
       },
       {
         "@type": "WebSite",
-        "@id": `${siteUrl}/#website`,
-        url: siteUrl,
-        name: siteConfig.name,
-        alternateName: siteConfig.shortName,
-        description: siteConfig.description,
-        inLanguage: siteConfig.language,
+        "@id": `${resolvedSiteUrl}/#website`,
+        url: resolvedSiteUrl,
+        name: config.name,
+        alternateName: config.shortName,
+        description: config.description,
+        inLanguage: config.language,
         publisher: {
-          "@id": `${siteUrl}/#organization`,
+          "@id": `${resolvedSiteUrl}/#organization`,
         },
       },
       {
         "@type": "ProfessionalService",
-        "@id": `${siteUrl}/#service`,
-        name: siteConfig.name,
-        url: siteUrl,
-        description: siteConfig.description,
+        "@id": `${resolvedSiteUrl}/#service`,
+        name: config.name,
+        url: resolvedSiteUrl,
+        description: config.description,
         areaServed: {
           "@type": "Country",
           name: "Romania",
         },
         provider: {
-          "@id": `${siteUrl}/#organization`,
+          "@id": `${resolvedSiteUrl}/#organization`,
         },
         hasOfferCatalog: {
           "@type": "OfferCatalog",
-          name: "Servicii ORBYVEN CREATIVE",
-          itemListElement: [
-            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Web design și creare website", url: `${siteUrl}/servicii` } },
-            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de nuntă digitale", url: `${siteUrl}/invitatii-nunta` } },
-            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de botez digitale", url: `${siteUrl}/invitatii-botez` } },
-            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Invitații de majorat digitale", url: `${siteUrl}/invitatii-majorat` } },
-          ],
+          name: offerCatalog.name,
+          itemListElement: offerCatalog.items.map(([name, path]) => ({
+            "@type": "Offer",
+            itemOffered: {
+              "@type": "Service",
+              name,
+              url: `${resolvedSiteUrl}${path}`,
+            },
+          })),
         },
       },
     ],
