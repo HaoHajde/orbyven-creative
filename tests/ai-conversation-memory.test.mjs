@@ -80,7 +80,7 @@ test("Agent Action proposals keep conversation identity and history cannot overt
 });
 
 test("Workspace history restores transcript without restoring old confirm actions", () => {
-  const ui = read("components/WorkspaceIntelligence.tsx");
+  const ui = read("components/WorkspaceIntelligence.tsx") + "\n" + read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(ui, /\/api\/ai\/conversations/);
   assert.match(ui, /conversationId,/);
   assert.match(ui, /\+ Nou/);
