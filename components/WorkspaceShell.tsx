@@ -152,6 +152,13 @@ export default function WorkspaceShell({
     bridge?.postMessage(JSON.stringify({ type: "orbyven:theme", theme }));
   }, [theme]);
 
+  const requestNativeHaptic = useCallback(() => {
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:haptic" }));
+  }, []);
+
   const enabledModules = useMemo<OrbyvenModuleId[]>(
     () => workspace?.enabledModules ?? ["overview"],
     [workspace]
@@ -625,7 +632,10 @@ export default function WorkspaceShell({
                   <button
                     key={definition.id}
                     type="button"
-                    onClick={() => openModule(definition.id)}
+                    onClick={() => {
+                      requestNativeHaptic();
+                      openModule(definition.id);
+                    }}
                     className={`flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[20px] border px-1 text-center transition active:scale-[0.97] ${
                       active
                         ? "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]"
@@ -646,7 +656,10 @@ export default function WorkspaceShell({
                 <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
                 <button
                   type="button"
-                  onClick={resetTextScale}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    resetTextScale();
+                  }}
                   aria-label="Revino la dimensiunea textului 100%"
                   title="Revino la 100%"
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold text-[var(--muted-2)]"
@@ -657,7 +670,10 @@ export default function WorkspaceShell({
               <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => changeTextScale(-1)}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    changeTextScale(-1);
+                  }}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
                   aria-label="Micșorează textul"
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
@@ -666,7 +682,10 @@ export default function WorkspaceShell({
                 </button>
                 <button
                   type="button"
-                  onClick={() => changeTextScale(1)}
+                  onClick={() => {
+                    requestNativeHaptic();
+                    changeTextScale(1);
+                  }}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
                   aria-label="Mărește textul"
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
@@ -679,6 +698,7 @@ export default function WorkspaceShell({
             <button
               type="button"
               onClick={() => {
+                requestNativeHaptic();
                 setMobileModuleMenuOpen(false);
                 onOpenPath("/ai-web-design");
               }}
@@ -691,6 +711,7 @@ export default function WorkspaceShell({
             <button
               type="button"
               onClick={() => {
+                requestNativeHaptic();
                 setPanel("modules");
                 setMobileModuleMenuOpen(false);
               }}
@@ -707,7 +728,10 @@ export default function WorkspaceShell({
         >
           <button
             type="button"
-            onClick={() => openModule("overview")}
+            onClick={() => {
+              requestNativeHaptic();
+              openModule("overview");
+            }}
             aria-current={panel === "workspace" && activeModule === "overview" ? "page" : undefined}
             className={`flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-[17px] text-[9px] font-semibold transition active:scale-[0.97] ${
               panel === "workspace" && activeModule === "overview"
@@ -722,7 +746,10 @@ export default function WorkspaceShell({
           <button
             type="button"
             disabled={!enabledModules.includes("tasks")}
-            onClick={() => openModule("tasks")}
+            onClick={() => {
+              requestNativeHaptic();
+              openModule("tasks");
+            }}
             aria-current={panel === "workspace" && activeModule === "tasks" ? "page" : undefined}
             className={`flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-[17px] text-[9px] font-semibold transition active:scale-[0.97] disabled:opacity-35 ${
               panel === "workspace" && activeModule === "tasks"
@@ -738,6 +765,7 @@ export default function WorkspaceShell({
             type="button"
             aria-label={canCreate ? "Creează o înregistrare" : "Deschide modulele"}
             onClick={() => {
+              requestNativeHaptic();
               if (canCreate) {
                 setCreateMenuOpen(true);
                 setMobileModuleMenuOpen(false);
@@ -754,7 +782,10 @@ export default function WorkspaceShell({
           <button
             type="button"
             disabled={!enabledModules.includes("leads")}
-            onClick={() => openModule("leads")}
+            onClick={() => {
+              requestNativeHaptic();
+              openModule("leads");
+            }}
             aria-current={panel === "workspace" && activeModule === "leads" ? "page" : undefined}
             className={`flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-[17px] text-[9px] font-semibold transition active:scale-[0.97] disabled:opacity-35 ${
               panel === "workspace" && activeModule === "leads"
@@ -770,7 +801,10 @@ export default function WorkspaceShell({
             type="button"
             aria-expanded={mobileModuleMenuOpen}
             aria-label={mobileModuleMenuOpen ? "Închide meniul modulelor" : "Deschide meniul modulelor"}
-            onClick={() => setMobileModuleMenuOpen((current) => !current)}
+            onClick={() => {
+              requestNativeHaptic();
+              setMobileModuleMenuOpen((current) => !current);
+            }}
             className={`flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-[17px] text-[9px] font-semibold transition active:scale-[0.97] ${
               mobileModuleMenuOpen ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--muted)]"
             }`}
