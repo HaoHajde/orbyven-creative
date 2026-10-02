@@ -11,13 +11,13 @@ import {
   PROJECT_PAYMENT_OPTIONS,
   type ProjectPaymentMode,
 } from "@/lib/project-requests";
+import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import Link from "next/link";
 import {
   useEffect,
   useMemo,
   useState,
-  type CSSProperties,
-  type FormEvent,
+   type FormEvent,
 } from "react";
 
 type Theme = "light" | "dark";
@@ -62,7 +62,7 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const nextTheme: Theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
       document.documentElement.style.colorScheme = nextTheme;
-      document.body.style.backgroundColor = nextTheme === "dark" ? "#09090a" : "#ffffff";
+      document.body.style.backgroundColor = themeBodyBackground(nextTheme);
       setTheme(nextTheme);
     };
     const frame = window.requestAnimationFrame(hydrate);
@@ -72,27 +72,14 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
   const selectedPlan = useMemo(() => (planId ? BILLING_PLANS[planId] : null), [planId]);
   const paymentOption = PROJECT_PAYMENT_OPTIONS[paymentMode];
 
-  const vars = {
-    "--bg": theme === "dark" ? "#09090a" : "#ffffff",
-    "--surface": theme === "dark" ? "#111113" : "#f5f5f7",
-    "--surface-2": theme === "dark" ? "#18181b" : "#fbfbfd",
-    "--text": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#6e6e73",
-    "--muted-2": theme === "dark" ? "#77777d" : "#86868b",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#1d1d1f",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(75,70,238,0.08)",
-  } as CSSProperties;
+  const vars = publicThemeVars(theme);
 
   const toggleTheme = () => {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
       window.localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090a" : "#ffffff";
+      document.body.style.backgroundColor = themeBodyBackground(next);
       return next;
     });
   };
@@ -155,7 +142,7 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
 
   if (result?.ok) {
     return (
-      <main style={vars} className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-5 py-12 text-[var(--text)] antialiased">
+      <main data-orbyven-theme={theme} style={vars} className="orbyven-theme-shell flex min-h-screen items-center justify-center bg-[var(--bg)] px-5 py-12 text-[var(--text)] antialiased">
         <section className="w-full max-w-2xl rounded-[34px] border border-[var(--border)] bg-[var(--surface-2)] p-7 sm:p-10">
           <div className="flex items-center justify-between gap-4">
             <BrandLogo compact theme={theme} />
@@ -175,7 +162,7 @@ export default function ProjectRequestFlow({ initialPlan, initialPaymentMode, in
   }
 
   return (
-    <main style={vars} className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased">
+    <main data-orbyven-theme={theme} style={vars} className="orbyven-theme-shell min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased">
       <header className="border-b border-[var(--border)] bg-[var(--bg)]/95">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-5 sm:px-6 md:px-10">
           <BrandLogo compact theme={theme} />
