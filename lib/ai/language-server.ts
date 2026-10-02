@@ -101,7 +101,7 @@ async function finishLanguageQuota(
   usage: { input: number; output: number },
   failureCode?: string
 ) {
-  const client = createBillingServiceClient();
+  const client = createBillingServiceClient(actor);
   const { error } = await client.rpc("ai_language_finish", {
     p_request_id: requestId,
     p_success: success,
