@@ -30,12 +30,13 @@ export async function recordPostServiceEvent(
   clientId: string,
   taskId: string,
   type: PostServiceEventType,
-  note?: string
+  note?: string,
+  score?: number
 ) {
   return createCrmLeadActivity(
     organizationId,
     clientId,
     "status",
-    encodePostServiceEvent(taskId, type, note)
+    encodePostServiceEvent(taskId, type, note, score)
   );
 }
