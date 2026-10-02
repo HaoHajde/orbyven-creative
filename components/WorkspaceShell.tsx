@@ -157,13 +157,6 @@ export default function WorkspaceShell({
   }, [initialWorkspace, loadWorkspace]);
 
   useEffect(() => {
-    if (!workspace?.profile?.locale) return;
-    const savedLanguage = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
-    if (savedLanguage === "en" || savedLanguage === "ro") return;
-    setUiLanguage(normalizeWorkspaceLanguage(workspace.profile.locale));
-  }, [workspace?.profile?.locale]);
-
-  useEffect(() => {
     document.documentElement.lang = uiLanguage;
     const bridge = (window as Window & {
       ReactNativeWebView?: { postMessage: (message: string) => void };
