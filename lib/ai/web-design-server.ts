@@ -14,15 +14,13 @@ import {
   webDesignStrategyInstruction,
 } from "@/lib/ai/web-design-intent";
 import type { WebDesignQualityReport } from "@/lib/ai/web-design-quality";
-import {
-  applyDesignDna,
-  designDnaInstruction,
-} from "@/lib/ai/web-design-variation";
+import { designDnaInstruction } from "@/lib/ai/web-design-variation";
 import type { WebDesignReadinessReport } from "@/lib/ai/web-design-readiness";
+import type { WebDesignAutonomousRefinementReport } from "@/lib/ai/web-design-autorefine";
 import {
-  autonomouslyRefineWebDesign,
-  type WebDesignAutonomousRefinementReport,
-} from "@/lib/ai/web-design-autorefine";
+  selectBestWebDesignCandidate,
+  type WebDesignCandidateSelectionReport,
+} from "@/lib/ai/web-design-candidate-selection";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -58,6 +56,7 @@ export type WebDesignGenerationResult = {
   quality: WebDesignQualityReport;
   readiness: WebDesignReadinessReport;
   refinement: WebDesignAutonomousRefinementReport;
+  selection: WebDesignCandidateSelectionReport;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -599,19 +598,13 @@ export async function generateWebDesignForActor(
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
     }
 
-    const variedDraft = readSiteDraft(
-      applyDesignDna(strategicDraft, current, strategy, prompt)
+    const selectedResult = selectBestWebDesignCandidate(
+      strategicDraft,
+      current,
+      strategy,
+      prompt
     );
-    if (!variedDraft) {
-      await finishQuota(quota.requestId, false, usage, "VARIATION_INVALID");
-      throw new Error("WEB_DESIGN_DRAFT_INVALID");
-    }
-
-    const autonomousResult = autonomouslyRefineWebDesign(
-      variedDraft,
-      strategy
-    );
-    const nextDraft = readSiteDraft(autonomousResult.draft);
+    const nextDraft = readSiteDraft(selectedResult.draft);
     if (!nextDraft) {
       await finishQuota(quota.requestId, false, usage, "AUTOREFINE_INVALID");
       throw new Error("WEB_DESIGN_DRAFT_INVALID");
@@ -624,15 +617,16 @@ export async function generateWebDesignForActor(
       draft: nextDraft,
       summary: result.summary,
       suggestions: [
-        ...autonomousResult.refinement.remainingActions,
+        ...selectedResult.refinement.remainingActions,
         ...result.suggestions,
       ]
         .filter((item, index, items) => items.indexOf(item) === index)
         .slice(0, 4),
       remainingToday: quota.remainingToday,
-      quality: autonomousResult.quality,
-      readiness: autonomousResult.readiness,
-      refinement: autonomousResult.refinement,
+      quality: selectedResult.quality,
+      readiness: selectedResult.readiness,
+      refinement: selectedResult.refinement,
+      selection: selectedResult.selection,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
