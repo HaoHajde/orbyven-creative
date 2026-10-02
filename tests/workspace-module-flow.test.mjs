@@ -260,3 +260,27 @@ test("calendar routes scheduled work through its dossier before completion", () 
   assert.match(calendar, /event\.status !== "completed" && canComplete/);
   assert.match(calendar, /Ora de început a trecut/);
 });
+
+
+test("calendar escalates missing scheduler resources to team", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /activeResources\.length === 0 && enabledModules\.includes\("team"\)/);
+  assert.match(calendar, /Adaugă resurse înainte de execuție/);
+  assert.match(calendar, /Deschide Echipă →/);
+});
+
+test("completed work without evidence is not treated as fully ready", () => {
+  const readiness = read("lib/automation/work-readiness.ts");
+  assert.match(readiness, /completedWithoutEvidence/);
+  assert.match(readiness, /operation\.status === "done"/);
+  assert.match(readiness, /dosarul nu are încă nicio dovadă sau document/);
+});
+
+test("inventory continues ready work into calendar", () => {
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /Materialele sunt pregătite/);
+  assert.match(inventory, /Programează execuția →/);
+  assert.match(inventory, /Nu există necesar material confirmat/);
+  assert.match(inventory, /taskId: planTaskId/);
+  assert.match(inventory, /clientId: taskById\.get\(planTaskId\)\?\.client_id/);
+});
