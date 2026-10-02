@@ -72,7 +72,7 @@ export default function LegalDocument({
             >
               Centrul juridic
             </Link>
-            <LanguageSwitch variant="light" />
+            <LanguageSwitch variant="light" initialLocale={locale} />
           </div>
         </div>
       </header>
