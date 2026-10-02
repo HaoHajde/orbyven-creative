@@ -58,7 +58,7 @@ del "%TEMP%\orbyven-expo-whoami.txt" >nul 2>&1
 
 echo.
 echo ===============================================
-echo   ORBYVEN iOS Alpha 0.10 - iPhone Dev Launcher
+echo   ORBYVEN iOS Alpha 0.11 - iPhone Dev Launcher
 echo ===============================================
 echo.
 echo 1. Deschide Expo Go pe iPhone si autentifica-te.
