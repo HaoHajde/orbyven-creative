@@ -11,6 +11,7 @@ type IntelligenceRequest = (path: string, init?: RequestInit) => Promise<Respons
 
 type Props = {
   organizationId: string;
+  theme: "light" | "dark";
   themeVars: CSSProperties;
   textScale: number;
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
@@ -58,6 +59,7 @@ const specialistLabels: Record<IntelligenceSpecialist, string> = {
 
 export default function WorkspaceIntelligence({
   organizationId,
+  theme,
   themeVars,
   textScale,
   onOpenModule,
@@ -651,8 +653,9 @@ export default function WorkspaceIntelligence({
   return createPortal(
         <div
           style={themeVars}
+          data-orbyven-theme={theme}
           data-orbyven-text-scale={textScale}
-          className="orbyven-workspace-text-scale contents text-[var(--text)]"
+          className="orbyven-theme-shell orbyven-workspace-text-scale contents text-[var(--text)]"
           data-orbyven-intelligence-theme-scope="true"
         >
           <>
