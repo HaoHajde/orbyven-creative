@@ -447,6 +447,13 @@ export default function WorkspaceShell({
             >
               AI Web Design
             </button>
+            <button
+              type="button"
+              onClick={() => onOpenPath("/video-ai")}
+              className="hidden h-9 rounded-[10px] border border-[#9a7dff]/25 bg-[#9a7dff]/10 px-3 text-[11px] font-semibold text-[#c6b8ff] transition hover:border-[#9a7dff]/45 hover:bg-[#9a7dff]/15 2xl:block"
+            >
+              Video AI
+            </button>
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
