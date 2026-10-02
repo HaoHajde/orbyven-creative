@@ -62,7 +62,7 @@ test("Video AI UI supports free render packages and authenticated provider rende
 
 test("Video AI is discoverable across the public site and workspace", () => {
   const header = read("components/SiteHeader.tsx");
-  const services = read("app/servicii/page.tsx");
+  const services = read("lib/public-service-catalog.ts");
   const workspace = read("components/WorkspaceShell.tsx");
   const sitemap = read("app/sitemap.ts");
 
