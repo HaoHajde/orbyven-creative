@@ -10,7 +10,14 @@ function WorkspaceAuthCallbackPageContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
   const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
-  const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
+  const checkoutProduct = searchParams.get("product") === "web-design-dashboard" ? "web-design-dashboard" : null;
+  const checkoutMode = searchParams.get("mode") === "web" ? "web" : "ecosystem";
+  const checkoutQuery = checkoutPlan
+    ? `?plan=${checkoutPlan}&checkout=1${checkoutProduct ? `&product=${checkoutProduct}&mode=${checkoutMode}` : ""}`
+    : "";
+  const checkoutDestination = checkoutProduct
+    ? `/porneste/web-design${checkoutQuery}`
+    : checkoutDestination;
   const [message, setMessage] = useState("Se confirmă contul...");
 
   useEffect(() => {
@@ -26,7 +33,7 @@ function WorkspaceAuthCallbackPageContent() {
       if (!cancelled) {
         const next = checkoutPlan
           ? destination === "/workspace"
-            ? `/contact${checkoutQuery}`
+            ? checkoutDestination
             : destination === "/workspace/onboarding" || destination === "/workspace/login"
               ? `/workspace/onboarding${checkoutQuery}`
               : destination
