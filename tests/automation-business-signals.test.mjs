@@ -564,3 +564,49 @@ test("Work Readiness flags open procurement on closed work without calling cance
   assert.equal(readiness.checks.find((item) => item.key === "procurement")?.state, "attention");
   assert.match(readiness.checks.find((item) => item.key === "procurement")?.message ?? "", /2 comenzi furnizor/);
 });
+
+
+test("cancelled work suppresses execution-only readiness alerts", () => {
+  const readiness = evaluateWorkReadiness({
+    operation: {
+      kind: "work",
+      status: "cancelled",
+      assignee: null,
+      scheduledAt: "2026-10-03T08:00:00.000Z",
+      dueAt: "2026-10-03T12:00:00.000Z",
+      progress: 25,
+    },
+    context: {
+      estimatesCount: 0,
+      sentEstimatesCount: 0,
+      acceptedEstimatesCount: 0,
+      documentsCount: 0,
+      upcomingEventsCount: 0,
+      expensesCount: 0,
+      expensesCents: 0,
+      inventoryMovementsCount: 0,
+      openPurchaseOrdersCount: 0,
+      inventoryConsumedCents: 0,
+      inventoryRequiredLines: 0,
+      inventoryUntrackedLines: 0,
+      inventoryUnreadyLines: 0,
+      inventoryShortageLines: 0,
+    },
+    checklist: { total: 2, done: 0 },
+    inactiveAssigneeNames: [],
+    enabled: {
+      estimates: true,
+      documents: true,
+      calendar: true,
+      expenses: true,
+      inventory: true,
+      team: true,
+    },
+    canAccessFinances: true,
+    now,
+  });
+
+  assert.notEqual(readiness.checks.find((item) => item.key === "ownership")?.state, "attention");
+  assert.notEqual(readiness.checks.find((item) => item.key === "checklist")?.state, "attention");
+  assert.equal(readiness.level, "ready");
+});
