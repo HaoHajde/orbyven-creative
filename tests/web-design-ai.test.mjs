@@ -30,6 +30,7 @@ import {
 import { guardWebDesignEvidence } from "../lib/ai/web-design-evidence.ts";
 import { deriveWebDesignBriefGaps } from "../lib/ai/web-design-brief-gaps.ts";
 import {
+  applyWebDesignInterviewAnswerLocally,
   buildWebDesignInterviewPrompt,
   pickNextWebDesignInterviewQuestion,
   readWebDesignInterviewQuestions,
@@ -1083,14 +1084,20 @@ test("Smart Interview handles evidence confirmation without fabricating claims",
   assert.match(rejected ?? "", /Elimină sau evită/);
 });
 
-test("Web Design editor runs Smart Interview answers through the existing protected generator", () => {
+test("Web Design editor uses a local Smart Interview fast-path before the protected generator", () => {
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
   const interview = read("lib/ai/web-design-interview.ts");
 
   assert.match(specialist, /readWebDesignInterviewQuestions/);
+  assert.match(specialist, /applyWebDesignInterviewAnswerLocally/);
   assert.match(specialist, /buildWebDesignInterviewPrompt/);
   assert.match(specialist, /submitInterview/);
+  assert.ok(
+    specialist.indexOf("applyWebDesignInterviewAnswerLocally(") <
+      specialist.indexOf("buildWebDesignInterviewPrompt(")
+  );
   assert.match(specialist, /generateWithAi\(interviewPrompt\)/);
+  assert.match(specialist, /INTERVIEW_QUEUE_KEY/);
   assert.match(specialist, /Întrebare utilă/);
   assert.match(specialist, /Aplică răspunsul/);
   assert.match(specialist, /Mai târziu/);
@@ -1115,4 +1122,86 @@ test("Web Design AI has an actor-scoped authenticated fallback without exposing 
 
   assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[^;]*ai_web_design_calls[^;]*authenticated/i);
   assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[^;]*ai_web_design_daily_usage[^;]*authenticated/i);
+});
+
+
+test("Smart Interview applies simple factual answers locally without AI", () => {
+  const brandGap = {
+    id: "brand_name",
+    label: "nume brand real",
+    question: "Care este numele real al brandului?",
+    priority: 1,
+    sections: ["hero"],
+  };
+  const brand = applyWebDesignInterviewAnswerLocally(
+    SITE_PRESETS.studio,
+    brandGap,
+    "Orbyven Atelier"
+  );
+  assert.ok(brand);
+  assert.equal(brand.draft.brand, "Orbyven Atelier");
+  assert.equal(brand.draft.headline, SITE_PRESETS.studio.headline);
+
+  const aboutGap = {
+    id: "about_real",
+    label: "descriere reală firmă",
+    question: "Cum descrii firma?",
+    priority: 2,
+    sections: ["about"],
+  };
+  const about = applyWebDesignInterviewAnswerLocally(
+    SITE_PRESETS.studio,
+    aboutGap,
+    "Construim site-uri și instrumente digitale pentru firme mici."
+  );
+  assert.ok(about);
+  assert.equal(
+    about.draft.aboutDescription,
+    "Construim site-uri și instrumente digitale pentru firme mici."
+  );
+  assert.equal(about.draft.servicesTitle, SITE_PRESETS.studio.servicesTitle);
+});
+
+test("Smart Interview maps clear conversion answers locally and leaves complex gaps to AI", () => {
+  const goalGap = {
+    id: "conversion_goal",
+    label: "obiectiv principal",
+    question: "Care este obiectivul?",
+    priority: 1,
+    sections: ["hero", "contact"],
+  };
+  const goal = applyWebDesignInterviewAnswerLocally(
+    SITE_PRESETS.instalatii,
+    goalGap,
+    "Vreau cereri de ofertă."
+  );
+  assert.ok(goal);
+  assert.equal(goal.draft.cta, "Cere o ofertă");
+  assert.equal(goal.draft.contactTitle, "Cere o ofertă");
+
+  const servicesGap = {
+    id: "services_real",
+    label: "servicii reale",
+    question: "Care sunt serviciile reale?",
+    priority: 1,
+    sections: ["services"],
+  };
+  assert.equal(
+    applyWebDesignInterviewAnswerLocally(
+      SITE_PRESETS.instalatii,
+      servicesGap,
+      "Montaj centrale, pardoseală și service."
+    ),
+    null
+  );
+});
+
+test("Smart Interview queue persists across refreshes and resets with preset changes", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(specialist, /INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01"/);
+  assert.match(specialist, /getItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
+  assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /setInterviewQuestions\(\[\]\)/);
 });
