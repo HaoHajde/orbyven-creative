@@ -51,3 +51,9 @@ test("public portal is noindex and document downloads re-check portal visibility
   assert.match(server, /loadPortalDocument/);
   assert.match(server, /\.eq\("portal_visible", true\)/);
 });
+
+test("customer portal foreign keys have covering indexes", () => {
+  const migration = read("supabase/migrations/20261002103000_customer_portal_fk_indexes.sql");
+  assert.match(migration, /client_portal_estimate_decisions\(organization_id, link_id\)/i);
+  assert.match(migration, /client_portal_links\(created_by\)/i);
+});
