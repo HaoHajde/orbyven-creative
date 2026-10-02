@@ -2,6 +2,7 @@ import { createBillingServiceClient, type BillingActor } from "@/lib/billing/sup
 import type { IntelligenceConversationMessage } from "@/lib/ai/conversation-server";
 import {
   detectContextEntityReferences,
+  detectImplicitEntityFollowUp,
   findLatestContextEntityCandidate,
   normalizeContextEntityText,
 } from "@/lib/ai/context-entity-core";
@@ -104,8 +105,37 @@ export async function resolveContextualEntityReferences(
 ): Promise<ContextEntityResolution> {
   const cleanPrompt = prompt.trim();
   const references = detectContextEntityReferences(cleanPrompt);
-  const wantsClient = references.client;
-  const wantsWork = references.work;
+  let wantsClient = references.client;
+  let wantsWork = references.work;
+
+  if (!wantsClient && !wantsWork && detectImplicitEntityFollowUp(cleanPrompt)) {
+    const implicitCandidates = [
+      {
+        kind: "client" as const,
+        ...findLatestContextEntityCandidate(messages, "client", now),
+      },
+      {
+        kind: "work" as const,
+        ...findLatestContextEntityCandidate(messages, "work", now),
+      },
+    ];
+    const recent = implicitCandidates.filter(
+      (candidate) => candidate.value && !candidate.stale
+    );
+
+    if (recent.length === 1) {
+      wantsClient = recent[0].kind === "client";
+      wantsWork = recent[0].kind === "work";
+    } else if (recent.length > 1) {
+      return {
+        effectivePrompt: cleanPrompt,
+        usedContext: false,
+        facts: [],
+        clarification:
+          "Follow-up-ul poate face referire atât la client, cât și la lucrare. Spune-mi pe care vrei să continui.",
+      };
+    }
+  }
 
   if (!wantsClient && !wantsWork) {
     return {
