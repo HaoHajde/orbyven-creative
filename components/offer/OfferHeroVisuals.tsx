@@ -1,8 +1,79 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import type { PublicOfferId } from "@/lib/commerce/public-offers";
 import { FeatureScene, Glyph } from "@/components/offer/OfferFeatureScene";
+
+function InteractiveHeroStage({
+  children,
+  dimmed,
+}: {
+  children: ReactNode;
+  dimmed: boolean;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (dimmed || event.pointerType === "touch") return;
+
+    const root = rootRef.current;
+    const content = contentRef.current;
+    if (!root || !content) return;
+
+    const rect = root.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const normalizedX = x / rect.width - 0.5;
+    const normalizedY = y / rect.height - 0.5;
+
+    root.style.setProperty("--hero-x", `${x}px`);
+    root.style.setProperty("--hero-y", `${y}px`);
+    content.style.transform =
+      `perspective(1400px) rotateX(${(-normalizedY * 2.4).toFixed(2)}deg) rotateY(${(normalizedX * 3.2).toFixed(2)}deg) scale(1.008)`;
+  };
+
+  const reset = () => {
+    const content = contentRef.current;
+    if (!content) return;
+    content.style.transform =
+      "perspective(1400px) rotateX(0deg) rotateY(0deg) scale(1)";
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      onPointerMove={onPointerMove}
+      onPointerLeave={reset}
+      className="group/hero relative"
+      style={
+        {
+          "--hero-x": "72%",
+          "--hero-y": "28%",
+        } as CSSProperties
+      }
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-[3%] z-30 rounded-[40px] opacity-0 transition-opacity duration-500 group-hover/hero:opacity-100"
+        style={{
+          background:
+            "radial-gradient(240px circle at var(--hero-x) var(--hero-y), rgba(189,161,255,.16), rgba(126,93,255,.045) 42%, transparent 72%)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-[13%] bottom-[5%] z-0 h-14 rounded-full bg-[#734cff]/18 blur-[34px] transition duration-500 group-hover/hero:bg-[#875cff]/24"
+      />
+      <div
+        ref={contentRef}
+        className={`relative z-10 transform-gpu transition-[transform,filter,opacity] duration-300 ease-out will-change-transform ${dimmed ? "scale-[.985] opacity-45 blur-[1px]" : "opacity-100"}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function BrowserShell({ children }: { children: ReactNode }) {
   return (
@@ -292,11 +363,14 @@ export function HeroVisual({
 }) {
   return (
     <div className="relative">
-      {offerId === "invitation"
-        ? <InvitationVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
-        : offerId === "web"
-          ? <WebVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
-          : <AdvancedVisual onSelect={onSelectFeature} activeFeature={activeFeature} />}
+      <InteractiveHeroStage dimmed={Boolean(activeFeature)}>
+        {offerId === "invitation"
+          ? <InvitationVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+          : offerId === "web"
+            ? <WebVisual onSelect={onSelectFeature} activeFeature={activeFeature} />
+            : <AdvancedVisual onSelect={onSelectFeature} activeFeature={activeFeature} />}
+      </InteractiveHeroStage>
+
       {activeFeature ? (
         <FeatureScene
           key={`${offerId}-${activeFeature}`}
