@@ -34,10 +34,10 @@ export function ModuleHeader({
 
 export function ModuleMetric({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <article className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-3.5">
-      <p className="text-[11px] font-medium text-[var(--muted)]">{label}</p>
-      <p className="mt-2 text-[26px] font-semibold leading-none tracking-[-0.045em]">{value}</p>
-      {note ? <p className="mt-1.5 text-[11px] leading-4 text-[var(--muted-2)]">{note}</p> : null}
+    <article className="min-w-0 overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-3.5">
+      <p className="break-words text-[11px] font-medium text-[var(--muted)]">{label}</p>
+      <p className="mt-2 break-words text-[clamp(20px,2vw,26px)] font-semibold leading-[1.05] tracking-[-0.045em] [overflow-wrap:anywhere]">{value}</p>
+      {note ? <p className="mt-1.5 break-words text-[11px] leading-4 text-[var(--muted-2)]">{note}</p> : null}
     </article>
   );
 }
@@ -101,13 +101,13 @@ export function ModuleNextAction({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-[var(--border-strong)] bg-[var(--accent-soft)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-[14px] border border-[var(--border-strong)] bg-[var(--accent-soft)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[var(--accent)]">{eyebrow}</p>
-        <p className="mt-1 text-[13px] font-semibold text-[var(--text)]">{title}</p>
-        {description ? <p className="mt-0.5 text-[11px] leading-4 text-[var(--muted)]">{description}</p> : null}
+        <p className="break-words text-[9px] font-semibold uppercase tracking-[0.13em] text-[var(--accent)]">{eyebrow}</p>
+        <p className="mt-1 break-words text-[13px] font-semibold leading-5 text-[var(--text)] [overflow-wrap:anywhere]">{title}</p>
+        {description ? <p className="mt-0.5 break-words text-[11px] leading-4 text-[var(--muted)] [overflow-wrap:anywhere]">{description}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="max-w-full shrink-0 [&>button]:max-w-full [&>button]:whitespace-normal [&>button]:text-center">{action}</div> : null}
     </div>
   );
 }
