@@ -506,14 +506,17 @@ export default function TasksModule({
     }
   };
 
-  const recordGrowthEvent = async (type: PostServiceEventType) => {
+  const recordGrowthEvent = async (
+    type: PostServiceEventType,
+    score?: number
+  ): Promise<boolean> => {
     if (
       !canWrite ||
       !selectedTask?.client_id ||
       selectedTask.status !== "done" ||
       selectedTask.kind === "task" ||
       saving
-    ) return;
+    ) return false;
 
     setSaving(true);
     setError("");
@@ -522,7 +525,9 @@ export default function TasksModule({
         organizationId,
         selectedTask.client_id,
         selectedTask.id,
-        type
+        type,
+        type === "feedback_scored" && score ? `Feedback înregistrat: ${score}/5.` : undefined,
+        score
       );
       setGrowthState(
         await loadPostServiceGrowthState(
@@ -532,11 +537,24 @@ export default function TasksModule({
         )
       );
       setSnapshotIso(new Date().toISOString());
+      return true;
     } catch (growthError) {
       console.error(growthError);
       setError("Starea post-serviciu nu a putut fi actualizată.");
+      return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const createGrowthEstimate = async () => {
+    if (!selectedTask?.client_id || saving) return;
+    const recorded = await recordGrowthEvent("upsell_offered");
+    if (recorded) {
+      onOpenModule("estimates", {
+        create: true,
+        clientId: selectedTask.client_id,
+      });
     }
   };
 
@@ -988,10 +1006,10 @@ export default function TasksModule({
             saving={saving}
             canWrite={canWrite}
             estimatesEnabled={enabledModules.includes("estimates")}
-            onEvent={(type) => void recordGrowthEvent(type)}
+            onEvent={(type, score) => void recordGrowthEvent(type, score)}
             onOpenClient={() => onOpenModule("leads", { recordId: selectedTask.client_id! })}
             onCreateRecovery={() => onOpenModule("tasks", { create: true, clientId: selectedTask.client_id! })}
-            onCreateEstimate={() => onOpenModule("estimates", { create: true, clientId: selectedTask.client_id! })}
+            onCreateEstimate={() => void createGrowthEstimate()}
           />
         )}
       {selectedTask && (
@@ -1072,7 +1090,7 @@ function PostServiceGrowthPanel({
   saving: boolean;
   canWrite: boolean;
   estimatesEnabled: boolean;
-  onEvent: (type: PostServiceEventType) => void;
+  onEvent: (type: PostServiceEventType, score?: number) => void;
   onOpenClient: () => void;
   onCreateRecovery: () => void;
   onCreateEstimate: () => void;
