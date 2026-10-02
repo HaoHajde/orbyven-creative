@@ -38,6 +38,7 @@ export const ENGLISH_PUBLIC_PATHS = new Set([
   "/invitatii-nunta",
   "/invitatii-botez",
   "/invitatii-majorat",
+  "/legal",
   "/legal/privacy",
   "/legal/terms",
   "/porneste/oferta",
