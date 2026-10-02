@@ -14,6 +14,11 @@ import {
   inferWebDesignRequestMode,
 } from "../lib/ai/web-design-intent.ts";
 import { critiqueWebDesign } from "../lib/ai/web-design-quality.ts";
+import {
+  applyDesignDna,
+  designDnaDistance,
+  selectAlternativeDesignDna,
+} from "../lib/ai/web-design-variation.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -338,4 +343,62 @@ test("Generative Web Design runs quality critic before cloud persistence", () =>
   assert.match(quality, /visibleSectionCount/);
   assert.match(quality, /repeatedCopy/);
   assert.doesNotMatch(quality, /fetch\(/);
+});
+
+
+test("Alternative Web Design uses a deterministic Design DNA that is structurally distant from the current draft", () => {
+  const strategy = buildWebDesignStrategy(
+    "Propune o altă variantă completă pentru același business.",
+    SITE_PRESETS.florarie
+  );
+  const dna = selectAlternativeDesignDna(
+    SITE_PRESETS.florarie,
+    "Propune o altă variantă completă pentru același business."
+  );
+  const candidate = applyDesignDna(
+    SITE_PRESETS.florarie,
+    SITE_PRESETS.florarie,
+    strategy,
+    "Propune o altă variantă completă pentru același business."
+  );
+
+  assert.equal(strategy.mode, "alternative");
+  assert.ok(dna.id.length > 0);
+  assert.ok(designDnaDistance(SITE_PRESETS.florarie, candidate) >= 6);
+
+  const repeated = selectAlternativeDesignDna(
+    SITE_PRESETS.florarie,
+    "Propune o altă variantă completă pentru același business."
+  );
+  assert.equal(repeated.id, dna.id);
+});
+
+test("Design DNA leaves compose and refine drafts untouched", () => {
+  const refine = buildWebDesignStrategy(
+    "Fă hero-ul mai premium.",
+    SITE_PRESETS.instalatii
+  );
+  const result = applyDesignDna(
+    SITE_PRESETS.instalatii,
+    SITE_PRESETS.instalatii,
+    refine,
+    "Fă hero-ul mai premium."
+  );
+
+  assert.deepEqual(result, SITE_PRESETS.instalatii);
+});
+
+test("Generative Web Design applies Design DNA before Quality Critic", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const variation = read("lib/ai/web-design-variation.ts");
+
+  assert.match(server, /designDnaInstruction\(current, strategy, prompt\)/);
+  assert.match(server, /applyDesignDna\(strategicDraft, current, strategy, prompt\)/);
+  assert.ok(
+    server.indexOf("applyDesignDna(strategicDraft") <
+      server.indexOf("critiqueWebDesign(variedDraft")
+  );
+  assert.match(variation, /distanceFromCurrent/);
+  assert.match(variation, /currentFingerprint/);
+  assert.doesNotMatch(variation, /Math\.random/);
 });
