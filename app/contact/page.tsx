@@ -97,28 +97,33 @@ export default function ContactPage() {
           <div className="orbyven-start-cards mt-12">
             <Link
               href="/porneste/invitatie"
-              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(180deg,rgba(8,7,12,.10) 0%,rgba(8,7,12,.34) 44%,rgba(8,7,12,.94) 100%),url('/demo/nunta/diana-florin/couple1.jpeg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
+              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#120d17] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_10%,rgba(255,255,255,.10),transparent_26%)]" />
-              <div className="relative flex h-full min-h-[500px] flex-col justify-between p-6 sm:p-7 lg:min-h-[560px]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_10%,rgba(234,201,255,.22),transparent_28%),radial-gradient(circle_at_86%_22%,rgba(137,93,255,.18),transparent_30%),linear-gradient(155deg,#201322_0%,#100c16_48%,#09090d_100%)]" />
+              <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:38px_38px]" />
+              <div className="absolute left-1/2 top-[18%] h-[58%] w-[62%] -translate-x-1/2 rotate-[-4deg] rounded-[30px] border border-white/12 bg-[#f5efe8]/95 shadow-[0_35px_80px_rgba(0,0,0,.32)] transition duration-700 group-hover:rotate-[-2deg] group-hover:scale-[1.03]">
+                <div className="absolute inset-3 rounded-[23px] border border-[#3f2c48]/10" />
+                <div className="absolute left-1/2 top-[18%] h-px w-20 -translate-x-1/2 bg-[#3f2c48]/18" />
+                <div className="absolute left-1/2 top-[25%] -translate-x-1/2 text-center text-[#2c2031]">
+                  <p className="text-[8px] font-semibold uppercase tracking-[.28em]">SAVE THE DATE</p>
+                  <p className="mt-4 font-serif text-[26px] italic leading-none">A & M</p>
+                  <p className="mt-4 text-[7px] uppercase tracking-[.22em] text-[#5b4a60]">RSVP · LOCATIONS · STORY</p>
+                </div>
+                <div className="absolute bottom-[18%] left-1/2 flex -translate-x-1/2 gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#8c6c92]/35" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#8c6c92]/65" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#8c6c92]/35" />
+                </div>
+              </div>
+              <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">01 · EVENIMENT</span>
                   <span className="rounded-full border border-white/16 bg-black/20 px-3 py-2 text-[8px] font-bold backdrop-blur-md">PERSONALIZAT</span>
                 </div>
 
                 <div className="max-w-[420px]">
-                  <div className="mb-5 w-fit rounded-[18px] border border-white/14 bg-black/25 p-3 backdrop-blur-xl">
-                    <div className="h-20 w-14 rounded-[10px] border border-white/15 bg-white/[.07] p-2">
-                      <div className="h-2 w-8 rounded-full bg-white/45" />
-                      <div className="mt-2 h-8 rounded-[5px] bg-white/10" />
-                      <div className="mt-2 h-1.5 w-7 rounded-full bg-[#d6c3ff]/70" />
-                    </div>
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/18 px-3 py-2 text-[8px] font-semibold text-white/58 backdrop-blur-xl">
+                    RSVP · LOCATIONS · STORY
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.94] tracking-[-.06em] sm:text-[42px]">
                     Invitație online
@@ -137,35 +142,35 @@ export default function ContactPage() {
 
             <Link
               href="/porneste/web-design?mode=web"
-              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(180deg,rgba(7,8,12,.12) 0%,rgba(7,8,12,.42) 42%,rgba(7,8,12,.96) 100%),url('/hao-customs/hero.webp')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
+              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-white/12 bg-[#0b0d14] text-white shadow-[0_28px_100px_rgba(0,0,0,.24)]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_8%,rgba(80,120,255,.18),transparent_30%)]" />
-              <div className="relative flex h-full min-h-[500px] flex-col justify-between p-6 sm:p-7 lg:min-h-[560px]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_8%,rgba(70,112,255,.25),transparent_30%),radial-gradient(circle_at_15%_52%,rgba(71,70,238,.12),transparent_35%),linear-gradient(155deg,#0d1322_0%,#0a0c13_56%,#08090d_100%)]" />
+              <div className="absolute left-[8%] right-[8%] top-[16%] h-[46%] overflow-hidden rounded-[28px] border border-white/12 bg-[#0d1018] shadow-[0_32px_90px_rgba(0,0,0,.38)] transition duration-700 group-hover:scale-[1.025]">
+                <div className="flex h-10 items-center justify-between border-b border-white/8 px-4">
+                  <div className="flex gap-1.5"><span className="h-2 w-2 rounded-full bg-white/16"/><span className="h-2 w-2 rounded-full bg-white/16"/><span className="h-2 w-2 rounded-full bg-white/16"/></div>
+                  <span className="text-[7px] font-semibold tracking-[.18em] text-white/30">ORBYVEN WEB PREVIEW</span>
+                </div>
+                <div className="relative h-[calc(100%-40px)] p-5">
+                  <div className="absolute right-[8%] top-[12%] h-40 w-40 rounded-full bg-[#7167ff]/18 blur-[45px]" />
+                  <div className="relative max-w-[70%]">
+                    <div className="h-3 w-20 rounded-full bg-[#a58bff]/70"/>
+                    <div className="mt-5 h-8 w-[92%] rounded-[7px] bg-white/85"/>
+                    <div className="mt-2 h-8 w-[70%] rounded-[7px] bg-white/85"/>
+                    <div className="mt-5 h-2.5 w-[85%] rounded-full bg-white/14"/>
+                    <div className="mt-2 h-2.5 w-[62%] rounded-full bg-white/10"/>
+                    <div className="mt-6 h-10 w-32 rounded-full bg-white/88"/>
+                  </div>
+                </div>
+              </div>
+              <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">02 · WEB DESIGN</span>
                   <span className="rounded-full border border-[#a58bff]/35 bg-[#a58bff]/14 px-3 py-2 text-[8px] font-bold text-[#d3c8ff] backdrop-blur-md">30 ZILE GRATUIT</span>
                 </div>
 
                 <div className="max-w-[470px]">
-                  <div className="mb-5 w-fit rounded-[16px] border border-white/14 bg-black/30 p-2.5 backdrop-blur-xl">
-                    <div className="w-40 overflow-hidden rounded-[10px] border border-white/10 bg-[#0c0c12]">
-                      <div className="flex h-5 items-center gap-1 border-b border-white/8 px-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                      </div>
-                      <div className="p-3">
-                        <div className="h-2.5 w-20 rounded-full bg-white/65" />
-                        <div className="mt-2 h-1.5 w-28 rounded-full bg-white/18" />
-                        <div className="mt-3 h-8 rounded-[7px] bg-white/[.07]" />
-                      </div>
-                    </div>
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#a58bff]/20 bg-[#a58bff]/10 px-3 py-2 text-[8px] font-semibold text-[#d4caff] backdrop-blur-xl">
+                    WEBSITE + 30 DAYS DASHBOARD
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Website-ul tău.
@@ -184,26 +189,40 @@ export default function ContactPage() {
 
             <Link
               href="/porneste/web-design?mode=ecosystem"
-              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-[#a58bff]/26 text-white shadow-[0_30px_110px_rgba(71,48,160,.24)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(180deg,rgba(8,7,16,.08) 0%,rgba(9,7,20,.44) 40%,rgba(8,7,16,.97) 100%),url('/pilot-002/control-smart.webp')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
+              className="orbyven-start-card group relative overflow-hidden rounded-[34px] border border-[#a58bff]/26 bg-[#0d0a17] text-white shadow-[0_30px_110px_rgba(71,48,160,.24)]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.26),transparent_30%)]" />
-              <div className="relative flex h-full min-h-[500px] flex-col justify-between p-6 sm:p-7 lg:min-h-[560px]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(145,102,255,.30),transparent_30%),radial-gradient(circle_at_20%_64%,rgba(75,70,238,.18),transparent_36%),linear-gradient(155deg,#17102b_0%,#0e0b18_54%,#09090d_100%)]" />
+              <div className="absolute left-[8%] right-[8%] top-[13%] h-[50%] overflow-hidden rounded-[28px] border border-[#a58bff]/18 bg-[#0c0b13]/94 p-4 shadow-[0_34px_100px_rgba(0,0,0,.40)] transition duration-700 group-hover:scale-[1.025]">
+                <div className="flex items-center justify-between">
+                  <div><p className="text-[8px] font-bold uppercase tracking-[.18em] text-[#b9a6ff]">ORBYVEN WORKSPACE</p><p className="mt-1 text-[11px] font-semibold text-white/80">Business OS</p></div>
+                  <span className="rounded-full border border-[#a58bff]/20 bg-[#a58bff]/10 px-2.5 py-1.5 text-[7px] font-bold text-[#cfc2ff]">ADVANCED</span>
+                </div>
+                <div className="mt-4 grid grid-cols-[.34fr_.66fr] gap-3">
+                  <div className="grid gap-2">
+                    {["Overview","Clienți","Lucrări","Oferte","Automatizări"].map((item,index)=>(
+                      <div key={item} className={`rounded-[9px] border px-2.5 py-2 text-[7px] font-semibold ${index===0?"border-[#a58bff]/25 bg-[#a58bff]/12 text-white":"border-white/7 bg-white/[.025] text-white/45"}`}>{item}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Leads","Calendar","Devize","Stoc"].map((item,index)=>(
+                      <div key={item} className="rounded-[12px] border border-white/8 bg-white/[.035] p-3">
+                        <p className="text-[7px] uppercase tracking-[.12em] text-white/30">{item}</p>
+                        <p className="mt-3 text-[18px] font-semibold tracking-[-.05em]">{[24,8,12,31][index]}</p>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-[#a58bff]/70" style={{width:[72,42,58,84][index]+"%"}}/></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:min-h-[680px] sm:p-7 lg:min-h-[780px]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/60">03 · ECOSISTEM</span>
                   <span className="rounded-full border border-[#a58bff]/38 bg-[#a58bff]/16 px-3 py-2 text-[8px] font-bold text-[#d9ceff] backdrop-blur-md">ADVANCED</span>
                 </div>
 
                 <div className="max-w-[470px]">
-                  <div className="mb-5 grid w-44 grid-cols-3 gap-1.5 rounded-[16px] border border-white/14 bg-black/30 p-2.5 backdrop-blur-xl">
-                    {["CRM", "Lucrări", "Oferte", "Task-uri", "Stoc", "Custom"].map((item) => (
-                      <span key={item} className="rounded-[7px] border border-white/8 bg-white/[.07] px-2 py-2 text-center text-[7px] font-semibold text-white/70">{item}</span>
-                    ))}
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#a58bff]/24 bg-[#a58bff]/12 px-3 py-2 text-[8px] font-semibold text-[#d8ceff] backdrop-blur-xl">
+                    CUSTOM MODULES · AUTOMATIONS · AI
                   </div>
                   <h2 className="text-[34px] font-semibold leading-[.92] tracking-[-.062em] sm:text-[44px]">
                     Web design +
