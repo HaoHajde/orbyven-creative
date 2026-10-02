@@ -1097,3 +1097,22 @@ test("Web Design editor runs Smart Interview answers through the existing protec
   assert.doesNotMatch(specialist, /api\/ai\/web-design\/interview/);
   assert.doesNotMatch(interview, /fetch\(/);
 });
+
+test("Web Design AI has an actor-scoped authenticated fallback without exposing quota tables", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const migration = read("supabase/migrations/20261002161525_web_design_authenticated_fallback.sql");
+
+  assert.doesNotMatch(server, /createBillingServiceClient\(\)/);
+  assert.match(server, /createBillingServiceClient\(actor\)/);
+  assert.match(server, /finishQuota\(\s*actor,/);
+
+  assert.match(migration, /grant select, insert, update on table public\.ai_web_design_drafts to authenticated/i);
+  assert.match(migration, /actor_id = \(select auth\.uid\(\)\)/i);
+  assert.match(migration, /private\.is_org_member\(organization_id\)/i);
+  assert.match(migration, /ACTOR_MISMATCH/);
+  assert.match(migration, /security definer/i);
+  assert.match(migration, /grant execute on function public\.ai_web_design_claim[\s\S]*authenticated, service_role/i);
+
+  assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[^;]*ai_web_design_calls[^;]*authenticated/i);
+  assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[^;]*ai_web_design_daily_usage[^;]*authenticated/i);
+});
