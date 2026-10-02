@@ -12,15 +12,10 @@ type LegalDocumentProps = {
 
 const legalLinks = [
   ["/legal/terms", "Terms"],
-  ["/legal/subscriptions", "Subscriptions"],
   ["/legal/privacy", "Privacy"],
   ["/legal/cookies", "Cookies"],
-  ["/legal/dpa", "DPA"],
-  ["/legal/acceptable-use", "Acceptable use"],
   ["/legal/consumer", "Consumer information"],
-  ["/legal/ai", "AI"],
-  ["/legal/data-rights", "Data rights"],
-  ["/legal/complaints", "Complaints"],
+  ["/legal/ai", "AI use"],
 ] as const;
 
 export default function LegalDocumentEn({
