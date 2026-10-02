@@ -17,6 +17,8 @@ export type WebDesignCandidateSelectionReport = {
   selectedScore: number;
   selectedDistance: number;
   styleAffinity: number;
+  visualMemoryCompared: number;
+  noveltyPenalty: number;
 };
 
 export type WebDesignCandidateSelectionResult = WebDesignAutonomousRefinementResult & {
@@ -49,26 +51,48 @@ function styleAffinity(prompt: string, dna: DesignDna) {
   return Math.min(100, 70 + matches * 15);
 }
 
+function noveltyPenalty(
+  candidate: EditableSite,
+  recentDrafts: EditableSite[]
+) {
+  if (!recentDrafts.length) return 0;
+
+  const closest = recentDrafts.reduce(
+    (minimum, recent) =>
+      Math.min(minimum, designDnaDistance(recent, candidate)),
+    Number.POSITIVE_INFINITY
+  );
+
+  if (closest <= 2) return 18;
+  if (closest <= 4) return 10;
+  if (closest <= 6) return 4;
+  return 0;
+}
+
 function weightedScore(
   result: WebDesignAutonomousRefinementResult,
   current: EditableSite,
   prompt: string,
-  dna: DesignDna
+  dna: DesignDna,
+  recentDrafts: EditableSite[]
 ) {
   const distance = designDnaDistance(current, result.draft);
   const distanceScore = Math.min(100, Math.round((distance / 14) * 100));
   const affinity = styleAffinity(prompt, dna);
 
+  const penalty = noveltyPenalty(result.draft, recentDrafts);
   const score =
     result.quality.score * 0.42 +
     result.readiness.score * 0.33 +
     distanceScore * 0.15 +
-    affinity * 0.1;
+    affinity * 0.1 -
+    penalty;
 
   return {
     score: Math.round(score * 10) / 10,
     distance,
     affinity,
+    penalty,
   };
 }
 
@@ -76,7 +100,8 @@ export function selectBestWebDesignCandidate(
   draft: EditableSite,
   current: EditableSite,
   strategy: WebDesignStrategy,
-  prompt: string
+  prompt: string,
+  recentDrafts: EditableSite[] = []
 ): WebDesignCandidateSelectionResult {
   if (strategy.mode !== "alternative") {
     const result = autonomouslyRefineWebDesign(draft, strategy);
@@ -90,6 +115,8 @@ export function selectBestWebDesignCandidate(
         ) / 10,
         selectedDistance: designDnaDistance(current, result.draft),
         styleAffinity: 50,
+        visualMemoryCompared: 0,
+        noveltyPenalty: 0,
       },
     };
   }
@@ -98,7 +125,13 @@ export function selectBestWebDesignCandidate(
   const evaluated = candidates.map((dna) => {
     const candidate = applySpecificDesignDna(draft, dna);
     const result = autonomouslyRefineWebDesign(candidate, strategy);
-    const ranking = weightedScore(result, current, prompt, dna);
+    const ranking = weightedScore(
+      result,
+      current,
+      prompt,
+      dna,
+      recentDrafts.slice(-4)
+    );
     return { dna, result, ranking };
   });
 
@@ -131,6 +164,8 @@ export function selectBestWebDesignCandidate(
         ) / 10,
         selectedDistance: designDnaDistance(current, fallback.draft),
         styleAffinity: 50,
+        visualMemoryCompared: recentDrafts.slice(-4).length,
+        noveltyPenalty: 0,
       },
     };
   }
@@ -143,6 +178,8 @@ export function selectBestWebDesignCandidate(
       selectedScore: winner.ranking.score,
       selectedDistance: winner.ranking.distance,
       styleAffinity: winner.ranking.affinity,
+      visualMemoryCompared: recentDrafts.slice(-4).length,
+      noveltyPenalty: winner.ranking.penalty,
     },
   };
 }
