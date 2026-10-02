@@ -9,14 +9,16 @@ export default function SeoIndexPage({
   title,
   intro,
   items,
+  locale = "ro",
 }: {
   eyebrow: string;
   title: string;
   intro: string;
   items: Item[];
+  locale?: "ro" | "en";
 }) {
   return (
-    <SeoShell>
+    <SeoShell locale={locale}>
       <section className="px-5 py-20 sm:px-7 md:px-10 md:py-28">
         <div className="mx-auto max-w-[1380px]">
           <p className="text-[10px] font-bold uppercase tracking-[.22em] text-[#4b46ee]">{eyebrow}</p>
