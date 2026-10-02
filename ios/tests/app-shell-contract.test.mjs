@@ -41,7 +41,7 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 test("Alpha 0.8 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.7\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.8\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
