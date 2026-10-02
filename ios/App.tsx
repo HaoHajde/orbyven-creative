@@ -23,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.11.0";
+const APP_VERSION = "0.12.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -40,6 +40,7 @@ const NATIVE_RUNTIME = {
     "haptics",
     "local-notifications",
     "work-deadline-reminders",
+    "crm-follow-up-reminders",
     "navigation-haptics",
     "network-recovery",
     "network-state-bridge",
@@ -81,6 +82,13 @@ type WorkReminderMessage = {
   title: string;
   dueAt: string;
   location?: string | null;
+};
+
+type CrmFollowUpReminderMessage = {
+  leadId: string;
+  name: string;
+  company?: string | null;
+  followUpAt: string;
 };
 
 Notifications.setNotificationHandler({
@@ -137,6 +145,48 @@ async function cancelCalendarReminder(eventId: string) {
       Notifications.cancelScheduledNotificationAsync(request.identifier)
     )
   );
+}
+
+async function cancelCrmFollowUpReminder(leadId: string) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const matches = scheduled.filter(
+    (request) =>
+      request.content.data?.kind === "crm-follow-up" &&
+      request.content.data?.leadId === leadId
+  );
+  await Promise.all(
+    matches.map((request) =>
+      Notifications.cancelScheduledNotificationAsync(request.identifier)
+    )
+  );
+}
+
+async function scheduleCrmFollowUpReminder(message: CrmFollowUpReminderMessage) {
+  await cancelCrmFollowUpReminder(message.leadId);
+
+  const followUpAt = new Date(message.followUpAt).getTime();
+  if (!Number.isFinite(followUpAt) || followUpAt <= Date.now()) return null;
+
+  const allowed = await notificationsAllowed();
+  if (!allowed) throw new Error("notification-permission-denied");
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: "ORBYVEN · Follow-up",
+      body: message.company
+        ? message.name + " · " + message.company
+        : message.name,
+      sound: true,
+      data: {
+        kind: "crm-follow-up",
+        leadId: message.leadId,
+      },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(followUpAt),
+    },
+  });
 }
 
 async function cancelWorkReminder(taskId: string) {
@@ -259,6 +309,7 @@ export default function App() {
   const previousReachability = useRef<boolean | null>(null);
   const pendingCalendarEventId = useRef<string | null>(null);
   const pendingWorkTaskId = useRef<string | null>(null);
+  const pendingCrmLeadId = useRef<string | null>(null);
   const pendingDocumentsIntent = useRef(false);
   const webRuntimeReadyRef = useRef(false);
   const workspaceReadyRef = useRef(false);
@@ -521,6 +572,17 @@ export default function App() {
     );
   }, []);
 
+  const flushPendingCrmLeadIntent = useCallback(() => {
+    const leadId = pendingCrmLeadId.current;
+    if (!leadId || !workspaceReadyRef.current) return;
+
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-lead-record',{detail:{leadId:" +
+        JSON.stringify(leadId) +
+        "}})); true;",
+    );
+  }, []);
+
   const flushPendingDocumentsIntent = useCallback(() => {
     if (!pendingDocumentsIntent.current || !workspaceReadyRef.current) return;
     pendingDocumentsIntent.current = false;
@@ -554,6 +616,19 @@ export default function App() {
       setTimeout(flushPendingWorkTaskIntent, 0);
     }
   }, [currentUrl, flushPendingWorkTaskIntent, navigateTrustedUrl]);
+
+  const openCrmLead = useCallback((leadId: string) => {
+    pendingCrmLeadId.current = leadId;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      navigateTrustedUrl(WORKSPACE_URL);
+      return;
+    }
+
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingCrmLeadIntent, 0);
+    }
+  }, [currentUrl, flushPendingCrmLeadIntent, navigateTrustedUrl]);
 
   const openDocuments = useCallback(() => {
     void Haptics.selectionAsync().catch(() => undefined);
@@ -591,6 +666,11 @@ export default function App() {
         typeof data.taskId === "string"
       ) {
         openWorkTask(data.taskId);
+      } else if (
+        data?.kind === "crm-follow-up" &&
+        typeof data.leadId === "string"
+      ) {
+        openCrmLead(data.leadId);
       } else if (typeof data?.url === "string") {
         openNotificationUrl(data.url);
       } else {
@@ -610,7 +690,7 @@ export default function App() {
       Notifications.addNotificationResponseReceivedListener(handleResponse);
 
     return () => subscription.remove();
-  }, [openCalendarRecord, openNotificationUrl, openWorkTask]);
+  }, [openCalendarRecord, openCrmLead, openNotificationUrl, openWorkTask]);
 
   const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
     try {
@@ -618,6 +698,10 @@ export default function App() {
         type?: string;
         eventId?: string;
         taskId?: string;
+        leadId?: string;
+        name?: string;
+        company?: string | null;
+        followUpAt?: string;
         title?: string;
         startAt?: string;
         dueAt?: string;
@@ -635,6 +719,7 @@ export default function App() {
         setTimeout(() => {
           flushPendingCalendarIntent();
           flushPendingWorkTaskIntent();
+          flushPendingCrmLeadIntent();
           flushPendingDocumentsIntent();
         }, 0);
       } else if (message.type === "orbyven:haptic") {
@@ -708,6 +793,48 @@ export default function App() {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
       } else if (message.type === "orbyven:document-selected") {
         void Haptics.selectionAsync().catch(() => undefined);
+      } else if (
+        message.type === "orbyven:schedule-crm-follow-up" &&
+        typeof message.leadId === "string" &&
+        typeof message.name === "string" &&
+        typeof message.followUpAt === "string"
+      ) {
+        void scheduleCrmFollowUpReminder({
+          leadId: message.leadId,
+          name: message.name,
+          company: message.company,
+          followUpAt: message.followUpAt,
+        })
+          .then(() =>
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success,
+            ).catch(() => undefined),
+          )
+          .catch((error: unknown) => {
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Error,
+            ).catch(() => undefined);
+            if (
+              error instanceof Error &&
+              error.message === "notification-permission-denied"
+            ) {
+              Alert.alert(
+                "Notificări dezactivate",
+                "Activează notificările pentru ORBYVEN din Settings ca să primești follow-up-urile CRM.",
+              );
+            }
+          });
+      } else if (
+        message.type === "orbyven:cancel-crm-follow-up" &&
+        typeof message.leadId === "string"
+      ) {
+        void cancelCrmFollowUpReminder(message.leadId).catch(() => undefined);
+      } else if (
+        message.type === "orbyven:native-lead-opened" &&
+        typeof message.leadId === "string" &&
+        pendingCrmLeadId.current === message.leadId
+      ) {
+        pendingCrmLeadId.current = null;
       } else if (
         message.type === "orbyven:schedule-work-reminder" &&
         typeof message.taskId === "string" &&
@@ -800,7 +927,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent]);
+  }, [flushPendingCalendarIntent, flushPendingCrmLeadIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
