@@ -174,6 +174,7 @@ export default function ExpensesModule({
   initialTaskId,
   initialEstimateId,
   initialPurchaseOrderId,
+  initialDocumentId,
 }: Props) {
   const canWrite = ["owner", "admin", "manager"].includes(role);
   const [tab, setTab] = useState<Tab>(initialCreate ? "expenses" : "overview");
