@@ -271,21 +271,7 @@ function FeatureScene({
             </div>
           )
         )}
-      </button>
-
-      <button
-        type="button"
-        aria-pressed={activeFeature === "Custom"}
-        onClick={() => onSelect("Custom")}
-        className="orbyven-float-a absolute bottom-[8%] right-[2%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] lg:block"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-[#bcaaff]"><Glyph kind="Custom" /></span>
-          <span className="rounded-full border border-[#a98dff]/24 bg-[#8f6cff]/12 px-2 py-1 text-[6px] font-bold text-[#d3c8ff]">CUSTOM</span>
-        </div>
-        <p className="mt-3 text-[10px] font-semibold">Module custom</p>
-        <p className="mt-1 text-[6px] text-white/35">adaptate business-ului</p>
-      </button>
+      </div>
     </div>
   );
 }
@@ -513,7 +499,21 @@ function AdvancedVisual({
         className="orbyven-float-b absolute right-[-3%] top-[20%] hidden w-[162px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] md:block"
       >
         <div className="text-[#bcaaff]"><Glyph kind="Calendar"/></div><p className="mt-3 text-[10px] font-semibold">Calendar</p><p className="mt-1 text-[6px] text-white/35">Programări</p>
-      </div>
+      </button>
+
+      <button
+        type="button"
+        aria-pressed={activeFeature === "Custom"}
+        onClick={() => onSelect("Custom")}
+        className="orbyven-float-a absolute bottom-[8%] right-[2%] hidden w-[154px] rounded-[20px] border border-[#b08fff]/42 bg-[#100c18]/96 p-4 text-left text-white shadow-[0_30px_92px_rgba(0,0,0,.56),0_0_34px_rgba(151,111,255,.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-[#c1adff]/70 hover:bg-[#171022] lg:block"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[#bcaaff]"><Glyph kind="Custom" /></span>
+          <span className="rounded-full border border-[#a98dff]/24 bg-[#8f6cff]/12 px-2 py-1 text-[6px] font-bold text-[#d3c8ff]">CUSTOM</span>
+        </div>
+        <p className="mt-3 text-[10px] font-semibold">Module custom</p>
+        <p className="mt-1 text-[6px] text-white/35">adaptate business-ului</p>
+      </button>
     </div>
   );
 }
