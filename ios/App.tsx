@@ -23,7 +23,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.9.0";
+const APP_VERSION = "0.10.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -45,6 +45,9 @@ const NATIVE_RUNTIME = {
     "state-preserving-reconnect",
     "stateful-deep-links",
     "workspace-continuity",
+    "web-readiness-handshake",
+    "workspace-readiness-handshake",
+    "pending-intent-replay",
     "push-registration",
   ],
 } as const;
@@ -205,6 +208,9 @@ export default function App() {
   const authenticationInProgress = useRef(false);
   const previousReachability = useRef<boolean | null>(null);
   const pendingCalendarEventId = useRef<string | null>(null);
+  const pendingDocumentsIntent = useRef(false);
+  const webRuntimeReadyRef = useRef(false);
+  const workspaceReadyRef = useRef(false);
   const webFailedRef = useRef(false);
   const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentUrlRef = useRef(WORKSPACE_URL);
@@ -223,6 +229,8 @@ export default function App() {
       return;
     }
 
+    webRuntimeReadyRef.current = false;
+    workspaceReadyRef.current = false;
     setCurrentUrl(url);
   }, []);
 
@@ -442,12 +450,20 @@ export default function App() {
 
   const flushPendingCalendarIntent = useCallback(() => {
     const eventId = pendingCalendarEventId.current;
-    if (!eventId) return;
+    if (!eventId || !workspaceReadyRef.current) return;
 
     webRef.current?.injectJavaScript(
       "window.dispatchEvent(new CustomEvent('orbyven:native-calendar-record',{detail:{eventId:" +
         JSON.stringify(eventId) +
         "}})); true;",
+    );
+  }, []);
+
+  const flushPendingDocumentsIntent = useCallback(() => {
+    if (!pendingDocumentsIntent.current || !workspaceReadyRef.current) return;
+    pendingDocumentsIntent.current = false;
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:native-documents',{detail:{create:true}})); true;",
     );
   }, []);
 
@@ -459,15 +475,24 @@ export default function App() {
       return;
     }
 
-    setTimeout(flushPendingCalendarIntent, 0);
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingCalendarIntent, 0);
+    }
   }, [currentUrl, flushPendingCalendarIntent, navigateTrustedUrl]);
 
   const openDocuments = useCallback(() => {
     void Haptics.selectionAsync().catch(() => undefined);
-    webRef.current?.injectJavaScript(
-      "window.dispatchEvent(new CustomEvent('orbyven:native-documents',{detail:{create:true}})); true;",
-    );
-  }, []);
+    pendingDocumentsIntent.current = true;
+
+    if (!currentUrl.startsWith(WORKSPACE_URL)) {
+      navigateTrustedUrl(WORKSPACE_URL);
+      return;
+    }
+
+    if (workspaceReadyRef.current) {
+      setTimeout(flushPendingDocumentsIntent, 0);
+    }
+  }, [currentUrl, flushPendingDocumentsIntent, navigateTrustedUrl]);
 
   const openNotificationUrl = useCallback((url: string) => {
     const resolved = url.startsWith("orbyven://")
@@ -517,9 +542,19 @@ export default function App() {
         reminderMinutes?: number | null;
         location?: string | null;
         theme?: NativeTheme;
+        href?: string;
       };
 
-      if (message.type === "orbyven:haptic") {
+      if (message.type === "orbyven:web-ready") {
+        webRuntimeReadyRef.current = true;
+        setWebHasLoaded(true);
+      } else if (message.type === "orbyven:workspace-ready") {
+        workspaceReadyRef.current = true;
+        setTimeout(() => {
+          flushPendingCalendarIntent();
+          flushPendingDocumentsIntent();
+        }, 0);
+      } else if (message.type === "orbyven:haptic") {
         void Haptics.selectionAsync().catch(() => undefined);
       } else if (
         message.type === "orbyven:theme" &&
@@ -640,7 +675,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, []);
+  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
@@ -719,13 +754,16 @@ export default function App() {
           onNavigationStateChange={onNavigationStateChange}
           onShouldStartLoadWithRequest={shouldStart}
           onMessage={handleWebMessage}
-          onLoadStart={() => setConnection("loading")}
+          onLoadStart={() => {
+            webRuntimeReadyRef.current = false;
+            workspaceReadyRef.current = false;
+            setConnection("loading");
+          }}
           onLoadEnd={() => {
             webFailedRef.current = false;
             setWebHasLoaded(true);
             setConnection("online");
             emitNativeNetworkState(true);
-            setTimeout(flushPendingCalendarIntent, 0);
           }}
           onError={() => {
             webFailedRef.current = true;
@@ -738,6 +776,8 @@ export default function App() {
             }
           }}
           onContentProcessDidTerminate={() => {
+            webRuntimeReadyRef.current = false;
+            workspaceReadyRef.current = false;
             setWebHasLoaded(false);
             setConnection("loading");
             webRef.current?.reload();
@@ -760,6 +800,8 @@ export default function App() {
                 style={styles.retryButton}
                 onPress={() => {
                   void Haptics.selectionAsync().catch(() => undefined);
+                  webRuntimeReadyRef.current = false;
+                  workspaceReadyRef.current = false;
                   setWebHasLoaded(false);
                   setReloadKey((value) => value + 1);
                 }}

@@ -57,3 +57,10 @@ test("workspace restores the last enabled module across app sessions", () => {
   assert.match(shell, /enabledModules\.includes\(savedModule\)/);
   assert.match(shell, /setActiveModule\(savedModule\)/);
 });
+
+
+test("workspace signals native readiness only after its runtime is mounted", () => {
+  assert.match(shell, /type: "orbyven:workspace-ready"/);
+  assert.match(shell, /workspace\?\.organization\.id/);
+  assert.match(shell, /ReactNativeWebView/);
+});

@@ -2,7 +2,7 @@
   "expo": {
     "name": "ORBYVEN",
     "slug": "orbyven-ios",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "scheme": "orbyven",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

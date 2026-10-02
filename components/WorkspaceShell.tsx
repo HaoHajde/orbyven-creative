@@ -334,6 +334,16 @@ export default function WorkspaceShell({
   }, [workspace?.organization.id]);
 
   useEffect(() => {
+    if (!workspace?.organization.id) return;
+
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:workspace-ready" }));
+  }, [workspace?.organization.id]);
+
+  useEffect(() => {
     if (navigation.token === 0 || panel !== "workspace") return;
 
     const selector = navigation.create

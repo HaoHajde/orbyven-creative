@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.9
+# ORBYVEN iOS — Alpha 0.10
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.9:
+Native Alpha 0.10:
+- handshake explicit `orbyven:web-ready` după hidratarea runtime-ului web;
+- handshake `orbyven:workspace-ready` după ce Dashboard-ul și listener-ele native sunt montate;
+- intenturile Calendar și Documente rămân în coadă până când workspace-ul este pregătit;
+- tap-ul pe o notificare la cold start/login nu mai depinde de momentul `onLoadEnd`;
+- replay-ul intenturilor este condiționat de readiness, reducând race conditions la pornire;
+- runtime-ul declară `web-readiness-handshake`, `workspace-readiness-handshake` și `pending-intent-replay`;
+
+Păstrat din Alpha 0.9:
 - ultimul modul activ din Dashboard este salvat local și restaurat la următoarea deschidere dacă modulul este încă activ pentru organizație;
 - deep-link-urile și tap-urile din notificări navighează în WebView-ul existent, fără remount inutil al aplicației;
 - loader-ul nativ complet este rezervat pornirii reale și recovery-ului hard, nu navigării interne;
@@ -230,3 +238,10 @@ Această schimbare reduce riscul de a pierde text introdus, poziția în modul s
 Versiunea 0.9.0 adaugă continuitate între sesiuni. Dashboard-ul memorează ultimul modul folosit în storage-ul local al workspace-ului și îl restaurează doar dacă acel modul este încă permis pentru organizația curentă. Astfel, redeschiderea ORBYVEN nu te trimite automat în Overview dacă lucrai în Calendar, Documente, Clienți sau alt modul activ.
 
 Deep-link-urile ORBYVEN și navigarea pornită din notificări folosesc acum WebView-ul existent. Un remount complet rămâne rezervat recuperării după o eroare reală sau unei reîncercări explicite, ceea ce reduce flash-urile și păstrează mai bine starea UI.
+
+
+## Alpha 0.10
+
+Versiunea 0.10.0 introduce un contract de readiness în două etape. Runtime-ul web confirmă către shell-ul iOS când pagina s-a hidratat, iar WorkspaceShell confirmă separat când workspace-ul autentificat și listener-ele pentru Calendar, Documente și celelalte bridge-uri sunt montate.
+
+Intenturile native care au nevoie de workspace — de exemplu deschiderea unei programări dintr-o notificare sau intrarea directă în Documente — sunt păstrate până la semnalul `orbyven:workspace-ready`. Astfel, un cold start, un login intermediar sau o încărcare mai lentă nu mai poate pierde acțiunea cerută de utilizator.
