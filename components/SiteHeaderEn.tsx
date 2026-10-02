@@ -5,7 +5,7 @@ import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type SitePage = "home" | "templates" | "services" | "contact";
+export type SitePage = "home" | "templates" | "webDesignAi" | "services" | "contact";
 
 type Theme = "light" | "dark";
 
@@ -16,6 +16,7 @@ const navItems: {
 }[] = [
   { key: "home", href: "/", label: "Home" },
   { key: "templates", href: "/templates", label: "Templates" },
+  { key: "webDesignAi", href: "/ai-web-design", label: "AI Web Design" },
   { key: "services", href: "/services", label: "Services" },
   { key: "contact", href: "/contact", label: "Start" },
 ];
@@ -89,7 +90,7 @@ export default function SiteHeader({
               <BrandLogo compact theme={theme} />
             </div>
 
-            <nav className="hidden items-center gap-8 text-[13px] font-medium text-[var(--muted)] md:flex">
+            <nav className="hidden items-center gap-5 text-[13px] font-medium text-[var(--muted)] md:flex lg:gap-7 xl:gap-8">
               {navItems.map((item) => {
                 const active = activePage === item.key;
                 return (
@@ -121,7 +122,7 @@ export default function SiteHeader({
                 Dashboard
               </Link>
 
-              <Link href="/cerere" className="hidden h-10 touch-manipulation items-center justify-center rounded-full bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99] md:transition-transform md:hover:scale-[1.02] sm:inline-flex">
+              <Link href="/contact" className="hidden h-10 touch-manipulation items-center justify-center rounded-full bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99] md:transition-transform md:hover:scale-[1.02] sm:inline-flex">
                 Start a project
               </Link>
 
@@ -172,7 +173,7 @@ export default function SiteHeader({
                   <span>Dashboard</span>
                   <span className="text-[var(--muted-2)]">↗</span>
                 </Link>
-                <Link href="/cerere" onClick={closeMobile} className="flex h-12 touch-manipulation items-center justify-center rounded-[18px] bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99]">
+                <Link href="/contact" onClick={closeMobile} className="flex h-12 touch-manipulation items-center justify-center rounded-[18px] bg-[var(--button)] px-5 text-[13px] font-medium text-[var(--button-text)] active:scale-[0.99]">
                   Start a project
                 </Link>
               </div>
