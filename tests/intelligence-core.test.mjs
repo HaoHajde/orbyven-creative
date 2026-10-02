@@ -274,7 +274,7 @@ test("Action Outcome Loop rechecks only completed plans and remains read-only", 
   const panel = read("components/WorkspaceIntelligence.tsx");
 
   assert.match(types, /export type IntelligenceOutcome/);
-  assert.match(types, /status: "resolved" \| "shifted" \| "still_priority"/);
+  assert.match(types, /status: "no_longer_primary" \| "shifted" \| "still_priority"/);
   assert.match(types, /outcome\?: IntelligenceOutcome/);
   assert.match(outcome, /loadLatestPlanAction/);
   assert.match(outcome, /every\(\(step\) => step\.status === "executed"\)/);
