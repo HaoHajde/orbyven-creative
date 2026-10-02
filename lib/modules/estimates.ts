@@ -172,12 +172,15 @@ export async function createEstimate(
   if (input.taskId) {
     const { data: task, error: taskError } = await orbyvenSupabase
       .from("ops_tasks")
-      .select("id,client_id,kind")
+      .select("id,client_id,kind,status")
       .eq("organization_id", organizationId)
       .eq("id", input.taskId)
       .single();
     if (taskError || !task || task.kind !== "work") {
       throw new Error("Lucrarea nu există în această firmă.");
+    }
+    if (!input.sourceEstimateId && ["done", "cancelled"].includes(task.status)) {
+      throw new Error("Lucrarea este închisă. Creează devizul pe client și pornește o lucrare nouă dacă este acceptat.");
     }
     if (linkedClientId && task.client_id && linkedClientId !== task.client_id) {
       throw new Error("Clientul ales nu corespunde lucrării.");
@@ -262,12 +265,15 @@ export async function attachAcceptedEstimateToTask(
   const [{ data: estimate, error: estimateError }, { data: task, error: taskError }] = await Promise.all([
     orbyvenSupabase.from("sales_estimates").select("id,status,client_id,task_id")
       .eq("organization_id", organizationId).eq("id", estimateId).single(),
-    orbyvenSupabase.from("ops_tasks").select("id,client_id,kind")
+    orbyvenSupabase.from("ops_tasks").select("id,client_id,kind,status")
       .eq("organization_id", organizationId).eq("id", taskId).single(),
   ]);
 
   if (estimateError || !estimate) throw new Error("Devizul nu există în această firmă.");
   if (taskError || !task || task.kind !== "work") throw new Error("Lucrarea nu există în această firmă.");
+  if (["done", "cancelled"].includes(task.status)) {
+    throw new Error("Devizul acceptat nu poate porni o lucrare deja finalizată sau anulată.");
+  }
   if (estimate.status !== "accepted") throw new Error("Doar un deviz acceptat poate porni o lucrare.");
   if (estimate.task_id && estimate.task_id !== taskId) throw new Error("Devizul este deja legat de altă lucrare.");
   if (estimate.client_id && task.client_id && estimate.client_id !== task.client_id) {
