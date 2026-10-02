@@ -33,11 +33,11 @@ export default function CookieConsent() {
   const [language, setLanguage] = useState<"ro" | "en">("ro");
 
   useEffect(() => {
-    const hostname = window.location.hostname.toLowerCase();
-    setLanguage(hostname === "orbyven.com" || hostname === "www.orbyven.com" ? "en" : "ro");
     if (!optionalCookiesEnabled) return;
 
     const frame = window.requestAnimationFrame(() => {
+      const hostname = window.location.hostname.toLowerCase();
+      setLanguage(hostname === "orbyven.com" || hostname === "www.orbyven.com" ? "en" : "ro");
       setVisible(!window.localStorage.getItem(STORAGE_KEY));
     });
     const open = () => {
