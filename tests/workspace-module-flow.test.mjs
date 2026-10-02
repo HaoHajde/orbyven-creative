@@ -645,3 +645,16 @@ test("calendar readiness ignores inactive team resources", () => {
   assert.match(calendar, /activeResourceIdsByEvent\.get\(selectedEvent\.id\)\?\.length/);
   assert.match(calendar, /const baseline = activeResourceIdsByEvent\.get\(selectedEvent\.id\) \?\? \[\]/);
 });
+
+
+test("team and resources surface the future-booking deactivation guard clearly", () => {
+  const resources = read("lib/modules/resources.ts");
+  assert.match(resources, /resource_has_future_bookings/);
+  assert.match(resources, /Realocă sau anulează acele programări din Calendar înainte de dezactivare/);
+
+  const teamData = read("lib/modules/team.ts");
+  assert.match(teamData, /Membrul este alocat în programări viitoare/);
+
+  const team = read("components/modules/TeamModule.tsx");
+  assert.match(team, /resourceError instanceof Error \? resourceError\.message/);
+});
