@@ -372,6 +372,21 @@ iframe {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
 }
 
+.orbyven-public-shell[data-orbyven-public-theme="light"] [class~="text-[#a58bff]"],
+.orbyven-public-shell[data-orbyven-public-theme="light"] [class~="text-[#9f8dff]"] {
+  color: #684fc8 !important;
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"]
+  :where(a, button)[class*="border-[var(--border"] {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+}
+
+.orbyven-public-shell[data-orbyven-public-theme="light"]
+  :where(a, button)[class*="border-[var(--border"]:hover {
+  border-color: rgba(104, 89, 214, 0.34);
+}
+
 /* =========================================================
    ORBYVEN DASHBOARD TEXT SCALE
    Persistent 90–130% accessibility/density control.
