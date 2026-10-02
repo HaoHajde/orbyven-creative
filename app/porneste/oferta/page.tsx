@@ -306,7 +306,13 @@ function InvitationVisual({
             <div className="absolute -right-16 top-[-40px] h-52 w-52 rounded-full border-[28px] border-white/[.035]" />
             <div className="relative flex items-center justify-between px-6 py-5 text-white/60">
               <span className="font-serif text-[15px] tracking-[.22em]">A | M</span>
-              <div className="hidden items-center gap-5 text-[8px] sm:flex"><span>Acasă</span><span>Poveste</span><span>Locație</span><span>Galerie</span><span className="rounded-full bg-[#f2e6d7] px-4 py-2 font-semibold text-[#352e37]">RSVP</span></div>
+              <div className="hidden items-center gap-4 text-[8px] sm:flex">
+                <span className="text-white/28">Acasă</span>
+                <button type="button" onClick={() => onSelect("Poveste")} className="transition hover:text-white">Poveste</button>
+                <button type="button" onClick={() => onSelect("Locații")} className="transition hover:text-white">Locație</button>
+                <button type="button" onClick={() => onSelect("Galerie")} className="transition hover:text-white">Galerie</button>
+                <button type="button" onClick={() => onSelect("RSVP")} className="rounded-full bg-[#f2e6d7] px-4 py-2 font-semibold text-[#352e37] transition hover:scale-[1.03]">RSVP</button>
+              </div>
             </div>
             <div className="relative mx-auto mt-8 max-w-[600px] px-6 text-center text-white">
               <p className="text-[7px] font-semibold uppercase tracking-[.36em] text-white/48">SAVE THE DATE</p>
@@ -314,12 +320,12 @@ function InvitationVisual({
               <p className="mt-5 text-[8px] uppercase tracking-[.28em] text-white/55">14 SEPTEMBRIE · 18:00</p>
               <div className="mx-auto mt-7 grid max-w-[390px] grid-cols-4 gap-2">
                 {[["102","Zile"],["14","Ore"],["37","Min"],["21","Sec"]].map(([n,l])=>(
-                  <div key={l} className="rounded-[13px] border border-white/10 bg-white/[.045] px-2 py-3">
+                  <button type="button" onClick={() => onSelect("Countdown")} key={l} className="rounded-[13px] border border-white/10 bg-white/[.045] px-2 py-3 transition hover:border-[#b49aff]/45 hover:bg-[#8f6cff]/10">
                     <p className="text-[18px] font-semibold">{n}</p><p className="mt-1 text-[6px] text-white/45">{l}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
-              <div className="mx-auto mt-6 w-fit rounded-full bg-[#f2e6d7] px-5 py-2.5 text-[8px] font-semibold text-[#352e37]">Confirmă prezența →</div>
+              <button type="button" onClick={() => onSelect("RSVP")} className="mx-auto mt-6 block w-fit rounded-full bg-[#f2e6d7] px-5 py-2.5 text-[8px] font-semibold text-[#352e37] transition hover:scale-[1.04]">Confirmă prezența →</button>
             </div>
           </div>
         </BrowserShell>
@@ -383,12 +389,12 @@ function WebVisual({
               <p className="mt-5 text-[30px] font-semibold leading-[.95] tracking-[-.045em]">Website-uri care aduc rezultate.</p>
               <div className="mt-4 h-2 w-[92%] rounded-full bg-white/10" />
               <div className="mt-2 h-2 w-[68%] rounded-full bg-white/8" />
-              <div className="mt-7 inline-flex rounded-full bg-white px-5 py-2.5 text-[8px] font-semibold text-[#09090d]">Începe acum →</div>
+              <button type="button" onClick={() => onSelect("Website")} className="mt-7 inline-flex rounded-full bg-white px-5 py-2.5 text-[8px] font-semibold text-[#09090d] transition hover:scale-[1.04]">Vezi website-ul →</button>
             </div>
-            <div className="absolute bottom-8 right-7 top-20 w-[31%] rounded-[18px] border border-white/8 bg-[linear-gradient(155deg,rgba(255,255,255,.08),rgba(111,89,255,.12))]">
+            <button type="button" onClick={() => onSelect("Responsive")} className="absolute bottom-8 right-7 top-20 w-[31%] rounded-[18px] border border-white/8 bg-[linear-gradient(155deg,rgba(255,255,255,.08),rgba(111,89,255,.12))] text-left transition hover:border-[#a98dff]/40 hover:bg-[linear-gradient(155deg,rgba(255,255,255,.10),rgba(111,89,255,.18))]">
               <div className="absolute inset-5 rounded-[15px] border border-white/[.06]" />
-              <div className="absolute bottom-7 left-6 text-[7px] font-semibold tracking-[.28em] text-white/35">BRAND<br/>IDEAS<br/>RESULTS</div>
-            </div>
+              <div className="absolute bottom-7 left-6 text-[7px] font-semibold tracking-[.28em] text-white/35">RESPONSIVE<br/>DESIGN</div>
+            </button>
           </div>
         </BrowserShell>
       </div>
@@ -448,13 +454,40 @@ function AdvancedVisual({
               <div className="rounded-[15px] border border-white/7 bg-white/[.025] p-3">
                 <p className="text-[8px] font-semibold tracking-[.14em] text-white/65">ORBYVEN</p>
                 <div className="mt-6 space-y-2">
-                  {["Dashboard","CRM","Task-uri","Calendar","Devize","Stoc","Automatizări","Module"].map((x,i)=><div key={x} className={`rounded-[9px] px-3 py-2 text-[6px] ${i===0?"bg-[#6d4cff] text-white":"text-white/38"}`}>{x}</div>)}
+                  {[
+                    ["Dashboard","Dashboard"],
+                    ["CRM","CRM"],
+                    ["Task-uri","Task-uri"],
+                    ["Calendar","Calendar"],
+                    ["Devize","Devize"],
+                    ["Stoc","Stoc"],
+                    ["Automatizări","Automatizări"],
+                    ["Module","Custom"],
+                  ].map(([label,feature],i)=>(
+                    <button
+                      type="button"
+                      onClick={() => onSelect(feature)}
+                      key={label}
+                      className={`block w-full rounded-[9px] px-3 py-2 text-left text-[6px] transition ${activeFeature===feature || (i===0 && !activeFeature)?"bg-[#6d4cff] text-white shadow-[0_0_18px_rgba(109,76,255,.25)]":"text-white/38 hover:bg-white/[.04] hover:text-white/70"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between"><div><p className="text-[8px] text-white/35">Bun venit,</p><p className="mt-1 text-[15px] font-semibold">Dashboard</p></div><div className="h-7 w-28 rounded-full bg-white/[.045]" /></div>
                 <div className="mt-4 grid grid-cols-4 gap-2">
-                  {[["124","Clienți"],["18","Devize"],["7","Proiecte"],["12","Task-uri"]].map(([n,l])=><div key={l} className="rounded-[12px] border border-white/7 bg-white/[.035] p-3"><p className="text-[17px] font-semibold">{n}</p><p className="mt-1 text-[6px] text-white/35">{l}</p></div>)}
+                  {[
+                    ["124","Clienți","CRM"],
+                    ["18","Devize","Devize"],
+                    ["7","Proiecte","Dashboard"],
+                    ["12","Task-uri","Task-uri"],
+                  ].map(([n,l,feature])=>(
+                    <button type="button" onClick={() => onSelect(feature)} key={l} className="rounded-[12px] border border-white/7 bg-white/[.035] p-3 text-left transition hover:border-[#a98dff]/35 hover:bg-[#8f6cff]/10">
+                      <p className="text-[17px] font-semibold">{n}</p><p className="mt-1 text-[6px] text-white/35">{l}</p>
+                    </button>
+                  ))}
                 </div>
                 <div className="mt-3 grid grid-cols-[1.25fr_.75fr] gap-2">
                   <div className="rounded-[14px] border border-white/7 bg-white/[.035] p-3">
@@ -467,8 +500,8 @@ function AdvancedVisual({
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-[7px] text-white/50">Activitate recentă</div>
-                  <div className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-[7px] text-white/50">Automatizări · ON</div>
+                  <button type="button" onClick={() => onSelect("CRM")} className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-left text-[7px] text-white/50 transition hover:border-[#a98dff]/35 hover:text-white/80">Activitate recentă</button>
+                  <button type="button" onClick={() => onSelect("Automatizări")} className="rounded-[14px] border border-white/7 bg-white/[.035] p-3 text-left text-[7px] text-white/50 transition hover:border-[#a98dff]/35 hover:text-white/80">Automatizări · ON</button>
                 </div>
               </div>
             </div>
@@ -782,11 +815,14 @@ function OfferPageContent() {
         @media (prefers-reduced-motion: reduce) {
           .orbyven-feature-scene, .orbyven-float-a, .orbyven-float-b, .orbyven-stage-sweep { animation: none !important; }
         }
+        @media (min-width: 1024px) and (max-height: 900px) {
+          .orbyven-offer-fit { transform: scale(.94); transform-origin: top center; width: 106.383%; margin-left: -3.1915%; }
+        }
         @media (min-width: 1024px) and (max-height: 820px) {
-          .orbyven-offer-stage { transform: scale(.91); transform-origin: top center; width: 109.89%; margin-left: -4.945%; }
+          .orbyven-offer-fit { transform: scale(.86); width: 116.279%; margin-left: -8.1395%; }
         }
         @media (min-width: 1024px) and (max-height: 740px) {
-          .orbyven-offer-stage { transform: scale(.83); width: 120.48%; margin-left: -10.24%; }
+          .orbyven-offer-fit { transform: scale(.78); width: 128.205%; margin-left: -14.1025%; }
         }
       `}</style>
 
@@ -794,6 +830,7 @@ function OfferPageContent() {
         <div className="mx-auto max-w-[1500px]">
           <Link href="/contact" className="inline-flex items-center gap-2 text-[9px] font-semibold text-[var(--muted)] transition hover:text-[var(--text)]">← Planuri</Link>
 
+          <div className="orbyven-offer-fit">
           <div className="orbyven-offer-stage relative mt-3 overflow-visible rounded-[32px] border border-[#9f7cff]/18 bg-[#06070b]/92 p-3 shadow-[0_42px_140px_rgba(0,0,0,.40),0_0_80px_rgba(100,62,220,.065)] ring-1 ring-white/[.018] sm:p-4 lg:p-5">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-[32px]">
               <div className="orbyven-stage-sweep absolute -top-[20%] h-[140%] w-[14%] rotate-[16deg] bg-[linear-gradient(90deg,transparent,rgba(183,151,255,.10),transparent)] blur-[6px]" />
@@ -837,8 +874,9 @@ function OfferPageContent() {
             </div>
           </div>
 
-          <div className="relative z-30 -mt-1 pt-5">
+          <div className="relative z-30 -mt-1 pt-4">
             <CheckoutPanel offerId={offerId} confirmed={confirmed} onToggle={() => setConfirmed((current) => !current)} />
+          </div>
           </div>
         </div>
       </section>
