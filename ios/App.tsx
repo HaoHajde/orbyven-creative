@@ -28,7 +28,63 @@ const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
 type NativeTheme = "light" | "dark";
+type NativeLocale = "ro" | "en";
 type NetworkNotice = "offline" | "online" | null;
+
+const IOS_COPY = {
+  ro: {
+    offline: "Fără internet · păstrăm ecranul curent",
+    online: "Conexiune restabilită",
+    syncing: "Sincronizare workspace…",
+    connectionUnavailable: "Conexiune indisponibilă",
+    connectionHelp: "Verifică internetul și reîncearcă. Datele ORBYVEN nu sunt stocate local în această versiune.",
+    retry: "Reîncearcă",
+    back: "Înapoi",
+    documents: "Documente",
+    forward: "Înainte",
+    protected: "ORBYVEN protejat",
+    protectedCopy: "Workspace-ul este ascuns cât timp aplicația nu este activă.",
+    checking: "Verificare…",
+    unlock: "Deblochează",
+    notificationsOff: "Notificări dezactivate",
+    notificationsOffCopy: "Activează notificările pentru ORBYVEN din Settings ca să primești alertele iPhone.",
+    pushReady: "Push pregătit",
+    pushReadyCopy: "ORBYVEN trebuie legat la proiectul EAS și la credențialele Apple Push înainte de activarea notificărilor remote.",
+    pushUnavailable: "Push indisponibil",
+    pushUnavailableCopy: "Tokenul push nu poate fi creat încă pe acest build.",
+    alertsEnabled: "Alerte iPhone activate",
+    alertsEnabledCopy: "Acest dispozitiv este înregistrat pentru notificările ORBYVEN.",
+    registrationFailed: "Înregistrare nereușită",
+    registrationFailedCopy: "ORBYVEN nu a putut salva acest dispozitiv pentru push. Încearcă din nou.",
+    remindersOffCopy: "Activează notificările pentru ORBYVEN din Settings ca să primești reminderele programărilor.",
+  },
+  en: {
+    offline: "No internet · keeping the current screen",
+    online: "Connection restored",
+    syncing: "Syncing workspace…",
+    connectionUnavailable: "Connection unavailable",
+    connectionHelp: "Check your internet connection and try again. ORBYVEN data is not stored locally in this version.",
+    retry: "Try again",
+    back: "Back",
+    documents: "Documents",
+    forward: "Forward",
+    protected: "ORBYVEN protected",
+    protectedCopy: "Your workspace is hidden while the app is not active.",
+    checking: "Checking…",
+    unlock: "Unlock",
+    notificationsOff: "Notifications disabled",
+    notificationsOffCopy: "Enable ORBYVEN notifications in Settings to receive iPhone alerts.",
+    pushReady: "Push ready",
+    pushReadyCopy: "ORBYVEN must be linked to the EAS project and Apple Push credentials before remote notifications can be enabled.",
+    pushUnavailable: "Push unavailable",
+    pushUnavailableCopy: "A push token cannot be created on this build yet.",
+    alertsEnabled: "iPhone alerts enabled",
+    alertsEnabledCopy: "This device is registered for ORBYVEN notifications.",
+    registrationFailed: "Registration failed",
+    registrationFailedCopy: "ORBYVEN could not save this device for push notifications. Try again.",
+    remindersOffCopy: "Enable ORBYVEN notifications in Settings to receive appointment reminders.",
+  },
+} as const;
 
 const NATIVE_RUNTIME = {
   platform: "ios",
@@ -49,6 +105,7 @@ const NATIVE_RUNTIME = {
     "web-readiness-handshake",
     "workspace-readiness-handshake",
     "pending-intent-replay",
+    "locale-sync",
     "push-registration",
   ],
 } as const;
@@ -240,6 +297,8 @@ export default function App() {
   const webRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
   const [webTheme, setWebTheme] = useState<NativeTheme | null>(null);
+  const [nativeLocale, setNativeLocale] = useState<NativeLocale>("ro");
+  const nativeCopy = IOS_COPY[nativeLocale];
   const dark = (webTheme ?? colorScheme) !== "light";
 
   const [connection, setConnection] = useState<ConnectionState>("loading");
@@ -624,6 +683,7 @@ export default function App() {
         reminderMinutes?: number | null;
         location?: string | null;
         theme?: NativeTheme;
+        locale?: NativeLocale;
         href?: string;
       };
 
@@ -644,6 +704,11 @@ export default function App() {
         (message.theme === "light" || message.theme === "dark")
       ) {
         setWebTheme(message.theme);
+      } else if (
+        message.type === "orbyven:locale" &&
+        (message.locale === "ro" || message.locale === "en")
+      ) {
+        setNativeLocale(message.locale);
       } else if (message.type === "orbyven:register-push") {
         void registerForRemotePush()
           .then((expoPushToken) => {
@@ -668,21 +733,21 @@ export default function App() {
               error.message === "notification-permission-denied"
             ) {
               Alert.alert(
-                "Notificări dezactivate",
-                "Activează notificările pentru ORBYVEN din Settings ca să primești alertele iPhone.",
+                nativeCopy.notificationsOff,
+                nativeCopy.notificationsOffCopy,
               );
             } else if (
               error instanceof Error &&
               error.message === "push-project-not-linked"
             ) {
               Alert.alert(
-                "Push pregătit",
-                "ORBYVEN trebuie legat la proiectul EAS și la credențialele Apple Push înainte de activarea notificărilor remote.",
+                nativeCopy.pushReady,
+                nativeCopy.pushReadyCopy,
               );
             } else {
               Alert.alert(
-                "Push indisponibil",
-                "Tokenul push nu poate fi creat încă pe acest build.",
+                nativeCopy.pushUnavailable,
+                nativeCopy.pushUnavailableCopy,
               );
             }
           });
@@ -691,16 +756,16 @@ export default function App() {
           Haptics.NotificationFeedbackType.Success,
         ).catch(() => undefined);
         Alert.alert(
-          "Alerte iPhone activate",
-          "Acest dispozitiv este înregistrat pentru notificările ORBYVEN.",
+          nativeCopy.alertsEnabled,
+          nativeCopy.alertsEnabledCopy,
         );
       } else if (message.type === "orbyven:push-registration-error") {
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Error,
         ).catch(() => undefined);
         Alert.alert(
-          "Înregistrare nereușită",
-          "ORBYVEN nu a putut salva acest dispozitiv pentru push. Încearcă din nou.",
+          nativeCopy.registrationFailed,
+          nativeCopy.registrationFailedCopy,
         );
       } else if (message.type === "orbyven:document-uploaded") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -780,8 +845,8 @@ export default function App() {
               error.message === "notification-permission-denied"
             ) {
               Alert.alert(
-                "Notificări dezactivate",
-                "Activează notificările pentru ORBYVEN din Settings ca să primești reminderele programărilor.",
+                nativeCopy.notificationsOff,
+                nativeCopy.remindersOffCopy,
               );
             }
           });
@@ -800,7 +865,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent]);
+  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent, nativeCopy]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";
@@ -838,9 +903,7 @@ export default function App() {
             ]}
           />
           <Text style={styles.networkNoticeText}>
-            {networkNotice === "offline"
-              ? "Fără internet · păstrăm ecranul curent"
-              : "Conexiune restabilită"}
+            {networkNotice === "offline" ? nativeCopy.offline : nativeCopy.online}
           </Text>
         </View>
       ) : null}
@@ -912,14 +975,14 @@ export default function App() {
             <View style={[styles.loader, { backgroundColor: background }]}>
               <ActivityIndicator size="large" />
               <Text style={[styles.loaderTitle, { color: text }]}>ORBYVEN</Text>
-              <Text style={[styles.loaderText, { color: muted }]}>Sincronizare workspace…</Text>
+              <Text style={[styles.loaderText, { color: muted }]}>{nativeCopy.syncing}</Text>
             </View>
           )}
           renderError={() => (
             <View style={[styles.loader, { backgroundColor: background }]}>
-              <Text style={[styles.loaderTitle, { color: text }]}>Conexiune indisponibilă</Text>
+              <Text style={[styles.loaderTitle, { color: text }]}>{nativeCopy.connectionUnavailable}</Text>
               <Text style={[styles.loaderText, { color: muted }]}>
-                Verifică internetul și reîncearcă. Datele ORBYVEN nu sunt stocate local în această versiune.
+                {nativeCopy.connectionHelp}
               </Text>
               <Pressable
                 style={styles.retryButton}
@@ -931,7 +994,7 @@ export default function App() {
                   setReloadKey((value) => value + 1);
                 }}
               >
-                <Text style={styles.retryText}>Reîncearcă</Text>
+                <Text style={styles.retryText}>{nativeCopy.retry}</Text>
               </Pressable>
             </View>
           )}
@@ -951,14 +1014,14 @@ export default function App() {
 
       {!webAppOwnsChrome ? (
       <View style={[styles.toolbar, { backgroundColor: surface, borderTopColor: border }]}>
-        <ToolbarButton label="‹" hint="Înapoi" disabled={!canGoBack} onPress={() => webRef.current?.goBack()} text={text} muted={muted} />
+        <ToolbarButton label="‹" hint={nativeCopy.back} disabled={!canGoBack} onPress={() => webRef.current?.goBack()} text={text} muted={muted} />
         <ToolbarButton label="⌂" hint="Workspace" onPress={() => {
           navigateTrustedUrl(WORKSPACE_URL);
         }} text={text} muted={muted} />
-        <ToolbarButton label="▣+" hint="Documente" onPress={openDocuments} text={text} muted={muted} />
+        <ToolbarButton label="▣+" hint={nativeCopy.documents} onPress={openDocuments} text={text} muted={muted} />
         <ToolbarButton label="↻" hint="Refresh" onPress={() => webRef.current?.reload()} text={text} muted={muted} />
         <ToolbarButton label="□↑" hint="Share" onPress={shareCurrentUrl} text={text} muted={muted} />
-        <ToolbarButton label="›" hint="Înainte" disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
+        <ToolbarButton label="›" hint={nativeCopy.forward} disabled={!canGoForward} onPress={() => webRef.current?.goForward()} text={text} muted={muted} />
       </View>
       ) : null}
 
@@ -967,9 +1030,9 @@ export default function App() {
           <View style={styles.shieldMark}>
             <Text style={styles.shieldMarkText}>OC</Text>
           </View>
-          <Text style={[styles.shieldTitle, { color: text }]}>ORBYVEN protejat</Text>
+          <Text style={[styles.shieldTitle, { color: text }]}>{nativeCopy.protected}</Text>
           <Text style={[styles.shieldText, { color: muted }]}>
-            Workspace-ul este ascuns cât timp aplicația nu este activă.
+            {nativeCopy.protectedCopy}
           </Text>
           {biometricAvailable ? (
             <Pressable
@@ -981,7 +1044,7 @@ export default function App() {
                 unlocking ? styles.disabled : null,
               ]}
             >
-              <Text style={styles.unlockText}>{unlocking ? "Verificare…" : "Deblochează"}</Text>
+              <Text style={styles.unlockText}>{unlocking ? nativeCopy.checking : nativeCopy.unlock}</Text>
             </Pressable>
           ) : (
             <ActivityIndicator size="small" style={styles.shieldSpinner} />

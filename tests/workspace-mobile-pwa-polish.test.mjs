@@ -11,12 +11,14 @@ const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 const nativeIos = readFileSync(join(process.cwd(), "ios/App.tsx"), "utf8");
 
 test("mobile workspace uses a five-action app dock instead of the floating active-module pill", () => {
-  assert.match(shell, /aria-label="Navigare mobilă ORBYVEN"/);
+  assert.match(shell, /aria-label=\{copy\.mobileNavigation\}/);
   assert.match(shell, /grid-cols-5/);
   assert.match(shell, />Overview</);
-  assert.match(shell, />Lucrări</);
-  assert.match(shell, />Clienți</);
-  assert.match(shell, />Mai multe</);
+  assert.match(shell, /workspaceModuleShortName\("tasks", uiLanguage\)/);
+  assert.match(shell, /workspaceModuleShortName\("leads", uiLanguage\)/);
+  assert.match(shell, /\{copy\.more\}/);
+  assert.match(shell, /WORKSPACE_LANGUAGE_STORAGE_KEY/);
+  assert.match(shell, /type: "orbyven:locale"/);
   assert.doesNotMatch(shell, /mobileModuleMenuOpen \? "Închide" : activeDefinition\.shortName/);
   assert.match(shell, /data-workspace-mobile-dock="true"/);
 });
