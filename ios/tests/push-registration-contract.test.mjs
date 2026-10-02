@@ -5,14 +5,14 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.7 declares the Expo push project dependency without hardcoding an EAS id", () => {
+test("Alpha 0.8 declares the Expo push project dependency without hardcoding an EAS id", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
   const app = read("../App.tsx");
 
-  assert.equal(pkg.version, "0.7.0");
+  assert.equal(pkg.version, "0.8.0");
   assert.equal(pkg.dependencies["expo-constants"], "~57.0.20");
-  assert.equal(config.expo.version, "0.7.0");
+  assert.equal(config.expo.version, "0.8.0");
   assert.match(app, /Constants\.expoConfig/);
   assert.match(app, /Constants\.easConfig/);
   assert.match(app, /getExpoPushTokenAsync\(\{ projectId \}\)/);
@@ -30,7 +30,7 @@ test("remote notification navigation is restricted to ORBYVEN URLs", () => {
 
 test("push registration is explicit, bridged through the authenticated workspace and acknowledged", () => {
   const activity = read("../../components/WorkspaceActivityCenter.tsx");
-  const workspace = read("../../components/ClientWorkspace.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
   const helper = read("../../lib/modules/push-devices.ts");
 
   assert.match(activity, /orbyven:register-push/);

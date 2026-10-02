@@ -26,6 +26,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -81,6 +82,7 @@ export default function WorkspaceShell({
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
   const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
+  const lastNativeRefreshAt = useRef(0);
 
 
   const loadWorkspace = useCallback(async () => {
@@ -113,6 +115,32 @@ export default function WorkspaceShell({
       setLoading(false);
     }
   }, [onUnauthenticated]);
+
+  const refreshWorkspaceSilently = useCallback(async () => {
+    try {
+      const nextWorkspace = await getCurrentWorkspace();
+      if (nextWorkspace) {
+        setWorkspace(nextWorkspace);
+        setLoadError("");
+
+        if (!nextWorkspace.enabledModules.includes(activeModule)) {
+          setPanel("workspace");
+          setActiveModule("overview");
+          setNavigation((current) => ({
+            module: "overview",
+            token: current.token + 1,
+          }));
+        }
+        return;
+      }
+
+      const { data: authData, error: authError } = await orbyvenSupabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authData.user) await onUnauthenticated();
+    } catch (error) {
+      console.error("Silent workspace refresh failed", error);
+    }
+  }, [activeModule, onUnauthenticated]);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("orbyven-dashboard-theme");
@@ -151,6 +179,22 @@ export default function WorkspaceShell({
     }).ReactNativeWebView;
     bridge?.postMessage(JSON.stringify({ type: "orbyven:theme", theme }));
   }, [theme]);
+
+  useEffect(() => {
+    const refreshFromNative = () => {
+      const now = Date.now();
+      if (now - lastNativeRefreshAt.current < 1200) return;
+      lastNativeRefreshAt.current = now;
+      void refreshWorkspaceSilently();
+    };
+
+    window.addEventListener("orbyven:app-resume", refreshFromNative);
+    window.addEventListener("orbyven:native-network-restored", refreshFromNative);
+    return () => {
+      window.removeEventListener("orbyven:app-resume", refreshFromNative);
+      window.removeEventListener("orbyven:native-network-restored", refreshFromNative);
+    };
+  }, [refreshWorkspaceSilently]);
 
   const requestNativeHaptic = useCallback(() => {
     const bridge = (window as Window & {

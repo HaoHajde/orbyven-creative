@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.7 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.8 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.7.0");
+  assert.equal(pkg.version, "0.8.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -38,10 +38,10 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 });
 
 
-test("Alpha 0.7 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+test("Alpha 0.8 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.7\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.8\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
@@ -62,4 +62,30 @@ test("native workspace navigation can request bounded selection haptics", () => 
   assert.match(app, /Haptics\.selectionAsync\(\)/);
   assert.match(workspace, /const requestNativeHaptic = useCallback/);
   assert.match(workspace, /type: "orbyven:haptic"/);
+});
+
+
+test("Alpha 0.8 preserves the live WebView across transient network loss", () => {
+  const app = read("App.tsx");
+
+  assert.match(app, /"connection-continuity"/);
+  assert.match(app, /"resume-refresh"/);
+  assert.match(app, /const webHadLoadError = useRef\(false\)/);
+  assert.match(app, /orbyven:native-network-restored/);
+  assert.match(app, /window\.dispatchEvent\(new Event\('online'\)\)/);
+  assert.match(app, /if \(webHadLoadError\.current\)/);
+  assert.match(app, /onLoadProgress/);
+  assert.match(app, /Offline · reconectare automată/);
+});
+
+test("Alpha 0.8 refreshes workspace data silently after native resume or reconnect", () => {
+  const workspace = read("../components/WorkspaceShell.tsx");
+  const activity = read("../components/WorkspaceActivityCenter.tsx");
+
+  assert.match(workspace, /refreshWorkspaceSilently/);
+  assert.match(workspace, /lastNativeRefreshAt/);
+  assert.match(workspace, /orbyven:app-resume/);
+  assert.match(workspace, /orbyven:native-network-restored/);
+  assert.match(workspace, /1200/);
+  assert.match(activity, /orbyven:native-network-restored/);
 });

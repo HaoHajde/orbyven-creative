@@ -5,11 +5,11 @@ import test from "node:test";
 const read = (relativePath) =>
   fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
-test("Alpha 0.7 preserves Expo local notifications and config plugin", () => {
+test("Alpha 0.8 preserves Expo local notifications and config plugin", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
 
-  assert.equal(pkg.version, "0.7.0");
+  assert.equal(pkg.version, "0.8.0");
   assert.equal(pkg.dependencies["expo-notifications"], "~57.0.21");
   assert.ok(
     config.expo.plugins.some((entry) =>
@@ -44,7 +44,7 @@ test("calendar module mirrors its existing reminder_minutes into native reminder
 });
 
 test("workspace opens the exact calendar record and acknowledges native routing", () => {
-  const workspace = read("../../components/ClientWorkspace.tsx");
+  const workspace = read("../../components/WorkspaceShell.tsx");
 
   assert.match(workspace, /orbyven:native-calendar-record/);
   assert.match(workspace, /openModule\("calendar", \{ recordId: eventId \}\)/);
