@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.7 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.8 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.7.0");
+  assert.equal(pkg.version, "0.8.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -38,10 +38,10 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 });
 
 
-test("Alpha 0.7 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+test("Alpha 0.8 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.7\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.8\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
@@ -62,4 +62,21 @@ test("native workspace navigation can request bounded selection haptics", () => 
   assert.match(app, /Haptics\.selectionAsync\(\)/);
   assert.match(workspace, /const requestNativeHaptic = useCallback/);
   assert.match(workspace, /type: "orbyven:haptic"/);
+});
+
+
+test("Alpha 0.8 preserves in-flight workspace state across short network interruptions", () => {
+  const app = read("App.tsx");
+
+  assert.match(app, /"state-preserving-reconnect"/);
+  assert.match(app, /"network-state-bridge"/);
+  assert.match(app, /orbyven:native-network-change/);
+  assert.match(app, /webFailedRef\.current/);
+  assert.match(app, /if \(webFailedRef\.current\)/);
+  assert.match(app, /Fără internet · păstrăm ecranul curent/);
+  assert.match(app, /Conexiune restabilită/);
+  assert.doesNotMatch(
+    app,
+    /if \(definitelyOnline && previousReachability\.current === false\)[\s\S]{0,180}webRef\.current\?\.reload\(\)/,
+  );
 });

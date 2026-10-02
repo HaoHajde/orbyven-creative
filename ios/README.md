@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.7
+# ORBYVEN iOS — Alpha 0.8
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.7:
+Native Alpha 0.8:
+- reconectarea la internet păstrează starea curentă a WebView-ului și evită reload-ul dacă pagina nu a eșuat efectiv;
+- indicator nativ discret pentru `Offline` / `Conexiune restabilită`;
+- bridge `orbyven:native-network-change` către Dashboard, cu `data-native-network` pentru diagnostic și UI contextual;
+- reload automat doar când WebView-ul a intrat efectiv în stare de eroare;
+- feedback haptic discret la revenirea conexiunii;
+- runtime-ul declară capabilitățile `network-state-bridge` și `state-preserving-reconnect`;
+
+Păstrat din Alpha 0.7:
 - handshake explicit native → web prin `window.__ORBYVEN_NATIVE__`, fără a folosi user-agent-ul drept sursă de adevăr;
 - runtime-ul web marchează `data-app-mode="native"` și publică platforma/versiunea shell-ului pentru UI și diagnostic;
 - capabilitățile native sunt declarate explicit (biometric lock, deep links, documente, haptics, remindere, network recovery, push registration);
@@ -201,3 +209,10 @@ Versiunea 0.6.0 pregătește notificările push remote fără să slăbească au
 Versiunea 0.7.0 transformă legătura dintre Dashboard și shell-ul iOS într-un contract explicit. WebView-ul injectează înainte de încărcarea aplicației un runtime limitat la informații de platformă, versiune și capabilități UI; acesta nu conține tokenuri, credentiale, sesiuni sau drepturi de autorizare. Autentificarea și RLS rămân exclusiv în fluxul ORBYVEN existent.
 
 Tema aleasă în Dashboard este trimisă către shell-ul iOS prin bridge-ul React Native WebView, astfel încât status bar-ul și ecranele native auxiliare să nu mai poată rămâne într-o temă diferită față de workspace. La revenirea din background, shell-ul emite explicit evenimentul `orbyven:app-resume`, pe lângă protecția biometrică existentă.
+
+
+## Alpha 0.8
+
+Versiunea 0.8.0 mută recovery-ul de rețea de la „reload la orice reconectare” la un model care păstrează starea utilizatorului. Dacă Wi‑Fi-ul sau datele mobile dispar temporar, shell-ul păstrează WebView-ul și afișează un status nativ discret. La revenirea internetului, pagina curentă rămâne deschisă și primește evenimentul `orbyven:native-network-change`; reload-ul este rezervat situațiilor în care WebView-ul a raportat efectiv o eroare.
+
+Această schimbare reduce riscul de a pierde text introdus, poziția în modul sau contextul unei lucrări în timpul unei întreruperi scurte de conexiune. Runtime-ul web expune starea prin `data-native-network="online|offline"`, fără să schimbe autentificarea, sesiunea Supabase sau politicile RLS.
