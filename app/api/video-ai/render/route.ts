@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
+import { persistVideoJob, updateVideoJob } from "@/lib/video-ai-job-store";
 import {
   buildVideoProviderPayload,
   normalizeVideoProviderResult,
@@ -46,24 +47,29 @@ export async function POST(request: Request) {
     const createdAt = new Date().toISOString();
     const config = readVideoRenderConfig();
 
+    const initialJob: VideoRenderJob = {
+      id,
+      status: config.ready && config.provider ? "queued" : "provider_required",
+      provider: config.provider,
+      outputUrl: null,
+      providerJobId: null,
+      createdAt,
+    };
+    const persisted = await persistVideoJob(actor, initialJob, renderRequest);
+
     if (!config.ready || !config.provider) {
-      const job: VideoRenderJob = {
-        id,
-        status: "provider_required",
-        provider: config.provider,
-        outputUrl: null,
-        providerJobId: null,
-        createdAt,
-      };
       return NextResponse.json(
         {
-          job,
+          job: initialJob,
+          persisted,
           renderPackage: buildVideoProviderPayload(id, actor, renderRequest),
           message: "Director package created. A render provider is not configured in this environment.",
         },
         { headers: noStore }
       );
     }
+
+    if (!persisted) throw new Error("VIDEO_JOB_PERSISTENCE_REQUIRED");
 
     const endpoint = process.env.ORBYVEN_VIDEO_RENDER_ENDPOINT?.trim();
     if (!endpoint) throw new Error("VIDEO_PROVIDER_NOT_CONFIGURED");
@@ -98,7 +104,23 @@ export async function POST(request: Request) {
         createdAt,
       };
 
-      return NextResponse.json({ job }, { headers: noStore });
+      await updateVideoJob(actor, id, {
+        status: job.status,
+        providerJobId: job.providerJobId,
+        outputUrl: job.outputUrl,
+        failureCode: null,
+      });
+
+      return NextResponse.json({ job, persisted: true }, { headers: noStore });
+    } catch (error) {
+      const aborted = error instanceof DOMException && error.name === "AbortError";
+      const failureCode = aborted
+        ? "VIDEO_PROVIDER_TIMEOUT"
+        : error instanceof Error
+          ? error.message.slice(0, 120)
+          : "UNKNOWN";
+      await updateVideoJob(actor, id, { status: "failed", failureCode });
+      throw error;
     } finally {
       clearTimeout(timeout);
     }
@@ -108,7 +130,7 @@ export async function POST(request: Request) {
     const status =
       code === "AUTH_REQUIRED" ? 401 :
       code === "ORG_ACCESS_REQUIRED" ? 403 :
-      code === "VIDEO_PROVIDER_NOT_CONFIGURED" ? 503 :
+      code === "VIDEO_PROVIDER_NOT_CONFIGURED" || code === "VIDEO_JOB_PERSISTENCE_REQUIRED" ? 503 :
       code.startsWith("VIDEO_PROVIDER_HTTP_") ? 502 :
       code === "VIDEO_PROVIDER_TIMEOUT" ? 504 :
       500;
