@@ -161,6 +161,70 @@ export async function completeElapsedWorkEventsForTask(
 }
 
 
+export async function syncCrmAfterEstimateCreated(
+  organizationId: string,
+  clientId: string,
+  estimateReference?: string | null
+) {
+  requireOrganizationId(organizationId);
+  if (!clientId.trim()) {
+    return { updated: false as const, reason: "missing_client" as const };
+  }
+
+  const { data: lead, error: leadError } = await orbyvenSupabase
+    .from("crm_leads")
+    .select("id,kind,stage")
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .single();
+
+  if (leadError || !lead) {
+    throw leadError ?? new Error("Clientul devizului nu a putut fi încărcat.");
+  }
+  if (lead.kind === "client") {
+    return { updated: false as const, reason: "already_client" as const };
+  }
+  if (lead.stage === "won" || lead.stage === "lost") {
+    return { updated: false as const, reason: "terminal_stage" as const, stage: lead.stage };
+  }
+  if (lead.stage === "proposal") {
+    return { updated: false as const, reason: "already_proposal" as const };
+  }
+
+  const { data: updated, error: updateError } = await orbyvenSupabase
+    .from("crm_leads")
+    .update({ stage: "proposal" })
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .eq("kind", "lead")
+    .in("stage", ["new", "contacted", "qualified"])
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) {
+    return { updated: false as const, reason: "state_changed" as const };
+  }
+
+  const label = estimateReference?.trim()
+    ? ` pentru ${estimateReference.trim()}`
+    : "";
+  const { error: activityError } = await orbyvenSupabase
+    .from("crm_lead_activities")
+    .insert({
+      organization_id: organizationId,
+      lead_id: clientId,
+      kind: "status",
+      body: "Stadiu mutat automat în Propunere după crearea devizului" + label + ".",
+      occurred_at: new Date().toISOString(),
+    });
+
+  return {
+    updated: true as const,
+    activityLogged: !activityError,
+  };
+}
+
 export async function syncCrmAfterAcceptedEstimate(
   organizationId: string,
   clientId: string,
