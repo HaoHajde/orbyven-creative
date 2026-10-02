@@ -1,6 +1,6 @@
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 
-export const WORKSPACE_UI_REVISION = "2026.10.02.1";
+export const WORKSPACE_UI_REVISION = "2026.10.02.2";
 export const CURRENT_DESKTOP_VERSION = "0.8.0";
 
 export const WORKSPACE_THEME = {
@@ -19,18 +19,18 @@ export const WORKSPACE_THEME = {
     accentSoft: "rgba(86,134,244,0.17)",
   },
   light: {
-    bg: "#f1f5fd",
-    surface: "#ffffff",
-    surface2: "#eaf1fd",
-    text: "#142746",
-    muted: "#596d8c",
-    muted2: "#7183a1",
-    border: "rgba(46,82,146,0.12)",
-    borderStrong: "rgba(46,82,146,0.24)",
-    button: "#244caa",
+    bg: "#eeebf6",
+    surface: "#f9f7fd",
+    surface2: "#e9e4f2",
+    text: "#201b31",
+    muted: "#625c72",
+    muted2: "#7c748c",
+    border: "rgba(92,72,148,0.15)",
+    borderStrong: "rgba(92,72,148,0.27)",
+    button: "#5b4dde",
     buttonText: "#ffffff",
-    accent: "#3561d8",
-    accentSoft: "rgba(65,105,208,0.11)",
+    accent: "#6757df",
+    accentSoft: "rgba(103,87,223,0.11)",
   },
 } as const;
 

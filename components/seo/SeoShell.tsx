@@ -26,8 +26,8 @@ const footerLinks = [
 
 export default function SeoShell({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-white text-[#161618]">
-      <header className="border-b border-black/[.07] bg-white/95">
+    <main data-orbyven-theme="light" className="orbyven-theme-shell min-h-screen bg-[#f1eef8] text-[#201b2d]">
+      <header className="border-b border-[#6654b8]/15 bg-[#f8f6fc]/95 backdrop-blur-xl">
         <div className="mx-auto flex min-h-[76px] max-w-[1380px] items-center justify-between gap-6 px-5 sm:px-7 md:px-10">
           <Link href="/" aria-label="ORBYVEN — Acasă" className="flex items-center gap-3">
             <Image
@@ -44,9 +44,9 @@ export default function SeoShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-[12px] font-medium text-black/55 md:flex">
+          <nav className="hidden items-center gap-6 text-[12px] font-medium text-[#665f75] md:flex">
             {primaryNav.map((item) => (
-              <Link key={item.href} href={item.href} className="transition hover:text-black">
+              <Link key={item.href} href={item.href} className="transition hover:text-[#201b2d]">
                 {item.label}
               </Link>
             ))}
@@ -54,7 +54,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
 
           <Link
             href="/cerere"
-            className="inline-flex h-10 items-center rounded-full bg-[#171719] px-5 text-[12px] font-semibold text-white"
+            className="inline-flex h-10 items-center rounded-full bg-[#352d55] px-5 text-[12px] font-semibold text-white"
           >
             Începe un proiect
           </Link>
@@ -63,16 +63,16 @@ export default function SeoShell({ children }: { children: ReactNode }) {
 
       {children}
 
-      <footer className="border-t border-black/[.07] bg-[#f6f6f8]">
+      <footer className="border-t border-[#6654b8]/15 bg-[#ebe7f4]">
         <div className="mx-auto max-w-[1380px] px-5 py-12 sm:px-7 md:px-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_1.4fr] lg:items-end">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-black/38">ORBYVEN CREATIVE</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#81798f]">ORBYVEN CREATIVE</p>
               <p className="mt-4 max-w-lg text-[28px] font-semibold leading-[1.03] tracking-[-.045em]">
                 Site-ul public și workspace-ul pot face parte din același sistem.
               </p>
             </div>
-            <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-black/55 sm:grid-cols-3">
+            <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-[#665f75] sm:grid-cols-3">
               {footerLinks.map((item) => (
                 <Link key={item.href} href={item.href} className="transition hover:text-black">
                   {item.label}
@@ -80,7 +80,7 @@ export default function SeoShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </div>
-          <div className="mt-10 flex flex-col gap-3 border-t border-black/[.07] pt-6 text-[10px] uppercase tracking-[.14em] text-black/35 sm:flex-row sm:justify-between">
+          <div className="mt-10 flex flex-col gap-3 border-t border-[#6654b8]/15 pt-6 text-[10px] uppercase tracking-[.14em] text-[#81798f] sm:flex-row sm:justify-between">
             <span>© 2026 ORBYVEN</span>
             <div className="flex gap-4">
               <Link href="/legal/privacy">Confidențialitate</Link>

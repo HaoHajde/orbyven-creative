@@ -60,3 +60,74 @@ test("dashboard text scaling has an explicit visual-integrity contract", () => {
   assert.match(qa, /Text escaped its visual frame/);
   assert.match(qa, /Text-scale control escaped its frame/);
 });
+
+
+test("light theme stays violet-tinted instead of pure white across canonical ORBYVEN surfaces", () => {
+  const palette = read("lib/orbyven-theme.ts");
+  const workspaceTheme = read("lib/workspace-visual-system.ts");
+  const globals = read("app/globals.css");
+  const layout = read("app/layout.tsx");
+
+  assert.match(palette, /light:\s*\{[\s\S]*?bg: "#f1eef8"/);
+  assert.match(palette, /surface: "#fbfaff"/);
+  assert.match(palette, /accent: "#5b4dde"/);
+  assert.match(palette, /border: "rgba\(88,69,146,.14\)"/);
+  assert.doesNotMatch(palette, /light:\s*\{[\s\S]*?bg: "#ffffff"/);
+
+  assert.match(workspaceTheme, /light:\s*\{[\s\S]*?bg: "#eeebf6"/);
+  assert.match(workspaceTheme, /accent: "#6757df"/);
+  assert.match(workspaceTheme, /surface: "#f9f7fd"/);
+
+  assert.match(globals, /ORBYVEN LIGHT THEME ATMOSPHERE/);
+  assert.match(globals, /orbyven-theme-shell\[data-orbyven-theme="light"\]/);
+  assert.match(globals, /radial-gradient\(circle at 8% 4%/);
+  assert.match(layout, /color: "#f1eef8"/);
+});
+
+test("theme-switchable pages expose the shared theme shell and persistent palette", () => {
+  for (const path of [
+    "components/HomePageClient.tsx",
+    "app/templates/page.tsx",
+    "app/servicii/page.tsx",
+    "app/contact/page.tsx",
+    "components/ProjectRequestFlow.tsx",
+    "app/porneste/web-design/page.tsx",
+    "app/porneste/invitatie/page.tsx",
+    "app/porneste/oferta/page.tsx",
+    "components/AiWebDesignEntry.tsx",
+    "components/WorkspaceShell.tsx",
+  ]) {
+    const source = read(path);
+    assert.match(source, /data-orbyven-theme=\{theme\}/);
+    assert.match(source, /orbyven-theme-shell/);
+  }
+
+  const home = read("components/HomePageClient.tsx");
+  const templates = read("app/templates/page.tsx");
+  const services = read("app/servicii/page.tsx");
+  const contact = read("app/contact/page.tsx");
+  const request = read("components/ProjectRequestFlow.tsx");
+  const webDesignStart = read("app/porneste/web-design/page.tsx");
+  const invitationStart = read("app/porneste/invitatie/page.tsx");
+  const offerStart = read("app/porneste/oferta/page.tsx");
+  const aiWebDesign = read("components/AiWebDesignEntry.tsx");
+
+  for (const source of [home, templates, services, contact, request, webDesignStart, invitationStart, offerStart, aiWebDesign]) {
+    assert.match(source, /themeBodyBackground/);
+    assert.match(source, /publicThemeVars/);
+  }
+});
+
+test("visual QA explicitly audits both public themes and workspace light mode", () => {
+  const publicAudit = read("scripts/audit-public-layout.mjs");
+  const authenticatedAudit = read("scripts/audit-authenticated-workspace.mjs");
+
+  assert.match(publicAudit, /themeRoutes = new Set\(\[[\s\S]*?"\/servicii"[\s\S]*?"\/contact"[\s\S]*?"\/templates"[\s\S]*?"\/porneste\/invitatie"[\s\S]*?"\/porneste\/web-design"[\s\S]*?\]\)/);
+  assert.match(publicAudit, /for \(const theme of \["light", "dark"\]\)/);
+  assert.match(publicAudit, /light theme reverted to pure white/);
+  assert.match(publicAudit, /theme horizontal overflow/);
+
+  assert.match(authenticatedAudit, /orbyven-dashboard-theme", "light"/);
+  assert.match(authenticatedAudit, /Workspace light theme reverted to pure white/);
+  assert.match(authenticatedAudit, /Workspace light theme horizontal overflow/);
+});

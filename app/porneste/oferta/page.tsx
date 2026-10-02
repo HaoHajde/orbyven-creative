@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import SiteHeader from "@/components/SiteHeader";
+import { publicThemeVars, themeBodyBackground } from "@/lib/orbyven-theme";
 import {
   PUBLIC_CHECKOUT_IS_DEMO,
   PUBLIC_OFFERS,
@@ -57,24 +58,6 @@ const OFFER_META: Record<
     ],
   },
 };
-
-function themeVars(theme: Theme) {
-  return {
-    "--bg": theme === "dark" ? "#09090d" : "#f8f8fb",
-    "--surface": theme === "dark" ? "#101014" : "#ffffff",
-    "--surface-2": theme === "dark" ? "#17171c" : "#f1f1f5",
-    "--text": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--muted": theme === "dark" ? "#aaaab2" : "#66666f",
-    "--muted-2": theme === "dark" ? "#777781" : "#878790",
-    "--border": theme === "dark" ? "rgba(255,255,255,.085)" : "rgba(18,18,24,.075)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,.15)" : "rgba(18,18,24,.14)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#17171b",
-    "--button-text": theme === "dark" ? "#09090d" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--home-violet": "#a58bff",
-    "--accent-soft": theme === "dark" ? "rgba(126,93,255,.14)" : "rgba(112,78,255,.09)",
-  } as CSSProperties;
-}
 
 function InvitationPreview() {
   return (
@@ -407,7 +390,7 @@ function OfferPageContent() {
             : "light";
       setTheme(next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(next);
     });
     return () => cancelAnimationFrame(frame);
   }, []);
@@ -417,7 +400,7 @@ function OfferPageContent() {
       const next = current === "light" ? "dark" : "light";
       localStorage.setItem("studio-theme", next);
       document.documentElement.style.colorScheme = next;
-      document.body.style.backgroundColor = next === "dark" ? "#09090d" : "#f8f8fb";
+      document.body.style.backgroundColor = themeBodyBackground(next);
       return next;
     });
   };
@@ -439,15 +422,16 @@ function OfferPageContent() {
 
   return (
     <main
+      data-orbyven-theme={theme}
       style={{
-        ...themeVars(theme),
+        ...publicThemeVars(theme),
         fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif",
         background:
           theme === "dark"
             ? "radial-gradient(circle at 72% 8%,rgba(126,93,255,.16),transparent 24%),linear-gradient(180deg,#0b0912 0%,#09090d 78%)"
             : "radial-gradient(circle at 72% 8%,rgba(126,93,255,.10),transparent 24%),linear-gradient(180deg,#fbfaff 0%,#f7f7fa 78%)",
       }}
-      className="relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
+      className="orbyven-theme-shell relative min-h-screen overflow-x-hidden text-[var(--text)] antialiased"
     >
       <SiteHeader theme={theme} compact={false} activePage="contact" onToggleTheme={toggleTheme} />
 

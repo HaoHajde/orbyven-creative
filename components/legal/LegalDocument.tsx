@@ -30,15 +30,15 @@ export default function LegalDocument({
   children,
 }: LegalDocumentProps) {
   return (
-    <main className="min-h-screen bg-white text-[#1d1d1f] dark:bg-[#09090a] dark:text-[#f5f5f7]">
-      <header className="border-b border-black/[0.08] dark:border-white/[0.1]">
+    <main className="min-h-screen bg-[#f1eef8] text-[#201b2d] dark:bg-[#09090a] dark:text-[#f5f5f7]">
+      <header className="border-b border-[#6654b8]/15 dark:border-white/[0.1]">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-6 px-6 py-6 md:px-10">
           <Link href="/" className="text-sm font-semibold tracking-[0.16em]">
             ORBYVEN
           </Link>
           <Link
             href="/legal"
-            className="text-xs font-medium text-[#6e6e73] transition hover:text-current dark:text-[#a1a1a6]"
+            className="text-xs font-medium text-[#665f75] transition hover:text-current dark:text-[#a1a1a6]"
           >
             Centrul juridic
           </Link>
@@ -48,13 +48,13 @@ export default function LegalDocument({
       <div className="mx-auto max-w-[1180px] px-6 py-14 md:px-10 md:py-20">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-20">
           <article className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6e6e73] dark:text-[#a1a1a6]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#665f75] dark:text-[#a1a1a6]">
               {eyebrow}
             </p>
             <h1 className="mt-5 max-w-4xl text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px] md:text-[68px]">
               {title}
             </h1>
-            <p className="mt-7 max-w-3xl text-[16px] leading-7 text-[#6e6e73] dark:text-[#a1a1a6]">
+            <p className="mt-7 max-w-3xl text-[16px] leading-7 text-[#665f75] dark:text-[#a1a1a6]">
               {intro}
             </p>
 
@@ -64,13 +64,13 @@ export default function LegalDocument({
               </div>
             )}
 
-            <div className="legal-copy mt-12 space-y-10 text-[15px] leading-7 text-[#3a3a3c] dark:text-[#d2d2d7]">
+            <div className="legal-copy mt-12 space-y-10 text-[15px] leading-7 text-[#40394f] dark:text-[#d2d2d7]">
               {children}
             </div>
           </article>
 
           <aside className="lg:sticky lg:top-8 lg:self-start">
-            <div className="rounded-[24px] border border-black/[0.08] bg-[#f5f5f7] p-5 dark:border-white/[0.1] dark:bg-[#111113]">
+            <div className="rounded-[24px] border border-[#6654b8]/15 bg-[#ebe7f4] p-5 dark:border-white/[0.1] dark:bg-[#111113]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#86868b]">
                 Documente
               </p>
@@ -83,7 +83,7 @@ export default function LegalDocument({
               </nav>
             </div>
 
-            <div className="mt-4 rounded-[24px] border border-black/[0.08] p-5 text-xs leading-5 text-[#6e6e73] dark:border-white/[0.1] dark:text-[#a1a1a6]">
+            <div className="mt-4 rounded-[24px] border border-[#6654b8]/15 bg-[#f8f6fc]/70 p-5 text-xs leading-5 text-[#665f75] dark:border-white/[0.1] dark:text-[#a1a1a6]">
               <p className="font-semibold text-current">{operatorLabel()}</p>
               {legalConfig.taxId && <p className="mt-2">CUI/CIF: {legalConfig.taxId}</p>}
               {legalConfig.registrationNumber && (
@@ -110,7 +110,7 @@ export function LegalSection({
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[#1d1d1f] dark:text-[#f5f5f7]">
+      <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[#201b2d] dark:text-[#f5f5f7]">
         {title}
       </h2>
       <div className="mt-4 space-y-4">{children}</div>

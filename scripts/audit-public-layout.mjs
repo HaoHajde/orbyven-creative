@@ -7,11 +7,24 @@ if (!chromePath) {
   process.exit(1);
 }
 
+const themeRoutes = new Set([
+  "/",
+  "/servicii",
+  "/contact",
+  "/templates",
+  "/porneste/invitatie",
+  "/porneste/web-design",
+  "/ai-web-design",
+]);
+
 const routes = [
   "/",
   "/servicii",
   "/contact",
   "/templates",
+  "/porneste/invitatie",
+  "/porneste/web-design",
+  "/ai-web-design",
   "/workspace/login",
   "/workspace/register",
   "/workspace/forgot-password",
@@ -100,6 +113,32 @@ try {
         if (frameStates.some((state) => state.interactiveFixed.some((rect) => rect.left < -3 || rect.right > state.viewport + 3 || rect.width > state.viewport + 6))) {
           throw new Error("interactive fixed element escapes viewport");
         }
+
+        if (themeRoutes.has(route)) {
+          for (const theme of ["light", "dark"]) {
+            await page.evaluate((value) => window.localStorage.setItem("studio-theme", value), theme);
+            await page.reload({ waitUntil: "domcontentloaded" });
+            await page.waitForTimeout(180);
+            const themeState = await page.evaluate((expectedTheme) => {
+              const root = document.querySelector(`[data-orbyven-theme="${expectedTheme}"]`);
+              if (!root) return { rootFound: false, overflow: true, bg: "", accent: "" };
+              const style = getComputedStyle(root);
+              return {
+                rootFound: true,
+                overflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+                bg: style.getPropertyValue("--bg").trim().toLowerCase(),
+                accent: style.getPropertyValue("--accent").trim().toLowerCase(),
+              };
+            }, theme);
+            if (!themeState.rootFound) throw new Error(`${theme} theme marker missing`);
+            if (themeState.overflow) throw new Error(`${theme} theme horizontal overflow`);
+            if (theme === "light" && ["#fff", "#ffffff", "white"].includes(themeState.bg)) {
+              throw new Error("light theme reverted to pure white");
+            }
+            if (theme === "light" && !themeState.accent) throw new Error("light theme accent missing");
+          }
+        }
+
         console.log(`${device.name} ${route}: ok`);
       } catch (error) {
         failures += 1;
