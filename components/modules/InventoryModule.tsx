@@ -718,7 +718,20 @@ export default function InventoryModule({
                 ) : (
                   <ModuleNextAction
                     title="Materialele sunt pregătite"
-                    description={taskPlanSummary.lines ? "Necesarul disponibil este rezervat sau deja consumat." : "Nu există necesar material confirmat pentru această lucrare."}
+                    description="Necesarul disponibil este rezervat sau deja consumat. Lucrarea poate trece la programare."
+                    action={canWrite && enabledModules.includes("calendar") ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenModule("calendar", {
+                          create: true,
+                          taskId: planTaskId,
+                          clientId: taskById.get(planTaskId)?.client_id ?? undefined,
+                        })}
+                        className={primary}
+                      >
+                        Programează execuția →
+                      </button>
+                    ) : undefined}
                   />
                 )}
               </div>
@@ -781,9 +794,24 @@ export default function InventoryModule({
               </div>
             </>
           ) : (
-            <div className="mt-4 rounded-[16px] border border-dashed border-[var(--border)] px-4 py-7 text-center">
-              <p className="text-sm font-semibold">Nu există necesar confirmat pentru această lucrare.</p>
-              <p className="mt-1 text-[10px] text-[var(--muted)]">Materialele apar aici după ce o ofertă cu poziții materiale este acceptată și legată de lucrare.</p>
+            <div className="mt-4">
+              <ModuleNextAction
+                title="Nu există necesar material confirmat"
+                description="Nu există un blocaj material în acest moment. Dacă lucrarea este pregătită operațional, poți continua cu programarea."
+                action={canWrite && enabledModules.includes("calendar") ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenModule("calendar", {
+                      create: true,
+                      taskId: planTaskId,
+                      clientId: taskById.get(planTaskId)?.client_id ?? undefined,
+                    })}
+                    className={primary}
+                  >
+                    Programează →
+                  </button>
+                ) : undefined}
+              />
             </div>
           )
         ) : (
