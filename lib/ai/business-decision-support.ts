@@ -191,7 +191,7 @@ export async function answerDecisionSupport(
   return {
     specialist: "operations",
     answer: `Pentru „${subject}” ai 3 abordări valide, cu compromisuri diferite. ORBYVEN îți arată efectele; alegerea rămâne la tine.`,
-    facts: briefing.facts,
+    facts: [],
     actions: briefing.actions.slice(0, 1),
     focus,
     decision: {
