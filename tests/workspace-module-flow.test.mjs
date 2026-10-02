@@ -458,3 +458,17 @@ test("task lifecycle panels live outside the main tasks module", () => {
   assert.match(lifecycle, /export function PostServiceGrowthPanel/);
   assert.match(lifecycle, /export function AftercarePanel/);
 });
+
+
+test("estimate creation advances active CRM leads to proposal without reopening terminal leads", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /export async function syncCrmAfterEstimateCreated/);
+  assert.match(sync, /lead\.stage === "won" \|\| lead\.stage === "lost"/);
+  assert.match(sync, /update\(\{ stage: "proposal" \}\)/);
+  assert.match(sync, /Stadiu mutat automat în Propunere/);
+
+  const estimates = read("components/modules/EstimatesModule.tsx");
+  assert.match(estimates, /syncCrmAfterEstimateCreated/);
+  assert.match(estimates, /CRM-ul a mutat cererea automat în stadiul Propunere/);
+  assert.match(estimates, /Cererea este marcată «Pierdut» în CRM/);
+});
