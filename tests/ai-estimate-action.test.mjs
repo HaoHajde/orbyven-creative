@@ -85,12 +85,12 @@ test("Estimate DB function is server-only, invoker mode and always creates draft
 
 test("Estimate execution resolves client and work in the authenticated organization", () => {
   const source = read("lib/ai/action-server.ts");
-  assert.match(source, /resolveClientId\(actor\.organizationId, input\.clientName\)/);
-  assert.match(source, /resolveWorkContext\(actor\.organizationId, input\.taskTitle, explicitClientId\)/);
-  assert.match(source, /\.eq\("organization_id", organizationId\)/);
+  assert.match(source, /resolveClientId\(actor, input\.clientName\)/);
+  assert.match(source, /resolveWorkContext\(actor, input\.taskTitle, explicitClientId\)/);
+  assert.match(source, /\.eq\("organization_id", actor\.organizationId\)/);
   assert.match(source, /\.in\("kind", \["work", "order"\]\)/);
   assert.match(source, /TASK_CLIENT_MISMATCH/);
-  assert.match(source, /rpc\("ai_create_estimate_draft"/);
+  assert.match(source, /rpc\("ai_create_estimate_draft_actor"/);
 });
 
 test("Estimate Agent Action cannot auto-send or auto-accept an estimate", () => {
