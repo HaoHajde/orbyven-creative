@@ -217,6 +217,27 @@ function uniqueSections(items: SiteSectionId[]) {
   return items.filter((item, index) => items.indexOf(item) === index);
 }
 
+function currentSiteContext(current: EditableSite) {
+  return [
+    current.brand,
+    current.eyebrow,
+    current.headline,
+    current.description,
+    current.cta,
+    current.servicesTitle,
+    ...current.services.flatMap((item) => [item.title, item.description]),
+    current.benefitsTitle,
+    ...current.benefits.flatMap((item) => [item.title, item.description]),
+    current.aboutTitle,
+    current.aboutDescription,
+    current.galleryTitle,
+    current.processTitle,
+    current.faqTitle,
+    current.contactTitle,
+    current.contactDescription,
+  ].join("\n");
+}
+
 export function inferWebDesignRequestMode(prompt: string): WebDesignRequestMode {
   const value = normalize(prompt);
 
@@ -404,8 +425,17 @@ export function buildWebDesignStrategy(
   current: EditableSite
 ): WebDesignStrategy {
   const mode = inferWebDesignRequestMode(prompt);
-  const archetypeResult = inferArchetype(prompt);
-  const goalResult = inferGoal(prompt, archetypeResult.archetype);
+  const context = currentSiteContext(current);
+
+  const promptArchetype = inferArchetype(prompt);
+  const contextArchetype = inferArchetype(context);
+  const archetypeResult =
+    promptArchetype.score > 0 ? promptArchetype : contextArchetype;
+
+  const promptGoal = inferGoal(prompt, archetypeResult.archetype);
+  const contextGoal = inferGoal(context, archetypeResult.archetype);
+  const goalResult = promptGoal.score > 0 ? promptGoal : contextGoal;
+
   const explicit = explicitSectionRules(prompt);
 
   let visible =
