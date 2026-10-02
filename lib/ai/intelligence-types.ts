@@ -109,6 +109,14 @@ export type IntelligenceDecisionSupport = {
   confidence: "high" | "medium";
 };
 
+export type IntelligenceOutcome = {
+  status: "resolved" | "shifted" | "still_priority";
+  previousFocus?: string;
+  currentFocus?: string;
+  summary: string;
+  confidence: "high" | "medium";
+};
+
 export type IntelligenceResponse = {
   specialist: IntelligenceSpecialist;
   answer: string;
@@ -116,5 +124,6 @@ export type IntelligenceResponse = {
   actions: IntelligenceAction[];
   focus?: IntelligenceFocusInsight;
   decision?: IntelligenceDecisionSupport;
+  outcome?: IntelligenceOutcome;
   generatedBy: "orbyven_core";
 };
