@@ -87,7 +87,7 @@ test("Web Design routes authenticate, validate and disable caching", () => {
   assert.match(generate, /authenticateBillingActor/);
   assert.match(generate, /prompt\.length < 2 \|\| prompt\.length > 2000/);
   assert.match(generate, /Cache-Control": "no-store"/);
-  assert.match(generate, /generateWebDesignForActor/);
+  assert.match(generate, /generateOrchestratedWebDesign/);
 
   assert.match(draft, /authenticateBillingActor/);
   assert.match(draft, /loadWebDesignDraft/);
@@ -122,4 +122,23 @@ test("Web Design UI uses cloud drafts, generative route, alternatives and respon
   assert.match(preview, /gallery/);
   assert.match(preview, /process/);
   assert.match(preview, /faq/);
+});
+
+
+test("Web Design orchestration separates compose, refine and alternative modes with bounded Design DNA", () => {
+  const orchestrator = read("lib/ai/web-design-orchestrator.ts");
+
+  assert.match(orchestrator, /WebDesignGenerationMode = "compose" \| "refine" \| "alternative"/);
+  assert.match(orchestrator, /inferWebDesignGenerationMode/);
+  assert.match(orchestrator, /chooseAlternativeBlueprint/);
+  assert.match(orchestrator, /directionDistance/);
+  assert.match(orchestrator, /designFingerprint/);
+  assert.match(orchestrator, /guidanceForAlternative/);
+  assert.match(orchestrator, /guidanceForRefine/);
+  assert.match(orchestrator, /applyAlternativeBlueprint/);
+  assert.match(orchestrator, /webDesignStructuralDistance/);
+  assert.match(orchestrator, /generateOrchestratedWebDesign/);
+  assert.match(orchestrator, /saveWebDesignDraft\(actor, draft, "ai", prompt\)/);
+  assert.match(orchestrator, /Cererea utilizatorului:/);
+  assert.doesNotMatch(orchestrator, /Math\.random/);
 });
