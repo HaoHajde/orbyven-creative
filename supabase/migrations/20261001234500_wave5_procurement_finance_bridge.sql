@@ -92,7 +92,7 @@ begin
     end if;
 
     new.task_id := po_task_id;
-    new.client_id := pg_catalog.coalesce(task_client_id, new.client_id);
+    new.client_id := coalesce(task_client_id, new.client_id);
   end if;
 
   return new;
@@ -178,7 +178,7 @@ begin
     end if;
 
     new.task_id := po_task_id;
-    new.client_id := pg_catalog.coalesce(task_client_id, new.client_id);
+    new.client_id := coalesce(task_client_id, new.client_id);
   end if;
 
   if po_supplier_name is not null then
@@ -246,19 +246,19 @@ select
   po.currency,
   po.ordered_on,
   po.expected_on,
-  pg_catalog.coalesce(o.ordered_cents, 0::bigint) as ordered_cents,
-  pg_catalog.coalesce(r.received_cents, 0::bigint) as received_cents,
-  pg_catalog.coalesce(x.recorded_expense_cents, 0::bigint) as recorded_expense_cents,
-  pg_catalog.coalesce(x.expense_count, 0) as expense_count,
-  pg_catalog.coalesce(e.document_count, 0) as document_count,
+  coalesce(o.ordered_cents, 0::bigint) as ordered_cents,
+  coalesce(r.received_cents, 0::bigint) as received_cents,
+  coalesce(x.recorded_expense_cents, 0::bigint) as recorded_expense_cents,
+  coalesce(x.expense_count, 0) as expense_count,
+  coalesce(e.document_count, 0) as document_count,
   (
-    pg_catalog.coalesce(x.recorded_expense_cents, 0::bigint)
-    - pg_catalog.coalesce(o.ordered_cents, 0::bigint)
+    coalesce(x.recorded_expense_cents, 0::bigint)
+    - coalesce(o.ordered_cents, 0::bigint)
   ) as variance_to_order_cents,
-  pg_catalog.greatest(
+  greatest(
     0::bigint,
-    pg_catalog.coalesce(r.received_cents, 0::bigint)
-      - pg_catalog.coalesce(x.recorded_expense_cents, 0::bigint)
+    coalesce(r.received_cents, 0::bigint)
+      - coalesce(x.recorded_expense_cents, 0::bigint)
   ) as received_without_recorded_expense_cents
 from public.ops_purchase_orders po
 join public.ops_suppliers s
