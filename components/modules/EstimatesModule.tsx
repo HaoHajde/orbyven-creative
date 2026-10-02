@@ -34,10 +34,10 @@ import {
   type MaterialLibrary,
 } from "@/lib/modules/materials-catalog";
 import {
-  loadInventoryTaskMaterialPlan,
-  type InventoryTaskMaterialPlan,
-} from "@/lib/modules/inventory";
-import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleNextAction, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
+  EstimateExecutionNextAction,
+  useEstimateExecutionReadiness,
+} from "@/components/modules/estimates/EstimateExecutionReadiness";
+import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type Props = {
@@ -110,10 +110,6 @@ export default function EstimatesModule({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [syncWarning, setSyncWarning] = useState("");
-  const [taskMaterialPlan, setTaskMaterialPlan] = useState<InventoryTaskMaterialPlan[] | null>(null);
-  const [taskMaterialPlanTaskId, setTaskMaterialPlanTaskId] = useState<string | null>(null);
-  const [taskMaterialPlanLoading, setTaskMaterialPlanLoading] = useState(false);
-  const [taskMaterialPlanError, setTaskMaterialPlanError] = useState(false);
 
   const canWrite = role !== "viewer";
   useWorkspaceCreateFocus(createOpen);
@@ -177,69 +173,12 @@ export default function EstimatesModule({
   const selected = useMemo(() => estimates.find((estimate) => estimate.id === selectedId) ?? null, [estimates, selectedId]);
   const inventoryEnabled = enabledModules.includes("inventory");
 
-  useEffect(() => {
-    let active = true;
-    const timer = window.setTimeout(() => {
-      const taskId = selected?.status === "accepted" ? selected.task_id : null;
-      if (!taskId || !inventoryEnabled) {
-        if (active) {
-          setTaskMaterialPlan(null);
-          setTaskMaterialPlanTaskId(null);
-          setTaskMaterialPlanLoading(false);
-          setTaskMaterialPlanError(false);
-        }
-        return;
-      }
-      setTaskMaterialPlanTaskId(taskId);
-      setTaskMaterialPlanLoading(true);
-      setTaskMaterialPlanError(false);
-      void loadInventoryTaskMaterialPlan(organizationId, taskId)
-        .then((plan) => {
-          if (!active) return;
-          setTaskMaterialPlan(plan);
-          setTaskMaterialPlanError(false);
-        })
-        .catch((planError) => {
-          console.error(planError);
-          if (!active) return;
-          setTaskMaterialPlan(null);
-          setTaskMaterialPlanError(true);
-        })
-        .finally(() => {
-          if (active) setTaskMaterialPlanLoading(false);
-        });
-    }, 0);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [inventoryEnabled, organizationId, selected?.status, selected?.task_id]);
-
-  const taskMaterialSummary = useMemo(() => {
-    const plan = taskMaterialPlan ?? [];
-    const active = plan.filter((item) => item.outstanding_quantity > 0);
-    return {
-      lines: plan.length,
-      untracked: active.filter((item) => !item.stock_tracked).length,
-      unready: active.filter(
-        (item) => item.stock_tracked && item.reserved_quantity < item.outstanding_quantity
-      ).length,
-      shortages: active.filter(
-        (item) => item.stock_tracked && item.shortage_after_reservation > 0
-      ).length,
-    };
-  }, [taskMaterialPlan]);
-  const materialBlocksScheduling = Boolean(
-    selected?.status === "accepted" &&
-    selected.task_id &&
-    inventoryEnabled &&
-    (
-      taskMaterialPlanTaskId !== selected.task_id ||
-      taskMaterialPlanLoading ||
-      taskMaterialPlanError ||
-      (taskMaterialPlan && (taskMaterialSummary.unready > 0 || taskMaterialSummary.shortages > 0))
-    )
-  );
+  const executionReadiness = useEstimateExecutionReadiness({
+    organizationId,
+    estimate: selected,
+    inventoryEnabled,
+  });
+  const materialBlocksScheduling = executionReadiness.materialBlocksScheduling;
 
   useWorkspaceLiveContext({ estimateId: selected?.id, clientId: selected?.client_id ?? undefined, taskId: selected?.task_id ?? undefined });
   useWorkspaceRecordFocus(initialRecordId, selectedId, loading);
@@ -588,55 +527,14 @@ export default function EstimatesModule({
           {selected ? <>
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatMoney(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
-            {selected.status === "accepted" && !selected.task_id && canWrite && enabledModules.includes("tasks") ? (
-              <div className="mt-4">
-                <ModuleNextAction
-                  title="Pornește lucrarea din oferta acceptată"
-                  description="Clientul, devizul și contextul comercial sunt transferate automat."
-                  action={<button type="button" onClick={() => onOpenModule("tasks", { create: true, clientId: selected.client_id ?? undefined, estimateId: selected.id, prefillTitle: selected.title })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pornește lucrarea →</button>}
-                />
-              </div>
-            ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && (taskMaterialPlanTaskId !== selected.task_id || taskMaterialPlanLoading) ? (
-              <div className="mt-4">
-                <ModuleNextAction
-                  eyebrow="Readiness"
-                  title="Verific materialele lucrării"
-                  description="ORBYVEN verifică necesarul, rezervările și lipsurile înainte să propună programarea."
-                />
-              </div>
-            ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && taskMaterialPlanError && enabledModules.includes("tasks") ? (
-              <div className="mt-4">
-                <ModuleNextAction
-                  eyebrow="Readiness"
-                  title="Verifică lucrarea înainte de programare"
-                  description="Pregătirea materialelor nu a putut fi confirmată acum; dosarul lucrării păstrează toate verificările într-un singur loc."
-                  action={<button type="button" onClick={() => onOpenModule("tasks", { recordId: selected.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide lucrarea →</button>}
-                />
-              </div>
-            ) : selected.status === "accepted" && selected.task_id && inventoryEnabled && taskMaterialPlan && (taskMaterialSummary.unready > 0 || taskMaterialSummary.shortages > 0) ? (
-              <div className="mt-4">
-                <ModuleNextAction
-                  eyebrow="Înainte de calendar"
-                  title={taskMaterialSummary.shortages > 0 ? "Rezolvă materialele lipsă" : "Rezervă materialele disponibile"}
-                  description={taskMaterialSummary.shortages > 0
-                    ? `${taskMaterialSummary.shortages} poziții rămân neacoperite. Programarea vine după ce necesarul este clar.`
-                    : `${taskMaterialSummary.unready} poziții pot fi pregătite din stoc înainte de programare.`}
-                  action={<button type="button" onClick={() => onOpenModule("inventory", { taskId: selected.task_id! })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Pregătește materialele →</button>}
-                />
-              </div>
-            ) : selected.status === "accepted" && selected.task_id && canWrite && enabledModules.includes("calendar") && !materialBlocksScheduling ? (
-              <div className="mt-4">
-                <ModuleNextAction
-                  title="Programează execuția"
-                  description={taskMaterialSummary.untracked > 0
-                    ? `${taskMaterialSummary.untracked} poziții nu folosesc stoc tracking și rămân de verificat manual; ORBYVEN nu le blochează automat. Lucrarea poate intra în calendar.`
-                    : taskMaterialPlan && taskMaterialSummary.lines > 0
-                      ? "Materialele urmărite sunt pregătite. Lucrarea poate intra în calendar."
-                      : "Nu există un blocaj material detectat. Lucrarea poate intra în calendar."}
-                  action={<button type="button" onClick={() => onOpenModule("calendar", { create: true, clientId: selected.client_id ?? undefined, taskId: selected.task_id ?? undefined })} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">+ Programare</button>}
-                />
-              </div>
-            ) : null}
+            <EstimateExecutionNextAction
+              estimate={selected}
+              canWrite={canWrite}
+              enabledModules={enabledModules}
+              onOpenModule={onOpenModule}
+              inventoryEnabled={inventoryEnabled}
+              readiness={executionReadiness}
+            />
             <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
             <CommercialWorkflowPanel
               key={selected.id}
