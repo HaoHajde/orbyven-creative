@@ -102,6 +102,52 @@ const typeStyles: Record<CalendarEventType, string> = {
   internal: "bg-emerald-500/10 text-emerald-600",
 };
 
+type NativeCalendarReminderMessage =
+  | {
+      type: "orbyven:schedule-calendar-reminder";
+      eventId: string;
+      title: string;
+      startAt: string;
+      reminderMinutes: number | null;
+      location?: string | null;
+    }
+  | {
+      type: "orbyven:cancel-calendar-reminder";
+      eventId: string;
+    };
+
+function postCalendarReminderBridge(message: NativeCalendarReminderMessage) {
+  const bridge = (
+    window as Window & {
+      ReactNativeWebView?: { postMessage: (payload: string) => void };
+    }
+  ).ReactNativeWebView;
+
+  bridge?.postMessage(JSON.stringify(message));
+}
+
+function syncNativeCalendarReminder(calendarEvent: CalendarEvent) {
+  if (
+    calendarEvent.status !== "scheduled" ||
+    calendarEvent.reminder_minutes === null
+  ) {
+    postCalendarReminderBridge({
+      type: "orbyven:cancel-calendar-reminder",
+      eventId: calendarEvent.id,
+    });
+    return;
+  }
+
+  postCalendarReminderBridge({
+    type: "orbyven:schedule-calendar-reminder",
+    eventId: calendarEvent.id,
+    title: calendarEvent.title,
+    startAt: calendarEvent.start_at,
+    reminderMinutes: calendarEvent.reminder_minutes,
+    location: calendarEvent.location,
+  });
+}
+
 function dateKeyInTimeZone(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -468,6 +514,7 @@ export default function CalendarModule({
         ...current.filter((assignment) => assignment.event_id !== created.id),
         ...createdAssignments,
       ]);
+      syncNativeCalendarReminder(created);
       setSelectedId(created.id);
       setCreateOpen(false);
       setForm(emptyForm);
@@ -499,6 +546,7 @@ export default function CalendarModule({
       setEvents((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
+      syncNativeCalendarReminder(updated);
     } catch (statusError) {
       console.error(statusError);
       setError("Statusul programării nu a putut fi actualizat.");
@@ -544,6 +592,10 @@ export default function CalendarModule({
     setError("");
     try {
       await deleteCalendarEvent(organizationId, calendarEvent.id);
+      postCalendarReminderBridge({
+        type: "orbyven:cancel-calendar-reminder",
+        eventId: calendarEvent.id,
+      });
       setEvents((current) => current.filter((entry) => entry.id !== calendarEvent.id));
       setSelectedId(null);
     } catch (deleteError) {
