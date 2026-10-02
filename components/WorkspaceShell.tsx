@@ -380,6 +380,7 @@ export default function WorkspaceShell({
 
   return (
     <main
+      data-orbyven-theme={theme}
       data-orbyven-text-scale={textScale}
       style={{
         ...vars,
@@ -391,11 +392,7 @@ export default function WorkspaceShell({
       {theme === "dark" ? (
         <WorkspaceOrbitBackground fixed />
       ) : (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0" style={{
-            background: "radial-gradient(ellipse 55% 42% at 34% 0%,rgba(115,166,255,0.17),transparent 78%)",
-          }} />
-        </div>
+        <div aria-hidden="true" className="orbyven-workspace-light-bg pointer-events-none fixed inset-0 z-0" />
       )}
 
       <header
@@ -460,7 +457,7 @@ export default function WorkspaceShell({
       </header>
 
       <div className="relative z-10 mx-auto grid max-w-[1520px] gap-3 px-2.5 pb-4 pt-3 md:grid-cols-[var(--workspace-sidebar-width)_minmax(0,1fr)] md:px-4 md:pb-6">
-        <aside className="sticky top-[77px] hidden h-[calc(100dvh-90px)] min-w-0 overflow-y-auto overscroll-contain rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
+        <aside data-workspace-surface="sidebar" className="sticky top-[77px] hidden h-[calc(100dvh-90px)] min-w-0 overflow-y-auto overscroll-contain rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
             <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
@@ -546,6 +543,7 @@ export default function WorkspaceShell({
         </aside>
 
         <section
+          data-workspace-surface="module"
           data-workspace-module-focus="true"
           className="min-w-0 scroll-mt-24 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface)]/82 px-3.5 py-4 pb-32 shadow-[0_18px_55px_rgba(0,0,0,0.09)] sm:px-5 md:min-h-[calc(100dvh-90px)] md:px-6 md:py-5 md:pb-7 lg:px-7 xl:px-8"
         >
