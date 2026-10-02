@@ -74,6 +74,15 @@ const services: Service[] = [
     tags: ["AI", "Preview live", "Design DNA"],
     gradient: "radial-gradient(circle at 18% 18%, rgba(116,92,255,.42), transparent 32%), radial-gradient(circle at 82% 74%, rgba(61,114,255,.25), transparent 38%), linear-gradient(140deg,#0b0916,#161126 56%,#08070d)",
   },
+  {
+    number: "06",
+    title: "Video AI",
+    line: "Turn a campaign brief into a directed storyboard, render package and provider-ready production plan.",
+    href: "/video-ai",
+    linkLabel: "Open ORBYVEN Video AI",
+    tags: ["Storyboard", "Motion", "Video AI"],
+    gradient: "radial-gradient(circle at 24% 18%, rgba(142,103,255,.40), transparent 31%), radial-gradient(circle at 78% 78%, rgba(77,63,185,.28), transparent 37%), linear-gradient(140deg,#0d0918,#18102b 58%,#07070c)",
+  },
 ];
 
 const modulePreviews: ModulePreview[] = [
