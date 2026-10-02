@@ -197,3 +197,12 @@ test("team resource engine stays available without dominating the default screen
   assert.match(team, /Resurse operaționale · \{activeResourceCount\} active/);
   assert.match(team, /Resource Engine/);
 });
+
+
+test("purchase orders expose one status-driven primary action", () => {
+  const inventory = read("components/modules/InventoryModule.tsx");
+  assert.match(inventory, /order\.status === "draft"/);
+  assert.match(inventory, /Marchează comandată →/);
+  assert.match(inventory, /order\.status === "received" && enabledModules\.includes\("documents"\)/);
+  assert.match(inventory, /<summary className=\{button \+ " flex cursor-pointer list-none items-center \[&::-webkit-details-marker\]:hidden"\}>Alte acțiuni<\/summary>/);
+});
