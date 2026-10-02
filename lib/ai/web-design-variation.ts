@@ -5,8 +5,8 @@ import type {
   SiteRadius,
   SiteSectionVariants,
   SiteVisualTone,
-} from "@/lib/ai/site-editor";
-import type { WebDesignStrategy } from "@/lib/ai/web-design-intent";
+} from "./site-editor.ts";
+import type { WebDesignStrategy } from "./web-design-intent.ts";
 
 export type DesignDna = {
   id: string;
