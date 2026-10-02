@@ -2,6 +2,7 @@ import {
   buildPostServiceGrowthState,
   encodePostServiceEvent,
   parsePostServiceEvent,
+  type PostServiceEvent,
   type PostServiceEventType,
   type PostServiceGrowthState,
 } from "@/lib/automation/post-service-growth";
@@ -20,7 +21,7 @@ export async function loadPostServiceGrowthState(
     activities
       .map((activity) => parsePostServiceEvent(activity.body, activity.occurred_at))
       .filter((event) => event?.taskId === taskId)
-      .filter((event): event is NonNullable<typeof event> => Boolean(event))
+      .filter((event): event is PostServiceEvent => Boolean(event))
   );
 }
 
