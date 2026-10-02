@@ -87,7 +87,12 @@ export function interviewFactsToEvidence(
 ) {
   return facts
     .slice(-8)
-    .map((fact) => `[${fact.id}] ${fact.question}\nRăspuns real: ${fact.answer}`)
+    .map((fact) => {
+      if (fact.id === "claim_evidence" && isNegativeAnswer(fact.answer)) {
+        return "[claim_evidence] Utilizatorul NU confirmă afirmațiile verificate.";
+      }
+      return `[${fact.id}] Răspuns real: ${fact.answer}`;
+    })
     .join("\n\n");
 }
 
