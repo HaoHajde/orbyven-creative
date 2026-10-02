@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "capturedFrom": "d1b8f161d46ea9904ee9989b2d25f7b3845e051a",
   "source": {
     "webRoots": [
@@ -14,7 +14,21 @@
     "desktopMaxFileBytes": 53248,
     "desktopLargeFileThresholdBytes": 35840,
     "desktopMaxLargeFiles": 1,
-    "desktopCssMaxFileBytes": 53248
+    "desktopCssMaxFileBytes": 53248,
+    "hotspotMaxBytes": {
+      "components/ClientTemplateSite.tsx": 65024,
+      "components/modules/TasksModule.tsx": 58368,
+      "components/modules/InventoryModule.tsx": 53248,
+      "lib/seo-foundation.ts": 51200,
+      "components/modules/CalendarModule.tsx": 45056,
+      "components/ControlCenter.tsx": 45056,
+      "components/WorkspaceIntelligence.tsx": 41984,
+      "components/modules/LeadsModule.tsx": 41984,
+      "app/servicii/page.tsx": 41984,
+      "components/modules/ExpensesModule.tsx": 39936,
+      "components/HomePageClient.tsx": 39936,
+      "desktop/src/styles.css": 53248
+    }
   },
   "dependencies": {
     "webRuntimeAllowlist": [
@@ -53,5 +67,19 @@
     "nextSingleJsChunkBytesMax": 524288,
     "desktopDistTotalBytesMax": 1572864,
     "desktopInstallerBytesMax": 4194304
+  },
+  "structure": {
+    "workspaceDynamicModules": [
+      "CalendarModule",
+      "DocumentsModule",
+      "EstimatesModule",
+      "ExpensesModule",
+      "InventoryModule",
+      "LeadsModule",
+      "OverviewModule",
+      "TasksModule",
+      "TeamModule",
+      "ThermalPlannerModule"
+    ]
   }
 }
