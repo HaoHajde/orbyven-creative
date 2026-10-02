@@ -160,4 +160,5 @@ test("offboarding migration gate fails safely without disabling Legal and GDPR",
   assert.match(staffAPI,/exitCases:offboardingConfigured/);
   assert.match(staffUI,/Migrarea de offboarding nu este activată încă/);
   assert.match(page,/migrarea bazei de date nu este activată încă/);
+  assert.match(page,/offboardingConfigured&&!active/);
 });

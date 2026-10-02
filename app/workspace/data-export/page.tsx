@@ -26,6 +26,7 @@ export default function WorkspaceDataExportPage() {
   const [notice,setNotice]=useState("");
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const [offboardingConfigured,setOffboardingConfigured]=useState(true);
   useEffect(()=>{
     let cancelled=false;
     const run=async()=>{
@@ -45,9 +46,12 @@ export default function WorkspaceDataExportPage() {
           headers:await authorization(),cache:"no-store",
         });
         const data=await response.json() as {cases?:ExitCase[];error?:string};
-        if(!response.ok)throw new Error(data.error==="offboarding_migration_required"
-          ?"Exportul este pregătit în aplicație, dar migrarea bazei de date nu este activată încă."
-          :data.error||"Registrul de export nu poate fi citit.");
+        if(!response.ok){
+          if(data.error==="offboarding_migration_required")setOffboardingConfigured(false);
+          throw new Error(data.error==="offboarding_migration_required"
+            ?"Exportul este pregătit în aplicație, dar migrarea bazei de date nu este activată încă."
+            :data.error||"Registrul de export nu poate fi citit.");
+        }
         if(!cancelled){setCases(data.cases??[]);setLoading(false);}
       }catch(e){if(!cancelled){setError(e instanceof Error?e.message:"Export indisponibil.");setLoading(false);}}
     };
@@ -116,7 +120,7 @@ export default function WorkspaceDataExportPage() {
       {error&&<p role="alert" className="mt-7 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{error}</p>}
       {notice&&<p role="status" className="mt-7 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-700">{notice}</p>}
       {loading?<p className="mt-8 text-sm text-[#86868b]">Se încarcă…</p>:<>
-        {!active&&organizationId&&<button type="button" disabled={busy}
+        {offboardingConfigured&&!active&&organizationId&&<button type="button" disabled={busy}
           onClick={()=>void requestExport()}
           className="mt-9 rounded-full bg-[#1d1d1f] px-6 py-3 text-sm font-semibold text-white disabled:opacity-40">
           Solicită exportul datelor
