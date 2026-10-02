@@ -101,10 +101,17 @@ function contrastRatio(foreground: string, background: string) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-function preferredTextColor(background: string) {
-  const luminance = relativeLuminance(background);
-  if (luminance === null) return "#f7f7f8";
-  return luminance > 0.42 ? "#17171b" : "#f7f7f8";
+function preferredTextColor(background: string, surface: string) {
+  const candidates = ["#17171b", "#f7f7f8"] as const;
+  return candidates
+    .map((color) => ({
+      color,
+      score: Math.min(
+        contrastRatio(color, background) ?? 0,
+        contrastRatio(color, surface) ?? 0
+      ),
+    }))
+    .sort((left, right) => right.score - left.score)[0]?.color ?? "#f7f7f8";
 }
 
 function visibleSectionCount(draft: EditableSite) {
@@ -168,9 +175,14 @@ export function critiqueWebDesign(
 
   const issues: WebDesignQualityIssue[] = [];
 
-  const textContrast = contrastRatio(draft.textColor, draft.background);
-  if (textContrast !== null && textContrast < 4.5) {
-    draft.textColor = preferredTextColor(draft.background);
+  const backgroundContrast = contrastRatio(draft.textColor, draft.background);
+  const surfaceContrast = contrastRatio(draft.textColor, draft.surface);
+  const weakestTextContrast = Math.min(
+    backgroundContrast ?? Number.POSITIVE_INFINITY,
+    surfaceContrast ?? Number.POSITIVE_INFINITY
+  );
+  if (Number.isFinite(weakestTextContrast) && weakestTextContrast < 4.5) {
+    draft.textColor = preferredTextColor(draft.background, draft.surface);
     issues.push({
       code: "LOW_TEXT_CONTRAST",
       severity: "warning",
@@ -237,7 +249,12 @@ export function critiqueWebDesign(
     0,
     Math.min(
       100,
-      100 - issues.reduce((total, issue) => total + issuePenalty(issue), 0)
+      100 -
+        issues.reduce(
+          (total, issue) =>
+            total + (issue.autoFixed ? Math.ceil(issuePenalty(issue) * 0.25) : issuePenalty(issue)),
+          0
+        )
     )
   );
 
