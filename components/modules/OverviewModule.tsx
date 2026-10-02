@@ -398,7 +398,7 @@ export default function OverviewModule({
       <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">ORBYVEN / OVERVIEW</p>
-          <h1 className="mt-1.5 text-[29px] font-semibold leading-[1.08] tracking-[-0.055em] sm:text-[34px]">
+          <h1 className="mt-1.5 text-[27px] font-semibold leading-[1.08] tracking-[-0.055em] sm:text-[34px]">
             Bună, {greetingName || "acolo"}.
           </h1>
           <p className="mt-1.5 text-[12px] text-[var(--muted)]">{dateLabel} · Rezumatul firmei</p>
@@ -422,7 +422,7 @@ export default function OverviewModule({
 
       {snapshot && computed ? (
         <>
-          <section aria-label="Indicatori business" className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+          <section aria-label="Indicatori business" className="mt-3.5 grid grid-cols-2 gap-2 sm:gap-2.5 xl:grid-cols-4">
             <MetricCard label="Cereri active" value={snapshot.activeLeadsCount} note="Noi în ultimele 7 zile" trend={computed.trends.leads} color="#7c7afa" enabled={enabledModules.includes("leads")} onClick={() => onOpenModule("leads")} />
             <MetricCard label="Lucrări deschise" value={snapshot.openTasksCount} note="Noi în ultimele 7 zile" trend={computed.trends.tasks} color="#66aaff" enabled={enabledModules.includes("tasks")} onClick={() => onOpenModule("tasks")} />
             <MetricCard label="Programări astăzi" value={computed.todayEvents.length} note="Programate în ultimele 7 zile" trend={computed.trends.calendar} color="#70d1eb" enabled={enabledModules.includes("calendar")} onClick={() => onOpenModule("calendar")} />
@@ -575,7 +575,7 @@ function MiniTrend({ values, color }: { values: number[]; color: string }) {
     return x + "," + y.toFixed(1);
   }).join(" ");
   return (
-    <svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true" className="h-[48px] w-full overflow-visible">
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true" className="h-full w-full overflow-visible">
       <polygon points={points + " 98,48 2,48"} fill={color} opacity="0.06" />
       <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {values.map((value, index) => <circle key={index} cx={2 + index * 16} cy={43 - value / high * 34} r="1.7" fill={color} />)}
@@ -593,11 +593,11 @@ function MetricCard({ label, value, note, trend, color, enabled, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <button type="button" disabled={!enabled} onClick={onClick} className="relative min-w-0 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3.5 pb-2.5 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)] disabled:cursor-default disabled:opacity-50 sm:px-4">
-      <span className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-semibold text-[var(--muted)]">{label}</span><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: enabled ? color : "var(--muted-2)" }} /></span>
-      <span className="mt-2.5 block text-[28px] font-semibold leading-none tracking-[-0.045em] tabular-nums sm:text-[31px]">{enabled ? value : "—"}</span>
-      <span className="mt-1.5 block text-[10px] text-[var(--muted-2)]">{enabled ? note : "Modul inactiv"}</span>
-      <span className="mt-2 block h-[48px] w-full">{enabled ? <MiniTrend values={trend} color={color} /> : null}</span>
+    <button type="button" disabled={!enabled} onClick={onClick} className="relative min-w-0 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 pb-2 pt-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:border-[var(--border-strong)] hover:bg-[var(--accent-soft)] disabled:cursor-default disabled:opacity-50 sm:px-4 sm:pb-2.5 sm:pt-3">
+      <span className="flex items-center justify-between gap-2"><span className="truncate text-[10px] font-semibold text-[var(--muted)] sm:text-[11px]">{label}</span><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: enabled ? color : "var(--muted-2)" }} /></span>
+      <span className="mt-2 block text-[24px] font-semibold leading-none tracking-[-0.045em] tabular-nums sm:mt-2.5 sm:text-[31px]">{enabled ? value : "—"}</span>
+      <span className="mt-1 block text-[9px] text-[var(--muted-2)] sm:mt-1.5 sm:text-[10px]">{enabled ? note : "Modul inactiv"}</span>
+      <span className="mt-1.5 block h-[38px] w-full sm:mt-2 sm:h-[48px]">{enabled ? <MiniTrend values={trend} color={color} /> : null}</span>
     </button>
   );
 }
