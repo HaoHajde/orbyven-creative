@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
-import { detectOperationalQuery } from "../lib/ai/operational-query.ts";
-import { detectEntityIntelligenceQuery } from "../lib/ai/entity-intelligence.ts";
+import { detectOperationalQuery } from "../lib/ai/operational-query-core.ts";
+import { detectEntityIntelligenceQuery } from "../lib/ai/entity-intelligence-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
