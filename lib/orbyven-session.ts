@@ -48,3 +48,18 @@ export async function requireOrbyvenSession() {
     throw new Error("ORBYVEN_SESSION_REQUIRED");
   }
 }
+
+
+export async function requireOrbyvenAccessToken(): Promise<string> {
+  await requireOrbyvenSession();
+
+  const { data, error } = await orbyvenSupabase.auth.getSession();
+  if (error) throw error;
+
+  const accessToken = data.session?.access_token?.trim();
+  if (!accessToken) {
+    throw new Error("ORBYVEN_ACCESS_TOKEN_REQUIRED");
+  }
+
+  return accessToken;
+}
