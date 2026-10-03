@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.13
+# ORBYVEN iOS — Alpha 0.14
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.13:
+Native Alpha 0.14:
+- foreground refresh inteligent: shell-ul transmite către Dashboard cât timp aplicația a stat în background;
+- Overview și Activity Center se actualizează doar după reveniri relevante, fără reload complet al WebView-ului;
+- reveniri mai scurte de 15 secunde nu declanșează query-uri suplimentare;
+- refresh-urile focus/resume sunt deduplicate pentru a evita citiri Supabase duble;
+- PWA și aplicația nativă folosesc același contract `orbyven:app-resume`, dar shell-ul nativ rămâne sursa autoritativă când rulează în iOS;
+- runtime-ul declară capabilitatea `foreground-refresh`;
+
+Păstrat din Alpha 0.13:
 - badge nativ pe iconița ORBYVEN sincronizat cu numărul real de elemente din Activity Center;
 - sursa de adevăr rămâne Activity Center-ul existent, fără tabel sau contor paralel;
 - valoarea este limitată la 99 și se curăță automat când nu mai există atenționări sau workspace-ul este demontat;
@@ -291,3 +299,10 @@ Handoff-ul nu modifică autentificarea ORBYVEN, sesiunea Supabase sau RLS. La o 
 Versiunea 0.13.0 leagă Activity Center de badge-ul nativ al iconiței ORBYVEN. Numărul afișat pe Home Screen este derivat direct din lista de semnale operaționale deja calculată de Dashboard, limitat la 99 și trimis către shell-ul iOS prin bridge-ul existent.
 
 ORBYVEN nu cere permisiunea de notificări doar pentru badge. Dacă utilizatorul a permis deja notificările/badge-urile, valoarea este sincronizată; dacă nu, funcția rămâne silențioasă. La logout sau demontarea workspace-ului, badge-ul este cerut la zero pentru a evita un indicator rămas stale.
+
+
+## Alpha 0.14
+
+Versiunea 0.14.0 face revenirea în aplicație mai eficientă. Shell-ul iOS măsoară durata petrecută în background și emite `orbyven:app-resume` cu `backgroundMs`. Overview și Activity Center folosesc această informație pentru a reîmprospăta datele doar când au devenit suficient de vechi, fără reload al WebView-ului și fără pierderea contextului curent.
+
+Evenimentele native de resume și evenimentele browser/PWA sunt deduplicate: în shell-ul iOS, React Native este sursa de adevăr; în PWA, runtime-ul web sintetizează același contract. Astfel evităm query-uri Supabase duplicate la fiecare revenire scurtă în aplicație.
