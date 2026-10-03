@@ -101,7 +101,7 @@ export function detectContextEntityReferences(prompt: string) {
 }
 
 export function detectImplicitEntityFollowUp(prompt: string) {
-  const normalized = normalizeContextPrompt(prompt);
+  const normalized = normalizeContextEntityText(prompt);
   return (
     IMPLICIT_FOLLOW_UP_PREFIX.test(normalized) &&
     IMPLICIT_FOLLOW_UP_TOPIC.test(normalized) &&
