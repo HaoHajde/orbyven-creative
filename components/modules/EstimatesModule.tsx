@@ -22,6 +22,7 @@ import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveCo
 import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPanel";
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
+import EstimateListPanel from "@/components/modules/estimates/EstimateListPanel";
 import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
 import {
   syncCrmAfterAcceptedEstimate,
@@ -513,15 +514,16 @@ export default function EstimatesModule({
       ) : null}
 
       <section className="mt-5 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Toate ofertele</h2><span className="text-xs text-[var(--muted)]">{estimates.length}</span></div>
-          {estimates.length ? <div className="space-y-2">{estimates.map((estimate) => (
-            <button key={estimate.id} type="button" onClick={() => { setSelectedId(estimate.id); setItems([]); }} className={`w-full rounded-[18px] border p-4 text-left ${selectedId === estimate.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
-              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{estimate.title}</p><p className="mt-1 text-[11px] text-[var(--muted)]">{estimate.reference} · {clientById.get(estimate.client_id || "")?.name || "Fără client"}</p></div><span className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold">{statusLabels[estimate.status]}</span></div>
-              <p className="mt-4 text-lg font-semibold">{formatMoney(estimate.total_cents, estimate.currency, locale)}</p>
-            </button>
-          ))}</div> : <ModuleEmpty title="Nicio ofertă încă" description="Prima ofertă poate porni direct de la un client și o lucrare existente." />}
-        </div>
+        <EstimateListPanel
+          estimates={estimates}
+          clients={clients}
+          selectedId={selectedId}
+          locale={locale}
+          onSelect={(estimateId) => {
+            setSelectedId(estimateId);
+            setItems([]);
+          }}
+        />
 
         <div data-workspace-record-focus={selected ? "true" : undefined} className="scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
           {selected ? <>
