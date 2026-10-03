@@ -37,6 +37,7 @@ import {
   readWebDesignInterviewFacts,
   readWebDesignInterviewQuestions,
 } from "../lib/ai/web-design-interview.ts";
+import { buildWebDesignPublishPlan } from "../lib/ai/web-design-publish-plan.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -486,7 +487,7 @@ test("Generative Web Design returns publish readiness beside technical quality",
 
   assert.match(server, /readiness: selectedResult\.readiness/);
   assert.match(autorefine, /evaluateWebDesignReadiness/);
-  assert.match(specialist, /Ready \{readinessScore\}/);
+  assert.match(specialist, /Publish \{readinessScore\}/);
   assert.match(specialist, /elemente de completat înainte de publicare/);
   assert.match(readiness, /PLACEHOLDER_COPY/);
   assert.match(readiness, /DEMO_BRAND/);
@@ -1202,7 +1203,10 @@ test("Smart Interview queue persists across refreshes and resets with preset cha
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
   assert.match(specialist, /INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01"/);
-  assert.match(specialist, /getItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(
+    specialist,
+    /getItem\(interviewQueueStorageKey\)[\s\S]*getItem\(INTERVIEW_QUEUE_KEY\)/
+  );
   assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
   assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
   assert.match(specialist, /setInterviewQuestions\(\[\]\)/);
