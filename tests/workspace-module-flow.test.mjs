@@ -707,3 +707,14 @@ test("completed work synchronizes calendar cleanup and CRM activity conservative
   assert.match(tasks, /await syncCompletedWork\(updated, "status"\)/);
   assert.match(tasks, /await syncCompletedWork\(updated, "progress"\)/);
 });
+
+
+test("post-service and aftercare expose one primary action before advanced options", () => {
+  const panels = read("components/modules/tasks/TaskLifecyclePanels.tsx");
+  assert.match(panels, /ModuleNextAction/);
+  assert.match(panels, /primaryPostServiceAction/);
+  assert.match(panels, /data-post-service-options="true"/);
+  assert.match(panels, /Opțiuni post-service/);
+  assert.match(panels, /data-aftercare-options="true"/);
+  assert.match(panels, /Revenire sau lucrare recurentă/);
+});
