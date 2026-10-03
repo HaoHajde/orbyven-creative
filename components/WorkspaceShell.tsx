@@ -536,6 +536,13 @@ export default function WorkspaceShell({
             >
               AI Web Design
             </button>
+            <button
+              type="button"
+              onClick={() => onOpenPath("/video-ai")}
+              className="hidden h-9 rounded-[10px] border border-[#9a79ff]/25 bg-[#9a79ff]/10 px-3 text-[11px] font-semibold text-[#c0adff] transition hover:border-[#9a79ff]/45 hover:bg-[#9a79ff]/15 2xl:block"
+            >
+              Video AI
+            </button>
             <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? copy.back : copy.modules}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
@@ -624,6 +631,14 @@ export default function WorkspaceShell({
             >
               <span className="block text-[11px] font-semibold text-[var(--text)]">✦ AI Web Design</span>
               <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">{copy.aiNote}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenPath("/video-ai")}
+              className="w-full rounded-[11px] border border-[#9a79ff]/22 bg-[#9a79ff]/[0.08] px-3.5 py-3 text-left transition hover:border-[#9a79ff]/42 hover:bg-[#9a79ff]/[0.12]"
+            >
+              <span className="block text-[11px] font-semibold text-[var(--text)]">◈ Video AI</span>
+              <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">{uiLanguage === "ro" ? "Storyboard și producție video AI →" : "AI storyboard and video production →"}</span>
             </button>
             <div data-workspace-text-scale-control="desktop" className="min-w-0 rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
               <div className="flex min-w-0 items-center justify-between gap-2">
@@ -815,6 +830,18 @@ export default function WorkspaceShell({
             >
               <span>✦ AI Web Design</span>
               <span className="text-[#aebcff]">→</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                requestNativeHaptic();
+                setMobileModuleMenuOpen(false);
+                onOpenPath("/video-ai");
+              }}
+              className="mt-2 flex min-h-11 w-full items-center justify-between rounded-[16px] border border-[#9a79ff]/24 bg-[#9a79ff]/[0.09] px-4 text-[11px] font-semibold text-[var(--text)]"
+            >
+              <span>◈ Video AI</span>
+              <span className="text-[#c0adff]">→</span>
             </button>
 
             <button

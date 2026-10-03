@@ -1198,12 +1198,14 @@ test("Smart Interview maps clear conversion answers locally and leaves complex g
   );
 });
 
-test("Smart Interview queue persists across refreshes and resets with preset changes", () => {
+test("Smart Interview queue persists per workspace and resets with preset changes", () => {
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
   assert.match(specialist, /INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01"/);
-  assert.match(specialist, /getItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, organizationId\)/);
+  assert.match(specialist, /getItem\(interviewQueueStorageKey\)/);
   assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
+  assert.match(specialist, /removeItem\(interviewQueueStorageKey\)/);
   assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
   assert.match(specialist, /setInterviewQuestions\(\[\]\)/);
 });
