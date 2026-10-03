@@ -756,3 +756,14 @@ test("calendar keeps resource allocation open only while it needs attention", ()
   assert.match(calendar, /Resurse alocate · \$\{selectedEventResourceCount\}/);
   assert.match(calendar, /data-calendar-resource-panel="true"/);
 });
+
+
+test("completed work shows operational dossier before aftercare panels", () => {
+  const tasks = read("components/modules/TasksModule.tsx");
+  const dossier = tasks.indexOf("<WorkFileSummary");
+  const aftercare = tasks.indexOf("<AftercarePanel");
+  const postService = tasks.indexOf("<PostServiceGrowthPanel");
+  assert.ok(dossier >= 0 && aftercare >= 0 && postService >= 0);
+  assert.ok(dossier < aftercare);
+  assert.ok(dossier < postService);
+});
