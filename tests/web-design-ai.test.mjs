@@ -1383,3 +1383,191 @@ test("Smart Interview local fast-path preserves the remaining question queue", (
     /setInterviewQuestions\(\(current\) => current\.slice\(1\)\)/
   );
 });
+
+
+test("Publish Planner blocks only on real required input and prioritizes the next question", () => {
+  const readiness = {
+    score: 76,
+    status: "almost_ready",
+    blockers: [
+      {
+        code: "DEMO_BRAND",
+        message: "Brand demonstrativ.",
+        sections: ["hero"],
+      },
+    ],
+    placeholderCount: 1,
+  };
+  const gaps = {
+    count: 2,
+    completionScore: 78,
+    labels: ["nume brand real", "dovezi"],
+    gaps: [
+      {
+        id: "claim_evidence",
+        label: "dovezi pentru afirmații",
+        question: "Confirmi garanția?",
+        priority: 2,
+        sections: [],
+      },
+      {
+        id: "brand_name",
+        label: "nume brand real",
+        question: "Care este numele real al brandului?",
+        priority: 1,
+        sections: ["hero"],
+      },
+    ],
+  };
+  const refinement = {
+    attempted: true,
+    passes: 1,
+    improved: true,
+    initialQuality: 80,
+    finalQuality: 94,
+    initialReadiness: 64,
+    finalReadiness: 76,
+    changes: ["rechecked_quality"],
+    remainingActions: [],
+  };
+  const evidence = {
+    revertedFields: ["hero.headline"],
+    unsupportedConcepts: ["guarantee"],
+  };
+
+  const plan = buildWebDesignPublishPlan(
+    readiness,
+    gaps,
+    refinement,
+    evidence
+  );
+
+  assert.equal(plan.status, "needs_input");
+  assert.equal(plan.publishable, false);
+  assert.deepEqual(plan.requiredGapIds, ["brand_name"]);
+  assert.deepEqual(plan.optionalGapIds, ["claim_evidence"]);
+  assert.equal(plan.nextStep.type, "ask_user");
+  assert.equal(plan.nextStep.gapId, "brand_name");
+  assert.ok(plan.score < 100);
+  assert.equal(plan.autoResolvedCount, 2);
+});
+
+test("Publish Planner does not block publication on already-retracted optional claims", () => {
+  const plan = buildWebDesignPublishPlan(
+    {
+      score: 100,
+      status: "ready",
+      blockers: [],
+      placeholderCount: 0,
+    },
+    {
+      count: 1,
+      completionScore: 93,
+      labels: ["dovezi pentru afirmații"],
+      gaps: [
+        {
+          id: "claim_evidence",
+          label: "dovezi pentru afirmații",
+          question: "Confirmi afirmația?",
+          priority: 2,
+          sections: [],
+        },
+      ],
+    },
+    {
+      attempted: false,
+      passes: 0,
+      improved: false,
+      initialQuality: 100,
+      finalQuality: 100,
+      initialReadiness: 100,
+      finalReadiness: 100,
+      changes: [],
+      remainingActions: [],
+    },
+    {
+      revertedFields: ["contact.description"],
+      unsupportedConcepts: ["free_consultation"],
+    }
+  );
+
+  assert.equal(plan.status, "ready");
+  assert.equal(plan.publishable, true);
+  assert.equal(plan.requiredInputCount, 0);
+  assert.equal(plan.optionalInputCount, 1);
+  assert.deepEqual(plan.optionalGapIds, ["claim_evidence"]);
+  assert.equal(plan.nextStep.type, "ready");
+  assert.equal(plan.score, 100);
+});
+
+test("Publish Planner requests review when no user facts are missing but readiness is not ready", () => {
+  const plan = buildWebDesignPublishPlan(
+    {
+      score: 81,
+      status: "almost_ready",
+      blockers: [
+        {
+          code: "QUALITY_REVIEW_REQUIRED",
+          message: "Quality review.",
+          sections: [],
+        },
+      ],
+      placeholderCount: 0,
+    },
+    {
+      count: 0,
+      completionScore: 100,
+      labels: [],
+      gaps: [],
+    },
+    {
+      attempted: true,
+      passes: 2,
+      improved: false,
+      initialQuality: 76,
+      finalQuality: 76,
+      initialReadiness: 81,
+      finalReadiness: 81,
+      changes: ["rechecked_quality"],
+      remainingActions: ["Revizuiește problemele tehnice."],
+    },
+    {
+      revertedFields: [],
+      unsupportedConcepts: [],
+    }
+  );
+
+  assert.equal(plan.status, "needs_review");
+  assert.equal(plan.publishable, false);
+  assert.equal(plan.requiredInputCount, 0);
+  assert.equal(plan.nextStep.type, "review");
+});
+
+test("Generative Web Design returns a Publish Plan after final readiness and Brief Gaps", () => {
+  const server = read("lib/ai/web-design-server.ts");
+  const planner = read("lib/ai/web-design-publish-plan.ts");
+
+  assert.match(server, /buildWebDesignPublishPlan\(/);
+  assert.ok(
+    server.indexOf("deriveWebDesignBriefGaps(") <
+      server.indexOf("buildWebDesignPublishPlan(")
+  );
+  assert.match(server, /publishPlan,/);
+  assert.match(planner, /OPTIONAL_GAPS/);
+  assert.match(planner, /claim_evidence/);
+  assert.match(planner, /needs_input/);
+  assert.match(planner, /needs_review/);
+  assert.match(planner, /publishable/);
+  assert.doesNotMatch(planner, /fetch\(/);
+  assert.doesNotMatch(planner, /Math\.random/);
+});
+
+test("Web Design editor asks only publish-blocking Smart Interview questions", () => {
+  const specialist = read("components/ai/WebDesignSpecialist.tsx");
+
+  assert.match(specialist, /body\.publishPlan\?\.requiredGapIds/);
+  assert.match(specialist, /requiredGapIds\.has\(question\.id\)/);
+  assert.match(specialist, /Publish \{readinessScore\}/);
+  assert.match(specialist, /gata de publicare/);
+  assert.match(specialist, /revizie finală/);
+});
