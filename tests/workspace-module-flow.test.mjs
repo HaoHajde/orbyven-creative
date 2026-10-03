@@ -747,3 +747,12 @@ test("documents confirm successful automatic evidence handoff", () => {
   assert.match(documents, /Documentul și contextul financiar au fost sincronizate automat/);
   assert.match(documents, /Înapoi la Finanțe →/);
 });
+
+
+test("calendar keeps resource allocation open only while it needs attention", () => {
+  const calendar = read("components/modules/CalendarModule.tsx");
+  assert.match(calendar, /selectedEventNeedsResources/);
+  assert.match(calendar, /open=\{selectedEventNeedsResources \|\| undefined\}/);
+  assert.match(calendar, /Resurse alocate · \$\{selectedEventResourceCount\}/);
+  assert.match(calendar, /data-calendar-resource-panel="true"/);
+});
