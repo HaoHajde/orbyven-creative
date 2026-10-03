@@ -1054,3 +1054,92 @@ html[data-app-mode="standalone"] button {
     font-size: 16px !important;
   }
 }
+
+
+/* ORBYVEN GALAXY RANDOM STARS — deterministic, non-tiled star field */
+.orbyven-home-main::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+.orbyven-galaxy-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: paint;
+}
+
+.orbyven-galaxy-star {
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+  transform: translate3d(0,0,0);
+  will-change: opacity, transform;
+}
+
+.orbyven-galaxy-star--white {
+  color: rgba(247,245,255,.95);
+  background: currentColor;
+}
+
+.orbyven-galaxy-star--violet {
+  color: rgba(177,153,255,.92);
+  background: currentColor;
+}
+
+.orbyven-galaxy-star--soft {
+  color: rgba(205,214,255,.72);
+  background: currentColor;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbyven-galaxy-star.is-twinkle {
+    animation-name: orbyvenRandomGalaxyTwinkle;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+}
+
+@keyframes orbyvenRandomGalaxyTwinkle {
+  0% {
+    transform: scale(.82);
+    opacity: .18;
+  }
+  42% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.32);
+    opacity: .86;
+  }
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-galaxy-stars {
+  opacity: .42;
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-galaxy-star--white {
+  color: rgba(83,76,124,.48);
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-galaxy-star--violet {
+  color: rgba(102,77,190,.54);
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-galaxy-star--soft {
+  color: rgba(89,98,146,.38);
+}
+
+@media (max-width: 767px) {
+  .orbyven-galaxy-stars {
+    opacity: .72;
+  }
+
+  .orbyven-galaxy-star:nth-child(3n) {
+    display: none;
+  }
+}

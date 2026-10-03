@@ -7,6 +7,7 @@ import HomeInvitationPreview from "@/components/HomeInvitationPreview";
 import HomeTemplatePreviewFrame from "@/components/HomeTemplatePreviewFrame";
 import { featuredTemplates } from "@/lib/featured-templates";
 import OrbitalSystem from "@/components/OrbitalSystem";
+import GalaxyStars from "@/components/GalaxyStars";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import WarpMenu, { type WarpItem } from "@/components/WarpMenu";
@@ -267,6 +268,7 @@ export default function HomePage() {
       }}
       className="orbyven-public-shell orbyven-home-main relative min-h-screen overflow-x-clip antialiased [&_input]:text-[16px] [&_select]:text-[16px] [&_textarea]:text-[16px]"
     >
+      <GalaxyStars />
       <SiteHeader theme={theme} compact={false} activePage="home" onToggleTheme={toggleTheme} />
       <WarpMenu items={warpItems} activeSection={activeSection} />
 
@@ -276,7 +278,6 @@ export default function HomePage() {
         className="orbyven-home-hero relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden md:min-h-screen"
       >
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-29%] hidden h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block" />
-        <div aria-hidden="true" className="orbyven-home-starfield absolute inset-0" />
         <div aria-hidden="true" className="orbyven-home-hero-aurora absolute inset-0" />
         <OrbitalSystem variant="hero" className="top-[48%]" />
 
