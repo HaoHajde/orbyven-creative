@@ -140,26 +140,26 @@ test("reserved stock is protected from unrelated task consumption", () => {
 
 test("work readiness treats unreserved or missing materials as operational attention", () => {
   const readiness = read("lib/automation/work-readiness.ts");
-  const tasksUi = read("components/modules/TasksModule.tsx");
+  const workFile = read("components/modules/tasks/WorkFileSummary.tsx");
   assert.match(readiness, /key: "materials"/);
   assert.match(readiness, /inventoryShortageLines/);
   assert.match(readiness, /inventoryUnreadyLines/);
   assert.match(readiness, /lipsă după rezervarea stocului disponibil/);
-  assert.match(tasksUi, /poziții cu lipsă/);
-  assert.match(tasksUi, /poziții de rezervat/);
+  assert.match(workFile, /poziții cu lipsă/);
+  assert.match(workFile, /poziții de rezervat/);
 });
 
 test("procurement consolidates shopping by supplier and real work cost includes stock consumption", () => {
   const inventoryUi = read("components/modules/InventoryModule.tsx");
   const tasksData = read("lib/modules/tasks.ts");
-  const tasksUi = read("components/modules/TasksModule.tsx");
+  const workFile = read("components/modules/tasks/WorkFileSummary.tsx");
 
   assert.match(inventoryUi, /Listă de cumpărături/);
   assert.match(inventoryUi, /prepareSupplierPurchase/);
   assert.match(inventoryUi, /estimatedCents/);
   assert.match(tasksData, /realOperationalCostCents/);
   assert.match(tasksData, /\(expensesCents \?\? 0\) \+ \(inventoryConsumedCents \?\? 0\)/);
-  assert.match(tasksUi, /cheltuieli operative \+ .* consumuri stoc/);
+  assert.match(workFile, /cheltuieli operative \+ .* consumuri stoc/);
 });
 
 test("Purchase Orders bridge directly to evidence and finance when those modules are enabled", () => {
