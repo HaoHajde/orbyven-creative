@@ -5,6 +5,8 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+const nativeRuntime = read("native-runtime.ts");
+
 test("Alpha 0.12 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
@@ -41,12 +43,12 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 test("Alpha 0.12 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.12\.0"/);
-  assert.match(app, /NATIVE_RUNTIME/);
+  assert.match(nativeRuntime, /APP_VERSION = "0\.12\.0"/);
+  assert.match(nativeRuntime, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
-  assert.match(app, /window\.__ORBYVEN_NATIVE__/);
-  assert.match(app, /dataset\.appMode = "native"/);
-  assert.match(app, /orbyven:native-ready/);
+  assert.match(nativeRuntime, /window\.__ORBYVEN_NATIVE__/);
+  assert.match(nativeRuntime, /dataset\.appMode = "native"/);
+  assert.match(nativeRuntime, /orbyven:native-ready/);
   assert.match(app, /message\.type === "orbyven:theme"/);
   assert.match(app, /setWebTheme\(message\.theme\)/);
   assert.match(app, /orbyven:app-resume/);
@@ -57,7 +59,7 @@ test("native workspace navigation can request bounded selection haptics", () => 
   const app = read("App.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
 
-  assert.match(app, /"navigation-haptics"/);
+  assert.match(nativeRuntime, /"navigation-haptics"/);
   assert.match(app, /message\.type === "orbyven:haptic"/);
   assert.match(app, /Haptics\.selectionAsync\(\)/);
   assert.match(workspace, /const requestNativeHaptic = useCallback/);
@@ -68,13 +70,13 @@ test("native workspace navigation can request bounded selection haptics", () => 
 test("Alpha 0.12 preserves in-flight workspace state across short network interruptions", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /"state-preserving-reconnect"/);
-  assert.match(app, /"network-state-bridge"/);
+  assert.match(nativeRuntime, /"state-preserving-reconnect"/);
+  assert.match(nativeRuntime, /"network-state-bridge"/);
   assert.match(app, /orbyven:native-network-change/);
   assert.match(app, /webFailedRef\.current/);
   assert.match(app, /if \(webFailedRef\.current\)/);
-  assert.match(app, /Fără internet · păstrăm ecranul curent/);
-  assert.match(app, /Conexiune restabilită/);
+  assert.match(nativeRuntime, /Fără internet · păstrăm ecranul curent/);
+  assert.match(nativeRuntime, /Conexiune restabilită/);
   assert.doesNotMatch(
     app,
     /if \(definitelyOnline && previousReachability\.current === false\)[\s\S]{0,180}webRef\.current\?\.reload\(\)/,
@@ -85,8 +87,8 @@ test("Alpha 0.12 preserves in-flight workspace state across short network interr
 test("Alpha 0.12 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /"stateful-deep-links"/);
-  assert.match(app, /"workspace-continuity"/);
+  assert.match(nativeRuntime, /"stateful-deep-links"/);
+  assert.match(nativeRuntime, /"workspace-continuity"/);
   assert.match(app, /const navigateTrustedUrl = useCallback/);
   assert.match(app, /currentUrlRef\.current === url/);
   assert.match(app, /setCurrentUrl\(url\)/);
@@ -107,9 +109,9 @@ test("Alpha 0.12 waits for explicit web and workspace readiness before replaying
   const runtime = read("../components/pwa/AppModeRuntime.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
 
-  assert.match(app, /"web-readiness-handshake"/);
-  assert.match(app, /"workspace-readiness-handshake"/);
-  assert.match(app, /"pending-intent-replay"/);
+  assert.match(nativeRuntime, /"web-readiness-handshake"/);
+  assert.match(nativeRuntime, /"workspace-readiness-handshake"/);
+  assert.match(nativeRuntime, /"pending-intent-replay"/);
   assert.match(app, /message\.type === "orbyven:web-ready"/);
   assert.match(app, /message\.type === "orbyven:workspace-ready"/);
   assert.match(app, /workspaceReadyRef\.current = true/);
@@ -129,7 +131,7 @@ test("Alpha 0.12 routes work deadline notifications through the ready workspace"
   const workspace = read("../components/WorkspaceShell.tsx");
   const tasks = read("../components/modules/TasksModule.tsx");
 
-  assert.match(app, /"work-deadline-reminders"/);
+  assert.match(nativeRuntime, /"work-deadline-reminders"/);
   assert.match(app, /scheduleWorkReminder/);
   assert.match(app, /cancelWorkReminder/);
   assert.match(app, /data\?\.kind === "work-task"/);
@@ -152,7 +154,7 @@ test("Alpha 0.12 routes work deadline notifications through the ready workspace"
 test("Alpha 0.12 hands launch ownership from native shell to the ready workspace without a visual flash", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /"native-launch-handoff"/);
+  assert.match(nativeRuntime, /"native-launch-handoff"/);
   assert.match(app, /const \[startupWebSettled, setStartupWebSettled\] = useState\(false\)/);
   assert.match(app, /const \[initialUnlockResolved, setInitialUnlockResolved\] = useState\(false\)/);
   assert.match(app, /const \[launchVisible, setLaunchVisible\] = useState\(true\)/);
