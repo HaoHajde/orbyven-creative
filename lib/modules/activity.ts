@@ -1,7 +1,6 @@
 "use client";
 
-import { orbyvenSupabase } from "@/lib/orbyven-supabase";
-import { requireOrbyvenSession } from "@/lib/orbyven-session";
+import { createAuthenticatedOrbyvenDataClient } from "@/lib/orbyven-authenticated-data";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import {
   buildBusinessAutomationSignals,
@@ -65,7 +64,7 @@ export async function loadWorkspaceActivity(
   timeZone: string
 ): Promise<WorkspaceActivityItem[]> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
-  await requireOrbyvenSession();
+  const dataClient = await createAuthenticatedOrbyvenDataClient();
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -88,7 +87,7 @@ export async function loadWorkspaceActivity(
     teamResult,
   ] = await Promise.all([
       enabledModules.includes("leads")
-        ? orbyvenSupabase
+        ? dataClient
             .from("crm_leads")
             .select("id,name,kind,stage,next_follow_up_at")
             .eq("organization_id", organizationId)
@@ -98,7 +97,7 @@ export async function loadWorkspaceActivity(
             .limit(14)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("leads")
-        ? orbyvenSupabase
+        ? dataClient
             .from("crm_leads")
             .select("id,name,kind,last_contact_at,next_follow_up_at,converted_at,created_at")
             .eq("organization_id", organizationId)
@@ -108,7 +107,7 @@ export async function loadWorkspaceActivity(
             .limit(80)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("tasks")
-        ? orbyvenSupabase
+        ? dataClient
             .from("ops_tasks")
             .select("id,title,kind,status,priority,assignee,due_at,scheduled_at,created_at,client_id")
             .eq("organization_id", organizationId)
@@ -117,7 +116,7 @@ export async function loadWorkspaceActivity(
             .limit(120)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("tasks") && enabledModules.includes("leads")
-        ? orbyvenSupabase
+        ? dataClient
             .from("ops_tasks")
             .select("id,title,kind,status,completed_at,client_id")
             .eq("organization_id", organizationId)
@@ -129,7 +128,7 @@ export async function loadWorkspaceActivity(
             .limit(80)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("leads")
-        ? orbyvenSupabase
+        ? dataClient
             .from("crm_lead_activities")
             .select("lead_id,body,occurred_at")
             .eq("organization_id", organizationId)
@@ -139,7 +138,7 @@ export async function loadWorkspaceActivity(
             .limit(240)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("calendar")
-        ? orbyvenSupabase
+        ? dataClient
             .from("calendar_events")
             .select("id,title,status,start_at,end_at,assignee,client_id,task_id")
             .eq("organization_id", organizationId)
@@ -149,7 +148,7 @@ export async function loadWorkspaceActivity(
             .limit(80)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("estimates")
-        ? orbyvenSupabase
+        ? dataClient
             .from("sales_estimates")
             .select("id,reference,title,status,valid_until,client_id,task_id,updated_at")
             .eq("organization_id", organizationId)
@@ -158,7 +157,7 @@ export async function loadWorkspaceActivity(
             .limit(80)
         : Promise.resolve({ data: [], error: null }),
       canAccessFinances && enabledModules.includes("expenses")
-        ? orbyvenSupabase
+        ? dataClient
             .from("sales_commercial_documents")
             .select("id,reference,title,status,total_cents,currency,due_on,client_id,task_id,estimate_id")
             .eq("organization_id", organizationId)
@@ -170,7 +169,7 @@ export async function loadWorkspaceActivity(
             .limit(12)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("inventory")
-        ? orbyvenSupabase
+        ? dataClient
             .from("ops_inventory_procurement_gaps")
             .select("material_id,name,unit,suggested_order,outstanding_demand,on_hand,on_order")
             .eq("organization_id", organizationId)
@@ -179,7 +178,7 @@ export async function loadWorkspaceActivity(
             .limit(10)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("inventory")
-        ? orbyvenSupabase
+        ? dataClient
             .from("ops_purchase_orders")
             .select("id,reference,status,expected_on,task_id")
             .eq("organization_id", organizationId)
@@ -190,7 +189,7 @@ export async function loadWorkspaceActivity(
             .limit(10)
         : Promise.resolve({ data: [], error: null }),
       enabledModules.includes("team")
-        ? orbyvenSupabase
+        ? dataClient
             .from("people_team_members")
             .select("display_name,status")
             .eq("organization_id", organizationId)
@@ -216,7 +215,7 @@ export async function loadWorkspaceActivity(
   const calendarEventIds = (eventsResult.data ?? []).map((event) => event.id);
   const resourceAssignmentsResult =
     enabledModules.includes("calendar") && calendarEventIds.length
-      ? await orbyvenSupabase
+      ? await dataClient
           .from("calendar_event_resources")
           .select("event_id")
           .eq("organization_id", organizationId)
@@ -453,7 +452,7 @@ export async function loadWorkspaceActivity(
   const invoices = invoicesResult.data ?? [];
   if (invoices.length) {
     const ids = invoices.map((row) => row.id);
-    const { data: incomeRows, error: incomeError } = await orbyvenSupabase
+    const { data: incomeRows, error: incomeError } = await dataClient
       .from("finance_income_entries")
       .select("commercial_document_id,amount_cents,currency")
       .eq("organization_id", organizationId)
