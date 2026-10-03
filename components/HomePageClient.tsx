@@ -237,23 +237,23 @@ export default function HomePage() {
 
   const vars = {
     "--bg": theme === "dark" ? "#000000" : "#e7e8f3",
-    "--surface": theme === "dark" ? "#0c0c0e" : "#f5f4fb",
-    "--surface-2": theme === "dark" ? "#151518" : "#ebe9f6",
-    "--text": theme === "dark" ? "#f5f5f7" : "#181a2c",
-    "--muted": theme === "dark" ? "#a1a1a6" : "#62647a",
-    "--muted-2": theme === "dark" ? "#77777d" : "#797b91",
-    "--border": theme === "dark" ? "rgba(255,255,255,0.09)" : "rgba(96,76,168,0.16)",
-    "--border-strong": theme === "dark" ? "rgba(255,255,255,0.16)" : "rgba(91,72,172,0.28)",
-    "--button": theme === "dark" ? "#f5f5f7" : "#5d55cf",
-    "--button-text": theme === "dark" ? "#000000" : "#ffffff",
-    "--accent": "#4b46ee",
-    "--home-violet": theme === "dark" ? "#a58bff" : "#7458d7",
-    "--home-flow-start": theme === "dark" ? "#0b0b0e" : "#eceaf5",
+    "--surface": theme === "dark" ? "#090a10" : "#f8f7fc",
+    "--surface-2": theme === "dark" ? "#101119" : "#efedf8",
+    "--text": theme === "dark" ? "#f7f6fb" : "#17182a",
+    "--muted": theme === "dark" ? "#aaa9b5" : "#62647a",
+    "--muted-2": theme === "dark" ? "#777784" : "#797b91",
+    "--border": theme === "dark" ? "rgba(214,204,255,0.095)" : "rgba(96,76,168,0.15)",
+    "--border-strong": theme === "dark" ? "rgba(214,204,255,0.18)" : "rgba(91,72,172,0.27)",
+    "--button": theme === "dark" ? "#f7f6fb" : "#5d55cf",
+    "--button-text": theme === "dark" ? "#05060a" : "#ffffff",
+    "--accent": "#6558ff",
+    "--home-violet": theme === "dark" ? "#b59dff" : "#7458d7",
+    "--home-flow-start": theme === "dark" ? "#05060a" : "#eeedf7",
     "--home-flow": theme === "dark"
-      ? "linear-gradient(180deg, #0b0b0e 0%, #111117 45%, #0e0e13 100%)"
-      : "linear-gradient(180deg, #eceaf5 0%, #e7e8f3 45%, #efedf7 100%)",
-    "--accent-soft": theme === "dark" ? "rgba(75,70,238,0.18)" : "rgba(116,88,215,0.13)",
-    "--accent-soft-2": theme === "dark" ? "rgba(111,66,255,0.11)" : "rgba(116,88,215,0.08)",
+      ? "radial-gradient(ellipse 78% 34% at 52% -4%, rgba(124,88,255,.16), transparent 64%), radial-gradient(ellipse 56% 28% at 88% 28%, rgba(68,92,215,.08), transparent 70%), radial-gradient(ellipse 64% 36% at 8% 62%, rgba(119,73,205,.055), transparent 72%), linear-gradient(180deg, #05060a 0%, #090a10 30%, #07080d 67%, #05060a 100%)"
+      : "radial-gradient(ellipse 72% 34% at 54% -4%, rgba(116,88,215,.14), transparent 66%), radial-gradient(ellipse 54% 30% at 88% 32%, rgba(112,97,204,.08), transparent 72%), linear-gradient(180deg, #f0eff8 0%, #e8e8f2 44%, #efedf7 100%)",
+    "--accent-soft": theme === "dark" ? "rgba(108,82,255,0.18)" : "rgba(116,88,215,0.13)",
+    "--accent-soft-2": theme === "dark" ? "rgba(136,93,255,0.10)" : "rgba(116,88,215,0.08)",
   } as CSSProperties;
 
   return (
@@ -276,7 +276,8 @@ export default function HomePage() {
         className="orbyven-home-hero relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden bg-[var(--bg)] md:min-h-screen"
       >
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-29%] hidden h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_center,currentColor_0.7px,transparent_0.7px)] [background-size:7px_7px]" />
+        <div aria-hidden="true" className="orbyven-home-starfield absolute inset-0" />
+        <div aria-hidden="true" className="orbyven-home-hero-aurora absolute inset-0" />
         <OrbitalSystem variant="hero" className="top-[48%]" />
 
         <motion.div
@@ -288,12 +289,12 @@ export default function HomePage() {
           </motion.p>
           <h1 className="contents">
             <span className="block overflow-hidden pb-2">
-              <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.05, delay: 0.16, ease: easeOut }} className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
+              <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.05, delay: 0.16, ease: easeOut }} className="orbyven-home-hero-title block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
                 Construim
               </motion.span>
             </span>
             <span className="block overflow-hidden pb-4">
-              <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.12, delay: 0.27, ease: easeOut }} className="block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
+              <motion.span initial={{ y: "115%" }} animate={{ y: "0%" }} transition={{ duration: 1.12, delay: 0.27, ease: easeOut }} className="orbyven-home-hero-title orbyven-home-hero-title--accent block text-[clamp(46px,13vw,56px)] font-semibold leading-[0.94] tracking-[-0.06em] sm:text-[80px] md:text-[104px] lg:text-[124px] xl:text-[132px]">
                 ce rămâne în minte.
               </motion.span>
             </span>
@@ -315,7 +316,7 @@ export default function HomePage() {
               <Link href="/workspace" className="mt-7 inline-flex h-12 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-6 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[var(--accent)]/60">Dashboard →</Link>
             </div>
 
-            <div className="relative overflow-hidden rounded-[38px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 shadow-[0_28px_90px_rgba(0,0,0,.12)] sm:p-5">
+            <div className="orbyven-home-workspace-shell relative overflow-hidden rounded-[38px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 shadow-[0_28px_90px_rgba(0,0,0,.12)] sm:p-5">
               <motion.div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-20 -top-28 h-[330px] w-[330px] rounded-full bg-[var(--accent-soft)] blur-[95px]"
@@ -417,7 +418,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
+          <div className="orbyven-home-template-shell mt-8 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4">
             <HomeTemplatePreviewFrame key={activeTemplate.source === "featured" ? activeTemplate.href : activeTemplate.slug}>
               {activeTemplate.source === "featured" ? (
                 <FeaturedTemplatePreview kind={activeTemplate.kind} eagerDemo />
@@ -485,7 +486,7 @@ export default function HomePage() {
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {services.map((service, index) => (
               <motion.div key={service.title} whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 280, damping: 24 }}>
-                <Link href="/servicii" className="group relative flex min-h-[280px] h-full flex-col justify-between overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--bg)] p-6 transition hover:border-[var(--border-strong)]">
+                <Link href="/servicii" className="orbyven-home-service-card group relative flex min-h-[280px] h-full flex-col justify-between overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--bg)] p-6 transition hover:border-[var(--border-strong)]">
                   <motion.div
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-0 opacity-80"
@@ -583,7 +584,7 @@ export default function HomePage() {
       </section>
 
       <section id="start" className="scroll-mt-24 px-5 pb-8 sm:px-6 md:px-10">
-        <div className="mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12 md:py-18">
+        <div className="orbyven-home-start-card mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12 md:py-18">
           <p className="text-[10px] uppercase tracking-[0.18em] opacity-50">Start</p>
           <div className="mt-4 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
             <h2 className="max-w-4xl text-[44px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[62px]">Spune-ne ce vrei să rezolvi.</h2>

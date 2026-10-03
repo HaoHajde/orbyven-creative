@@ -1053,3 +1053,296 @@ html[data-app-mode="standalone"] button {
     font-size: 16px !important;
   }
 }
+
+
+/* =========================================================
+   ORBYVEN HOMEPAGE LUXURY REFRESH — 2026-10-03
+   Preserves the current structure, orbit system and content.
+   Adds a denser star field, richer continuous background and
+   premium glass/depth treatment without image assets.
+   ========================================================= */
+
+.orbyven-home-main {
+  position: relative;
+  isolation: isolate;
+  background-image: var(--home-flow);
+  background-attachment: scroll;
+}
+
+.orbyven-home-main::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 78vh 0 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 56% 22% at 83% 10%, rgba(137, 102, 255, .095), transparent 72%),
+    radial-gradient(ellipse 48% 24% at 12% 30%, rgba(86, 112, 255, .055), transparent 74%),
+    radial-gradient(ellipse 68% 18% at 52% 58%, rgba(160, 116, 255, .05), transparent 76%),
+    linear-gradient(118deg, transparent 0 34%, rgba(181, 157, 255, .028) 47%, transparent 61%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 8%, #000 94%, transparent 100%);
+}
+
+.orbyven-home-main::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 95vh 0 0;
+  pointer-events: none;
+  opacity: .32;
+  background-image:
+    linear-gradient(rgba(190, 176, 255, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(190, 176, 255, .018) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 80%, transparent);
+}
+
+.orbyven-home-main > section,
+.orbyven-home-main > footer {
+  position: relative;
+  z-index: 1;
+}
+
+.orbyven-home-hero {
+  background:
+    radial-gradient(ellipse 58% 42% at 50% 41%, rgba(114, 79, 255, .075), transparent 68%),
+    radial-gradient(ellipse 28% 30% at 82% 24%, rgba(149, 112, 255, .055), transparent 72%),
+    var(--bg);
+}
+
+.orbyven-home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 46%, transparent 0 32%, rgba(151, 120, 255, .025) 46%, transparent 62%),
+    linear-gradient(to bottom, rgba(255,255,255,.008), transparent 22%, transparent 76%, rgba(104,78,210,.045));
+}
+
+.orbyven-home-starfield {
+  z-index: 0;
+  overflow: hidden;
+  opacity: .95;
+}
+
+.orbyven-home-starfield::before,
+.orbyven-home-starfield::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  top: 14%;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(247, 245, 255, .82);
+  box-shadow:
+    74px 28px 0 rgba(255,255,255,.30),
+    146px 116px 0 rgba(181,159,255,.58),
+    224px 16px 0 rgba(255,255,255,.46),
+    310px 94px 0 rgba(139,118,255,.40),
+    388px 2px 0 rgba(255,255,255,.30),
+    470px 152px 0 rgba(255,255,255,.44),
+    544px 54px 0 rgba(186,166,255,.62),
+    626px 204px 0 rgba(255,255,255,.25),
+    706px 84px 0 rgba(150,126,255,.48),
+    792px 12px 0 rgba(255,255,255,.42),
+    864px 168px 0 rgba(255,255,255,.29),
+    946px 58px 0 rgba(188,166,255,.56),
+    1022px 238px 0 rgba(255,255,255,.24),
+    1102px 118px 0 rgba(148,126,255,.44),
+    1178px 16px 0 rgba(255,255,255,.34),
+    40px 286px 0 rgba(170,145,255,.36),
+    132px 378px 0 rgba(255,255,255,.26),
+    244px 326px 0 rgba(255,255,255,.46),
+    352px 414px 0 rgba(176,149,255,.45),
+    458px 292px 0 rgba(255,255,255,.28),
+    574px 432px 0 rgba(255,255,255,.40),
+    684px 332px 0 rgba(155,132,255,.56),
+    804px 456px 0 rgba(255,255,255,.27),
+    918px 354px 0 rgba(255,255,255,.43),
+    1030px 422px 0 rgba(181,157,255,.50),
+    1144px 310px 0 rgba(255,255,255,.31);
+}
+
+.orbyven-home-starfield::after {
+  left: 22%;
+  top: 10%;
+  width: 1px;
+  height: 1px;
+  opacity: .72;
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 5px rgba(173, 144, 255, .35));
+  box-shadow:
+    38px 92px 0 rgba(255,255,255,.52),
+    118px 184px 0 rgba(169,143,255,.65),
+    196px 42px 0 rgba(255,255,255,.42),
+    284px 246px 0 rgba(255,255,255,.38),
+    374px 118px 0 rgba(184,159,255,.66),
+    452px 314px 0 rgba(255,255,255,.44),
+    538px 66px 0 rgba(255,255,255,.46),
+    624px 232px 0 rgba(166,139,255,.65),
+    708px 388px 0 rgba(255,255,255,.36),
+    794px 138px 0 rgba(255,255,255,.50),
+    888px 294px 0 rgba(177,151,255,.62);
+}
+
+.orbyven-home-hero-aurora {
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 42% 16% at 50% 36%, rgba(172, 135, 255, .11), transparent 72%),
+    conic-gradient(from 206deg at 50% 48%, transparent 0 36%, rgba(112, 84, 255, .035) 43%, transparent 51% 100%);
+  filter: blur(6px);
+}
+
+.orbyven-home-hero-title {
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.025),
+    0 22px 60px rgba(0,0,0,.22);
+}
+
+.orbyven-home-hero-title--accent {
+  background: linear-gradient(102deg, var(--text) 8%, var(--text) 42%, var(--home-violet) 72%, var(--text) 100%);
+  background-size: 180% 100%;
+  background-position: 38% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.orbyven-home-soft {
+  background: transparent;
+}
+
+.orbyven-home-workspace-shell,
+.orbyven-home-template-shell,
+.orbyven-home-invite-card,
+.orbyven-home-service-card,
+.orbyven-home-price {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.12),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.orbyven-home-workspace-shell::before,
+.orbyven-home-template-shell::before,
+.orbyven-home-invite-card::before,
+.orbyven-home-service-card::before,
+.orbyven-home-price::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 7%;
+  right: 7%;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(201,184,255,.44), rgba(255,255,255,.18), transparent);
+  opacity: .62;
+}
+
+.orbyven-home-workspace-shell,
+.orbyven-home-template-shell {
+  background-image:
+    radial-gradient(circle at 82% 8%, rgba(126, 91, 255, .10), transparent 30%),
+    linear-gradient(145deg, rgba(255,255,255,.022), transparent 42%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.orbyven-home-invite-card,
+.orbyven-home-service-card,
+.orbyven-home-price {
+  transition:
+    transform .55s cubic-bezier(.16,1,.3,1),
+    border-color .4s ease,
+    box-shadow .5s ease,
+    background-color .4s ease;
+}
+
+.orbyven-home-service-card:hover,
+.orbyven-home-invite-card:hover,
+.orbyven-home-price:hover {
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.18),
+    0 0 0 1px rgba(161,135,255,.07),
+    0 0 46px rgba(105,77,220,.08);
+}
+
+.orbyven-home-kicker-icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 0 24px rgba(116,88,215,.08);
+}
+
+.orbyven-home-start-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 42% 120% at 82% 0%, rgba(171,145,255,.25), transparent 70%),
+    radial-gradient(ellipse 34% 100% at 6% 100%, rgba(91,76,210,.12), transparent 72%),
+    var(--button);
+  box-shadow:
+    0 34px 110px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.orbyven-home-start-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 0 38%, rgba(255,255,255,.075) 48%, transparent 58%);
+}
+
+.orbyven-home-main .orbyven-public-header-surface {
+  background-color: color-mix(in srgb, var(--bg) 82%, transparent) !important;
+  border-color: color-mix(in srgb, var(--border-strong) 84%, transparent);
+  box-shadow:
+    0 16px 54px rgba(0,0,0,.14),
+    inset 0 1px 0 rgba(255,255,255,.035);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbyven-home-starfield::after {
+    animation: orbyvenLuxuryStars 7s ease-in-out infinite alternate;
+  }
+
+  .orbyven-home-hero-aurora {
+    animation: orbyvenLuxuryAurora 13s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes orbyvenLuxuryStars {
+  from { opacity: .50; transform: scale(1.32) translate3d(0,0,0); }
+  to { opacity: .82; transform: scale(1.36) translate3d(5px,-4px,0); }
+}
+
+@keyframes orbyvenLuxuryAurora {
+  from { opacity: .72; transform: scale(1) translate3d(0,0,0); }
+  to { opacity: 1; transform: scale(1.035) translate3d(0,-8px,0); }
+}
+
+@media (max-width: 767px) {
+  .orbyven-home-main::after {
+    background-size: 64px 64px;
+    opacity: .20;
+  }
+
+  .orbyven-home-starfield {
+    opacity: .68;
+    transform: scale(.78);
+    transform-origin: 50% 35%;
+  }
+
+  .orbyven-home-workspace-shell,
+  .orbyven-home-template-shell {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
