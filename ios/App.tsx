@@ -24,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.13.0";
+const APP_VERSION = "0.14.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -98,6 +98,7 @@ const NATIVE_RUNTIME = {
     "local-notifications",
     "native-launch-handoff",
     "native-attention-badge",
+    "foreground-refresh",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -352,7 +353,7 @@ export default function App() {
 
     if (currentUrlRef.current === url) {
       webRef.current?.injectJavaScript(
-        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); true;",
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new CustomEvent('orbyven:app-resume',{detail:{backgroundMs:0}})); true;",
       );
       return;
     }
@@ -466,14 +467,18 @@ export default function App() {
         return;
       }
 
-      webRef.current?.injectJavaScript(
-        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('orbyven:app-resume')); document.dispatchEvent(new Event('visibilitychange')); true;",
-      );
-
       const backgroundAt = lastBackgroundAt.current;
       lastBackgroundAt.current = null;
+      const backgroundMs =
+        backgroundAt === null ? 0 : Math.max(0, Date.now() - backgroundAt);
 
-      if (backgroundAt === null || Date.now() - backgroundAt >= RELOCK_AFTER_MS) {
+      webRef.current?.injectJavaScript(
+        "window.dispatchEvent(new Event('focus')); window.dispatchEvent(new CustomEvent('orbyven:app-resume',{detail:{backgroundMs:" +
+          backgroundMs +
+          "}})); document.dispatchEvent(new Event('visibilitychange')); true;",
+      );
+
+      if (backgroundAt === null || backgroundMs >= RELOCK_AFTER_MS) {
         void authenticateToUnlock();
       } else {
         setPrivacyShielded(false);
