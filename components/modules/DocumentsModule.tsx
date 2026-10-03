@@ -31,6 +31,7 @@ type Props = {
   initialRecordId?: string;
   initialTaskId?: string;
   initialPurchaseOrderId?: string;
+  initialCategory?: DocumentCategory;
 };
 
 const DOCUMENT_ACCEPT = [".pdf",".jpg",".jpeg",".png",".webp",".heic",".heif",".txt",".csv",".doc",".docx",".xls",".xlsx",".ppt",".pptx"].join(",");
@@ -64,14 +65,14 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId, initialCategory }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
   const [estimates, setEstimates] = useState<DocumentEstimateLink[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<DocumentPurchaseOrderLink[]>([]);
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState<DocumentCategory>("general");
+  const [category, setCategory] = useState<DocumentCategory>(initialCategory ?? "general");
   const [clientId, setClientId] = useState("");
   const [taskId, setTaskId] = useState(initialTaskId ?? "");
   const [estimateId, setEstimateId] = useState("");
