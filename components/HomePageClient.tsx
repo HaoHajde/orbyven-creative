@@ -273,7 +273,7 @@ export default function HomePage() {
       <section
         id="intro"
         ref={heroRef}
-        className="orbyven-home-hero relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden bg-[var(--bg)] md:min-h-screen"
+        className="orbyven-home-hero relative flex min-h-[100svh] scroll-mt-24 items-center justify-center overflow-hidden md:min-h-screen"
       >
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-29%] hidden h-[760px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--accent-soft)] blur-[150px] md:block" />
         <div aria-hidden="true" className="orbyven-home-starfield absolute inset-0" />

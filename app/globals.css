@@ -1151,10 +1151,7 @@ html[data-app-mode="standalone"] button {
 
 /* Hero uses the same base canvas. It only adds density, stars and orbit lines. */
 .orbyven-home-hero {
-  background:
-    radial-gradient(ellipse 60% 46% at 50% 42%, rgba(116,80,255,.070), transparent 70%),
-    radial-gradient(ellipse 30% 31% at 82% 23%, rgba(150,111,255,.050), transparent 74%),
-    transparent !important;
+  background: transparent !important;
 }
 
 .orbyven-home-hero::before {
@@ -1164,14 +1161,20 @@ html[data-app-mode="standalone"] button {
   z-index: 0;
   pointer-events: none;
   background:
+    radial-gradient(ellipse 60% 46% at 50% 42%, rgba(116,80,255,.070), transparent 70%),
+    radial-gradient(ellipse 30% 31% at 82% 23%, rgba(150,111,255,.050), transparent 74%),
     radial-gradient(circle at 50% 46%, transparent 0 32%, rgba(151,120,255,.022) 46%, transparent 63%),
     radial-gradient(ellipse 42% 15% at 50% 36%, rgba(172,135,255,.085), transparent 74%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,.88) 70%, rgba(0,0,0,.42) 84%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,.88) 70%, rgba(0,0,0,.42) 84%, transparent 100%);
 }
 
 .orbyven-home-starfield {
   z-index: 0;
   overflow: hidden;
   opacity: .98;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgba(0,0,0,.78) 76%, rgba(0,0,0,.32) 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgba(0,0,0,.78) 76%, rgba(0,0,0,.32) 88%, transparent 100%);
 }
 
 .orbyven-home-starfield::before,
@@ -1241,6 +1244,8 @@ html[data-app-mode="standalone"] button {
     radial-gradient(ellipse 42% 16% at 50% 36%, rgba(172,135,255,.10), transparent 72%),
     conic-gradient(from 206deg at 50% 48%, transparent 0 36%, rgba(112,84,255,.032) 43%, transparent 51% 100%);
   filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 56%, rgba(0,0,0,.74) 72%, rgba(0,0,0,.24) 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 56%, rgba(0,0,0,.74) 72%, rgba(0,0,0,.24) 88%, transparent 100%);
 }
 
 .orbyven-home-hero-title {
@@ -1399,4 +1404,16 @@ html[data-app-mode="standalone"] button {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+}
+
+
+/* Final seam fix: every hero-only decorative layer dissolves into the same
+   page-wide galaxy before the section ends. */
+.orbyven-home-hero .orbyven-orbit-system--hero {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.72) 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.72) 82%, transparent 100%);
+}
+
+.orbyven-home-main #modular {
+  margin-top: -1px;
 }
