@@ -329,7 +329,7 @@ export default function App() {
   const webFailedRef = useRef(false);
   const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentUrlRef = useRef(WORKSPACE_URL);
-  const launchOpacity = useRef(new Animated.Value(1)).current;
+  const [launchOpacity] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     currentUrlRef.current = currentUrl;
