@@ -738,3 +738,12 @@ test("missing expense evidence upload keeps full context and auto-attaches", () 
   assert.match(documents, /initialClientId \?\? ""/);
   assert.match(documents, /initialEstimateId \?\? ""/);
 });
+
+
+test("documents confirm successful automatic evidence handoff", () => {
+  const documents = read("components/modules/DocumentsModule.tsx");
+  assert.match(documents, /expenseEvidenceAttached/);
+  assert.match(documents, /Dovada este atașată cheltuielii/);
+  assert.match(documents, /Documentul și contextul financiar au fost sincronizate automat/);
+  assert.match(documents, /Înapoi la Finanțe →/);
+});
