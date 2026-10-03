@@ -24,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.15.0";
+const APP_VERSION = "0.16.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -108,6 +108,7 @@ const NATIVE_RUNTIME = {
     "native-attention-badge",
     "safe-runtime-update",
     "editing-safe-refresh",
+    "editing-safe-navigation",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -1107,7 +1108,7 @@ export default function App() {
               </Pressable>
             </View>
           )}
-          allowsBackForwardNavigationGestures
+          allowsBackForwardNavigationGestures={!editingActive}
           pullToRefreshEnabled={Platform.OS === "ios" && !editingActive}
           sharedCookiesEnabled
           thirdPartyCookiesEnabled

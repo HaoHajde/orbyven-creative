@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.15
+# ORBYVEN iOS — Alpha 0.16
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -305,3 +305,10 @@ Dacă actualizarea este aplicată, versiunea este persistată înainte de reload
 Versiunea 0.15.0 protejează editarea pe iPhone împotriva refresh-ului accidental prin gesture. Runtime-ul web urmărește doar focusul elementelor editabile și transmite shell-ului nativ o stare booleană limitată. Cât timp un astfel de control este activ, `pullToRefreshEnabled` este oprit; după blur către un element ne-editabil, gestul revine.
 
 Bridge-ul nu trimite valoarea câmpului, textul introdus sau alte date de formular. Transmite exclusiv faptul că un control editabil este activ, păstrând aceeași separare dintre UI nativ și datele workspace-ului.
+
+
+## Alpha 0.16
+
+Versiunea 0.16.0 extinde protecția de editare și asupra gesturilor native de navigare iOS. Cât timp un control editabil este activ, WebView-ul dezactivează atât pull-to-refresh, cât și swipe-back/swipe-forward. După ieșirea din editare, ambele gesturi revin automat.
+
+Această protecție folosește aceeași stare booleană introdusă în Alpha 0.15 și nu transmite conținutul câmpurilor către shell-ul nativ.
