@@ -5,10 +5,10 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Alpha 0.12 preserves SDK-compatible native privacy dependencies", () => {
+test("Alpha 0.13 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
-  assert.equal(pkg.version, "0.12.0");
+  assert.equal(pkg.version, "0.13.0");
   assert.equal(pkg.dependencies["expo-local-authentication"], "~57.0.3");
   assert.equal(pkg.dependencies["expo-network"], "~57.0.2");
   assert.equal(pkg.dependencies["expo-haptics"], "~57.0.3");
@@ -38,10 +38,10 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 });
 
 
-test("Alpha 0.12 exposes a bounded native runtime bridge and follows the workspace theme", () => {
+test("Alpha 0.13 exposes a bounded native runtime bridge and follows the workspace theme", () => {
   const app = read("App.tsx");
 
-  assert.match(app, /const APP_VERSION = "0\.12\.0"/);
+  assert.match(app, /const APP_VERSION = "0\.13\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
   assert.match(app, /injectedJavaScriptBeforeContentLoaded=\{NATIVE_BOOTSTRAP_SCRIPT\}/);
   assert.match(app, /window\.__ORBYVEN_NATIVE__/);
@@ -65,7 +65,7 @@ test("native workspace navigation can request bounded selection haptics", () => 
 });
 
 
-test("Alpha 0.12 preserves in-flight workspace state across short network interruptions", () => {
+test("Alpha 0.13 preserves in-flight workspace state across short network interruptions", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"state-preserving-reconnect"/);
@@ -82,7 +82,7 @@ test("Alpha 0.12 preserves in-flight workspace state across short network interr
 });
 
 
-test("Alpha 0.12 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
+test("Alpha 0.13 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"stateful-deep-links"/);
@@ -102,7 +102,7 @@ test("Alpha 0.12 keeps trusted deep links stateful and limits full remounts to h
 });
 
 
-test("Alpha 0.12 waits for explicit web and workspace readiness before replaying pending intents", () => {
+test("Alpha 0.13 waits for explicit web and workspace readiness before replaying pending intents", () => {
   const app = read("App.tsx");
   const runtime = read("../components/pwa/AppModeRuntime.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
@@ -124,7 +124,7 @@ test("Alpha 0.12 waits for explicit web and workspace readiness before replaying
 });
 
 
-test("Alpha 0.12 routes work deadline notifications through the ready workspace", () => {
+test("Alpha 0.13 routes work deadline notifications through the ready workspace", () => {
   const app = read("App.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
   const tasks = read("../components/modules/TasksModule.tsx");
@@ -149,7 +149,7 @@ test("Alpha 0.12 routes work deadline notifications through the ready workspace"
 });
 
 
-test("Alpha 0.12 hands launch ownership from native shell to the ready workspace without a visual flash", () => {
+test("Alpha 0.13 hands launch ownership from native shell to the ready workspace without a visual flash", () => {
   const app = read("App.tsx");
 
   assert.match(app, /"native-launch-handoff"/);
@@ -163,4 +163,21 @@ test("Alpha 0.12 hands launch ownership from native shell to the ready workspace
   assert.match(app, /setInitialUnlockResolved\(true\)/);
   assert.match(app, /privacyShielded && !launchVisible/);
   assert.match(app, /styles\.launchHandoff/);
+});
+
+
+test("Alpha 0.13 mirrors Activity Center attention count into the native iOS app badge", () => {
+  const app = read("App.tsx");
+  const activity = read("../components/WorkspaceActivityCenter.tsx");
+
+  assert.match(app, /"native-attention-badge"/);
+  assert.match(app, /async function syncNativeAttentionBadge\(count: number\)/);
+  assert.match(app, /Notifications\.setBadgeCountAsync\(normalized\)/);
+  assert.match(app, /permissions\.ios\?\.allowsBadge === false/);
+  assert.match(app, /message\.type === "orbyven:attention-badge"/);
+  assert.match(app, /Number\.isFinite\(message\.badgeCount\)/);
+
+  assert.match(activity, /type: "orbyven:attention-badge"/);
+  assert.match(activity, /badgeCount: Math\.min\(items\.length, 99\)/);
+  assert.match(activity, /badgeCount: 0/);
 });

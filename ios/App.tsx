@@ -24,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.12.0";
+const APP_VERSION = "0.13.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -97,6 +97,7 @@ const NATIVE_RUNTIME = {
     "haptics",
     "local-notifications",
     "native-launch-handoff",
+    "native-attention-badge",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -182,6 +183,17 @@ async function registerForRemotePush() {
   const token = await Notifications.getExpoPushTokenAsync({ projectId });
   if (!token.data) throw new Error("push-token-unavailable");
   return token.data;
+}
+
+async function syncNativeAttentionBadge(count: number) {
+  const normalized = Math.max(0, Math.min(99, Math.floor(count)));
+  const permissions = await Notifications.getPermissionsAsync();
+  const allowed =
+    permissions.granted ||
+    permissions.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+
+  if (!allowed || permissions.ios?.allowsBadge === false) return false;
+  return Notifications.setBadgeCountAsync(normalized);
 }
 
 async function cancelCalendarReminder(eventId: string) {
@@ -713,6 +725,7 @@ export default function App() {
         theme?: NativeTheme;
         locale?: NativeLocale;
         href?: string;
+        badgeCount?: number;
       };
 
       if (message.type === "orbyven:web-ready") {
@@ -738,6 +751,12 @@ export default function App() {
         (message.locale === "ro" || message.locale === "en")
       ) {
         setNativeLocale(message.locale);
+      } else if (
+        message.type === "orbyven:attention-badge" &&
+        typeof message.badgeCount === "number" &&
+        Number.isFinite(message.badgeCount)
+      ) {
+        void syncNativeAttentionBadge(message.badgeCount).catch(() => undefined);
       } else if (message.type === "orbyven:register-push") {
         void registerForRemotePush()
           .then((expoPushToken) => {
