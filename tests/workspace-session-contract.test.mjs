@@ -5,16 +5,29 @@ import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
-test("workspace high-fanout reads require a fresh session before issuing PostgREST queries", () => {
+test("workspace high-fanout reads use a JWT-bound data client", () => {
   const overview = read("lib/modules/overview.ts");
   const activity = read("lib/modules/activity.ts");
 
   for (const source of [overview, activity]) {
-    const gate = source.indexOf("await requireOrbyvenSession()");
-    const firstQuery = source.indexOf("orbyvenSupabase.from(");
-    assert.ok(gate >= 0, "session gate missing");
-    assert.ok(firstQuery > gate, "PostgREST query appears before session gate");
+    const gate = source.indexOf("await createAuthenticatedOrbyvenDataClient()");
+    const firstQuery = source.indexOf("dataClient.from(");
+    assert.ok(gate >= 0, "authenticated data client gate missing");
+    assert.ok(firstQuery > gate, "PostgREST query appears before JWT-bound client");
+    assert.doesNotMatch(source, /orbyvenSupabase\.from\(/);
   }
+});
+
+test("JWT-bound data client pins validated access token into Authorization", () => {
+  const helper = read("lib/orbyven-authenticated-data.ts");
+  const session = read("lib/orbyven-session.ts");
+
+  assert.match(helper, /requireOrbyvenAccessToken/);
+  assert.match(helper, /Authorization:\s*`Bearer \$\{accessToken\}`/);
+  assert.match(helper, /persistSession:\s*false/);
+  assert.match(helper, /autoRefreshToken:\s*false/);
+  assert.match(helper, /detectSessionInUrl:\s*false/);
+  assert.match(session, /ORBYVEN_ACCESS_TOKEN_REQUIRED/);
 });
 
 test("workspace session gate refreshes once and shares concurrent refresh work", () => {
