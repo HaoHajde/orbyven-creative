@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadWorkspaceActivity, type WorkspaceActivityItem } from "@/lib/modules/activity";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
@@ -40,10 +40,12 @@ export default function WorkspaceActivityCenter({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [nativePushAvailable, setNativePushAvailable] = useState(false);
+  const lastRefreshRequestedAtRef = useRef(0);
 
   const canAccessFinances = ["owner", "admin", "manager"].includes(role);
 
   const load = useCallback(async () => {
+    lastRefreshRequestedAtRef.current = Date.now();
     setLoading(true);
     setError("");
     try {
@@ -91,14 +93,28 @@ export default function WorkspaceActivityCenter({
   }, []);
 
   useEffect(() => {
+    const refreshIfStale = (minimumAgeMs: number) => {
+      if (Date.now() - lastRefreshRequestedAtRef.current < minimumAgeMs) return;
+      void load();
+    };
+
     const timer = window.setTimeout(() => void load(), 0);
-    const refresh = window.setInterval(() => void load(), 5 * 60 * 1000);
-    const onFocus = () => void load();
+    const refresh = window.setInterval(() => refreshIfStale(4 * 60 * 1000), 5 * 60 * 1000);
+    const onFocus = () => refreshIfStale(2_000);
+    const onResume = (event: Event) => {
+      const backgroundMs =
+        (event as CustomEvent<{ backgroundMs?: number }>).detail?.backgroundMs ?? 0;
+      if (backgroundMs < 15_000) return;
+      refreshIfStale(10_000);
+    };
+
     window.addEventListener("focus", onFocus);
+    window.addEventListener("orbyven:app-resume", onResume);
     return () => {
       window.clearTimeout(timer);
       window.clearInterval(refresh);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("orbyven:app-resume", onResume);
     };
   }, [load]);
 
