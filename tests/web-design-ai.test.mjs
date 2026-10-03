@@ -258,9 +258,11 @@ test("Web Design intent architect respects explicit section instructions and alt
 test("Generative Web Design consumes the deterministic Site Strategy before rendering", () => {
   const server = read("lib/ai/web-design-server.ts");
   const intent = read("lib/ai/web-design-intent.ts");
+  const context = read("lib/ai/web-design-generation-context.ts");
 
-  assert.match(server, /buildWebDesignStrategy\(prompt, current\)/);
-  assert.match(server, /webDesignStrategyInstruction\(strategy\)/);
+  assert.match(server, /prepareWebDesignGenerationContext\(prompt, current, interviewFacts\)/);
+  assert.match(context, /buildWebDesignStrategy\(prompt, current\)/);
+  assert.match(context, /webDesignStrategyInstruction\(strategy\)/);
   assert.match(server, /site_strategy: strategy/);
   assert.match(server, /applyWebDesignStrategy\(parsedDraft, strategy\)/);
   assert.match(intent, /primaryGoal/);
@@ -413,10 +415,11 @@ test("Design DNA leaves compose and refine drafts untouched", () => {
 
 test("Generative Web Design evaluates Design DNA candidates before persistence", () => {
   const server = read("lib/ai/web-design-server.ts");
+  const context = read("lib/ai/web-design-generation-context.ts");
   const variation = read("lib/ai/web-design-variation.ts");
   const selector = read("lib/ai/web-design-candidate-selection.ts");
 
-  assert.match(server, /designDnaInstruction\(current, strategy, prompt\)/);
+  assert.match(context, /designDnaInstruction\(current, strategy, prompt\)/);
   assert.match(server, /selectBestWebDesignCandidate\(/);
   assert.match(selector, /getAlternativeDesignDnaCandidates\(current, prompt, 3\)/);
   assert.match(selector, /applySpecificDesignDna/);
@@ -751,11 +754,12 @@ test("Broad visual refinement remains flexible when no explicit field is targete
 
 test("Generative Web Design applies Refine Locks before candidate selection", () => {
   const server = read("lib/ai/web-design-server.ts");
+  const context = read("lib/ai/web-design-generation-context.ts");
   const locks = read("lib/ai/web-design-refine-locks.ts");
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
-  assert.match(server, /resolveWebDesignRefineScope\(prompt, strategy\)/);
-  assert.match(server, /webDesignRefineScopeInstruction\(refineScope\)/);
+  assert.match(context, /resolveWebDesignRefineScope\(prompt, strategy\)/);
+  assert.match(context, /webDesignRefineScopeInstruction\(refineScope\)/);
   assert.match(server, /applyWebDesignRefineScope\(strategicDraft, current, refineScope\)/);
   assert.ok(
     server.indexOf("applyWebDesignRefineScope(strategicDraft") <
@@ -1198,13 +1202,14 @@ test("Smart Interview maps clear conversion answers locally and leaves complex g
   );
 });
 
-test("Smart Interview queue persists across refreshes and resets with preset changes", () => {
+test("Smart Interview queue persists per workspace and resets with preset changes", () => {
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
   assert.match(specialist, /INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01"/);
-  assert.match(specialist, /getItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_QUEUE_KEY,\s*workspaceId\s*\)/);
+  assert.match(specialist, /getItem\(interviewQueueStorageKey\)/);
   assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
-  assert.match(specialist, /removeItem\(INTERVIEW_QUEUE_KEY\)/);
+  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, organizationId\)/);
   assert.match(specialist, /setInterviewQuestions\(\[\]\)/);
 });
 
