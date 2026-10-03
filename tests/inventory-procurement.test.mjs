@@ -140,7 +140,7 @@ test("reserved stock is protected from unrelated task consumption", () => {
 
 test("work readiness treats unreserved or missing materials as operational attention", () => {
   const readiness = read("lib/automation/work-readiness.ts");
-  const tasksUi = read("components/modules/TasksModule.tsx");
+  const tasksUi = read("components/modules/tasks/WorkFileSummary.tsx");
   assert.match(readiness, /key: "materials"/);
   assert.match(readiness, /inventoryShortageLines/);
   assert.match(readiness, /inventoryUnreadyLines/);
@@ -152,7 +152,7 @@ test("work readiness treats unreserved or missing materials as operational atten
 test("procurement consolidates shopping by supplier and real work cost includes stock consumption", () => {
   const inventoryUi = read("components/modules/InventoryModule.tsx");
   const tasksData = read("lib/modules/tasks.ts");
-  const tasksUi = read("components/modules/TasksModule.tsx");
+  const tasksUi = read("components/modules/tasks/WorkFileSummary.tsx");
 
   assert.match(inventoryUi, /Listă de cumpărături/);
   assert.match(inventoryUi, /prepareSupplierPurchase/);
