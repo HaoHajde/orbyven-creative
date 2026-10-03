@@ -8,7 +8,7 @@ const read = (relativePath) =>
 test("Alpha 0.13 declares the Expo push project dependency without hardcoding an EAS id", () => {
   const pkg = JSON.parse(read("../package.json"));
   const config = JSON.parse(read("../app.json"));
-  const app = read("../App.tsx");
+  const app = read("../App.tsx") + "\n" + read("../native-support.ts");
 
   assert.equal(pkg.version, "0.13.0");
   assert.equal(pkg.dependencies["expo-constants"], "~57.0.20");
@@ -21,7 +21,7 @@ test("Alpha 0.13 declares the Expo push project dependency without hardcoding an
 });
 
 test("remote notification navigation is restricted to ORBYVEN URLs", () => {
-  const app = read("../App.tsx");
+  const app = read("../App.tsx") + "\n" + read("../native-support.ts");
 
   assert.match(app, /typeof data\?\.url === "string"/);
   assert.match(app, /const navigateTrustedUrl = useCallback/);
