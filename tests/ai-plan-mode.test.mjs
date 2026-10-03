@@ -126,7 +126,9 @@ test("Language layer cannot rewrite Plan Mode actions", () => {
 });
 
 test("Workspace renders separate per-step confirmation instead of one bulk execution control", () => {
-  const source = read("components/WorkspaceIntelligence.tsx");
+  const source =
+    read("components/WorkspaceIntelligence.tsx") +
+    read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(source, />PLAN<\/p>/);
   assert.match(source, /Confirmare pas cu pas/);
   assert.match(source, /"Confirmă"/);
@@ -181,11 +183,13 @@ test("Plan Recovery endpoint is authenticated, bounded and no-store", () => {
 
 test("Recovered plans remain audited and explicitly confirmed step by step", () => {
   const source = read("lib/ai/plan-server.ts");
-  const ui = read("components/WorkspaceIntelligence.tsx");
+  const ui =
+    read("components/WorkspaceIntelligence.tsx") +
+    read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(source, /p_action: "ai_plan\.recovered"/);
   assert.match(source, /execution: "proposal_only_explicit_confirmation_required"/);
   assert.match(ui, /PLAN RECOVERY/);
-  assert.match(ui, /recoverPlanAction/);
+  assert.match(ui, /onRecoverPlanAction/);
   assert.match(ui, /"Confirmă"/);
   assert.doesNotMatch(ui, />\\s*Confirmă tot\\s*</);
 });
