@@ -80,7 +80,7 @@ export const NATIVE_RUNTIME = {
   ],
 } as const;
 
-const NATIVE_BOOTSTRAP_SCRIPT = `
+export const NATIVE_BOOTSTRAP_SCRIPT = `
 (function () {
   var runtime = ${JSON.stringify(NATIVE_RUNTIME)};
   window.__ORBYVEN_NATIVE__ = runtime;
