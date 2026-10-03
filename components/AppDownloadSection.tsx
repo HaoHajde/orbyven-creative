@@ -84,8 +84,8 @@ export default function AppDownloadSection({
         };
 
   return (
-    <section className="relative z-10 overflow-hidden px-4 pb-10 pt-7 sm:px-6 md:px-10 md:pb-16 md:pt-10">
-      <div className="relative mx-auto max-w-[1500px] overflow-hidden rounded-[38px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_30px_100px_rgba(0,0,0,.08)]">
+    <section className="orbyven-home-download-section relative z-10 overflow-hidden px-4 pb-10 pt-7 sm:px-6 md:px-10 md:pb-16 md:pt-10">
+      <div className="orbyven-home-download-card relative mx-auto max-w-[1500px] overflow-hidden rounded-[38px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_30px_100px_rgba(0,0,0,.08)]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-80"

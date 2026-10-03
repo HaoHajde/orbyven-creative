@@ -305,7 +305,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <section id="modular" className="orbyven-home-soft relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
+      <section id="modular" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--workspace relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[65%] bg-[radial-gradient(circle_at_60%_15%,rgba(75,70,238,0.10),transparent_56%)]" />
         <div className="relative mx-auto max-w-[1500px]">
           <div className="grid gap-9 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:gap-16">
@@ -405,7 +405,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="templates" className="orbyven-home-soft scroll-mt-24 border-y border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+      <section id="templates" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--templates scroll-mt-24 px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="mx-auto max-w-[1500px]">
           <div className="flex items-end justify-between gap-5">
             <div>
@@ -448,7 +448,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section aria-labelledby="invitatii-orbyven" className="orbyven-home-soft border-b border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-20">
+      <section aria-labelledby="invitatii-orbyven" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--invites px-5 py-16 sm:px-6 md:px-10 md:py-20">
         <div className="mx-auto max-w-[1500px]">
           <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Momente care rămân</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
           <h2 id="invitatii-orbyven" className="mt-4 max-w-3xl text-[38px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-[52px]">Momente <span className="relative z-10 -mx-[0.035em] text-[var(--home-violet)]">personale.</span> Un link memorabil.</h2>
@@ -473,7 +473,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="services" className="orbyven-home-soft scroll-mt-24 border-y border-[var(--border)] px-5 py-16 sm:px-6 md:px-10 md:py-24">
+      <section id="services" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--services scroll-mt-24 px-5 py-16 sm:px-6 md:px-10 md:py-24">
         <div className="mx-auto max-w-[1500px]">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -510,7 +510,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="orbyven-home-soft relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
+      <section id="pricing" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--pricing relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[30%] h-[460px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--accent-soft-2)] blur-[160px]" />
         <div className="relative mx-auto max-w-[1500px]">
           <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Alegi ritmul în care crești</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
@@ -583,7 +583,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="start" className="scroll-mt-24 px-5 pb-8 sm:px-6 md:px-10">
+      <section id="start" className="orbyven-home-flow-section orbyven-home-flow-section--start scroll-mt-24 px-5 pb-8 sm:px-6 md:px-10">
         <div className="orbyven-home-start-card mx-auto max-w-[1500px] rounded-[34px] bg-[var(--button)] px-6 py-14 text-[var(--button-text)] sm:px-8 md:px-12 md:py-18">
           <p className="text-[10px] uppercase tracking-[0.18em] opacity-50">Start</p>
           <div className="mt-4 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">

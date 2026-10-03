@@ -35,8 +35,8 @@ const legalLinks = [
 
 export default function SiteFooter({ theme, activePage }: { theme: Theme; activePage: SitePage }) {
   return (
-    <footer className="relative z-10 px-5 pb-6 sm:px-6 md:px-10 md:pb-8">
-      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-8 text-[var(--button-text)] sm:px-8 md:px-12 md:py-10">
+    <footer className="orbyven-home-footer relative z-10 px-5 pb-6 sm:px-6 md:px-10 md:pb-8">
+      <div className="orbyven-home-footer-card mx-auto max-w-[1500px] overflow-hidden rounded-[34px] bg-[var(--button)] px-6 py-8 text-[var(--button-text)] sm:px-8 md:px-12 md:py-10">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col items-start gap-3">
             <BrandLogo theme={theme === "dark" ? "light" : "dark"} />
