@@ -29,6 +29,15 @@ function getNativeRuntime() {
   return (window as WindowWithNativeRuntime).__ORBYVEN_NATIVE__ ?? null;
 }
 
+function isEditableElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), select:not([disabled]), [contenteditable="true"]'
+    )
+  );
+}
+
 export default function AppModeRuntime() {
   useEffect(() => {
     const media = window.matchMedia("(display-mode: standalone)");
@@ -66,6 +75,35 @@ export default function AppModeRuntime() {
       }));
     };
 
+    let editingState = false;
+    let focusTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const postEditingState = (active: boolean) => {
+      if (editingState === active) return;
+      editingState = active;
+      const bridge = (window as WindowWithNativeRuntime).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:editing-state",
+        active,
+      }));
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+        focusTimer = null;
+      }
+      if (isEditableElement(event.target)) postEditingState(true);
+    };
+
+    const handleFocusOut = () => {
+      if (focusTimer) clearTimeout(focusTimer);
+      focusTimer = setTimeout(() => {
+        focusTimer = null;
+        postEditingState(isEditableElement(document.activeElement));
+      }, 0);
+    };
+
     const handlePageShow = () => {
       resume();
       postWebReady();
@@ -82,6 +120,8 @@ export default function AppModeRuntime() {
     media.addEventListener("change", syncMode);
     window.addEventListener("orbyven:native-ready", syncMode);
     window.addEventListener("orbyven:native-network-change", syncNativeNetwork);
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("pageshow", handlePageShow);
 
@@ -89,8 +129,12 @@ export default function AppModeRuntime() {
       media.removeEventListener("change", syncMode);
       window.removeEventListener("orbyven:native-ready", syncMode);
       window.removeEventListener("orbyven:native-network-change", syncNativeNetwork);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("pageshow", handlePageShow);
+      if (focusTimer) clearTimeout(focusTimer);
+      postEditingState(false);
       delete document.documentElement.dataset.appMode;
       delete document.documentElement.dataset.nativePlatform;
       delete document.documentElement.dataset.nativeVersion;

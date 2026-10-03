@@ -60,6 +60,9 @@ test("installed web app publishes standalone runtime mode without caching privat
   assert.match(runtime, /orbyven:native-network-change/);
   assert.match(runtime, /dataset\.nativeNetwork/);
   assert.match(runtime, /orbyven:app-resume/);
+  assert.match(runtime, /orbyven:editing-state/);
+  assert.match(runtime, /focusin/);
+  assert.match(runtime, /focusout/);
   assert.match(layout, /AppModeRuntime/);
   assert.match(css, /data-app-mode="standalone"/);
   assert.match(css, /orbyven-workspace-header/);
