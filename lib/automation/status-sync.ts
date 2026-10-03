@@ -165,6 +165,51 @@ export async function completeElapsedWorkEventsForTask(
 }
 
 
+export async function syncCrmAfterWorkCompleted(
+  organizationId: string,
+  clientId: string,
+  taskTitle?: string | null
+) {
+  requireOrganizationId(organizationId);
+  if (!clientId.trim()) {
+    return { updated: false as const, reason: "missing_client" as const };
+  }
+
+  const { data: client, error: clientError } = await orbyvenSupabase
+    .from("crm_leads")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("id", clientId)
+    .single();
+
+  if (clientError || !client) {
+    throw clientError ?? new Error("Clientul lucrării nu a putut fi încărcat.");
+  }
+
+  const now = new Date().toISOString();
+  const { error: updateError } = await orbyvenSupabase
+    .from("crm_leads")
+    .update({ last_contact_at: now })
+    .eq("organization_id", organizationId)
+    .eq("id", clientId);
+  if (updateError) throw updateError;
+
+  const title = taskTitle?.trim();
+  const { error: activityError } = await orbyvenSupabase
+    .from("crm_lead_activities")
+    .insert({
+      organization_id: organizationId,
+      lead_id: clientId,
+      kind: "status",
+      body: title
+        ? `Lucrarea „${title}” a fost finalizată.`
+        : "Lucrarea a fost finalizată.",
+      occurred_at: now,
+    });
+
+  return { updated: true as const, activityLogged: !activityError };
+}
+
 export async function syncCrmAfterInvoicePaid(
   organizationId: string,
   clientId: string,
