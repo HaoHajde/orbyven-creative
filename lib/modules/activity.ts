@@ -1,6 +1,6 @@
 "use client";
 
-import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { createOrbyvenAuthenticatedClient } from "@/lib/orbyven-supabase";
 import { requireOrbyvenSession } from "@/lib/orbyven-session";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import {
@@ -65,7 +65,8 @@ export async function loadWorkspaceActivity(
   timeZone: string
 ): Promise<WorkspaceActivityItem[]> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
-  await requireOrbyvenSession();
+  const accessToken = await requireOrbyvenSession();
+  const supabase = createOrbyvenAuthenticatedClient(accessToken);
 
   const now = new Date();
   const nowIso = now.toISOString();
