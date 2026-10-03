@@ -5,6 +5,9 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+const nativeSource = () =>
+  read("App.tsx") + "\n" + read("native-support.ts");
+
 test("Alpha 0.13 preserves SDK-compatible native privacy dependencies", () => {
   const pkg = JSON.parse(read("package.json"));
 
@@ -25,7 +28,7 @@ test("Face ID permission is configured for signed ORBYVEN builds", () => {
 });
 
 test("native shell protects app-switcher privacy and keeps biometric lock non-fatal", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
 
   assert.match(app, /privacyShielded/);
   assert.match(app, /LocalAuthentication\.authenticateAsync/);
@@ -39,7 +42,7 @@ test("native shell protects app-switcher privacy and keeps biometric lock non-fa
 
 
 test("Alpha 0.13 exposes a bounded native runtime bridge and follows the workspace theme", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
 
   assert.match(app, /const APP_VERSION = "0\.13\.0"/);
   assert.match(app, /NATIVE_RUNTIME/);
@@ -54,7 +57,7 @@ test("Alpha 0.13 exposes a bounded native runtime bridge and follows the workspa
 
 
 test("native workspace navigation can request bounded selection haptics", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
   const workspace = read("../components/WorkspaceShell.tsx");
 
   assert.match(app, /"navigation-haptics"/);
@@ -66,7 +69,7 @@ test("native workspace navigation can request bounded selection haptics", () => 
 
 
 test("Alpha 0.13 preserves in-flight workspace state across short network interruptions", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
 
   assert.match(app, /"state-preserving-reconnect"/);
   assert.match(app, /"network-state-bridge"/);
@@ -83,7 +86,7 @@ test("Alpha 0.13 preserves in-flight workspace state across short network interr
 
 
 test("Alpha 0.13 keeps trusted deep links stateful and limits full remounts to hard recovery", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
 
   assert.match(app, /"stateful-deep-links"/);
   assert.match(app, /"workspace-continuity"/);
@@ -103,7 +106,7 @@ test("Alpha 0.13 keeps trusted deep links stateful and limits full remounts to h
 
 
 test("Alpha 0.13 waits for explicit web and workspace readiness before replaying pending intents", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
   const runtime = read("../components/pwa/AppModeRuntime.tsx");
   const workspace = read("../components/WorkspaceShell.tsx");
 
@@ -125,7 +128,7 @@ test("Alpha 0.13 waits for explicit web and workspace readiness before replaying
 
 
 test("Alpha 0.13 routes work deadline notifications through the ready workspace", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
   const workspace = read("../components/WorkspaceShell.tsx");
   const tasks = read("../components/modules/TasksModule.tsx");
 
@@ -150,7 +153,7 @@ test("Alpha 0.13 routes work deadline notifications through the ready workspace"
 
 
 test("Alpha 0.13 hands launch ownership from native shell to the ready workspace without a visual flash", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
 
   assert.match(app, /"native-launch-handoff"/);
   assert.match(app, /const \[startupWebSettled, setStartupWebSettled\] = useState\(false\)/);
@@ -167,7 +170,7 @@ test("Alpha 0.13 hands launch ownership from native shell to the ready workspace
 
 
 test("Alpha 0.13 mirrors Activity Center attention count into the native iOS app badge", () => {
-  const app = read("App.tsx");
+  const app = nativeSource();
   const activity = read("../components/WorkspaceActivityCenter.tsx");
 
   assert.match(app, /"native-attention-badge"/);
