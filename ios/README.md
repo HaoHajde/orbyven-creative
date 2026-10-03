@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.14
+# ORBYVEN iOS — Alpha 0.15
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -298,3 +298,10 @@ ORBYVEN nu cere permisiunea de notificări doar pentru badge. Dacă utilizatorul
 Versiunea 0.14.0 face update-urile web sigure pentru utilizarea nativă. Endpoint-ul de runtime freshness continuă să detecteze imediat deployment-urile noi, dar atunci când pagina rulează în shell-ul iOS nu mai execută direct `window.location.reload()`. În schimb, trimite versiunea nouă către aplicația nativă, iar utilizatorul poate alege să actualizeze acum sau să amâne.
 
 Dacă actualizarea este aplicată, versiunea este persistată înainte de reload pentru a evita buclele. Dacă este amânată, WebView-ul și formularele curente rămân intacte. Browserul și PWA-ul instalat păstrează refresh-ul automat existent, deoarece nu au shell nativ pentru acest control.
+
+
+## Alpha 0.15
+
+Versiunea 0.15.0 protejează editarea pe iPhone împotriva refresh-ului accidental prin gesture. Runtime-ul web urmărește doar focusul elementelor editabile și transmite shell-ului nativ o stare booleană limitată. Cât timp un astfel de control este activ, `pullToRefreshEnabled` este oprit; după blur către un element ne-editabil, gestul revine.
+
+Bridge-ul nu trimite valoarea câmpului, textul introdus sau alte date de formular. Transmite exclusiv faptul că un control editabil este activ, păstrând aceeași separare dintre UI nativ și datele workspace-ului.
