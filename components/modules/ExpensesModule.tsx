@@ -886,7 +886,7 @@ export default function ExpensesModule({
                             {enabledModules.includes("documents") ? (
                               <button
                                 type="button"
-                                onClick={() => onOpenModule("documents", { create: true, taskId: expense.task_id ?? undefined, purchaseOrderId: expense.purchase_order_id ?? undefined })}
+                                onClick={() => onOpenModule("documents", { create: true, taskId: expense.task_id ?? undefined, purchaseOrderId: expense.purchase_order_id ?? undefined, documentCategory: "receipt" })}
                                 className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-[10px] font-semibold"
                               >
                                 + Încarcă dovadă
