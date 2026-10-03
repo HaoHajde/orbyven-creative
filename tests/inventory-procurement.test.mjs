@@ -140,7 +140,7 @@ test("reserved stock is protected from unrelated task consumption", () => {
 
 test("work readiness treats unreserved or missing materials as operational attention", () => {
   const readiness = read("lib/automation/work-readiness.ts");
-  const tasksUi = read("components/modules/TasksModule.tsx");
+  const tasksUi = read("components/modules/tasks/WorkFileSummary.tsx");
   assert.match(readiness, /key: "materials"/);
   assert.match(readiness, /inventoryShortageLines/);
   assert.match(readiness, /inventoryUnreadyLines/);
