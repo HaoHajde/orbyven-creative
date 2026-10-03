@@ -112,24 +112,24 @@ test("Verified Section Planner never restructures targeted refine requests", () 
   assert.deepEqual(planned.strategy, base);
 });
 
-test("Generative Web Design applies verified section evidence before downstream architecture stages", () => {
+test("Generative Web Design prepares verified architecture before downstream stages", () => {
   const server = read("lib/ai/web-design-server.ts");
   const planner = read("lib/ai/web-design-section-evidence.ts");
+  const context = read("lib/ai/web-design-generation-context.ts");
 
-  assert.match(server, /applyVerifiedSectionEvidence\(/);
-  assert.match(server, /const strategy = sectionEvidence\.strategy/);
-  assert.match(server, /verified_section_plan:/);
-  assert.match(server, /sectionEvidence:/);
+  assert.match(server, /prepareWebDesignGenerationContext\(/);
+  assert.match(context, /applyVerifiedSectionEvidence\(/);
+  assert.match(context, /webDesignStrategyInstruction\(strategy\)/);
+  assert.match(context, /designDnaInstruction\(current, strategy, prompt\)/);
+  assert.match(context, /resolveWebDesignRefineScope\(prompt, strategy\)/);
+  assert.match(server, /site_strategy: strategy/);
   assert.ok(
-    server.indexOf("applyVerifiedSectionEvidence(") <
-      server.indexOf("webDesignStrategyInstruction(strategy)")
-  );
-  assert.ok(
-    server.indexOf("applyVerifiedSectionEvidence(") <
-      server.indexOf("designDnaInstruction(current, strategy, prompt)")
+    server.indexOf("prepareWebDesignGenerationContext(") <
+      server.indexOf("selectBestWebDesignCandidate(")
   );
   assert.match(planner, /OPTIONAL_NEGATIVE_SECTIONS/);
   assert.match(planner, /conversion_goal/);
   assert.doesNotMatch(planner, /fetch\(/);
   assert.doesNotMatch(planner, /Math\.random/);
+  assert.doesNotMatch(context, /fetch\(/);
 });
