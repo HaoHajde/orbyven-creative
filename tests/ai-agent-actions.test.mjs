@@ -125,6 +125,6 @@ test("Confirmation endpoint is bounded and UI exposes confirm/reject", () => {
   assert.match(route, /decideMutationProposal/);
   assert.match(route, /Cache-Control": "no-store"/);
   assert.match(ui, /CONFIRMARE NECESARĂ/);
-  assert.match(ui, /decideProposal\(action, "confirm"\)/);
-  assert.match(ui, /decideProposal\(action, "reject"\)/);
+  assert.match(ui, /onDecideProposal\(action, "confirm"\)/);
+  assert.match(ui, /onDecideProposal\(action, "reject"\)/);
 });
