@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   AppState,
   Linking,
   Platform,
@@ -23,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.11.0";
+const APP_VERSION = "0.12.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -95,6 +96,7 @@ const NATIVE_RUNTIME = {
     "documents",
     "haptics",
     "local-notifications",
+    "native-launch-handoff",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -307,6 +309,9 @@ export default function App() {
   const [canGoForward, setCanGoForward] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [webHasLoaded, setWebHasLoaded] = useState(false);
+  const [startupWebSettled, setStartupWebSettled] = useState(false);
+  const [initialUnlockResolved, setInitialUnlockResolved] = useState(false);
+  const [launchVisible, setLaunchVisible] = useState(true);
   const [privacyShielded, setPrivacyShielded] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
@@ -324,6 +329,7 @@ export default function App() {
   const webFailedRef = useRef(false);
   const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentUrlRef = useRef(WORKSPACE_URL);
+  const launchOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     currentUrlRef.current = currentUrl;
@@ -399,6 +405,7 @@ export default function App() {
     } finally {
       authenticationInProgress.current = false;
       setUnlocking(false);
+      setInitialUnlockResolved(true);
     }
   }, []);
 
@@ -415,6 +422,27 @@ export default function App() {
 
     return () => clearTimeout(timer);
   }, [authenticateToUnlock]);
+
+  useEffect(() => {
+    if (!launchVisible || !initialUnlockResolved || !startupWebSettled) return;
+
+    const animation = Animated.timing(launchOpacity, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    });
+
+    animation.start(({ finished }) => {
+      if (finished) setLaunchVisible(false);
+    });
+
+    return () => animation.stop();
+  }, [
+    initialUnlockResolved,
+    launchOpacity,
+    launchVisible,
+    startupWebSettled,
+  ]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
@@ -690,6 +718,7 @@ export default function App() {
       if (message.type === "orbyven:web-ready") {
         webRuntimeReadyRef.current = true;
         setWebHasLoaded(true);
+        setStartupWebSettled(true);
       } else if (message.type === "orbyven:workspace-ready") {
         workspaceReadyRef.current = true;
         setTimeout(() => {
@@ -950,16 +979,19 @@ export default function App() {
           onLoadEnd={() => {
             webFailedRef.current = false;
             setWebHasLoaded(true);
+            setStartupWebSettled(true);
             setConnection("online");
             emitNativeNetworkState(true);
           }}
           onError={() => {
             webFailedRef.current = true;
+            setStartupWebSettled(true);
             setConnection("offline");
           }}
           onHttpError={({ nativeEvent }) => {
             if (nativeEvent.statusCode >= 500) {
               webFailedRef.current = true;
+              setStartupWebSettled(true);
               setConnection("offline");
             }
           }}
@@ -1025,7 +1057,28 @@ export default function App() {
       </View>
       ) : null}
 
-      {privacyShielded ? (
+      {launchVisible ? (
+        <Animated.View
+          pointerEvents="auto"
+          accessibilityRole="progressbar"
+          accessibilityLabel="ORBYVEN"
+          style={[
+            styles.launchHandoff,
+            { backgroundColor: background, opacity: launchOpacity },
+          ]}
+        >
+          <View style={styles.launchMark}>
+            <Text style={styles.launchMarkText}>OC</Text>
+          </View>
+          <Text style={[styles.launchTitle, { color: text }]}>ORBYVEN</Text>
+          <Text style={[styles.launchSubtitle, { color: muted }]}>
+            {nativeCopy.syncing}
+          </Text>
+          <ActivityIndicator size="small" style={styles.launchSpinner} />
+        </Animated.View>
+      ) : null}
+
+      {privacyShielded && !launchVisible ? (
         <View style={[styles.privacyShield, { backgroundColor: background }]}>
           <View style={styles.shieldMark}>
             <Text style={styles.shieldMarkText}>OC</Text>
@@ -1091,6 +1144,52 @@ function ToolbarButton({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  launchHandoff: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 140,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  launchMark: {
+    width: 78,
+    height: 78,
+    borderRadius: 26,
+    backgroundColor: "#17132b",
+    borderWidth: 1,
+    borderColor: "#7458ee",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#7458ee",
+    shadowOpacity: 0.24,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  launchMarkText: {
+    color: "#ffffff",
+    fontWeight: "900",
+    letterSpacing: -1.6,
+    fontSize: 23,
+  },
+  launchTitle: {
+    marginTop: 20,
+    fontSize: 21,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+  },
+  launchSubtitle: {
+    marginTop: 7,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  launchSpinner: {
+    marginTop: 18,
+  },
   networkNotice: {
     position: "absolute",
     top: 8,
