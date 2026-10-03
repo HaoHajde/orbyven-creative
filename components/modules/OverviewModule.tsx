@@ -8,7 +8,7 @@ import { rankNextBestActions } from "@/lib/automation/next-best-action";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   organizationId: string;
@@ -95,8 +95,10 @@ export default function OverviewModule({
   const [snapshotNow, setSnapshotNow] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const lastRefreshRequestedAtRef = useRef(0);
 
   const load = useCallback(async () => {
+    lastRefreshRequestedAtRef.current = Date.now();
     setLoading(true);
     setError("");
     try {
@@ -119,6 +121,19 @@ export default function OverviewModule({
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
+  }, [load]);
+
+  useEffect(() => {
+    const handleResume = (event: Event) => {
+      const backgroundMs =
+        (event as CustomEvent<{ backgroundMs?: number }>).detail?.backgroundMs ?? 0;
+      if (backgroundMs < 15_000) return;
+      if (Date.now() - lastRefreshRequestedAtRef.current < 10_000) return;
+      void load();
+    };
+
+    window.addEventListener("orbyven:app-resume", handleResume);
+    return () => window.removeEventListener("orbyven:app-resume", handleResume);
   }, [load]);
 
   const computed = useMemo(() => {
