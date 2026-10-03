@@ -118,7 +118,7 @@ export default function WorkspaceContent({
   } else if (activeModule === "estimates") {
     content = <EstimatesModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} />;
   } else if (activeModule === "documents") {
-    content = <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} initialPurchaseOrderId={intent?.purchaseOrderId} initialCategory={intent?.documentCategory} initialExpenseId={intent?.expenseId} />;
+    content = <DocumentsModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialCreate={initialCreate} initialRecordId={intent?.recordId} initialClientId={intent?.clientId} initialTaskId={intent?.taskId} initialEstimateId={intent?.estimateId} initialPurchaseOrderId={intent?.purchaseOrderId} initialCategory={intent?.documentCategory} initialExpenseId={intent?.expenseId} />;
   } else if (activeModule === "inventory") {
     content = <InventoryModule key={navigation.token} organizationId={organizationId} locale={locale} role={role} enabledModules={enabledModules} onOpenModule={onOpenModule} initialRecordId={intent?.recordId} initialTaskId={intent?.taskId} />;
   } else if (activeModule === "expenses") {
