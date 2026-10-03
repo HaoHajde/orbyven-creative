@@ -886,7 +886,7 @@ export default function ExpensesModule({
                             {enabledModules.includes("documents") ? (
                               <button
                                 type="button"
-                                onClick={() => onOpenModule("documents", { create: true, taskId: expense.task_id ?? undefined, purchaseOrderId: expense.purchase_order_id ?? undefined, expenseId: expense.id, documentCategory: "receipt" })}
+                                onClick={() => onOpenModule("documents", { create: true, clientId: expense.client_id ?? undefined, taskId: expense.task_id ?? undefined, estimateId: expense.estimate_id ?? undefined, purchaseOrderId: expense.purchase_order_id ?? undefined, expenseId: expense.id, documentCategory: "receipt" })}
                                 className="h-9 rounded-full border border-[var(--border-strong)] px-3 text-[10px] font-semibold"
                               >
                                 + Încarcă dovadă
