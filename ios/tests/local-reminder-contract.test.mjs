@@ -21,7 +21,7 @@ test("Alpha 0.13 preserves Expo local notifications and config plugin", () => {
 });
 
 test("native shell schedules, cancels and routes local calendar reminders", () => {
-  const app = read("../App.tsx");
+  const app = read("../App.tsx") + "\n" + read("../native-support.ts");
 
   assert.match(app, /scheduleNotificationAsync/);
   assert.match(app, /cancelScheduledNotificationAsync/);
@@ -55,7 +55,7 @@ test("workspace opens the exact calendar record and acknowledges native routing"
 
 
 test("work deadlines schedule local iPhone reminders and cancel when work closes", () => {
-  const app = read("../App.tsx");
+  const app = read("../App.tsx") + "\n" + read("../native-support.ts");
   const tasks = read("../../components/modules/TasksModule.tsx");
   const workspace = read("../../components/WorkspaceShell.tsx");
 
