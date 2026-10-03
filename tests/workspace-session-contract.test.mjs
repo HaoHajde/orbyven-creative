@@ -23,7 +23,7 @@ test("workspace high-fanout reads bind PostgREST to the validated JWT", () => {
 test("workspace session gate refreshes once and shares concurrent refresh work", () => {
   const session = read("lib/orbyven-session.ts");
 
-  assert.match(session, /let sessionGatePromise: Promise<boolean> \| null = null/);
+  assert.match(session, /let sessionGatePromise: Promise<string | null> | null = null| null = null/);
   assert.match(session, /if \(sessionGatePromise\) return sessionGatePromise/);
   assert.match(session, /auth\.getSession\(\)/);
   assert.match(session, /REFRESH_MARGIN_MS = 90_000/);
