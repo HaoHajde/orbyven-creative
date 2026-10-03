@@ -948,7 +948,7 @@ export default function ExpensesModule({
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {enabledModules.includes("documents") ? (
-                          <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.purchase_order_id })} className="h-8 rounded-full border border-[var(--border-strong)] px-3 text-[9px] font-semibold">+ Dovadă</button>
+                          <button type="button" onClick={() => onOpenModule("documents", { create: true, taskId: order.task_id ?? undefined, purchaseOrderId: order.purchase_order_id, documentCategory: "receipt" })} className="h-8 rounded-full border border-[var(--border-strong)] px-3 text-[9px] font-semibold">+ Dovadă</button>
                         ) : null}
                         {financeReady ? (
                           <button type="button" onClick={() => choosePurchaseOrder(order.purchase_order_id, true)} className="h-8 rounded-full bg-[var(--button)] px-3 text-[9px] font-semibold text-[var(--button-text)]">+ Cost furnizor</button>
