@@ -718,3 +718,23 @@ test("post-service and aftercare expose one primary action before advanced optio
   assert.match(panels, /data-aftercare-options="true"/);
   assert.match(panels, /Revenire sau lucrare recurentă/);
 });
+
+
+test("missing expense evidence upload keeps full context and auto-attaches", () => {
+  const navigation = read("lib/workspace-navigation.ts");
+  assert.match(navigation, /expenseId\?: string/);
+  assert.match(navigation, /documentCategory\?:/);
+
+  const finance = read("components/modules/ExpensesModule.tsx");
+  assert.match(finance, /expenseId: expense\.id/);
+  assert.match(finance, /documentCategory: "receipt"/);
+  assert.match(finance, /clientId: expense\.client_id/);
+  assert.match(finance, /estimateId: expense\.estimate_id/);
+
+  const documents = read("components/modules/DocumentsModule.tsx");
+  assert.match(documents, /initialExpenseId\?: string/);
+  assert.match(documents, /initialCategory\?: DocumentCategory/);
+  assert.match(documents, /attachExpenseDocument\(organizationId, initialExpenseId, created\.id\)/);
+  assert.match(documents, /initialClientId \?\? ""/);
+  assert.match(documents, /initialEstimateId \?\? ""/);
+});
