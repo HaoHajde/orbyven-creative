@@ -156,7 +156,8 @@ test("Alpha 0.12 hands launch ownership from native shell to the ready workspace
   assert.match(app, /const \[startupWebSettled, setStartupWebSettled\] = useState\(false\)/);
   assert.match(app, /const \[initialUnlockResolved, setInitialUnlockResolved\] = useState\(false\)/);
   assert.match(app, /const \[launchVisible, setLaunchVisible\] = useState\(true\)/);
-  assert.match(app, /new Animated\.Value\(1\)/);
+  assert.match(app, /const \[launchOpacity\] = useState\(\(\) => new Animated\.Value\(1\)\)/);
+  assert.doesNotMatch(app, /useRef\(new Animated\.Value\(1\)\)\.current/);
   assert.match(app, /Animated\.timing\(launchOpacity/);
   assert.match(app, /duration: 180/);
   assert.match(app, /setStartupWebSettled\(true\)/);
