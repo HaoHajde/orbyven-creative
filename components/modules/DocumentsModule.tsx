@@ -16,6 +16,7 @@ import {
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
+import { attachExpenseDocument } from "@/lib/modules/expenses";
 import { Field, ModuleAdvancedFields, ModuleEmpty, ModuleError, ModuleHeader, ModuleMetric, ModuleNextAction, ModuleProgressiveMetrics, moduleInputClass } from "@/components/modules/ModuleKit";
 import { useWorkspaceCreateFocus, useWorkspaceRecordFocus } from "@/components/modules/useWorkspaceRecordFocus";
 import { useWorkspaceLiveContext } from "@/components/modules/useWorkspaceLiveContext";
@@ -32,6 +33,7 @@ type Props = {
   initialTaskId?: string;
   initialPurchaseOrderId?: string;
   initialCategory?: DocumentCategory;
+  initialExpenseId?: string;
 };
 
 const DOCUMENT_ACCEPT = [".pdf",".jpg",".jpeg",".png",".webp",".heic",".heif",".txt",".csv",".doc",".docx",".xls",".xlsx",".ppt",".pptx"].join(",");
@@ -65,7 +67,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId, initialCategory }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId, initialCategory, initialExpenseId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -250,6 +252,18 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
       });
       setDocuments((current) => [created, ...current]);
       postNativeBridge("orbyven:document-uploaded", { id: created.id, name: created.name });
+      if (initialExpenseId) {
+        try {
+          await attachExpenseDocument(organizationId, initialExpenseId, created.id);
+        } catch (attachError) {
+          console.error(attachError);
+          setError(
+            attachError instanceof Error
+              ? `Documentul a fost încărcat, dar nu a putut fi atașat automat cheltuielii: ${attachError.message}`
+              : "Documentul a fost încărcat, dar nu a putut fi atașat automat cheltuielii."
+          );
+        }
+      }
       resetUpload();
       setUploadOpen(false);
     } catch (saveError) {
