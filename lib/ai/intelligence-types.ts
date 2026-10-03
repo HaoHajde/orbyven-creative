@@ -77,10 +77,55 @@ export type IntelligenceAction =
       }>;
     };
 
+export type IntelligenceFocusReason =
+  | "blocked"
+  | "overdue"
+  | "priority"
+  | "unassigned"
+  | "unplanned"
+  | "lead_followup"
+  | "estimate_followup"
+  | "appointment";
+
+export type IntelligenceFocusInsight = {
+  reason?: IntelligenceFocusReason;
+  why: string;
+  consequence: string;
+  nextStep: string;
+  confidence: "high" | "medium";
+};
+
+export type IntelligenceDecisionOption = {
+  label: string;
+  impact: string;
+  tradeoff: string;
+  whenToUse: string;
+  handoffPrompt?: string;
+};
+
+export type IntelligenceDecisionSupport = {
+  subject: string;
+  options: IntelligenceDecisionOption[];
+  handoffAvailable?: boolean;
+  confidence: "high" | "medium";
+};
+
+export type IntelligenceOutcome = {
+  planId: string;
+  status: "no_longer_primary" | "shifted" | "still_priority";
+  previousFocus?: string;
+  currentFocus?: string;
+  summary: string;
+  confidence: "high" | "medium";
+};
+
 export type IntelligenceResponse = {
   specialist: IntelligenceSpecialist;
   answer: string;
   facts: Array<{ label: string; value: string }>;
   actions: IntelligenceAction[];
+  focus?: IntelligenceFocusInsight;
+  decision?: IntelligenceDecisionSupport;
+  outcome?: IntelligenceOutcome;
   generatedBy: "orbyven_core";
 };
