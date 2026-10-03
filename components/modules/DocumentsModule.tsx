@@ -87,6 +87,7 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [expenseEvidenceAttached, setExpenseEvidenceAttached] = useState(false);
   const [query, setQuery] = useState("");
   const [scopeTaskId, setScopeTaskId] = useState(initialTaskId ?? "");
   const filePickerRef = useRef<HTMLInputElement>(null);
@@ -242,6 +243,7 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
     if (!canWrite || !file || saving) return;
     setSaving(true);
     setError("");
+    setExpenseEvidenceAttached(false);
     try {
       const created = await uploadDocument(organizationId, {
         file,
@@ -257,6 +259,7 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
       if (initialExpenseId) {
         try {
           await attachExpenseDocument(organizationId, initialExpenseId, created.id);
+          setExpenseEvidenceAttached(true);
         } catch (attachError) {
           console.error(attachError);
           setError(
@@ -319,6 +322,17 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
       />
 
       <div className="mt-8"><ModuleError message={error} /></div>
+
+      {expenseEvidenceAttached && initialExpenseId ? (
+        <div className="mt-3">
+          <ModuleNextAction
+            eyebrow="Legătură completă"
+            title="Dovada este atașată cheltuielii"
+            description="Documentul și contextul financiar au fost sincronizate automat."
+            action={<button type="button" onClick={() => onOpenModule("expenses", { clientId: initialClientId, taskId: initialTaskId, estimateId: initialEstimateId, purchaseOrderId: initialPurchaseOrderId })} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Înapoi la Finanțe →</button>}
+          />
+        </div>
+      ) : null}
 
       <ModuleProgressiveMetrics
         className="mt-8"
