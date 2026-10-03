@@ -52,9 +52,30 @@ export default function AppModeRuntime() {
       }
     };
 
+    let hiddenAt: number | null =
+      document.visibilityState === "hidden" ? Date.now() : null;
+
     const resume = () => {
-      if (document.visibilityState === "visible") {
-        window.dispatchEvent(new Event("orbyven:app-resume"));
+      if (document.visibilityState === "hidden") {
+        if (hiddenAt === null) hiddenAt = Date.now();
+        return;
+      }
+
+      if (document.visibilityState !== "visible") return;
+
+      const backgroundMs =
+        hiddenAt === null ? 0 : Math.max(0, Date.now() - hiddenAt);
+      hiddenAt = null;
+
+      // In the native app the React Native shell owns the resume event and
+      // includes the authoritative background duration. Browser/PWA mode
+      // synthesizes the same contract here.
+      if (!getNativeRuntime()) {
+        window.dispatchEvent(
+          new CustomEvent("orbyven:app-resume", {
+            detail: { backgroundMs },
+          })
+        );
       }
     };
 
