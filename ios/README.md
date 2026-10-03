@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.12
+# ORBYVEN iOS — Alpha 0.13
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,14 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.12:
+Native Alpha 0.13:
+- badge nativ pe iconița ORBYVEN sincronizat cu numărul real de elemente din Activity Center;
+- sursa de adevăr rămâne Activity Center-ul existent, fără tabel sau contor paralel;
+- valoarea este limitată la 99 și se curăță automat când nu mai există atenționări sau workspace-ul este demontat;
+- badge-ul folosește doar permisiunea iOS deja existentă și nu deschide un prompt nou doar pentru această funcție;
+- runtime-ul declară capabilitatea `native-attention-badge`;
+
+Păstrat din Alpha 0.12:
 - launch handoff nativ unic între splash, bootstrap web și workspace, fără alternarea vizibilă loader/privacy/workspace;
 - ecranul de pornire rămâne deasupra WebView-ului până când bootstrap-ul web s-a stabilizat și verificarea locală de acces s-a încheiat;
 - tranziția către workspace folosește un fade nativ scurt de 180 ms;
@@ -277,3 +284,10 @@ La apăsarea notificării, intentul este păstrat până când workspace-ul aute
 Versiunea 0.12.0 unifică pornirea aplicației într-un singur handoff nativ. Splash-ul Expo este urmat de ecranul ORBYVEN al shell-ului, în timp ce WebView-ul, sesiunea și verificarea locală se pregătesc dedesubt. Când runtime-ul web s-a stabilizat și verificarea locală s-a încheiat, shell-ul cedează controlul printr-un fade scurt direct către workspace sau, dacă este necesar, către privacy shield.
 
 Handoff-ul nu modifică autentificarea ORBYVEN, sesiunea Supabase sau RLS. La o eroare reală de încărcare, stratul de launch se închide și lasă recovery-ul existent să devină vizibil, astfel încât aplicația să nu poată rămâne blocată într-un splash infinit.
+
+
+## Alpha 0.13
+
+Versiunea 0.13.0 leagă Activity Center de badge-ul nativ al iconiței ORBYVEN. Numărul afișat pe Home Screen este derivat direct din lista de semnale operaționale deja calculată de Dashboard, limitat la 99 și trimis către shell-ul iOS prin bridge-ul existent.
+
+ORBYVEN nu cere permisiunea de notificări doar pentru badge. Dacă utilizatorul a permis deja notificările/badge-urile, valoarea este sincronizată; dacă nu, funcția rămâne silențioasă. La logout sau demontarea workspace-ului, badge-ul este cerut la zero pentru a evita un indicator rămas stale.
