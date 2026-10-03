@@ -24,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.14.0";
+const APP_VERSION = "0.15.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -107,6 +107,7 @@ const NATIVE_RUNTIME = {
     "native-launch-handoff",
     "native-attention-badge",
     "safe-runtime-update",
+    "editing-safe-refresh",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -338,6 +339,7 @@ export default function App() {
   const [unlocking, setUnlocking] = useState(false);
   const [deviceOffline, setDeviceOffline] = useState(false);
   const [networkNotice, setNetworkNotice] = useState<NetworkNotice>(null);
+  const [editingActive, setEditingActive] = useState(false);
 
   const lastBackgroundAt = useRef<number | null>(null);
   const authenticationInProgress = useRef(false);
@@ -751,6 +753,7 @@ export default function App() {
         href?: string;
         badgeCount?: number;
         runtimeVersion?: string;
+        active?: boolean;
       };
 
       if (message.type === "orbyven:web-ready") {
@@ -782,6 +785,11 @@ export default function App() {
         Number.isFinite(message.badgeCount)
       ) {
         void syncNativeAttentionBadge(message.badgeCount).catch(() => undefined);
+      } else if (
+        message.type === "orbyven:editing-state" &&
+        typeof message.active === "boolean"
+      ) {
+        setEditingActive(message.active);
       } else if (
         message.type === "orbyven:runtime-update-available" &&
         typeof message.runtimeVersion === "string" &&
@@ -1041,6 +1049,7 @@ export default function App() {
           onLoadStart={() => {
             webRuntimeReadyRef.current = false;
             workspaceReadyRef.current = false;
+            setEditingActive(false);
             setConnection("loading");
           }}
           onLoadEnd={() => {
@@ -1065,6 +1074,7 @@ export default function App() {
           onContentProcessDidTerminate={() => {
             webRuntimeReadyRef.current = false;
             workspaceReadyRef.current = false;
+            setEditingActive(false);
             setWebHasLoaded(false);
             setConnection("loading");
             webRef.current?.reload();
@@ -1098,7 +1108,7 @@ export default function App() {
             </View>
           )}
           allowsBackForwardNavigationGestures
-          pullToRefreshEnabled={Platform.OS === "ios"}
+          pullToRefreshEnabled={Platform.OS === "ios" && !editingActive}
           sharedCookiesEnabled
           thirdPartyCookiesEnabled
           domStorageEnabled
