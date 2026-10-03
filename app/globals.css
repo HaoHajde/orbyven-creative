@@ -1057,71 +1057,103 @@ html[data-app-mode="standalone"] button {
 
 
 /* =========================================================
-   ORBYVEN HOMEPAGE LUXURY FLOW V2 — 2026-10-03
-   One continuous premium canvas from orbital hero to footer.
-   Decorative layers fade at their edges so sections never look cut apart.
+   ORBYVEN HOMEPAGE SEAMLESS GALAXY — 2026-10-03
+   One uninterrupted canvas. No section background transitions.
+   Hero keeps the rich orbital scene; stars continue to the footer.
    ========================================================= */
 
 .orbyven-home-main {
   position: relative;
   isolation: isolate;
-  background:
-    var(--home-flow);
-  background-color: var(--bg);
+  background-color: #05060a;
+  background-image:
+    radial-gradient(ellipse 58vw 32vw at 18% 10%, rgba(96,73,213,.095), transparent 76%),
+    radial-gradient(ellipse 54vw 30vw at 86% 34%, rgba(99,84,228,.075), transparent 78%),
+    radial-gradient(ellipse 62vw 34vw at 24% 61%, rgba(119,76,213,.060), transparent 79%),
+    radial-gradient(ellipse 58vw 31vw at 82% 84%, rgba(82,103,213,.055), transparent 80%),
+    linear-gradient(#05060a,#05060a);
 }
 
-/* A single long atmospheric layer under every homepage section. */
+/* One galaxy haze over the whole document, not one glow per section. */
 .orbyven-home-main::before {
   content: "";
   position: absolute;
   z-index: 0;
-  inset: 72vh 0 0;
+  inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 48% 9% at 85% 5%, rgba(151,110,255,.11), transparent 76%),
-    radial-gradient(ellipse 44% 8% at 8% 17%, rgba(82,112,238,.065), transparent 78%),
-    radial-gradient(ellipse 54% 9% at 78% 30%, rgba(132,89,238,.078), transparent 78%),
-    radial-gradient(ellipse 44% 8% at 13% 43%, rgba(91,87,224,.060), transparent 80%),
-    radial-gradient(ellipse 52% 9% at 84% 57%, rgba(155,105,250,.075), transparent 78%),
-    radial-gradient(ellipse 45% 8% at 12% 72%, rgba(77,109,227,.052), transparent 80%),
-    radial-gradient(ellipse 56% 10% at 72% 89%, rgba(143,98,239,.080), transparent 78%),
-    radial-gradient(circle at 103% 14%, transparent 0 360px, rgba(185,160,255,.055) 361px 362px, transparent 363px),
-    radial-gradient(circle at -7% 45%, transparent 0 300px, rgba(130,112,240,.044) 301px 302px, transparent 303px),
-    radial-gradient(circle at 108% 75%, transparent 0 430px, rgba(178,151,255,.045) 431px 432px, transparent 433px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 97%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 97%, transparent 100%);
+    radial-gradient(ellipse 34% 13% at 50% 7%, rgba(159,119,255,.095), transparent 76%),
+    radial-gradient(ellipse 28% 17% at 5% 31%, rgba(82,105,232,.055), transparent 80%),
+    radial-gradient(ellipse 32% 17% at 96% 52%, rgba(145,99,239,.060), transparent 80%),
+    radial-gradient(ellipse 31% 16% at 9% 76%, rgba(96,80,218,.050), transparent 82%),
+    radial-gradient(ellipse 36% 18% at 88% 94%, rgba(133,96,233,.055), transparent 82%),
+    linear-gradient(116deg, transparent 0 39%, rgba(181,156,255,.018) 49%, transparent 61%);
+  opacity: .95;
 }
 
-/* Sparse stellar language continues after the hero without becoming busy. */
+/* Continuous stars from top to bottom. Multiple repeat grids make the pattern
+   feel irregular without image assets or section boundaries. */
 .orbyven-home-main::after {
   content: "";
   position: absolute;
   z-index: 0;
-  inset: 88vh 0 0;
+  inset: 0;
   pointer-events: none;
-  opacity: .55;
+  opacity: .62;
   background-image:
-    radial-gradient(circle, rgba(247,244,255,.23) 0 1px, transparent 1.2px),
-    radial-gradient(circle, rgba(174,149,255,.22) 0 1px, transparent 1.25px),
-    radial-gradient(circle, rgba(255,255,255,.12) 0 .7px, transparent 1px);
-  background-size: 187px 203px, 271px 249px, 119px 131px;
-  background-position: 23px 17px, 101px 79px, 53px 97px;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 92%, transparent 100%);
+    radial-gradient(circle, rgba(250,248,255,.30) 0 1px, transparent 1.25px),
+    radial-gradient(circle, rgba(187,164,255,.24) 0 1px, transparent 1.3px),
+    radial-gradient(circle, rgba(255,255,255,.14) 0 .7px, transparent 1px),
+    radial-gradient(circle, rgba(148,128,255,.16) 0 .65px, transparent .95px);
+  background-size:
+    181px 197px,
+    263px 239px,
+    109px 127px,
+    337px 311px;
+  background-position:
+    17px 23px,
+    91px 73px,
+    43px 97px,
+    151px 37px;
+  background-repeat: repeat;
 }
 
 .orbyven-home-main > section,
 .orbyven-home-main > footer {
   position: relative;
   z-index: 1;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
-/* Hero remains the richest star/orbit moment, but its base is transparent so
-   the global canvas visibly continues into the next section. */
+/* Kill old chapter fades and local section atmospheres. */
+.orbyven-home-hero::after,
+.orbyven-home-flow-section::before,
+.orbyven-home-flow-section::after,
+.orbyven-home-download-section::before,
+.orbyven-home-download-section::after,
+.orbyven-home-footer::before,
+.orbyven-home-flow-section--templates > div::before,
+.orbyven-home-flow-section--services > div::before,
+.orbyven-home-download-section > div::before {
+  content: none !important;
+  display: none !important;
+}
+
+.orbyven-home-soft,
+.orbyven-home-flow-section,
+.orbyven-home-download-section,
+.orbyven-home-footer {
+  background: transparent !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+
+/* Hero uses the same base canvas. It only adds density, stars and orbit lines. */
 .orbyven-home-hero {
   background:
-    radial-gradient(ellipse 58% 42% at 50% 41%, rgba(114,79,255,.075), transparent 68%),
-    radial-gradient(ellipse 28% 30% at 82% 24%, rgba(149,112,255,.055), transparent 72%),
+    radial-gradient(ellipse 60% 46% at 50% 42%, rgba(116,80,255,.070), transparent 70%),
+    radial-gradient(ellipse 30% 31% at 82% 23%, rgba(150,111,255,.050), transparent 74%),
     transparent !important;
 }
 
@@ -1132,14 +1164,14 @@ html[data-app-mode="standalone"] button {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 46%, transparent 0 32%, rgba(151,120,255,.025) 46%, transparent 62%),
-    linear-gradient(to bottom, rgba(255,255,255,.008), transparent 23%, transparent 78%, rgba(104,78,210,.045));
+    radial-gradient(circle at 50% 46%, transparent 0 32%, rgba(151,120,255,.022) 46%, transparent 63%),
+    radial-gradient(ellipse 42% 15% at 50% 36%, rgba(172,135,255,.085), transparent 74%);
 }
 
 .orbyven-home-starfield {
   z-index: 0;
   overflow: hidden;
-  opacity: .96;
+  opacity: .98;
 }
 
 .orbyven-home-starfield::before,
@@ -1147,67 +1179,67 @@ html[data-app-mode="standalone"] button {
   content: "";
   position: absolute;
   left: 10%;
-  top: 12%;
+  top: 11%;
   width: 2px;
   height: 2px;
   border-radius: 999px;
-  background: rgba(247,245,255,.82);
+  background: rgba(247,245,255,.84);
   box-shadow:
     68px 26px 0 rgba(255,255,255,.30),
-    142px 114px 0 rgba(181,159,255,.58),
-    216px 10px 0 rgba(255,255,255,.46),
-    298px 90px 0 rgba(139,118,255,.40),
-    384px 0 0 rgba(255,255,255,.30),
-    468px 150px 0 rgba(255,255,255,.44),
-    548px 52px 0 rgba(186,166,255,.62),
-    628px 202px 0 rgba(255,255,255,.25),
-    712px 82px 0 rgba(150,126,255,.48),
-    798px 12px 0 rgba(255,255,255,.42),
-    882px 170px 0 rgba(255,255,255,.29),
-    966px 58px 0 rgba(188,166,255,.56),
-    1050px 238px 0 rgba(255,255,255,.24),
-    1132px 116px 0 rgba(148,126,255,.44),
-    1210px 18px 0 rgba(255,255,255,.34),
-    32px 286px 0 rgba(170,145,255,.36),
-    124px 380px 0 rgba(255,255,255,.26),
-    236px 326px 0 rgba(255,255,255,.46),
-    348px 414px 0 rgba(176,149,255,.45),
-    460px 292px 0 rgba(255,255,255,.28),
-    574px 432px 0 rgba(255,255,255,.40),
-    690px 332px 0 rgba(155,132,255,.56),
-    812px 456px 0 rgba(255,255,255,.27),
-    930px 354px 0 rgba(255,255,255,.43),
-    1048px 422px 0 rgba(181,157,255,.50),
-    1170px 310px 0 rgba(255,255,255,.31);
+    142px 114px 0 rgba(181,159,255,.60),
+    216px 10px 0 rgba(255,255,255,.48),
+    298px 90px 0 rgba(139,118,255,.42),
+    384px 0 0 rgba(255,255,255,.32),
+    468px 150px 0 rgba(255,255,255,.46),
+    548px 52px 0 rgba(186,166,255,.64),
+    628px 202px 0 rgba(255,255,255,.27),
+    712px 82px 0 rgba(150,126,255,.50),
+    798px 12px 0 rgba(255,255,255,.44),
+    882px 170px 0 rgba(255,255,255,.31),
+    966px 58px 0 rgba(188,166,255,.58),
+    1050px 238px 0 rgba(255,255,255,.26),
+    1132px 116px 0 rgba(148,126,255,.46),
+    1210px 18px 0 rgba(255,255,255,.36),
+    32px 286px 0 rgba(170,145,255,.38),
+    124px 380px 0 rgba(255,255,255,.28),
+    236px 326px 0 rgba(255,255,255,.48),
+    348px 414px 0 rgba(176,149,255,.47),
+    460px 292px 0 rgba(255,255,255,.30),
+    574px 432px 0 rgba(255,255,255,.42),
+    690px 332px 0 rgba(155,132,255,.58),
+    812px 456px 0 rgba(255,255,255,.29),
+    930px 354px 0 rgba(255,255,255,.45),
+    1048px 422px 0 rgba(181,157,255,.52),
+    1170px 310px 0 rgba(255,255,255,.33);
 }
 
 .orbyven-home-starfield::after {
   left: 20%;
-  top: 9%;
+  top: 8%;
   width: 1px;
   height: 1px;
-  opacity: .72;
+  opacity: .76;
   transform: scale(1.35);
-  filter: drop-shadow(0 0 5px rgba(173,144,255,.35));
+  filter: drop-shadow(0 0 5px rgba(173,144,255,.36));
   box-shadow:
-    36px 92px 0 rgba(255,255,255,.52),
-    116px 184px 0 rgba(169,143,255,.65),
-    194px 42px 0 rgba(255,255,255,.42),
-    282px 246px 0 rgba(255,255,255,.38),
-    372px 118px 0 rgba(184,159,255,.66),
-    452px 314px 0 rgba(255,255,255,.44),
-    540px 66px 0 rgba(255,255,255,.46),
-    626px 232px 0 rgba(166,139,255,.65),
-    714px 388px 0 rgba(255,255,255,.36),
-    802px 138px 0 rgba(255,255,255,.50),
-    896px 294px 0 rgba(177,151,255,.62);
+    36px 92px 0 rgba(255,255,255,.54),
+    116px 184px 0 rgba(169,143,255,.68),
+    194px 42px 0 rgba(255,255,255,.44),
+    282px 246px 0 rgba(255,255,255,.40),
+    372px 118px 0 rgba(184,159,255,.68),
+    452px 314px 0 rgba(255,255,255,.46),
+    540px 66px 0 rgba(255,255,255,.48),
+    626px 232px 0 rgba(166,139,255,.68),
+    714px 388px 0 rgba(255,255,255,.38),
+    802px 138px 0 rgba(255,255,255,.52),
+    896px 294px 0 rgba(177,151,255,.65);
 }
 
 .orbyven-home-hero-aurora {
   z-index: 0;
   background:
-    radial-gradient(ellipse 42% 16% at 50% 36%, rgba(172,135,255,.11), transparent 72%),
-    conic-gradient(from 206deg at 50% 48%, transparent 0 36%, rgba(112,84,255,.035) 43%, transparent 51% 100%);
+    radial-gradient(ellipse 42% 16% at 50% 36%, rgba(172,135,255,.10), transparent 72%),
+    conic-gradient(from 206deg at 50% 48%, transparent 0 36%, rgba(112,84,255,.032) 43%, transparent 51% 100%);
   filter: blur(6px);
 }
 
@@ -1226,163 +1258,8 @@ html[data-app-mode="standalone"] button {
   color: transparent;
 }
 
-/* Every section is transparent. Its local light is edge-faded and overlaps the
-   neighboring section, producing a real seamless vertical flow. */
-.orbyven-home-soft,
-.orbyven-home-flow-section,
-.orbyven-home-download-section,
-.orbyven-home-footer {
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-.orbyven-home-flow-section::before,
-.orbyven-home-download-section::before,
-.orbyven-home-footer::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
-  inset: -120px 0;
-  opacity: .9;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
-}
-
-.orbyven-home-flow-section > *,
-.orbyven-home-download-section > *,
-.orbyven-home-footer > * {
-  position: relative;
-  z-index: 1;
-}
-
-.orbyven-home-flow-section--workspace::before {
-  background:
-    radial-gradient(ellipse 45% 55% at 86% 24%, rgba(118,86,255,.085), transparent 72%),
-    radial-gradient(ellipse 34% 44% at 7% 72%, rgba(74,113,238,.050), transparent 74%);
-}
-
-.orbyven-home-flow-section--templates::before {
-  background:
-    radial-gradient(ellipse 46% 50% at 10% 32%, rgba(139,96,246,.075), transparent 72%),
-    radial-gradient(ellipse 36% 40% at 91% 74%, rgba(87,100,225,.055), transparent 74%);
-}
-
-.orbyven-home-flow-section--invites::before {
-  background:
-    radial-gradient(ellipse 46% 48% at 81% 30%, rgba(163,118,244,.072), transparent 74%),
-    radial-gradient(ellipse 32% 38% at 14% 82%, rgba(106,92,221,.050), transparent 76%);
-}
-
-.orbyven-home-flow-section--services::before {
-  background:
-    radial-gradient(ellipse 48% 48% at 9% 38%, rgba(79,111,238,.060), transparent 74%),
-    radial-gradient(ellipse 40% 44% at 88% 70%, rgba(149,95,249,.070), transparent 75%);
-}
-
-.orbyven-home-flow-section--pricing::before {
-  background:
-    radial-gradient(ellipse 52% 52% at 72% 34%, rgba(140,94,250,.085), transparent 72%),
-    radial-gradient(ellipse 34% 40% at 12% 78%, rgba(80,106,225,.050), transparent 76%);
-}
-
-.orbyven-home-flow-section--start::before {
-  background:
-    radial-gradient(ellipse 48% 58% at 50% 58%, rgba(139,97,247,.070), transparent 74%);
-}
-
-.orbyven-home-download-section::before {
-  background:
-    radial-gradient(ellipse 52% 60% at 84% 30%, rgba(92,118,236,.065), transparent 75%),
-    radial-gradient(ellipse 42% 48% at 12% 74%, rgba(149,101,249,.065), transparent 76%);
-}
-
-.orbyven-home-footer::before {
-  inset: -150px 0 -30px;
-  background:
-    radial-gradient(ellipse 58% 70% at 50% 80%, rgba(121,88,235,.075), transparent 76%);
-}
-
-/* Fine orbital traces echo the hero farther down without repeating it. */
-.orbyven-home-flow-section--workspace::after,
-.orbyven-home-flow-section--pricing::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
-  width: min(54vw, 820px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(169,145,255,.055);
-  border-radius: 999px;
-  box-shadow:
-    0 0 0 54px rgba(142,113,255,.014),
-    0 0 0 108px rgba(142,113,255,.009);
-}
-
-.orbyven-home-flow-section--workspace::after {
-  right: -28%;
-  top: 20%;
-}
-
-.orbyven-home-flow-section--pricing::after {
-  left: -30%;
-  top: 12%;
-}
-
-/* Controlled star clusters in only a few lower zones. */
-.orbyven-home-flow-section--templates > div::before,
-.orbyven-home-flow-section--services > div::before,
-.orbyven-home-download-section > div::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  width: 2px;
-  height: 2px;
-  border-radius: 999px;
-  background: rgba(245,242,255,.23);
-  opacity: .58;
-  box-shadow:
-    82px 58px 0 rgba(255,255,255,.14),
-    211px 142px 0 rgba(177,151,255,.22),
-    372px 38px 0 rgba(255,255,255,.11),
-    556px 176px 0 rgba(156,133,255,.18),
-    744px 72px 0 rgba(255,255,255,.13),
-    926px 188px 0 rgba(181,155,255,.18),
-    1110px 44px 0 rgba(255,255,255,.12),
-    1284px 156px 0 rgba(160,137,255,.20);
-}
-
-.orbyven-home-flow-section--templates > div::before {
-  left: 3%;
-  top: 8%;
-}
-
-.orbyven-home-flow-section--services > div::before {
-  left: -2%;
-  top: 58%;
-  transform: scale(.85);
-}
-
-.orbyven-home-download-section > div::before {
-  left: 5%;
-  top: 10%;
-  transform: scale(.72);
-}
-
-/* Premium section headings: more contrast, but no extra copy. */
-.orbyven-home-flow-section h2,
-.orbyven-home-download-section h2 {
-  text-shadow: 0 18px 45px rgba(0,0,0,.08);
-}
-
-.orbyven-home-kicker-icon {
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.10),
-    0 0 26px rgba(116,88,215,.09);
-}
-
-/* Main product surfaces look cut from the same material. */
+/* Product surfaces still have depth, but their surroundings are now identical
+   everywhere on the page. */
 .orbyven-home-workspace-shell,
 .orbyven-home-template-shell,
 .orbyven-home-invite-card,
@@ -1392,7 +1269,7 @@ html[data-app-mode="standalone"] button {
   position: relative;
   isolation: isolate;
   box-shadow:
-    0 26px 80px rgba(0,0,0,.13),
+    0 26px 80px rgba(0,0,0,.14),
     0 0 0 1px rgba(161,137,255,.025),
     inset 0 1px 0 rgba(255,255,255,.030);
 }
@@ -1419,20 +1296,10 @@ html[data-app-mode="standalone"] button {
 .orbyven-home-template-shell,
 .orbyven-home-download-card {
   background-image:
-    radial-gradient(circle at 82% 8%, rgba(126,91,255,.095), transparent 30%),
-    linear-gradient(145deg, rgba(255,255,255,.022), transparent 42%);
+    radial-gradient(circle at 82% 8%, rgba(126,91,255,.090), transparent 30%),
+    linear-gradient(145deg, rgba(255,255,255,.020), transparent 42%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-}
-
-.orbyven-home-invite-card,
-.orbyven-home-service-card,
-.orbyven-home-price {
-  transition:
-    transform .55s cubic-bezier(.16,1,.3,1),
-    border-color .4s ease,
-    box-shadow .5s ease,
-    background-color .4s ease;
 }
 
 .orbyven-home-service-card:hover,
@@ -1444,8 +1311,6 @@ html[data-app-mode="standalone"] button {
     0 0 50px rgba(105,77,220,.09);
 }
 
-/* Start and footer become luxury anchor blocks while still sitting on the
-   same continuous atmospheric canvas. */
 .orbyven-home-start-card,
 .orbyven-home-footer-card {
   position: relative;
@@ -1465,11 +1330,9 @@ html[data-app-mode="standalone"] button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(108deg, transparent 0 37%, rgba(255,255,255,.07) 48%, transparent 59%);
+  background: linear-gradient(108deg, transparent 0 37%, rgba(255,255,255,.07) 48%, transparent 59%);
 }
 
-/* Header belongs to the same glass material as the page cards. */
 .orbyven-home-main .orbyven-public-header-surface {
   background-color: color-mix(in srgb, var(--bg) 82%, transparent) !important;
   border-color: color-mix(in srgb, var(--border-strong) 84%, transparent);
@@ -1480,73 +1343,52 @@ html[data-app-mode="standalone"] button {
   -webkit-backdrop-filter: blur(24px) saturate(145%);
 }
 
+/* Light mode keeps one continuous canvas too. */
+.orbyven-home-main[data-orbyven-public-theme="light"] {
+  background-color: #eceaf4;
+  background-image:
+    radial-gradient(ellipse 58vw 32vw at 18% 10%, rgba(116,88,215,.095), transparent 76%),
+    radial-gradient(ellipse 54vw 30vw at 86% 34%, rgba(112,97,204,.070), transparent 78%),
+    radial-gradient(ellipse 62vw 34vw at 24% 61%, rgba(126,92,210,.050), transparent 79%),
+    linear-gradient(#eceaf4,#eceaf4);
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"]::before {
+  opacity: .45;
+}
+
+.orbyven-home-main[data-orbyven-public-theme="light"]::after {
+  opacity: .18;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .orbyven-home-starfield::after {
-    animation: orbyvenHomeLuxuryStarsV2 7s ease-in-out infinite alternate;
+    animation: orbyvenSeamlessGalaxyStars 7s ease-in-out infinite alternate;
   }
 
   .orbyven-home-hero-aurora {
-    animation: orbyvenHomeLuxuryAuroraV2 13s ease-in-out infinite alternate;
+    animation: orbyvenSeamlessGalaxyAurora 13s ease-in-out infinite alternate;
   }
 }
 
-@keyframes orbyvenHomeLuxuryStarsV2 {
-  from { opacity: .50; transform: scale(1.32) translate3d(0,0,0); }
-  to { opacity: .82; transform: scale(1.36) translate3d(5px,-4px,0); }
+@keyframes orbyvenSeamlessGalaxyStars {
+  from { opacity: .54; transform: scale(1.32) translate3d(0,0,0); }
+  to { opacity: .84; transform: scale(1.36) translate3d(5px,-4px,0); }
 }
 
-@keyframes orbyvenHomeLuxuryAuroraV2 {
+@keyframes orbyvenSeamlessGalaxyAurora {
   from { opacity: .72; transform: scale(1) translate3d(0,0,0); }
   to { opacity: 1; transform: scale(1.035) translate3d(0,-8px,0); }
 }
 
-/* Light mode keeps the exact composition with lower contrast and violet depth. */
-.orbyven-home-main[data-orbyven-public-theme="light"]::before {
-  opacity: .62;
-}
-
-.orbyven-home-main[data-orbyven-public-theme="light"]::after {
-  opacity: .26;
-}
-
-.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-home-workspace-shell,
-.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-home-template-shell,
-.orbyven-home-main[data-orbyven-public-theme="light"] .orbyven-home-download-card {
-  box-shadow:
-    0 24px 76px rgba(63,51,112,.095),
-    0 0 0 1px rgba(105,85,190,.035),
-    inset 0 1px 0 rgba(255,255,255,.75);
-}
-
 @media (max-width: 767px) {
   .orbyven-home-main::after {
-    opacity: .30;
-    background-size: 151px 169px, 211px 197px, 97px 109px;
-  }
-
-  .orbyven-home-flow-section::before,
-  .orbyven-home-download-section::before,
-  .orbyven-home-footer::before {
-    inset: -68px 0;
-    opacity: .70;
-  }
-
-  .orbyven-home-flow-section--workspace::after,
-  .orbyven-home-flow-section--pricing::after {
-    width: 120vw;
-    opacity: .55;
-  }
-
-  .orbyven-home-flow-section--templates > div::before,
-  .orbyven-home-flow-section--services > div::before,
-  .orbyven-home-download-section > div::before {
-    opacity: .30;
-    transform: scale(.56);
-    transform-origin: left top;
+    opacity: .34;
+    background-size: 151px 169px, 211px 197px, 97px 109px, 277px 251px;
   }
 
   .orbyven-home-starfield {
-    opacity: .66;
+    opacity: .70;
     transform: scale(.80);
     transform-origin: 50% 35%;
   }

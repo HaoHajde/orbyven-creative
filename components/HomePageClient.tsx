@@ -306,7 +306,6 @@ export default function HomePage() {
       </section>
 
       <section id="modular" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--workspace relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[65%] bg-[radial-gradient(circle_at_60%_15%,rgba(75,70,238,0.10),transparent_56%)]" />
         <div className="relative mx-auto max-w-[1500px]">
           <div className="grid gap-9 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:gap-16">
             <div>
@@ -511,7 +510,6 @@ export default function HomePage() {
       </section>
 
       <section id="pricing" className="orbyven-home-soft orbyven-home-flow-section orbyven-home-flow-section--pricing relative scroll-mt-24 overflow-hidden px-5 py-16 sm:px-6 md:px-10 md:py-28">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[30%] h-[460px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--accent-soft-2)] blur-[160px]" />
         <div className="relative mx-auto max-w-[1500px]">
           <p className="orbyven-home-kicker"><span aria-hidden="true" className="orbyven-home-kicker-icon">✦</span><span>Alegi ritmul în care crești</span><span aria-hidden="true" className="orbyven-home-kicker-line" /></p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
