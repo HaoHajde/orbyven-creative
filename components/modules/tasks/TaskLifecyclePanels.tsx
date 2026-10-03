@@ -1,6 +1,7 @@
 "use client";
 
 import type { WorkTask, WorkTaskClient } from "@/lib/modules/tasks";
+import { ModuleNextAction } from "@/components/modules/ModuleKit";
 import {
   evaluatePostServiceGrowth,
   type PostServiceEventType,
@@ -62,33 +63,58 @@ export function PostServiceGrowthPanel({
   });
   const reviewResolved = Boolean(state.reviewCompletedAt || state.reviewDeclinedAt);
   const referralResolved = Boolean(state.referralReceivedAt || state.referralDeclinedAt);
+  const openPostServiceOptions = () => {
+    const element = document.querySelector<HTMLDetailsElement>('[data-post-service-options="true"]');
+    if (element) {
+      element.open = true;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  const primaryPostServiceAction =
+    !canWrite || !action
+      ? undefined
+      : state.feedback === "none"
+        ? { label: "Cere feedback →", run: () => onEvent("feedback_requested") }
+        : state.feedback === "issue"
+          ? { label: "Pornește remedierea →", run: onCreateRecovery }
+          : state.feedback === "positive" && !state.reviewRequestedAt && !reviewResolved
+            ? { label: "Cere review →", run: () => onEvent("review_requested") }
+            : state.feedback === "positive" && state.reviewCompletedAt && !state.referralRequestedAt && !referralResolved
+              ? { label: "Cere recomandare →", run: () => onEvent("referral_requested") }
+              : action.rule === "post_service_upsell" && estimatesEnabled
+                ? { label: "Pregătește ofertă →", run: onCreateEstimate }
+                : { label: "Vezi opțiunile →", run: openPostServiceOptions };
 
   return (
     <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">
-            ORBYVEN · POST-SERVICE GROWTH
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-[15px] font-semibold">Feedback → review → recomandare → oportunitate nouă.</h2>
-            {state.feedbackScore !== null ? (
-              <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold">{state.feedbackScore}/5</span>
-            ) : null}
-          </div>
-          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
-            {action?.detail ?? "Fluxul este în regulă; ORBYVEN va ridica următorul pas când devine relevant."}
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">ORBYVEN · POST-SERVICE</p>
+          <p className="mt-1 text-sm font-semibold">Relația continuă după lucrare.</p>
         </div>
-        {action ? (
-          <span className="self-start rounded-full bg-[var(--bg)] px-3 py-1.5 text-[10px] font-semibold text-[var(--muted)]">
-            {action.level === "urgent" ? "Prioritar" : action.level === "attention" ? "Recomandat" : "Următorul pas"}
-          </span>
-        ) : null}
+        {state.feedbackScore !== null ? <span className="rounded-full bg-[var(--bg)] px-2.5 py-1 text-[10px] font-semibold">{state.feedbackScore}/5</span> : null}
+      </div>
+
+      <div className="mt-3">
+        <ModuleNextAction
+          eyebrow={action?.level === "urgent" ? "Prioritar" : "Următorul pas"}
+          title={action?.title ?? "Post-service este în regulă"}
+          description={action?.detail ?? "ORBYVEN va ridica următoarea acțiune când devine relevantă."}
+          action={primaryPostServiceAction ? (
+            <button type="button" disabled={saving} onClick={primaryPostServiceAction.run} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] disabled:opacity-40">
+              {primaryPostServiceAction.label}
+            </button>
+          ) : undefined}
+        />
       </div>
 
       {canWrite ? (
-        <div className="mt-4 space-y-4 border-t border-[var(--border)] pt-4">
+        <details data-post-service-options="true" className="group mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+            <span>Opțiuni post-service</span><span className="transition group-open:rotate-45">+</span>
+          </summary>
+          <div className="space-y-4 border-t border-[var(--border)] p-3.5">
           {(state.feedback === "none" || state.feedback === "requested") ? (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Feedback client</p>
@@ -160,7 +186,8 @@ export function PostServiceGrowthPanel({
               </div>
             </div>
           ) : null}
-        </div>
+          </div>
+        </details>
       ) : null}
     </section>
   );
@@ -190,6 +217,14 @@ export function AftercarePanel({
     ? new Date(followUp).getTime() > new Date(nowIso || "1970-01-01T00:00:00.000Z").getTime()
     : false;
 
+  const openAftercareOptions = () => {
+    const element = document.querySelector<HTMLDetailsElement>('[data-aftercare-options="true"]');
+    if (element) {
+      element.open = true;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   return (
     <section className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -207,23 +242,38 @@ export function AftercarePanel({
 
       {canWrite ? (
         <>
-          <div className="mt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Revenire client</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {AFTERCARE_WINDOWS.map((days) => (
-                <button key={days} type="button" disabled={saving} onClick={() => onSchedule(days)} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">În {days} zile</button>
-              ))}
-            </div>
+          <div className="mt-3">
+            <ModuleNextAction
+              eyebrow="Aftercare"
+              title={followUpIsFuture ? "Revenirea este deja programată" : followUp ? "Revenirea clientului este restantă" : "Programează următorul contact"}
+              description={followUp
+                ? `${followUpIsFuture ? "Programată" : "Restantă"}: ${formatDateTime(followUp, locale)}`
+                : "Alege când vrei să revii pentru feedback, mentenanță sau o comandă repetată."}
+              action={<button type="button" onClick={openAftercareOptions} className="h-9 rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)]">Alege opțiunea →</button>}
+            />
           </div>
-          <div className="mt-4 border-t border-[var(--border)] pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Lucrare recurentă</p>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Creează următoarea lucrare cu același client, locație, durată și checklist. Responsabilul rămâne nealocat.</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {RECURRING_WORK_WINDOWS.map((days) => (
-                <button key={days} type="button" disabled={saving} onClick={() => onRepeat(days)} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">Repetă în {days === 365 ? "1 an" : days + " zile"}</button>
-              ))}
+          <details data-aftercare-options="true" className="group mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)]/45">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[11px] font-semibold text-[var(--muted)] [&::-webkit-details-marker]:hidden">
+              <span>Revenire sau lucrare recurentă</span><span className="transition group-open:rotate-45">+</span>
+            </summary>
+            <div className="border-t border-[var(--border)] p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Revenire client</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {AFTERCARE_WINDOWS.map((days) => (
+                  <button key={days} type="button" disabled={saving} onClick={() => onSchedule(days)} className="h-9 rounded-full bg-[var(--accent-soft)] px-3.5 text-xs font-semibold text-[var(--accent)] disabled:opacity-50">În {days} zile</button>
+                ))}
+              </div>
+              <div className="mt-4 border-t border-[var(--border)] pt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted-2)]">Lucrare recurentă</p>
+                <p className="mt-1 text-[10px] leading-4 text-[var(--muted)]">Creează următoarea lucrare cu același client, locație, durată și checklist. Responsabilul rămâne nealocat.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {RECURRING_WORK_WINDOWS.map((days) => (
+                    <button key={days} type="button" disabled={saving} onClick={() => onRepeat(days)} className="h-9 rounded-full border border-[var(--border-strong)] px-3.5 text-xs font-semibold disabled:opacity-50">Repetă în {days === 365 ? "1 an" : days + " zile"}</button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          </details>
         </>
       ) : null}
     </section>
