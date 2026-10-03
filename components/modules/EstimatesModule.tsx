@@ -23,7 +23,7 @@ import CommercialWorkflowPanel from "@/components/modules/CommercialWorkflowPane
 import MaterialsLibraryPanel from "@/components/modules/MaterialsLibraryPanel";
 import EstimateProfitabilityPanel from "@/components/modules/EstimateProfitabilityPanel";
 import EstimateListPanel from "@/components/modules/estimates/EstimateListPanel";
-import { formatEstimateMoney } from "@/components/modules/estimates/estimate-format";
+import { formatEstimateMoney as money } from "@/components/modules/estimates/estimate-format";
 import { addRequirementsFromRecipe, syncOfferStatusFromEstimate } from "@/lib/ecosystem/actions";
 import {
   syncCrmAfterAcceptedEstimate,
@@ -448,7 +448,7 @@ export default function EstimatesModule({
         primary={<>
           <ModuleMetric label="Așteaptă răspuns" value={String(metrics.waiting)} note="status trimisă" />
           <ModuleMetric label="Acceptate" value={String(metrics.accepted)} note="confirmate de client" />
-          <ModuleMetric label="Valoare acceptată" value={formatEstimateMoney(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
+          <ModuleMetric label="Valoare acceptată" value={money(metrics.acceptedValue, "RON", locale)} note="total orientativ" />
         </>}
         secondary={<ModuleMetric label="Total" value={String(metrics.total)} note="devize în workspace" />}
       />
@@ -518,7 +518,7 @@ export default function EstimatesModule({
 
         <div data-workspace-record-focus={selected ? "true" : undefined} className="scroll-mt-28 rounded-[28px] border border-[var(--border)] bg-[var(--surface-2)] p-5 sm:p-7">
           {selected ? <>
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{formatEstimateMoney(selected.total_cents, selected.currency, locale)}</p></div>
+            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-2)]">{selected.reference}</p><h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">{selected.title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{clientById.get(selected.client_id || "")?.name || "Fără client"}{selected.task_id ? ` · ${taskById.get(selected.task_id)?.title || "Lucrare"}` : ""}</p></div><p className="text-[30px] font-semibold tracking-[-0.05em]">{money(selected.total_cents, selected.currency, locale)}</p></div>
             <div className="mt-6 grid grid-cols-3 gap-3"><ModuleMetric label="Status" value={statusLabels[selected.status]} /><ModuleMetric label="Poziții" value={String(items.length)} /><ModuleMetric label="Taxă" value={selected.tax_rate === null ? "—" : `${selected.tax_rate}%`} /></div>
             <EstimateExecutionNextAction
               estimate={selected}
@@ -528,7 +528,7 @@ export default function EstimatesModule({
               inventoryEnabled={inventoryEnabled}
               readiness={executionReadiness}
             />
-            <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {formatEstimateMoney(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{formatEstimateMoney(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
+            <div className="mt-6 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg)]">{items.length ? items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--border)] px-4 py-3 last:border-b-0"><div><p className="text-sm font-medium">{item.description}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.quantity} × {money(item.unit_price_cents, selected.currency, locale)}</p></div><p className="text-sm font-semibold">{money(Math.round(item.quantity * item.unit_price_cents), selected.currency, locale)}</p></div>) : <p className="p-4 text-sm text-[var(--muted)]">Se încarcă pozițiile…</p>}</div>
             <CommercialWorkflowPanel
               key={selected.id}
               organizationId={organizationId}
