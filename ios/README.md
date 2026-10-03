@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.13
+# ORBYVEN iOS — Alpha 0.14
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -291,3 +291,10 @@ Handoff-ul nu modifică autentificarea ORBYVEN, sesiunea Supabase sau RLS. La o 
 Versiunea 0.13.0 leagă Activity Center de badge-ul nativ al iconiței ORBYVEN. Numărul afișat pe Home Screen este derivat direct din lista de semnale operaționale deja calculată de Dashboard, limitat la 99 și trimis către shell-ul iOS prin bridge-ul existent.
 
 ORBYVEN nu cere permisiunea de notificări doar pentru badge. Dacă utilizatorul a permis deja notificările/badge-urile, valoarea este sincronizată; dacă nu, funcția rămâne silențioasă. La logout sau demontarea workspace-ului, badge-ul este cerut la zero pentru a evita un indicator rămas stale.
+
+
+## Alpha 0.14
+
+Versiunea 0.14.0 face update-urile web sigure pentru utilizarea nativă. Endpoint-ul de runtime freshness continuă să detecteze imediat deployment-urile noi, dar atunci când pagina rulează în shell-ul iOS nu mai execută direct `window.location.reload()`. În schimb, trimite versiunea nouă către aplicația nativă, iar utilizatorul poate alege să actualizeze acum sau să amâne.
+
+Dacă actualizarea este aplicată, versiunea este persistată înainte de reload pentru a evita buclele. Dacă este amânată, WebView-ul și formularele curente rămân intacte. Browserul și PWA-ul instalat păstrează refresh-ul automat existent, deoarece nu au shell nativ pentru acest control.
