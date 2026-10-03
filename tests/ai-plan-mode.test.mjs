@@ -189,7 +189,7 @@ test("Recovered plans remain audited and explicitly confirmed step by step", () 
   assert.match(source, /p_action: "ai_plan\.recovered"/);
   assert.match(source, /execution: "proposal_only_explicit_confirmation_required"/);
   assert.match(ui, /PLAN RECOVERY/);
-  assert.match(ui, /recoverPlanAction/);
+  assert.match(ui, /onRecoverPlanAction/);
   assert.match(ui, /"Confirmă"/);
   assert.doesNotMatch(ui, />\\s*Confirmă tot\\s*</);
 });
