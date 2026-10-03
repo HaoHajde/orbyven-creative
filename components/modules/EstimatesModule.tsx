@@ -67,13 +67,7 @@ type FormState = {
 };
 
 const emptyForm: FormState = { title: "", clientId: "", taskId: "", validUntil: "", taxRate: "", discount: "", notes: "", plannedLabor: "", otherCosts: "" };
-const statusLabels: Record<EstimateStatus, string> = {
-  draft: "Draft",
-  sent: "Trimisă",
-  accepted: "Acceptată",
-  rejected: "Respinsă",
-  expired: "Expirată",
-};
+const statusLabels: Record<EstimateStatus, string> = { draft: "Draft", sent: "Trimisă", accepted: "Acceptată", rejected: "Respinsă", expired: "Expirată" };
 
 function newLine(): DraftLine {
   return { key: crypto.randomUUID(), description: "", quantity: "1", price: "" };
