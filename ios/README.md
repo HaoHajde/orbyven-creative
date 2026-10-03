@@ -1,4 +1,4 @@
-# ORBYVEN iOS — Alpha 0.11
+# ORBYVEN iOS — Alpha 0.12
 
 Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
@@ -6,7 +6,15 @@ Client iOS pentru ORBYVEN, construit cu Expo SDK 57 / React Native 0.86.
 
 Aplicația este un native shell peste workspace-ul ORBYVEN live, astfel încât autentificarea, RLS, modulele, AI-ul și modificările dashboard-ului rămân sincronizate cu produsul web.
 
-Native Alpha 0.11:
+Native Alpha 0.12:
+- launch handoff nativ unic între splash, bootstrap web și workspace, fără alternarea vizibilă loader/privacy/workspace;
+- ecranul de pornire rămâne deasupra WebView-ului până când bootstrap-ul web s-a stabilizat și verificarea locală de acces s-a încheiat;
+- tranziția către workspace folosește un fade nativ scurt de 180 ms;
+- dacă web-ul eșuează la pornire, handoff-ul cedează controlul către recovery în loc să rămână blocat;
+- privacy shield-ul apare după handoff doar atunci când accesul local chiar necesită protecție;
+- runtime-ul declară capabilitatea `native-launch-handoff`;
+
+Păstrat din Alpha 0.11:
 - termenele din modulul Lucrări folosesc direct `due_at` pentru remindere locale iPhone, fără tabel sau câmp paralel;
 - o lucrare activă cu termen viitor poate programa notificarea locală exact la termen;
 - finalizarea, anularea sau ștergerea lucrării elimină reminderul local;
@@ -262,3 +270,10 @@ Versiunea 0.11.0 extinde notificările locale ORBYVEN de la Calendar către modu
 La crearea unei lucrări cu termen viitor, shell-ul iOS programează o notificare locală exact la termen. Dacă lucrarea este finalizată, anulată sau ștearsă înainte de termen, notificarea asociată este eliminată. Lucrările recurente folosesc același bridge atunci când rezultatul are un termen valid.
 
 La apăsarea notificării, intentul este păstrat până când workspace-ul autentificat semnalează `orbyven:workspace-ready`, apoi ORBYVEN deschide modulul Lucrări pe recordul exact. Notificarea este locală și nu necesită infrastructură push remote sau Apple Developer Program în etapa Expo Go.
+
+
+## Alpha 0.12
+
+Versiunea 0.12.0 unifică pornirea aplicației într-un singur handoff nativ. Splash-ul Expo este urmat de ecranul ORBYVEN al shell-ului, în timp ce WebView-ul, sesiunea și verificarea locală se pregătesc dedesubt. Când runtime-ul web s-a stabilizat și verificarea locală s-a încheiat, shell-ul cedează controlul printr-un fade scurt direct către workspace sau, dacă este necesar, către privacy shield.
+
+Handoff-ul nu modifică autentificarea ORBYVEN, sesiunea Supabase sau RLS. La o eroare reală de încărcare, stratul de launch se închide și lasă recovery-ul existent să devină vizibil, astfel încât aplicația să nu poată rămâne blocată într-un splash infinit.
