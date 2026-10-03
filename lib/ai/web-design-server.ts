@@ -39,6 +39,10 @@ import {
   interviewFactsToEvidence,
   type WebDesignInterviewFact,
 } from "@/lib/ai/web-design-interview";
+import {
+  applyVerifiedSectionEvidence,
+  type WebDesignVerifiedSectionPlan,
+} from "@/lib/ai/web-design-section-evidence";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -78,6 +82,7 @@ export type WebDesignGenerationResult = {
   refineScope: WebDesignRefineScope;
   evidence: WebDesignEvidenceGuardReport;
   briefGaps: WebDesignBriefGapReport;
+  sectionEvidence: Omit<WebDesignVerifiedSectionPlan, "strategy">;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -531,7 +536,13 @@ export async function generateWebDesignForActor(
   const config = webDesignConfig();
   if (!config) throw new Error("WEB_DESIGN_AI_NOT_CONFIGURED");
 
-  const strategy = buildWebDesignStrategy(prompt, current);
+  const baseStrategy = buildWebDesignStrategy(prompt, current);
+  const sectionEvidence = applyVerifiedSectionEvidence(
+    baseStrategy,
+    interviewFacts,
+    current
+  );
+  const strategy = sectionEvidence.strategy;
   const strategyInstruction = webDesignStrategyInstruction(strategy);
   const variationInstruction = designDnaInstruction(current, strategy, prompt);
   const refineScope = resolveWebDesignRefineScope(prompt, strategy);
@@ -584,6 +595,12 @@ export async function generateWebDesignForActor(
           legal_name: organization?.legal_name ?? null,
           current_site: current,
           site_strategy: strategy,
+          verified_section_plan: {
+            supportedSections: sectionEvidence.supportedSections,
+            unavailableSections: sectionEvidence.unavailableSections,
+            appliedFacts: sectionEvidence.appliedFacts,
+            changed: sectionEvidence.changed,
+          },
           verified_interview_facts: interviewFacts.slice(-8),
         }),
         max_output_tokens: 3600,
@@ -689,6 +706,12 @@ export async function generateWebDesignForActor(
       refineScope,
       evidence: evidenceResult.report,
       briefGaps,
+      sectionEvidence: {
+        supportedSections: sectionEvidence.supportedSections,
+        unavailableSections: sectionEvidence.unavailableSections,
+        appliedFacts: sectionEvidence.appliedFacts,
+        changed: sectionEvidence.changed,
+      },
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {
