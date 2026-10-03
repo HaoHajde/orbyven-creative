@@ -170,7 +170,7 @@ test("web and desktop release metadata are aligned", () => {
 
 test("canonical shell carries the exact responsive web layout", () => {
   assert.match(shell, /max-w-\[1520px\]/);
-  assert.match(shell, /md:grid-cols-\[206px_minmax\(0,1fr\)\]/);
+  assert.match(shell, /md:grid-cols-\[var\(--workspace-sidebar-width\)_minmax\(0,1fr\)\]/);
   assert.match(shell, /md:hidden/);
   assert.match(shell, /mobileModuleMenuOpen/);
   assert.equal(config.app.windows[0].resizable, true);
