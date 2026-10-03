@@ -88,6 +88,11 @@ test("PWA runtime detects stale deployments without reload loops", () => {
   assert.match(registration, /sessionStorage\.getItem\(RUNTIME_VERSION_KEY\)/);
   assert.match(registration, /sessionStorage\.setItem\(RUNTIME_VERSION_KEY, serverVersion\)/);
   assert.match(registration, /window\.location\.reload\(\)/);
+  assert.match(registration, /getNativeBridge\(\)/);
+  assert.match(registration, /orbyven:runtime-update-available/);
+  assert.match(registration, /runtimeVersion: serverVersion/);
+  assert.match(registration, /orbyven:apply-runtime-update/);
+  assert.match(registration, /sessionStorage\.setItem\(RUNTIME_VERSION_KEY, version\)/);
   assert.match(registration, /updateViaCache:\s*"none"/);
   assert.match(registration, /registration\.update\(\)/);
   assert.match(registration, /visibilitychange/);

@@ -24,7 +24,7 @@ import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react
 
 const BASE_URL = "https://orbyven.ro";
 const WORKSPACE_URL = BASE_URL + "/workspace";
-const APP_VERSION = "0.13.0";
+const APP_VERSION = "0.14.0";
 const RELOCK_AFTER_MS = 30_000;
 
 type ConnectionState = "loading" | "online" | "offline";
@@ -58,6 +58,10 @@ const IOS_COPY = {
     registrationFailed: "Înregistrare nereușită",
     registrationFailedCopy: "ORBYVEN nu a putut salva acest dispozitiv pentru push. Încearcă din nou.",
     remindersOffCopy: "Activează notificările pentru ORBYVEN din Settings ca să primești reminderele programărilor.",
+    updateAvailable: "Actualizare ORBYVEN disponibilă",
+    updateAvailableCopy: "O versiune nouă este gata. Poți actualiza acum sau mai târziu, fără să întrerupem automat lucrul în curs.",
+    updateLater: "Mai târziu",
+    updateNow: "Actualizează acum",
   },
   en: {
     offline: "No internet · keeping the current screen",
@@ -84,6 +88,10 @@ const IOS_COPY = {
     registrationFailed: "Registration failed",
     registrationFailedCopy: "ORBYVEN could not save this device for push notifications. Try again.",
     remindersOffCopy: "Enable ORBYVEN notifications in Settings to receive appointment reminders.",
+    updateAvailable: "ORBYVEN update available",
+    updateAvailableCopy: "A new version is ready. Update now or later without interrupting work in progress automatically.",
+    updateLater: "Later",
+    updateNow: "Update now",
   },
 } as const;
 
@@ -98,6 +106,7 @@ const NATIVE_RUNTIME = {
     "local-notifications",
     "native-launch-handoff",
     "native-attention-badge",
+    "safe-runtime-update",
     "work-deadline-reminders",
     "navigation-haptics",
     "network-recovery",
@@ -341,6 +350,7 @@ export default function App() {
   const webFailedRef = useRef(false);
   const networkNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentUrlRef = useRef(WORKSPACE_URL);
+  const deferredRuntimeVersionRef = useRef<string | null>(null);
   const [launchOpacity] = useState(()=>new Animated.Value(1));
 
   useEffect(() => {
@@ -677,6 +687,20 @@ export default function App() {
     navigateTrustedUrl(resolved);
   }, [navigateTrustedUrl]);
 
+  const applyRuntimeUpdate = useCallback((runtimeVersion: string) => {
+    deferredRuntimeVersionRef.current = null;
+    webRuntimeReadyRef.current = false;
+    workspaceReadyRef.current = false;
+    setConnection("loading");
+    void Haptics.selectionAsync().catch(() => undefined);
+
+    webRef.current?.injectJavaScript(
+      "window.dispatchEvent(new CustomEvent('orbyven:apply-runtime-update',{detail:{version:" +
+        JSON.stringify(runtimeVersion) +
+        "}})); true;",
+    );
+  }, []);
+
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data;
@@ -726,6 +750,7 @@ export default function App() {
         locale?: NativeLocale;
         href?: string;
         badgeCount?: number;
+        runtimeVersion?: string;
       };
 
       if (message.type === "orbyven:web-ready") {
@@ -757,6 +782,29 @@ export default function App() {
         Number.isFinite(message.badgeCount)
       ) {
         void syncNativeAttentionBadge(message.badgeCount).catch(() => undefined);
+      } else if (
+        message.type === "orbyven:runtime-update-available" &&
+        typeof message.runtimeVersion === "string" &&
+        message.runtimeVersion.trim()
+      ) {
+        const runtimeVersion = message.runtimeVersion.trim();
+        if (deferredRuntimeVersionRef.current === runtimeVersion) return;
+
+        deferredRuntimeVersionRef.current = runtimeVersion;
+        Alert.alert(
+          nativeCopy.updateAvailable,
+          nativeCopy.updateAvailableCopy,
+          [
+            {
+              text: nativeCopy.updateLater,
+              style: "cancel",
+            },
+            {
+              text: nativeCopy.updateNow,
+              onPress: () => applyRuntimeUpdate(runtimeVersion),
+            },
+          ],
+        );
       } else if (message.type === "orbyven:register-push") {
         void registerForRemotePush()
           .then((expoPushToken) => {
@@ -913,7 +961,7 @@ export default function App() {
     } catch {
       // Ignore web messages that do not belong to the ORBYVEN native bridge.
     }
-  }, [flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent, nativeCopy]);
+  }, [applyRuntimeUpdate, flushPendingCalendarIntent, flushPendingDocumentsIntent, flushPendingWorkTaskIntent, nativeCopy]);
 
   const background = dark ? "#07101d" : "#f4f6fb";
   const surface = dark ? "#0c1727" : "#ffffff";

@@ -9,6 +9,16 @@ type RuntimeVersionPayload = {
   version?: string;
 };
 
+type NativeBridgeWindow = Window & {
+  ReactNativeWebView?: { postMessage: (message: string) => void };
+};
+
+type RuntimeUpdateEvent = CustomEvent<{ version?: string }>;
+
+function getNativeBridge() {
+  return (window as NativeBridgeWindow).ReactNativeWebView;
+}
+
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
@@ -46,7 +56,17 @@ export default function ServiceWorkerRegistration() {
 
           if (currentVersion === serverVersion) return;
 
-          // Persist before reloading so the new runtime does not enter a reload loop.
+          const nativeBridge = getNativeBridge();
+          if (nativeBridge) {
+            nativeBridge.postMessage(JSON.stringify({
+              type: "orbyven:runtime-update-available",
+              runtimeVersion: serverVersion,
+            }));
+            return;
+          }
+
+          // Browser/PWA runtimes can refresh immediately because they do not have
+          // a native shell that can protect in-flight workspace state.
           window.sessionStorage.setItem(RUNTIME_VERSION_KEY, serverVersion);
           window.location.reload();
         } catch {
@@ -84,6 +104,15 @@ export default function ServiceWorkerRegistration() {
 
     const onFocus = () => void checkRuntimeVersion();
 
+    const applyRuntimeUpdate = (event: Event) => {
+      const version = (event as RuntimeUpdateEvent).detail?.version?.trim();
+      if (!version) return;
+
+      // Persist first so the refreshed runtime cannot loop on the same deploy.
+      window.sessionStorage.setItem(RUNTIME_VERSION_KEY, version);
+      window.location.reload();
+    };
+
     if (document.readyState === "complete") {
       void register();
     } else {
@@ -93,6 +122,7 @@ export default function ServiceWorkerRegistration() {
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onFocus);
     window.addEventListener("pageshow", onFocus);
+    window.addEventListener("orbyven:apply-runtime-update", applyRuntimeUpdate);
 
     return () => {
       disposed = true;
@@ -100,6 +130,7 @@ export default function ServiceWorkerRegistration() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("pageshow", onFocus);
+      window.removeEventListener("orbyven:apply-runtime-update", applyRuntimeUpdate);
     };
   }, []);
 
