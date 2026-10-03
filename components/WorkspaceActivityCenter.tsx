@@ -72,6 +72,25 @@ export default function WorkspaceActivityCenter({
   }, []);
 
   useEffect(() => {
+    if (loading) return;
+    const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({
+      type: "orbyven:attention-badge",
+      badgeCount: Math.min(items.length, 99),
+    }));
+  }, [items.length, loading]);
+
+  useEffect(() => {
+    return () => {
+      const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:attention-badge",
+        badgeCount: 0,
+      }));
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     const refresh = window.setInterval(() => void load(), 5 * 60 * 1000);
     const onFocus = () => void load();
