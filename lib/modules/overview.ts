@@ -1,4 +1,4 @@
-import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { createOrbyvenAuthenticatedClient } from "@/lib/orbyven-supabase";
 import { requireOrbyvenSession } from "@/lib/orbyven-session";
 import { readAllPages } from "@/lib/modules/paged-read";
 
@@ -121,7 +121,8 @@ export async function loadOverviewSnapshot(
   includeTeam = false
 ): Promise<OverviewSnapshot> {
   if (!organizationId.trim()) throw new Error("organization_id is required.");
-  await requireOrbyvenSession();
+  const accessToken = await requireOrbyvenSession();
+  const supabase = createOrbyvenAuthenticatedClient(accessToken);
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -142,26 +143,26 @@ export async function loadOverviewSnapshot(
     recentEstimates, staleEstimates, leadTrend, taskTrend, estimateTrend,
     events, monthExpenseRows, monthIncomeRows, documentCount, activeTeamCount, inactiveTeamResult,
   ] = await Promise.all([
-    countRows(orbyvenSupabase.from("crm_leads").select("id", { count: "exact", head: true })
+    countRows(supabase.from("crm_leads").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("kind", "lead").not("stage", "in", OPEN_LEADS)),
-    countRows(orbyvenSupabase.from("ops_tasks").select("id", { count: "exact", head: true })
+    countRows(supabase.from("ops_tasks").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)),
-    countRows(orbyvenSupabase.from("sales_estimates").select("id", { count: "exact", head: true })
+    countRows(supabase.from("sales_estimates").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId).eq("status", "sent")),
     Promise.all((["planned", "in_progress", "blocked", "done", "cancelled"] as const).map((status) =>
-      countRows(orbyvenSupabase.from("ops_tasks").select("id", { count: "exact", head: true })
+      countRows(supabase.from("ops_tasks").select("id", { count: "exact", head: true })
         .eq("organization_id", organizationId).eq("status", status))
     )),
-    orbyvenSupabase.from("crm_leads")
+    supabase.from("crm_leads")
       .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
-    orbyvenSupabase.from("crm_leads")
+    supabase.from("crm_leads")
       .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
       .eq("organization_id", organizationId)
       .not("next_follow_up_at", "is", null)
       .or("kind.eq.client,stage.not.in.(won,lost)")
       .lt("next_follow_up_at", nowIso).order("next_follow_up_at").limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("crm_leads")
+    supabase.from("crm_leads")
       .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
       .eq("organization_id", organizationId)
       .eq("kind", "client")
@@ -170,7 +171,7 @@ export async function loadOverviewSnapshot(
       .lte("last_contact_at", reactivationBefore)
       .order("last_contact_at")
       .limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("crm_leads")
+    supabase.from("crm_leads")
       .select("id,name,kind,stage,last_contact_at,next_follow_up_at,converted_at,created_at")
       .eq("organization_id", organizationId)
       .eq("kind", "client")
@@ -180,57 +181,57 @@ export async function loadOverviewSnapshot(
       .lte("converted_at", reactivationBefore)
       .order("converted_at")
       .limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .lt("due_at", nowIso).order("due_at").limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .eq("priority", "urgent").order("created_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).eq("status", "blocked")
       .order("updated_at", { ascending: false }).limit(ATTENTION_LIMIT + 1),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("scheduled_at", nearTaskFrom).lte("scheduled_at", nearTaskUntil)
       .order("scheduled_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
-    orbyvenSupabase.from("ops_tasks")
+    supabase.from("ops_tasks")
       .select("id,title,kind,status,priority,assignee,client_id,due_at,scheduled_at,created_at")
       .eq("organization_id", organizationId).not("status", "in", OPEN_TASKS)
       .gte("due_at", nearTaskFrom).lte("due_at", nearTaskUntil)
       .order("due_at", { ascending: true }).limit(ATTENTION_LIMIT * 2),
-    orbyvenSupabase.from("sales_estimates")
+    supabase.from("sales_estimates")
       .select("id,reference,title,status,total_cents,currency,valid_until,client_id,task_id,updated_at,created_at")
       .eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(4),
-    orbyvenSupabase.from("sales_estimates")
+    supabase.from("sales_estimates")
       .select("id,reference,title,status,total_cents,currency,valid_until,client_id,task_id,updated_at,created_at")
       .eq("organization_id", organizationId).eq("status", "sent")
       .lte("updated_at", staleEstimateBefore).order("updated_at").limit(ATTENTION_LIMIT + 1),
     readAllPages<{ created_at: string }>((from, to) =>
-      orbyvenSupabase.from("crm_leads").select("created_at").eq("organization_id", organizationId)
+      supabase.from("crm_leads").select("created_at").eq("organization_id", organizationId)
         .eq("kind", "lead").not("stage", "in", OPEN_LEADS)
         .gte("created_at", trendSince).order("created_at").order("id").range(from, to)),
     readAllPages<{ created_at: string }>((from, to) =>
-      orbyvenSupabase.from("ops_tasks").select("created_at").eq("organization_id", organizationId)
+      supabase.from("ops_tasks").select("created_at").eq("organization_id", organizationId)
         .not("status", "in", OPEN_TASKS).gte("created_at", trendSince)
         .order("created_at").order("id").range(from, to)),
     readAllPages<{ created_at: string }>((from, to) =>
-      orbyvenSupabase.from("sales_estimates").select("created_at").eq("organization_id", organizationId)
+      supabase.from("sales_estimates").select("created_at").eq("organization_id", organizationId)
         .eq("status", "sent").gte("created_at", trendSince)
         .order("created_at").order("id").range(from, to)),
     readAllPages<OverviewEvent>((from, to) =>
-      orbyvenSupabase.from("calendar_events").select("id,title,status,start_at,end_at,assignee,client_id,task_id")
+      supabase.from("calendar_events").select("id,title,status,start_at,end_at,assignee,client_id,task_id")
         .eq("organization_id", organizationId).gte("start_at", trendSince).lte("start_at", eventsUntil)
         .order("start_at").order("id").range(from, to)),
     canAccessFinances
       ? readAllPages<{ amount_cents: number }>((from, to) =>
-          orbyvenSupabase.from("finance_expenses").select("amount_cents")
+          supabase.from("finance_expenses").select("amount_cents")
             .eq("organization_id", organizationId)
             .eq("currency", "RON")
             .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
@@ -238,20 +239,20 @@ export async function loadOverviewSnapshot(
       : Promise.resolve([] as { amount_cents: number }[]),
     canAccessFinances
       ? readAllPages<{ amount_cents: number }>((from, to) =>
-          orbyvenSupabase.from("finance_income_entries").select("amount_cents")
+          supabase.from("finance_income_entries").select("amount_cents")
             .eq("organization_id", organizationId)
             .eq("currency", "RON")
             .gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart)
             .order("occurred_on").order("id").range(from, to))
       : Promise.resolve([] as { amount_cents: number }[]),
-    countRows(orbyvenSupabase.from("ops_documents").select("id", { count: "exact", head: true })
+    countRows(supabase.from("ops_documents").select("id", { count: "exact", head: true })
       .eq("organization_id", organizationId)),
     includeTeam
-      ? countRows(orbyvenSupabase.from("people_team_members").select("id", { count: "exact", head: true })
+      ? countRows(supabase.from("people_team_members").select("id", { count: "exact", head: true })
           .eq("organization_id", organizationId).eq("status", "active"))
       : Promise.resolve(0),
     includeTeam
-      ? orbyvenSupabase.from("people_team_members")
+      ? supabase.from("people_team_members")
           .select("display_name,status")
           .eq("organization_id", organizationId)
           .eq("status", "inactive")
