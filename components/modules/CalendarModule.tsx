@@ -428,6 +428,15 @@ export default function CalendarModule({
     () => events.find((calendarEvent) => calendarEvent.id === selectedId) ?? null,
     [events, selectedId]
   );
+  const selectedEventResourceCount = selectedEvent
+    ? activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0
+    : 0;
+  const selectedEventNeedsResources = Boolean(
+    selectedEvent &&
+    selectedEvent.status === "scheduled" &&
+    selectedEvent.event_type === "work" &&
+    selectedEventResourceCount === 0
+  );
   const selectedEventCanComplete = Boolean(
     selectedEvent &&
     snapshotIso &&
@@ -788,13 +797,13 @@ export default function CalendarModule({
 
       {selectedEvent && canWrite ? (
         <div className="mt-4">
-          {selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 && activeResources.length === 0 && enabledModules.includes("team") ? (
+          {selectedEventNeedsResources && activeResources.length === 0 && enabledModules.includes("team") ? (
             <ModuleNextAction
               title="Adaugă resurse înainte de execuție"
               description="Lucrarea este programată, dar firma nu are încă oameni sau resurse active disponibile în scheduler."
               action={<button type="button" onClick={() => onOpenModule("team")} className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)]">Deschide Echipă →</button>}
             />
-          ) : selectedEvent.status === "scheduled" && selectedEvent.event_type === "work" && (activeResourceIdsByEvent.get(selectedEvent.id)?.length ?? 0) === 0 ? (
+          ) : selectedEventNeedsResources ? (
             <ModuleNextAction
               title="Alocă resurse înainte de execuție"
               description="ORBYVEN a detectat o lucrare programată fără oameni, echipă sau utilaj."
@@ -836,50 +845,63 @@ export default function CalendarModule({
         </div>
       ) : null}
       {selectedEvent && (
-        <section data-calendar-resource-panel="true" className="mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <details
+          data-calendar-resource-panel="true"
+          open={selectedEventNeedsResources || undefined}
+          className="group mt-4 scroll-mt-28 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)]"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">Scheduler · Resurse</p>
-              <p className="mt-1 text-sm font-semibold">Alocări pentru această programare</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Scheduler · Resurse</p>
+              <p className="mt-1 text-sm font-semibold">
+                {selectedEventNeedsResources
+                  ? "Resurse necesare"
+                  : `Resurse alocate · ${selectedEventResourceCount}`}
+              </p>
             </div>
+            <span aria-hidden="true" className="text-lg text-[var(--muted)] transition group-open:rotate-45">+</span>
+          </summary>
+          <div className="border-t border-[var(--border)] p-4 sm:p-5">
             {canWrite ? (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => void saveEventResources(selectedEvent)}
-                className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40"
-              >
-                Salvează resursele
-              </button>
+              <div className="mb-3 flex justify-end">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void saveEventResources(selectedEvent)}
+                  className="h-9 rounded-full bg-[var(--button)] px-4 text-xs font-semibold text-[var(--button-text)] disabled:opacity-40"
+                >
+                  Salvează resursele
+                </button>
+              </div>
             ) : null}
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {activeResources.length ? activeResources.map((resource) => {
+                const baseline = activeResourceIdsByEvent.get(selectedEvent.id) ?? [];
+                const selected = (resourceDrafts[selectedEvent.id] ?? baseline).includes(resource.id);
+                return (
+                  <label key={resource.id} className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs ${selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
+                    <input
+                      type="checkbox"
+                      disabled={!canWrite}
+                      checked={selected}
+                      onChange={(event) => setResourceDrafts((current) => {
+                        const base = current[selectedEvent.id] ?? baseline;
+                        const nextIds = event.target.checked
+                          ? [...base, resource.id]
+                          : base.filter((id) => id !== resource.id);
+                        return { ...current, [selectedEvent.id]: nextIds };
+                      })}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{resource.name}</span>
+                      <span className="block truncate text-[10px] text-[var(--muted)]">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
+                    </span>
+                  </label>
+                );
+              }) : <p className="text-xs text-[var(--muted)]">Nu există resurse active.</p>}
+            </div>
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {activeResources.length ? activeResources.map((resource) => {
-              const baseline = activeResourceIdsByEvent.get(selectedEvent.id) ?? [];
-              const selected = (resourceDrafts[selectedEvent.id] ?? baseline).includes(resource.id);
-              return (
-                <label key={resource.id} className={`flex items-center gap-2 rounded-[14px] border px-3 py-2 text-xs ${selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
-                  <input
-                    type="checkbox"
-                    disabled={!canWrite}
-                    checked={selected}
-                    onChange={(event) => setResourceDrafts((current) => {
-                      const base = current[selectedEvent.id] ?? baseline;
-                      const nextIds = event.target.checked
-                        ? [...base, resource.id]
-                        : base.filter((id) => id !== resource.id);
-                      return { ...current, [selectedEvent.id]: nextIds };
-                    })}
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold">{resource.name}</span>
-                    <span className="block truncate text-[10px] text-[var(--muted)]">{RESOURCE_TYPE_LABELS[resource.resource_type]}</span>
-                  </span>
-                </label>
-              );
-            }) : <p className="text-xs text-[var(--muted)]">Nu există resurse active.</p>}
-          </div>
-        </section>
+        </details>
       )}
       {selectedEvent && (
         <div
