@@ -43,7 +43,7 @@ test("Conversation messages persist transcript only, never reusable Agent Action
   const server = read("lib/ai/conversation-server.ts");
   assert.match(migration, /Action buttons\/proposal payloads are intentionally not stored here/);
   assert.match(server, /content: response\.answer/);
-  assert.match(server, /facts: response\.facts/);
+  assert.match(server, /facts: \[\.\.\.baseFacts, \.\.\.focusFacts, \.\.\.decisionFacts, \.\.\.outcomeFacts\]/);
   assert.doesNotMatch(server, /response\.actions/);
 });
 
@@ -80,7 +80,9 @@ test("Agent Action proposals keep conversation identity and history cannot overt
 });
 
 test("Workspace history restores transcript without restoring old confirm actions", () => {
-  const ui = read("components/WorkspaceIntelligence.tsx");
+  const ui =
+    read("components/WorkspaceIntelligence.tsx") +
+    read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(ui, /\/api\/ai\/conversations/);
   assert.match(ui, /conversationId,/);
   assert.match(ui, /\+ Nou/);
