@@ -15,11 +15,7 @@ export function createOrbyvenAuthenticatedClient(accessToken: string) {
   if (!token) throw new Error("ORBYVEN_SESSION_REQUIRED");
 
   return createClient(supabaseUrl, supabasePublishableKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
+    accessToken: async () => token,
     auth: {
       persistSession: false,
       autoRefreshToken: false,
