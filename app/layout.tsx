@@ -16,6 +16,7 @@ import {
 import { siteConfig, siteConfigEn } from "@/lib/site-config";
 
 import "./globals.css";
+import "./home-seamless-galaxy.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
