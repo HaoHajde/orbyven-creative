@@ -20,17 +20,17 @@ test("workspace high-fanout reads bind PostgREST to the validated JWT", () => {
   }
 });
 
-test("workspace session gate refreshes once and shares concurrent refresh work", () => {
+test("workspace session gate refreshes once and returns the exact access token", () => {
   const session = read("lib/orbyven-session.ts");
 
-  assert.match(session, /let sessionGatePromise: Promise<string \\| null> \\| null = null/);
+  assert.match(session, /let sessionGatePromise: Promise<string \| null> \| null = null/);
   assert.match(session, /if \(sessionGatePromise\) return sessionGatePromise/);
   assert.match(session, /auth\.getSession\(\)/);
   assert.match(session, /REFRESH_MARGIN_MS = 90_000/);
   assert.match(session, /auth\.refreshSession\(\)/);
   assert.match(session, /finally \{\s*sessionGatePromise = null/);
-  assert.match(session, /session\\.access_token/);
-  assert.match(session, /refreshed\\.data\\.session\\?\\.access_token/);
+  assert.match(session, /session\.access_token/);
+  assert.match(session, /refreshed\.data\.session\?\.access_token/);
   assert.match(session, /ORBYVEN_SESSION_REQUIRED/);
 });
 
@@ -45,10 +45,12 @@ test("workspace shell reacts to real Supabase sign-out without making auth callb
   assert.doesNotMatch(shell, /onAuthStateChange\(async/);
 });
 
-test("JWT-bound workspace client never relies on publishable-key authorization", () => {
+test("JWT-bound workspace client uses Supabase accessToken instead of a custom Authorization header", () => {
   const client = read("lib/orbyven-supabase.ts");
+
   assert.match(client, /createOrbyvenAuthenticatedClient\(accessToken: string\)/);
-  assert.match(client, /Authorization:\s*`Bearer \$\{token\}`/);
+  assert.match(client, /accessToken:\s*async \(\) => token/);
+  assert.doesNotMatch(client, /Authorization:/);
   assert.match(client, /persistSession:\s*false/);
   assert.match(client, /autoRefreshToken:\s*false/);
 });
