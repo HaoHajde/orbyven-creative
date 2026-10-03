@@ -30,7 +30,9 @@ type Props = {
   onOpenModule: (moduleId: OrbyvenModuleId, options?: WorkspaceOpenOptions) => void;
   initialCreate?: boolean;
   initialRecordId?: string;
+  initialClientId?: string;
   initialTaskId?: string;
+  initialEstimateId?: string;
   initialPurchaseOrderId?: string;
   initialCategory?: DocumentCategory;
   initialExpenseId?: string;
@@ -67,7 +69,7 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialTaskId, initialPurchaseOrderId, initialCategory, initialExpenseId }: Props) {
+export default function DocumentsModule({ organizationId, locale, role, enabledModules, onOpenModule, initialCreate = false, initialRecordId, initialClientId, initialTaskId, initialEstimateId, initialPurchaseOrderId, initialCategory, initialExpenseId }: Props) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [clients, setClients] = useState<DocumentLink[]>([]);
   const [tasks, setTasks] = useState<DocumentTaskLink[]>([]);
@@ -75,9 +77,9 @@ export default function DocumentsModule({ organizationId, locale, role, enabledM
   const [purchaseOrders, setPurchaseOrders] = useState<DocumentPurchaseOrderLink[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState<DocumentCategory>(initialCategory ?? "general");
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(initialClientId ?? "");
   const [taskId, setTaskId] = useState(initialTaskId ?? "");
-  const [estimateId, setEstimateId] = useState("");
+  const [estimateId, setEstimateId] = useState(initialEstimateId ?? "");
   const [purchaseOrderId, setPurchaseOrderId] = useState(initialPurchaseOrderId ?? "");
   const [note, setNote] = useState("");
   const [uploadOpen, setUploadOpen] = useState(Boolean(initialCreate && role !== "viewer"));
