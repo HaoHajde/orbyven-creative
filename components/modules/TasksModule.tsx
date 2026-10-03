@@ -43,7 +43,10 @@ import {
   AftercarePanel,
   PostServiceGrowthPanel,
 } from "@/components/modules/tasks/TaskLifecyclePanels";
-import { completeElapsedWorkEventsForTask } from "@/lib/automation/status-sync";
+import {
+  completeElapsedWorkEventsForTask,
+  syncCrmAfterWorkCompleted,
+} from "@/lib/automation/status-sync";
 import { ModuleAdvancedFields, ModuleNextAction, ModuleProgressiveMetrics } from "@/components/modules/ModuleKit";
 import {
   useCallback,
@@ -426,6 +429,54 @@ export default function TasksModule({
     }
   };
 
+  const syncCompletedWork = async (task: WorkTask, source: "status" | "progress") => {
+    const warnings: string[] = [];
+    let calendarReview = false;
+
+    if (enabledModules.includes("calendar")) {
+      try {
+        const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
+        calendarReview = sync.futureScheduled > 0;
+        if (sync.futureScheduled > 0) {
+          warnings.push(
+            `${source === "status" ? "Lucrarea este finalizată" : "Lucrarea este la 100%"}, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
+          );
+        } else if (sync.completedEvents > 0) {
+          warnings.push(
+            `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
+          );
+        }
+      } catch (syncError) {
+        console.error(syncError);
+        calendarReview = true;
+        warnings.push(
+          source === "status"
+            ? "Lucrarea este finalizată, dar programările trecute nu au putut fi sincronizate automat."
+            : "Lucrarea este la 100%, dar programările trecute nu au putut fi sincronizate automat."
+        );
+      }
+    }
+
+    if (task.client_id) {
+      try {
+        const crm = await syncCrmAfterWorkCompleted(
+          organizationId,
+          task.client_id,
+          task.title
+        );
+        if (crm.updated && !crm.activityLogged) {
+          warnings.push("Lucrarea este finalizată, dar activitatea CRM nu a putut fi salvată.");
+        }
+      } catch (crmError) {
+        console.error(crmError);
+        warnings.push("Lucrarea este finalizată, dar istoricul CRM nu a putut fi sincronizat automat.");
+      }
+    }
+
+    setSyncCalendarReview(calendarReview);
+    setSyncWarning(warnings.join(" "));
+  };
+
   const changeStatus = async (task: WorkTask, status: WorkTaskStatus) => {
     if (!canWrite || saving || task.status === status) return;
     setSaving(true);
@@ -433,22 +484,8 @@ export default function TasksModule({
     try {
       const updated = await setWorkTaskStatus(organizationId, task.id, status);
       replaceTask(updated);
-      if (status === "done" && enabledModules.includes("calendar")) {
-        try {
-          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
-          setSyncCalendarReview(sync.futureScheduled > 0);
-          setSyncWarning(
-            sync.futureScheduled > 0
-              ? `Lucrarea este finalizată, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
-              : sync.completedEvents > 0
-                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
-                : ""
-          );
-        } catch (syncError) {
-          console.error(syncError);
-          setSyncCalendarReview(true);
-          setSyncWarning("Lucrarea este finalizată, dar programările trecute nu au putut fi sincronizate automat.");
-        }
+      if (status === "done") {
+        await syncCompletedWork(updated, "status");
       } else {
         setSyncCalendarReview(false);
         setSyncWarning("");
@@ -468,22 +505,8 @@ export default function TasksModule({
     try {
       const updated = await setWorkTaskProgress(organizationId, task.id, progress);
       replaceTask(updated);
-      if (progress === 100 && enabledModules.includes("calendar")) {
-        try {
-          const sync = await completeElapsedWorkEventsForTask(organizationId, task.id);
-          setSyncCalendarReview(sync.futureScheduled > 0);
-          setSyncWarning(
-            sync.futureScheduled > 0
-              ? `Lucrarea este la 100%, dar ${sync.futureScheduled} programări de lucru viitoare sunt încă active. Verifică Calendarul.`
-              : sync.completedEvents > 0
-                ? `${sync.completedEvents} programări de lucru deja trecute au fost închise automat.`
-                : ""
-          );
-        } catch (syncError) {
-          console.error(syncError);
-          setSyncCalendarReview(true);
-          setSyncWarning("Lucrarea este la 100%, dar programările trecute nu au putut fi sincronizate automat.");
-        }
+      if (progress === 100) {
+        await syncCompletedWork(updated, "progress");
       } else {
         setSyncCalendarReview(false);
         setSyncWarning("");
