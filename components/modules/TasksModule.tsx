@@ -1086,6 +1086,24 @@ export default function TasksModule({
           </details>
         </div>
       ) : null}
+      {selectedTask && (
+        <WorkFileSummary
+          task={selectedTask}
+          context={workContext}
+          checklist={checklist}
+          inactiveAssigneeNames={teamMembers
+            .filter((member) => member.status === "inactive")
+            .map((member) => member.display_name)}
+          snapshotIso={snapshotIso}
+          loading={contextLoading}
+          error={contextError}
+          locale={locale}
+          enabledModules={enabledModules}
+          canAccessFinances={canAccessFinances}
+          onOpenModule={onOpenModule}
+          onCompleteTask={() => void changeStatus(selectedTask, "done")}
+        />
+      )}
       {selectedTask &&
         selectedTask.status === "done" &&
         selectedTask.kind !== "task" &&
@@ -1122,24 +1140,6 @@ export default function TasksModule({
             onCreateEstimate={() => void createGrowthEstimate()}
           />
         )}
-      {selectedTask && (
-        <WorkFileSummary
-          task={selectedTask}
-          context={workContext}
-          checklist={checklist}
-          inactiveAssigneeNames={teamMembers
-            .filter((member) => member.status === "inactive")
-            .map((member) => member.display_name)}
-          snapshotIso={snapshotIso}
-          loading={contextLoading}
-          error={contextError}
-          locale={locale}
-          enabledModules={enabledModules}
-          canAccessFinances={canAccessFinances}
-          onOpenModule={onOpenModule}
-          onCompleteTask={() => void changeStatus(selectedTask, "done")}
-        />
-      )}
       {selectedTask && (
         <div data-workspace-record-focus={selectedTask ? "true" : undefined} className="scroll-mt-28">
         <TaskDetail
