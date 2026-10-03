@@ -692,3 +692,18 @@ test("work dossier carries minimal financial closeout context", () => {
   assert.match(summary, /attention\.key === "financial"/);
   assert.match(summary, /label: "Închide financiar"/);
 });
+
+
+test("completed work synchronizes calendar cleanup and CRM activity conservatively", () => {
+  const sync = read("lib/automation/status-sync.ts");
+  assert.match(sync, /export async function syncCrmAfterWorkCompleted/);
+  assert.match(sync, /last_contact_at: now/);
+  assert.match(sync, /Lucrarea „\$\{title\}” a fost finalizată/);
+
+  const tasks = read("components/modules/TasksModule.tsx");
+  assert.match(tasks, /const syncCompletedWork = async/);
+  assert.match(tasks, /completeElapsedWorkEventsForTask/);
+  assert.match(tasks, /syncCrmAfterWorkCompleted/);
+  assert.match(tasks, /await syncCompletedWork\(updated, "status"\)/);
+  assert.match(tasks, /await syncCompletedWork\(updated, "progress"\)/);
+});
