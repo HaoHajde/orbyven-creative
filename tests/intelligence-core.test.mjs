@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
+import { detectOperationalQuery } from "../lib/ai/operational-query-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -61,4 +62,47 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   assert.match(route, /answerIntelligenceForActor/);
   assert.match(route, /ensureConversation/);
   assert.match(route, /persistAssistantResponse/);
+});
+
+
+test("Operational Query Mode detects concrete read-only intents", () => {
+  assert.equal(detectOperationalQuery("Ce lucrări sunt întârziate?"), "overdue_tasks");
+  assert.equal(detectOperationalQuery("Arată-mi lucrările blocate"), "blocked_tasks");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt fără responsabil?"), "unassigned_tasks");
+  assert.equal(detectOperationalQuery("Ce am de făcut azi?"), "today");
+  assert.equal(detectOperationalQuery("Ce leaduri trebuie contactate azi?"), "lead_followups");
+  assert.equal(detectOperationalQuery("Ce oferte expiră și trebuie urmărite?"), "estimate_followups");
+  assert.equal(detectOperationalQuery("Fă-mi briefingul zilei"), "briefing");
+  assert.equal(detectOperationalQuery("Compară opțiunile pentru Focus #1"), "decision_support");
+  assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
+});
+
+test("Dashboard AI routes entity and operational intelligence before generic specialist fallback", () => {
+  const source = read("lib/ai/intelligence-server.ts");
+  assert.match(source, /answerEntityIntelligenceQuery/);
+  assert.match(source, /answerOperationalQuery/);
+  assert.ok(source.indexOf("answerEntityIntelligenceQuery") < source.indexOf("routeIntelligencePrompt(prompt)"));
+  assert.ok(source.indexOf("answerOperationalQuery") < source.indexOf("routeIntelligencePrompt(prompt)"));
+});
+
+test("Focus Decision and Outcome loop remain bounded and confirmation-first", () => {
+  const briefing = read("lib/ai/business-briefing.ts");
+  const decision = read("lib/ai/business-decision-support.ts");
+  const handoff = read("app/api/ai/decisions/handoff/route.ts");
+  const outcome = read("lib/ai/action-outcome.ts");
+  const panel = read("components/WorkspaceIntelligence.tsx");
+  const renderer = read("components/intelligence/IntelligenceMessageList.tsx");
+
+  assert.match(briefing, /focusInsight/);
+  assert.match(decision, /handoffPlanPrompt/);
+  assert.match(handoff, /DECISION_STALE/);
+  assert.match(handoff, /proposal_only_explicit_confirmation_required/);
+  assert.match(outcome, /OUTCOME_PLAN_NOT_COMPLETE/);
+  assert.match(outcome, /no_longer_primary/);
+  assert.doesNotMatch(outcome, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(panel, /\/api\/ai\/outcomes\/recheck/);
+  assert.match(renderer, /data-orbyven-outcome="true"/);
+  assert.match(renderer, /Vezi briefingul actual/);
+  assert.match(renderer, /Compară noul Focus/);
+  assert.match(panel, /ORBYVEN INTELLIGENCE · 0\.8\.25/);
 });
