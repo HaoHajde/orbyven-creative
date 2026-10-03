@@ -2,16 +2,19 @@ import { orbyvenSupabase } from "@/lib/orbyven-supabase";
 
 const REFRESH_MARGIN_MS = 90_000;
 
-let sessionGatePromise: Promise<boolean> | null = null;
+let sessionGatePromise: Promise<string | null> | null = null;
 
 /**
- * Ensure browser-side workspace reads never fan out while the Supabase session
- * is absent or close enough to expiry that a focus/auto-refresh race can send
- * PostgREST requests without a usable JWT.
+ * Resolve the access token that browser-side workspace reads must use.
+ *
+ * Returning the token (instead of only a boolean) lets high-fanout read models
+ * bind every PostgREST request in one batch to the exact validated session.
+ * This avoids a refresh race where the shared browser client temporarily falls
+ * back to the publishable key between getSession()/refreshSession() and fetch.
  *
  * Multiple callers share one refresh operation.
  */
-export async function ensureOrbyvenSession(): Promise<boolean> {
+export async function ensureOrbyvenSession(): Promise<string | null> {
   if (sessionGatePromise) return sessionGatePromise;
 
   sessionGatePromise = (async () => {
@@ -19,7 +22,7 @@ export async function ensureOrbyvenSession(): Promise<boolean> {
     if (error) throw error;
 
     const session = data.session;
-    if (!session) return false;
+    if (!session?.access_token) return null;
 
     const expiresAtMs =
       typeof session.expires_at === "number"
@@ -27,12 +30,12 @@ export async function ensureOrbyvenSession(): Promise<boolean> {
         : null;
 
     if (!expiresAtMs || expiresAtMs - Date.now() > REFRESH_MARGIN_MS) {
-      return true;
+      return session.access_token;
     }
 
     const refreshed = await orbyvenSupabase.auth.refreshSession();
     if (refreshed.error) throw refreshed.error;
-    return Boolean(refreshed.data.session);
+    return refreshed.data.session?.access_token ?? null;
   })();
 
   try {
@@ -42,9 +45,10 @@ export async function ensureOrbyvenSession(): Promise<boolean> {
   }
 }
 
-export async function requireOrbyvenSession() {
-  const available = await ensureOrbyvenSession();
-  if (!available) {
+export async function requireOrbyvenSession(): Promise<string> {
+  const accessToken = await ensureOrbyvenSession();
+  if (!accessToken) {
     throw new Error("ORBYVEN_SESSION_REQUIRED");
   }
+  return accessToken;
 }
