@@ -72,7 +72,7 @@ test("SEO V3.1 connects commercial pages through indexable topic clusters", () =
   assert.ok(clusters.includes('"/studii-de-caz/haos-customs"'));
   assert.ok(clusters.includes("isIndexableClusterTarget"));
   assert.ok(clusters.includes('href.startsWith("/templates/")'));
-  assert.ok(related.includes('href="/cerere"'));
+  assert.ok(related.includes('locale === "ro" ? "/cerere" : "/contact"'));
   for (const source of [landing, caseStudy, guide]) {
     assert.ok(source.includes("SeoRelatedLinks"));
   }
@@ -103,8 +103,9 @@ test("RO and EN domains keep host-specific robots, sitemap and canonicals", () =
   }
 
   assert.ok(sitemap.includes('if (locale === "en")'));
-  assert.ok(sitemap.includes('const englishRoutes = ['));
-  for (const route of ["/servicii", "/templates", "/contact", "/ai-web-design"]) {
+  assert.ok(sitemap.includes('const englishCoreRoutes = ['));
+  assert.ok(sitemap.includes('const englishLandingRoutes = seoLandingPagesEn.map'));
+  for (const route of ["/servicii", "/templates", "/contact", "/ai-web-design", "/video-ai"]) {
     assert.ok(sitemap.includes(route), route);
   }
   assert.ok(domainLocale.includes('"https://www.orbyven.com"'));

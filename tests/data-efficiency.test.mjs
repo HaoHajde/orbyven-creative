@@ -10,6 +10,7 @@ const search = read("components/WorkspaceSearch.tsx");
 const workspace = read("components/WorkspaceShell.tsx");
 const tasksData = read("lib/modules/tasks.ts");
 const tasksUi = read("components/modules/TasksModule.tsx");
+const workFile = read("components/modules/tasks/WorkFileSummary.tsx");
 const estimatesData = read("lib/modules/estimates.ts");
 const estimatesUi = read("components/modules/EstimatesModule.tsx");
 const documentsData = read("lib/modules/documents.ts");
@@ -78,12 +79,13 @@ test("work dossier reads contextual data without bypassing finance or pagination
   assert.match(tasksData, /\.from\("ops_documents"\)/);
   assert.match(tasksData, /\.from\("calendar_events"\)/);
   assert.match(tasksData, /options\.includeThermal/);
-  assert.match(tasksUi, /DOSAR OPERAȚIONAL/);
-  assert.match(tasksUi, /realOperationalCostCents/);
+  assert.match(tasksUi, /WorkFileSummary/);
+  assert.match(workFile, /DOSAR OPERAȚIONAL/);
+  assert.match(workFile, /realOperationalCostCents/);
   assert.match(tasksData, /inventoryConsumedCents/);
-  assert.match(tasksUi, /thermalSketch/);
-  assert.match(tasksUi, /evaluateWorkReadiness/);
-  assert.match(tasksUi, /ORBYVEN · WORK READINESS/);
+  assert.match(workFile, /thermalSketch/);
+  assert.match(workFile, /evaluateWorkReadiness/);
+  assert.match(workFile, /ORBYVEN · WORK READINESS/);
 });
 
 test("accepted estimate handoff is organization-scoped and rolls back incomplete work creation", () => {
