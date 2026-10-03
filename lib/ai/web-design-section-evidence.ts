@@ -164,10 +164,9 @@ export function applyVerifiedSectionEvidence(
   if (!visible.includes("contact")) visible.push("contact");
 
   const visibleOrder = orderForGoal(primaryGoal, visible, current);
-  const hidden = uniqueSections([
-    ...strategy.hiddenSections.filter((section) => !supported.has(section)),
-    ...Array.from(unavailable),
-  ]).filter((section) => section !== "hero" && !visible.includes(section));
+  const hidden = current.sectionOrder.filter(
+    (section) => section !== "hero" && !visible.includes(section)
+  );
 
   const allSections = uniqueSections([
     ...visibleOrder,
