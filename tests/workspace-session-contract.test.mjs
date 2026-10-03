@@ -5,15 +5,18 @@ import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
-test("workspace high-fanout reads require a fresh session before issuing PostgREST queries", () => {
+test("workspace high-fanout reads bind PostgREST to the validated JWT", () => {
   const overview = read("lib/modules/overview.ts");
   const activity = read("lib/modules/activity.ts");
 
   for (const source of [overview, activity]) {
     const gate = source.indexOf("await requireOrbyvenSession()");
-    const firstQuery = source.indexOf("orbyvenSupabase.from(");
+    const boundClient = source.indexOf("createOrbyvenAuthenticatedClient(accessToken)");
+    const firstQuery = source.indexOf("supabase.from(");
     assert.ok(gate >= 0, "session gate missing");
-    assert.ok(firstQuery > gate, "PostgREST query appears before session gate");
+    assert.ok(boundClient > gate, "JWT-bound client must be created after session validation");
+    assert.ok(firstQuery > boundClient, "PostgREST query appears before JWT-bound client");
+    assert.ok(!source.includes("orbyvenSupabase.from("), "fanout reads must not use the shared auth-racy client");
   }
 });
 
@@ -26,6 +29,8 @@ test("workspace session gate refreshes once and shares concurrent refresh work",
   assert.match(session, /REFRESH_MARGIN_MS = 90_000/);
   assert.match(session, /auth\.refreshSession\(\)/);
   assert.match(session, /finally \{\s*sessionGatePromise = null/);
+  assert.match(session, /session\\.access_token/);
+  assert.match(session, /refreshed\\.data\\.session\\?\\.access_token/);
   assert.match(session, /ORBYVEN_SESSION_REQUIRED/);
 });
 
@@ -38,4 +43,13 @@ test("workspace shell reacts to real Supabase sign-out without making auth callb
   assert.match(shell, /Promise\.resolve\(onSignedOut\(\)\)/);
   assert.match(shell, /data\.subscription\.unsubscribe\(\)/);
   assert.doesNotMatch(shell, /onAuthStateChange\(async/);
+});
+
+test("JWT-bound workspace client never relies on publishable key authorization", () => {
+  const client = read("lib/orbyven-supabase.ts");
+
+  assert.match(client, /createOrbyvenAuthenticatedClient\(accessToken: string\)/);
+  assert.match(client, /Authorization:\s*`Bearer \$\{token\}`/);
+  assert.match(client, /persistSession:\s*false/);
+  assert.match(client, /autoRefreshToken:\s*false/);
 });
