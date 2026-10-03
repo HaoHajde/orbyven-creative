@@ -1202,7 +1202,7 @@ test("Smart Interview queue persists per workspace and resets with preset change
   const specialist = read("components/ai/WebDesignSpecialist.tsx");
 
   assert.match(specialist, /INTERVIEW_QUEUE_KEY = "orbyven-web-design-interview-queue-v01"/);
-  assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, workspaceId\)/);
+  assert.match(specialist, /workspaceStorageKey\(\s*INTERVIEW_QUEUE_KEY,\s*workspaceId\s*\)/);
   assert.match(specialist, /getItem\(interviewQueueStorageKey\)/);
   assert.match(specialist, /workspaceStorageKey\(INTERVIEW_QUEUE_KEY, organizationId\)/);
   assert.match(specialist, /JSON\.stringify\(interviewQuestions\)/);
