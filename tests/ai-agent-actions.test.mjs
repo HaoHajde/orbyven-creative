@@ -118,7 +118,9 @@ test("Agent execution keeps Finance writes forbidden and estimate creation behin
 
 test("Confirmation endpoint is bounded and UI exposes confirm/reject", () => {
   const route = read("app/api/ai/actions/confirm/route.ts");
-  const ui = read("components/WorkspaceIntelligence.tsx");
+  const ui =
+    read("components/WorkspaceIntelligence.tsx") +
+    read("components/intelligence/IntelligenceMessageList.tsx");
   assert.match(route, /decision === "reject"/);
   assert.match(route, /decideMutationProposal/);
   assert.match(route, /Cache-Control": "no-store"/);
