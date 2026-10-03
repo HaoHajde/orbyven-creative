@@ -437,7 +437,7 @@ test("Work Readiness flags meaningful ownership and commercial issues inside the
 });
 
 test("Work Readiness wiring is shared by dossier, Activity, Overview and Operations AI", () => {
-  const tasks = readFileSync(join(process.cwd(), "components/modules/TasksModule.tsx"), "utf8");
+  const tasks = readFileSync(join(process.cwd(), "components/modules/tasks/WorkFileSummary.tsx"), "utf8");
   const activity = readFileSync(join(process.cwd(), "lib/modules/activity.ts"), "utf8");
   const overview = readFileSync(join(process.cwd(), "components/modules/OverviewModule.tsx"), "utf8");
   const intelligence = readFileSync(join(process.cwd(), "lib/ai/intelligence-server.ts"), "utf8");
