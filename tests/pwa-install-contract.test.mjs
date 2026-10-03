@@ -77,3 +77,24 @@ test("Next generated manifest matches the canonical installed workspace experien
   assert.match(generatedManifest, /orbyven-app-icon\.png/);
   assert.match(generatedManifest, /purpose:\s*"maskable"/);
 });
+
+test("PWA runtime detects stale deployments without reload loops", () => {
+  const registration = read("components/pwa/ServiceWorkerRegistration.tsx");
+  const route = read("app/api/runtime-version/route.ts");
+
+  assert.match(registration, /\/api\/runtime-version/);
+  assert.match(registration, /cache:\s*"no-store"/);
+  assert.match(registration, /VERSION_CHECK_MIN_INTERVAL_MS = 60_000/);
+  assert.match(registration, /sessionStorage\.getItem\(RUNTIME_VERSION_KEY\)/);
+  assert.match(registration, /sessionStorage\.setItem\(RUNTIME_VERSION_KEY, serverVersion\)/);
+  assert.match(registration, /window\.location\.reload\(\)/);
+  assert.match(registration, /updateViaCache:\s*"none"/);
+  assert.match(registration, /registration\.update\(\)/);
+  assert.match(registration, /visibilitychange/);
+  assert.match(registration, /pageshow/);
+
+  assert.match(route, /VERCEL_GIT_COMMIT_SHA/);
+  assert.match(route, /VERCEL_DEPLOYMENT_ID/);
+  assert.match(route, /Cache-Control/);
+  assert.match(route, /no-store, no-cache, must-revalidate/);
+});
