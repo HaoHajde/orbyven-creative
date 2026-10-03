@@ -39,6 +39,10 @@ import {
   interviewFactsToEvidence,
   type WebDesignInterviewFact,
 } from "@/lib/ai/web-design-interview";
+import {
+  buildWebDesignPublishPlan,
+  type WebDesignPublishPlan,
+} from "@/lib/ai/web-design-publish-plan";
 
 type WebDesignConfig = {
   provider: "openai";
@@ -78,6 +82,7 @@ export type WebDesignGenerationResult = {
   refineScope: WebDesignRefineScope;
   evidence: WebDesignEvidenceGuardReport;
   briefGaps: WebDesignBriefGapReport;
+  publishPlan: WebDesignPublishPlan;
   generatedBy: "orbyven_web_design_ai";
 };
 
@@ -668,6 +673,12 @@ export async function generateWebDesignForActor(
       selectedResult.readiness,
       evidenceResult.report
     );
+    const publishPlan = buildWebDesignPublishPlan(
+      selectedResult.readiness,
+      briefGaps,
+      selectedResult.refinement,
+      evidenceResult.report
+    );
 
     await saveWebDesignDraft(actor, nextDraft, "ai", prompt);
     await finishQuota(actor, quota.requestId, true, usage);
@@ -689,6 +700,7 @@ export async function generateWebDesignForActor(
       refineScope,
       evidence: evidenceResult.report,
       briefGaps,
+      publishPlan,
       generatedBy: "orbyven_web_design_ai",
     };
   } catch (error) {

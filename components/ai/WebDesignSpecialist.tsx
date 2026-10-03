@@ -100,6 +100,21 @@ type GenerationBody = {
       priority?: number;
     }>;
   };
+  publishPlan?: {
+    score?: number;
+    status?: "ready" | "needs_input" | "needs_review";
+    publishable?: boolean;
+    requiredInputCount?: number;
+    optionalInputCount?: number;
+    requiredGapIds?: string[];
+    optionalGapIds?: string[];
+    autoResolvedCount?: number;
+    nextStep?: {
+      type?: "ask_user" | "review" | "ready";
+      label?: string;
+      question?: string | null;
+    };
+  };
   error?: string;
   code?: string;
 };
@@ -431,9 +446,17 @@ export default function WebDesignSpecialist() {
       });
       setDraft(next);
       setSuggestions((body.suggestions ?? []).slice(0, 4));
-      const nextInterviewQuestions = readWebDesignInterviewQuestions(
+      const allInterviewQuestions = readWebDesignInterviewQuestions(
         body.briefGaps?.gaps
       );
+      const requiredGapIds = Array.isArray(body.publishPlan?.requiredGapIds)
+        ? new Set(body.publishPlan.requiredGapIds)
+        : null;
+      const nextInterviewQuestions = requiredGapIds
+        ? allInterviewQuestions.filter((question) =>
+            requiredGapIds.has(question.id)
+          )
+        : allInterviewQuestions;
       setInterviewQuestions(nextInterviewQuestions);
       if (!nextInterviewQuestions.length) setInterviewAnswer("");
       const nextQualityScore =
@@ -441,9 +464,13 @@ export default function WebDesignSpecialist() {
           ? Math.max(0, Math.min(100, Math.round(body.quality.score)))
           : null;
       setQualityScore(nextQualityScore);
+      const publishScore =
+        typeof body.publishPlan?.score === "number"
+          ? body.publishPlan.score
+          : body.readiness?.score;
       const nextReadinessScore =
-        typeof body.readiness?.score === "number"
-          ? Math.max(0, Math.min(100, Math.round(body.readiness.score)))
+        typeof publishScore === "number"
+          ? Math.max(0, Math.min(100, Math.round(publishScore)))
           : null;
       setReadinessScore(nextReadinessScore);
       const blockerCount = Array.isArray(body.readiness?.blockers)
@@ -464,14 +491,18 @@ export default function WebDesignSpecialist() {
       const revertedClaimCount = Array.isArray(body.evidence?.revertedFields)
         ? body.evidence.revertedFields.length
         : 0;
-      const briefGapLabels = Array.isArray(body.briefGaps?.labels)
-        ? body.briefGaps.labels.slice(0, 2)
-        : [];
+      const briefGapLabels = nextInterviewQuestions
+        .map((question) => question.label)
+        .slice(0, 2);
       setMessage(
         (body.summary || "Varianta AI a fost aplicată.") +
           (briefGapLabels.length > 0
             ? ` · lipsesc: ${briefGapLabels.join(", ")}`
-            : "") +
+            : body.publishPlan?.status === "ready"
+              ? " · gata de publicare"
+              : body.publishPlan?.status === "needs_review"
+                ? " · revizie finală"
+                : "") +
           (revertedClaimCount > 0
             ? ` · ${revertedClaimCount} afirmații neverificate retrase`
             : "") +
@@ -704,10 +735,10 @@ export default function WebDesignSpecialist() {
             ) : null}
             {readinessScore !== null ? (
               <span
-                title="Grad de pregătire pentru publicare: placeholders, structură și calitate"
+                title="Scor de publicare: informații reale, structură, siguranță și calitate"
                 className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1.5 text-[9px] font-semibold text-emerald-200/80"
               >
-                Ready {readinessScore}
+                Publish {readinessScore}
               </span>
             ) : null}
             <button
