@@ -1,54 +1,50 @@
-# ORBYVEN Daily Checkpoint — 2026-10-01
+# ORBYVEN Daily Checkpoint — 2026-10-05
 
-Current product version: **Alpha 0.9.3**
-Product baseline: `131eb407d461e98b6812079f6e9d9a86ab57bc43`
-Previous checkpoint baseline: `02067a8918badab479165858541b3d29023595f8`
+Current product version: **Alpha 0.10.0**
+Product baseline: `4aeb03ad5e93f58f75b7f0726ce4afff2bf2477f`
+Current main head at audit: `7400a86593a0f50d1112c14636f42a0d47fcfdae`
+Previous release report: `docs/ORBYVEN-ALPHA-0.10.0-2026-10-04.md`
 
 ## Daily sync result
 
-The daily sync is **not clean/no-op**: main contains one real product commit after the previous checkpoint.
+**Clean daily synchronization. No product version change.**
 
-The correct version movement is a **patch bump from 0.9.2 to 0.9.3**, driven by Windows canonical shell parity v0.7.0.
+Compared with the 0.10.0 product baseline, main is ahead by exactly one commit, and that commit only adds the 2026-10-04 release report. There are no new product/code changes on main after `4aeb03ad...`.
 
-## Main / live / draft boundary
+Therefore **Alpha 0.10.0 remains the current version**. Documentation-only checkpoint commits do not trigger patch bumps.
+
+## Main / deploy / draft boundary
 
 ### Confirmed on main
-- Desktop canonical Search reuse
-- Desktop canonical Activity Center reuse
-- Desktop canonical ORBYVEN Intelligence reuse
-- live module metadata manifest
-- Desktop AI plan-recovery bridge
-- removal of duplicated Desktop Search / Activity / Intelligence implementations
-- Windows Desktop internal version 0.7.0
+No new product changes since the 0.10.0 release report. The previously released state remains the source of truth:
+- Core / Modules: 97%
+- AI / Intelligence: 95%
+- Security: 97%
+- Legal / Billing: 91%
+- SEO / Public: 95%
+- Windows: 97%
+- QA / Release confidence: 96%
 
 ### Deployment evidence
-- GitHub commit status for `131eb407...`: **Vercel success**
-- direct Vercel API inspection: blocked by 403 scope authorization
-- production alias to exact SHA: **not independently confirmed**
+- GitHub combined status for current main head `7400a865...`: **Vercel success**.
+- Vercel connector currently exposes no accessible teams/projects, so the exact production alias cannot be independently verified through the Vercel API.
+- No new product deployment is inferred from the documentation-only commit.
 
 ### Not counted as released
-- PR #194 — Intelligence 0.8.14 Guided Resolution — OPEN
-- PR #186 — Architecture Guard v4 — OPEN
-- PR #188 — migration-history alignment — OPEN/DRAFT
-- any local-only or unmerged work
+Open PRs, draft work and local-only work remain outside the release. In particular, Dashboard AI 0.8.25 current-main integration remains open and is not part of Alpha 0.10.0 until merged.
 
-## Current roadmap percentages
+## Risks / backlog
 
-- Core / Modules: **93%**
-- AI / Intelligence: **89%**
-- Security: **92%**
-- Legal / Billing: **82%**
-- SEO / Public: **86%**
-- Windows: **94%**
-- QA / Release confidence: **92%**
+Unchanged from the 2026-10-04 release report:
+- direct production-alias verification;
+- full current-head regression evidence;
+- Windows 0.8 and iOS 0.16 real-device smoke tests;
+- Architecture Guard reconciliation;
+- review/rebase of Dashboard AI 0.8.25 and other open AI/product PRs;
+- cleanup of superseded/reconciliation PRs.
 
-## Immediate next actions
+## Immediate roadmap
 
-1. restore direct Vercel scope access and verify production alias;
-2. obtain full validation evidence for the current main head;
-3. smoke-test Desktop v0.7 installer on Windows;
-4. rebase/review Architecture Guard v4;
-5. evaluate open migration-history alignment;
-6. rebase/validate Guided Resolution before counting Intelligence 0.8.14 as released.
+`0.10.0 → verify production alias → full regression evidence → Windows/iOS device smoke → reconcile Architecture Guard → review Dashboard AI 0.8.25 → stabilize 0.10.x`
 
-Detailed report: `docs/ORBYVEN-ALPHA-0.9.3-2026-10-01.md`
+Do not bump the version until a real product/code change lands on main.
