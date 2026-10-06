@@ -1,4 +1,4 @@
-name: ORBYVEN One-Off Integrity Maintenance
+name: ORBYVEN One-Off Package Alignment
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  maintain:
+  align:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,27 +26,22 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Align Next tooling and modernize permanent Actions runtime
+      - name: Align Next tooling
         run: |
           set -euo pipefail
           npm install eslint-config-next@16.3.8 --save-dev --save-exact --package-lock-only
           npm ci
           npm audit --omit=dev --audit-level=high
 
-          while IFS= read -r -d '' file; do
-            sed -i 's#actions/checkout@v4#actions/checkout@v7#g; s#actions/setup-node@v4#actions/setup-node@v7#g' "$file"
-          done < <(find .github/workflows -type f \( -name '*.yml' -o -name '*.yaml' \) ! -name 'security-deps-repair.yml' -print0)
-
-      - name: Commit maintenance changes
+      - name: Commit package alignment
         run: |
           set -euo pipefail
           git config user.name "ORBYVEN Integrity Bot"
           git config user.email "integrity-bot@users.noreply.github.com"
-          git add package.json package-lock.json .github/workflows
-          git reset .github/workflows/security-deps-repair.yml
+          git add package.json package-lock.json
           if git diff --cached --quiet; then
-            echo "No maintenance changes required."
+            echo "No package alignment required."
             exit 0
           fi
-          git commit -m "chore: align Next tooling and modernize GitHub Actions"
+          git commit -m "chore: align Next lint tooling"
           git push origin HEAD:main
