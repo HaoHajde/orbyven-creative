@@ -78,8 +78,71 @@ jobs:
       - name: Architecture and lightweight source gate
         run: npm run test:architecture
 
-      - name: Ecosystem contract tests (offline)
-        run: npm run test:ecosystem
+      - name: Ecosystem · core contract
+        run: node --experimental-strip-types --test tests/ecosystem-contract.test.mjs
+
+      - name: Ecosystem · thermal planner
+        run: node --experimental-strip-types --test tests/thermal-planner-live.test.mjs
+
+      - name: Ecosystem · finance activity
+        run: node --experimental-strip-types --test tests/finance-activity-contract.test.mjs
+
+      - name: Ecosystem · intelligence core
+        run: node --experimental-strip-types --test tests/intelligence-core.test.mjs
+
+      - name: Ecosystem · web design AI
+        run: node --experimental-strip-types --test tests/web-design-ai.test.mjs
+
+      - name: Ecosystem · AI agent actions
+        run: node --experimental-strip-types --test tests/ai-agent-actions.test.mjs
+
+      - name: Ecosystem · AI estimate action
+        run: node --experimental-strip-types --test tests/ai-estimate-action.test.mjs
+
+      - name: Ecosystem · AI document action
+        run: node --experimental-strip-types --test tests/ai-document-action.test.mjs
+
+      - name: Ecosystem · AI conversation memory
+        run: node --experimental-strip-types --test tests/ai-conversation-memory.test.mjs
+
+      - name: Ecosystem · AI context followups
+        run: node --experimental-strip-types --test tests/ai-context-followups.test.mjs
+
+      - name: Ecosystem · AI selective language
+        run: node --experimental-strip-types --test tests/ai-selective-language.test.mjs
+
+      - name: Ecosystem · AI entity context
+        run: node --experimental-strip-types --test tests/ai-entity-context.test.mjs
+
+      - name: Ecosystem · automation business signals
+        run: node --experimental-strip-types --test tests/automation-business-signals.test.mjs
+
+      - name: Ecosystem · inventory procurement
+        run: node --experimental-strip-types --test tests/inventory-procurement.test.mjs
+
+      - name: Ecosystem · resource scheduler
+        run: node --experimental-strip-types --test tests/resource-scheduler.test.mjs
+
+      - name: Ecosystem · AI plan mode
+        run: node --experimental-strip-types --test tests/ai-plan-mode.test.mjs
+
+      - name: Ecosystem · intelligence floating overlay
+        run: node --experimental-strip-types --test tests/intelligence-floating-overlay.test.mjs
+
+      - name: Ecosystem · PWA install contract
+        run: node --experimental-strip-types --test tests/pwa-install-contract.test.mjs
+
+      - name: Ecosystem · workspace warp navigation
+        run: node --experimental-strip-types --test tests/workspace-warp-navigation.test.mjs
+
+      - name: Ecosystem · workspace mobile PWA polish
+        run: node --experimental-strip-types --test tests/workspace-mobile-pwa-polish.test.mjs
+
+      - name: Ecosystem · client retention aftercare
+        run: node --experimental-strip-types --test tests/client-retention-aftercare.test.mjs
+
+      - name: Ecosystem · post-service growth
+        run: node --experimental-strip-types --test tests/post-service-growth.test.mjs
 
       - name: Billing webhook and fiscal regression tests (offline)
         run: npm run test:billing
