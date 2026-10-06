@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Runtime dependency security audit
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Collect changed lint targets
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
