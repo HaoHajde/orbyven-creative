@@ -86,7 +86,14 @@ test("workspace light theme uses a low-glare violet visual system", () => {
 
   assert.match(css, /ORBYVEN WORKSPACE LIGHT THEME/);
   assert.match(css, /radial-gradient\(ellipse 58% 46% at 8% 7%/);
-  assert.match(css, /background-image: linear-gradient\(145deg, var\(--panel-highlight\), transparent 34%\)/);
+  assert.match(
+    css,
+    /background-image:\s*linear-gradient\(145deg, var\(--panel-highlight\), transparent 34%\),/,
+  );
+  assert.match(
+    css,
+    /linear-gradient\(180deg, rgba\(116, 88, 215, 0\.018\), transparent 52%\)/,
+  );
   assert.match(css, /border-color: var\(--violet-line\)/);
   assert.match(css, /rgba\(116, 88, 215, 0\.19\)/);
   assert.match(css, /scrollbar-color: rgba\(104, 89, 214, 0\.42\)/);
