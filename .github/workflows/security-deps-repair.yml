@@ -1,4 +1,4 @@
-name: ORBYVEN Security Dependency Repair
+name: ORBYVEN One-Off Integrity Maintenance
 
 on:
   push:
@@ -11,38 +11,42 @@ permissions:
   contents: write
 
 jobs:
-  repair:
+  maintain:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
-      - name: Patch vulnerable build dependencies
+      - name: Align Next tooling and modernize permanent Actions runtime
         run: |
           set -euo pipefail
           npm install eslint-config-next@16.3.8 --save-dev --save-exact --package-lock-only
-          npm audit fix --package-lock-only
           npm ci
-          npm audit --audit-level=high
+          npm audit --omit=dev --audit-level=high
 
-      - name: Commit repaired dependency lock
+          while IFS= read -r -d '' file; do
+            sed -i 's#actions/checkout@v4#actions/checkout@v7#g; s#actions/setup-node@v4#actions/setup-node@v7#g' "$file"
+          done < <(find .github/workflows -type f \( -name '*.yml' -o -name '*.yaml' \) ! -name 'security-deps-repair.yml' -print0)
+
+      - name: Commit maintenance changes
         run: |
           set -euo pipefail
-          git config user.name "ORBYVEN Security Bot"
-          git config user.email "security-bot@users.noreply.github.com"
-          git add package.json package-lock.json
+          git config user.name "ORBYVEN Integrity Bot"
+          git config user.email "integrity-bot@users.noreply.github.com"
+          git add package.json package-lock.json .github/workflows
+          git reset .github/workflows/security-deps-repair.yml
           if git diff --cached --quiet; then
-            echo "No dependency changes required."
+            echo "No maintenance changes required."
             exit 0
           fi
-          git commit -m "security: patch vulnerable build dependencies"
+          git commit -m "chore: align Next tooling and modernize GitHub Actions"
           git push origin HEAD:main
