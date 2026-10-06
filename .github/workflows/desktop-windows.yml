@@ -58,7 +58,7 @@ jobs:
         run: node scripts/architecture-integrity.mjs --desktop-build-only
 
       - name: Upload Windows installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ORBYVEN-Desktop-Windows-v0.8.0
           path: desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
