@@ -81,7 +81,7 @@ jobs:
           node scripts/summarize-lighthouse.mjs lighthouse
       - name: Upload raw audit data
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: orbyven-lighthouse-${{ github.sha }}
           path: lighthouse/
