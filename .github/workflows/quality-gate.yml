@@ -114,9 +114,6 @@ jobs:
       - name: Ecosystem · AI entity context
         run: node --experimental-strip-types --test tests/ai-entity-context.test.mjs
 
-      - name: Ecosystem · Work Readiness wiring probe
-        run: node --experimental-strip-types --test --test-name-pattern="Work Readiness wiring is shared by dossier, Activity, Overview and Operations AI" tests/automation-business-signals.test.mjs
-
       - name: Ecosystem · automation business signals
         run: node --experimental-strip-types --test tests/automation-business-signals.test.mjs
 
@@ -162,8 +159,14 @@ jobs:
       - name: Demo template integrity (offline)
         run: node --test tests/pilot-demo-integrity.test.mjs
 
-      - name: Performance loading regression tests (offline)
-        run: npm run test:performance
+      - name: Performance · boundaries
+        run: node --test tests/performance-boundaries.test.mjs
+
+      - name: Performance · workspace auth
+        run: node --test tests/workspace-auth-performance.test.mjs
+
+      - name: Performance · device integrity
+        run: node --test tests/device-integrity.test.mjs
 
       - name: Data efficiency and search regression tests (offline)
         run: npm run test:data
