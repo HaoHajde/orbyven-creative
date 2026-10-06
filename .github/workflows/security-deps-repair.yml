@@ -26,13 +26,13 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Patch vulnerable runtime dependencies
+      - name: Patch vulnerable build dependencies
         run: |
           set -euo pipefail
-          npm install next@16.3.8 --save-exact --package-lock-only
-          npm audit fix --package-lock-only --omit=dev
+          npm install eslint-config-next@16.3.8 --save-dev --save-exact --package-lock-only
+          npm audit fix --package-lock-only
           npm ci
-          npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=high
 
       - name: Commit repaired dependency lock
         run: |
@@ -44,5 +44,5 @@ jobs:
             echo "No dependency changes required."
             exit 0
           fi
-          git commit -m "security: patch vulnerable runtime dependencies"
+          git commit -m "security: patch vulnerable build dependencies"
           git push origin HEAD:main
