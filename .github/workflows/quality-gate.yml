@@ -114,6 +114,9 @@ jobs:
       - name: Ecosystem · AI entity context
         run: node --experimental-strip-types --test tests/ai-entity-context.test.mjs
 
+      - name: Ecosystem · Work Readiness wiring probe
+        run: node --experimental-strip-types --test --test-name-pattern="Work Readiness wiring is shared by dossier, Activity, Overview and Operations AI" tests/automation-business-signals.test.mjs
+
       - name: Ecosystem · automation business signals
         run: node --experimental-strip-types --test tests/automation-business-signals.test.mjs
 
