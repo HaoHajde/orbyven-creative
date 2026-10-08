@@ -3,6 +3,8 @@ import type { OrbyvenModuleDefinition, OrbyvenModuleId } from "@/lib/orbyven-mod
 
 export let orbyvenSupabase: SupabaseClient;
 
+let desktopConfig: DesktopConfig | null = null;
+
 type DesktopConfig = {
   supabaseUrl: string;
   supabasePublishableKey: string;
@@ -51,6 +53,7 @@ export async function initializeDesktopClient() {
   if (!supabaseUrl || !supabasePublishableKey || !supabaseUrl.startsWith("https://")) {
     throw new Error("Configurația publică ORBYVEN este invalidă.");
   }
+  desktopConfig = { supabaseUrl, supabasePublishableKey };
   orbyvenSupabase = createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
       persistSession: true,
@@ -60,6 +63,21 @@ export async function initializeDesktopClient() {
     },
   });
   return orbyvenSupabase;
+}
+
+export function createOrbyvenAuthenticatedClient(accessToken: string) {
+  const token = accessToken.trim();
+  if (!token) throw new Error("ORBYVEN_SESSION_REQUIRED");
+  if (!desktopConfig) throw new Error("ORBYVEN_DESKTOP_CLIENT_NOT_INITIALIZED");
+
+  return createClient(desktopConfig.supabaseUrl, desktopConfig.supabasePublishableKey, {
+    accessToken: async () => token,
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
 }
 
 export async function desktopApiFetch(path: string, init: RequestInit = {}) {
