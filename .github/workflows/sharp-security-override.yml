@@ -1,0 +1,46 @@
+name: Sharp security override
+
+on:
+  push:
+    branches:
+      - fix/sharp-security-override
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: fix/sharp-security-override
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Keep sharp patched without adding a direct web dependency
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          if (pkg.dependencies) delete pkg.dependencies.sharp;
+          pkg.overrides = { ...(pkg.overrides || {}), sharp: '0.35.5' };
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          npm install --package-lock-only
+      - name: Verify runtime security
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verify architecture/lightweight guard
+        run: npm run test:architecture
+      - name: Commit repaired manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "fix(security): pin patched sharp via override"
+          git push
