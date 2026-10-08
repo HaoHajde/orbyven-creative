@@ -289,7 +289,7 @@ function WebScene({ feature }: { feature: string }) {
         ].map(([title,items],i)=>(
           <SceneCard key={title as string} className="min-w-0 p-2 sm:p-3">
             <div className="flex items-center justify-between"><span className="text-[7px] font-bold text-white/35">{title as string}</span><span className="text-[7px] text-white/20">{(items as string[]).length}</span></div>
-            <div className="mt-3 space-y-2">{(items as string[]).map((x,j)=><div key={x} className={`break-words rounded-[11px] border p-2 text-[7px] sm:p-3 sm:text-[8px] ${i===2?"border-emerald-400/12 bg-emerald-400/[.05]":"border-white/7 bg-[#0b0c12]"}`}><div className="mb-3 h-1.5 w-[45%] rounded-full bg-[#8f6cff]/45"/>{x}</div>)}</div>
+            <div className="mt-3 space-y-2">{(items as string[]).map((x)=><div key={x} className={`break-words rounded-[11px] border p-2 text-[7px] sm:p-3 sm:text-[8px] ${i===2?"border-emerald-400/12 bg-emerald-400/[.05]":"border-white/7 bg-[#0b0c12]"}`}><div className="mb-3 h-1.5 w-[45%] rounded-full bg-[#8f6cff]/45"/>{x}</div>)}</div>
           </SceneCard>
         ))}
       </div>
@@ -399,7 +399,7 @@ function AdvancedScene({ feature }: { feature: string }) {
         <div className="relative grid h-full grid-cols-4 grid-rows-3 gap-2">
           {[
             ["CRM","col-span-1 row-span-2"],["Dashboard","col-span-2 row-span-1"],["AI","col-span-1 row-span-1"],["Calendar","col-span-1 row-span-1"],["Custom +","col-span-2 row-span-2"],["Stoc","col-span-1 row-span-1"],["Devize","col-span-1 row-span-1"]
-          ].map(([label,size],i)=><div key={label} className={`${size} grid place-items-center rounded-[14px] border ${label==="Custom +"?"border-[#a98dff]/45 bg-[#8f6cff]/16 shadow-[0_0_34px_rgba(126,93,255,.14)]":"border-white/8 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={label==="Custom +"?"Custom":label}/><p className="mt-2 text-[7px] text-white/55">{label}</p></div></div>)}
+          ].map(([label,size])=><div key={label} className={`${size} grid place-items-center rounded-[14px] border ${label==="Custom +"?"border-[#a98dff]/45 bg-[#8f6cff]/16 shadow-[0_0_34px_rgba(126,93,255,.14)]":"border-white/8 bg-white/[.035]"}`}><div className="text-center text-[#c8b8ff]"><Glyph kind={label==="Custom +"?"Custom":label}/><p className="mt-2 text-[7px] text-white/55">{label}</p></div></div>)}
         </div>
       </div>
     );
