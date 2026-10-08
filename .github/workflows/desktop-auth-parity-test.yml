@@ -1,0 +1,25 @@
+name: Desktop auth parity test
+
+on:
+  push:
+    branches:
+      - fix/desktop-auth-client-parity-20261009
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run check
+      - run: npm run build:web
