@@ -45,8 +45,11 @@ jobs:
       - name: Rust stable for Windows
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Tauri CLI
-        run: npm install --prefix desktop --no-audit --no-fund
+      - name: Install locked desktop dependencies
+        run: npm ci --prefix desktop --no-audit --no-fund
+
+      - name: Audit desktop runtime dependencies
+        run: npm audit --prefix desktop --omit=dev --audit-level=high
 
       - name: Contract checks
         run: npm run check --prefix desktop

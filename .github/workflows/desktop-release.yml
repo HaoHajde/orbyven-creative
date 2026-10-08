@@ -30,8 +30,11 @@ jobs:
       - name: Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install desktop dependencies
-        run: npm install --prefix desktop --no-audit --no-fund
+      - name: Install locked desktop dependencies
+        run: npm ci --prefix desktop --no-audit --no-fund
+
+      - name: Audit desktop runtime dependencies
+        run: npm audit --prefix desktop --omit=dev --audit-level=high
 
       - name: Validate desktop
         run: npm run check --prefix desktop
@@ -57,7 +60,7 @@ jobs:
 
           if gh release view desktop-latest >/dev/null 2>&1; then
             gh release upload desktop-latest release/ORBYVEN-Windows-Setup.exe --clobber
-            gh release edit desktop-latest               --title "ORBYVEN Desktop Windows Alpha"               --notes "Latest ORBYVEN Windows Alpha build. Unsigned preview build for testing."
+            gh release edit desktop-latest --title "ORBYVEN Desktop Windows Alpha" --notes "Latest ORBYVEN Windows Alpha build. Unsigned preview build for testing."
           else
-            gh release create desktop-latest               release/ORBYVEN-Windows-Setup.exe               --title "ORBYVEN Desktop Windows Alpha"               --notes "Latest ORBYVEN Windows Alpha build. Unsigned preview build for testing."               --prerelease               --target "$GITHUB_SHA"
+            gh release create desktop-latest release/ORBYVEN-Windows-Setup.exe --title "ORBYVEN Desktop Windows Alpha" --notes "Latest ORBYVEN Windows Alpha build. Unsigned preview build for testing." --prerelease --target "$GITHUB_SHA"
           fi
