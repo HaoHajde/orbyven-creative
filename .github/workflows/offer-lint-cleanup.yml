@@ -1,0 +1,43 @@
+name: Offer lint cleanup
+
+on:
+  push:
+    branches:
+      - fix/offer-lint-cleanup-20261009
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: fix/offer-lint-cleanup-20261009
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Remove unused callback indexes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('components/offer/OfferFeatureScene.tsx')
+          s = p.read_text()
+          s2 = s.replace('.map((x,j)=><div key={x}', '.map((x)=><div key={x}')
+          s2 = s2.replace('].map(([label,size],i)=><div key={label}', '].map(([label,size])=><div key={label}')
+          if s2 == s:
+              raise SystemExit('Expected lint patterns were not found')
+          p.write_text(s2)
+          PY
+      - run: npx eslint components/offer/OfferFeatureScene.tsx --max-warnings=0
+      - run: npm run typecheck
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/offer/OfferFeatureScene.tsx
+          git commit -m "chore: remove unused offer scene indexes"
+          git push
