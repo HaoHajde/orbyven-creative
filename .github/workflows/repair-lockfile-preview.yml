@@ -1,0 +1,27 @@
+name: Repair lockfile preview
+
+on:
+  push:
+    branches:
+      - fix/sharp-cve-2026-96889
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Generate safe dependency fix
+        run: npm audit fix --package-lock-only
+      - name: Verify runtime audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Print lockfile patch
+        if: always()
+        run: git diff -- package-lock.json
