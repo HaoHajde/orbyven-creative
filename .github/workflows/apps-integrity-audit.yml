@@ -1,0 +1,46 @@
+name: App integrity audit
+
+on:
+  push:
+    branches:
+      - audit/apps-integrity-20261009
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Desktop tests and typecheck
+        run: npm run check
+      - name: Desktop web build
+        run: npm run build:web
+
+  ios:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: iOS TypeScript check
+        run: npm run check
+      - name: iOS contract tests
+        run: npm run test:contract
