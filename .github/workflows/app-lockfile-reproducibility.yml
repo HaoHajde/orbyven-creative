@@ -1,0 +1,59 @@
+name: App dependency reproducibility
+
+on:
+  push:
+    branches:
+      - fix/app-reproducible-deps-20261009
+
+permissions:
+  contents: write
+
+jobs:
+  lock-and-validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: fix/app-reproducible-deps-20261009
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Generate desktop lockfile
+        working-directory: desktop
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Generate iOS lockfile
+        working-directory: ios
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Clean install desktop
+        working-directory: desktop
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Audit desktop runtime
+        working-directory: desktop
+        run: npm audit --omit=dev --audit-level=high
+      - name: Validate desktop
+        working-directory: desktop
+        run: npm run check && npm run build:web
+
+      - name: Clean install iOS
+        working-directory: ios
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Report iOS upstream advisories
+        working-directory: ios
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+      - name: Validate iOS
+        working-directory: ios
+        run: npm run check && npm run test:contract && npm run export:ios
+
+      - name: Commit application lockfiles
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop/package-lock.json ios/package-lock.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(apps): lock desktop and iOS dependencies"
+          git push
