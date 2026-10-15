@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type WarpItem = {
   id: string;
@@ -10,7 +10,25 @@ export type WarpItem = {
 
 export default function WarpMenu({ items, activeSection }: { items: WarpItem[]; activeSection: string | null }) {
   const [open, setOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const activeItem = items.find((item) => item.id === activeSection) ?? null;
+
+  useEffect(() => {
+    const initial = document.documentElement.dataset.orbyvenHeaderVisible;
+    if (initial === "true" || initial === "false") {
+      setHeaderVisible(initial === "true");
+    }
+
+    const onHeaderVisibility = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visible?: boolean }>;
+      if (typeof customEvent.detail?.visible === "boolean") {
+        setHeaderVisible(customEvent.detail.visible);
+      }
+    };
+
+    window.addEventListener("orbyven:header-visibility", onHeaderVisibility);
+    return () => window.removeEventListener("orbyven:header-visibility", onHeaderVisibility);
+  }, []);
 
   const goTo = (id: string) => {
     const element = document.getElementById(id);
@@ -29,8 +47,19 @@ export default function WarpMenu({ items, activeSection }: { items: WarpItem[]; 
   return (
     <>
       {activeItem ? (
-        <div className="pointer-events-none fixed left-1/2 top-[92px] z-[70] max-w-[calc(100vw-32px)] -translate-x-1/2 md:top-[96px]">
-          <div style={{ backgroundColor: "var(--bg)" }} className="flex max-w-full items-center gap-2.5 rounded-full border border-[var(--border)] px-3 py-2 shadow-[0_10px_35px_rgba(0,0,0,0.07)] sm:gap-3 sm:px-4">
+        <div
+          className={`pointer-events-none fixed left-1/2 z-[70] max-w-[calc(100vw-32px)] -translate-x-1/2 transform-gpu transition-[top,transform,opacity] duration-300 ease-out ${
+            headerVisible ? "top-[92px] md:top-[96px]" : "top-[32px]"
+          }`}
+        >
+          <div
+            style={{ backgroundColor: "var(--bg)" }}
+            className={`flex max-w-full items-center gap-2.5 rounded-full border px-3 py-2 transition-[border-color,box-shadow,background-color] duration-300 sm:gap-3 sm:px-4 ${
+              headerVisible
+                ? "border-[var(--border)] shadow-[0_10px_35px_rgba(0,0,0,0.07)]"
+                : "border-[var(--border-strong)] shadow-[0_14px_42px_rgba(0,0,0,0.14)]"
+            }`}
+          >
             <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-2)]">WARP</span>
             <span className="h-1 w-1 rounded-full bg-[var(--accent)]" />
             <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--muted-2)]">{activeItem.number}</span>
