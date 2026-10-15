@@ -71,10 +71,17 @@ export default function SiteHeader({
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    document.documentElement.dataset.orbyvenHeaderVisible = visible ? "true" : "false";
+    window.dispatchEvent(
+      new CustomEvent("orbyven:header-visibility", {
+        detail: { visible },
+      })
+    );
+  }, [visible]);
+
   return (
     <>
-
-
       <header
         className={`pointer-events-none fixed inset-x-0 top-0 z-[100] transform-gpu transition-transform duration-300 ease-out ${
           visible ? "translate-y-0" : "-translate-y-[calc(100%+20px)]"
