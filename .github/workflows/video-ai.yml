@@ -21,6 +21,7 @@ on:
       - "lib/video-ai-*.ts"
       - "proxy.ts"
       - "tests/video-ai.test.mjs"
+      - "tests/product-film-engine.test.mjs"
       - ".github/workflows/video-ai.yml"
   push:
     branches:
@@ -44,6 +45,7 @@ on:
       - "lib/video-ai-*.ts"
       - "proxy.ts"
       - "tests/video-ai.test.mjs"
+      - "tests/product-film-engine.test.mjs"
       - ".github/workflows/video-ai.yml"
 
 permissions:
@@ -71,4 +73,4 @@ jobs:
         run: npm ci
 
       - name: Video AI contract tests
-        run: node --experimental-strip-types --test tests/video-ai.test.mjs
+        run: node --experimental-strip-types --test tests/video-ai.test.mjs tests/product-film-engine.test.mjs
