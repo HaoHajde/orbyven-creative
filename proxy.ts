@@ -40,6 +40,7 @@ export const config = {
     "/templates",
     "/contact",
     "/ai-web-design",
+    "/video-ai",
     "/cerere",
     "/creare-site",
     "/site-prezentare",

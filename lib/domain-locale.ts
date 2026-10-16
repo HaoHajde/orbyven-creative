@@ -23,6 +23,7 @@ export const ENGLISH_PUBLIC_PATHS = new Set([
   "/templates",
   "/contact",
   "/ai-web-design",
+  "/video-ai",
   "/solutii",
   "/studii-de-caz",
   "/ghid",
