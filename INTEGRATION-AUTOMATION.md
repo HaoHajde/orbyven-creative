@@ -95,15 +95,27 @@ After this automation is merged and its checks are verified green, configure `ma
 
 Do not make Vercel a hard required gate while the account is actively hitting external build-rate limits; the repository production build remains the deterministic source-code gate.
 
+## Persistent agent checkpoints
+
+Long-running ORBYVEN workstreams also use the checkpoint protocol in `ORBYVEN-AGENT-HANDOFF.md`.
+
+The persistent checkpoint files live under `.orbyven/handoff/` and are operational hints only. They never override Git, PR, CI, ownership boundaries, or `main` as the canonical source of truth.
+
+Agents must checkpoint after atomic milestones and before long-running verification so another Chat or Work session can resume with minimal repeated analysis if an allowance limit interrupts execution.
+
+A checkpoint may say where to resume, but the resuming agent must still verify current Git/PR/CI state before changing code.
+
 ## Chat handoff rule
 
 A chat does not need a prose summary from the previous chat before continuing. Its first integration step is:
 
 1. fetch current `main`;
-2. inspect the diff/contracts added since its branch point;
-3. adapt only its owned implementation;
-4. preserve the canonical tenant/module/billing contracts;
-5. rerun CI/build;
-6. merge only after the branch is current and green.
+2. read the relevant `.orbyven/handoff/<worker>.json` when the task belongs to a persistent workstream;
+3. inspect the diff/contracts added since its branch point or checkpoint;
+4. adapt only its owned implementation;
+5. preserve the canonical tenant/module/billing contracts;
+6. rerun CI/build;
+7. update its checkpoint with the verified commit/PR/test state;
+8. merge only after the branch is current and green.
 
-Git + repository contracts are the handoff mechanism.
+Git + repository contracts + verified checkpoint state are the handoff mechanism.
