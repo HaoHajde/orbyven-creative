@@ -1,26 +1,27 @@
 {
   "version": 1,
   "worker_id": "dashboard-core",
-  "state": "BLOCKED_LIMIT",
-  "mode": "chat",
-  "updated_at": "2026-10-16T13:43:00Z",
+  "state": "READY_FOR_WORK",
+  "mode": "work",
+  "updated_at": "2026-10-16T13:48:53Z",
   "branch": "feature/dashboard-ai-0825-current-main-r8-20261003",
-  "base_main_sha": "34e0d193f5bab82d8f9a583cab7b60a8ca83d450",
+  "base_main_sha": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
   "last_completed": [
     "Persistent Chat ↔ Work handoff protocol is merged on main.",
-    "Current main includes the latest security/integrity hardening and migration-history alignment.",
-    "Open dashboard work includes PR #346 for Dashboard AI 0.8.25 and PR #231 for the connected minimalist module flow."
+    "Normal-Chat review found PR #346 is non-mergeable and based on an old main, while PR #231 is also non-mergeable, draft, and much broader/older.",
+    "PR #346 contains the newer Dashboard AI intelligence/action layer; PR #231 contains the connected minimalist operational-flow concepts. They must not be merged wholesale or stacked as-is.",
+    "Current main CI and Integration Train are green after the handoff commits."
   ],
-  "next_action": "Normal Chat: compare current main with PR #346 and PR #231, identify stale/conflicting assumptions and the safest integration order, and reduce the next Work step to one concrete implementation action that preserves the current auth/security contracts and the 3-click beginner-friendly UX goal.",
+  "next_action": "Work: create a fresh dashboard integration branch from current main (4a8ade0c). Port only the still-missing Dashboard AI 0.8.25 capabilities from PR #346 first, preserving current auth/security contracts and confirmation-only mutations. Treat PR #231 as a UX/flow reference only: after the #346 port is clean, selectively reimplement its single-next-action/3-click module-flow ideas against current main rather than merging its 198-commit branch. Run architecture guard, targeted dashboard tests, Quality Gate and CI before opening/updating a PR.",
   "files_touched": [],
   "tests": {
-    "status": "not_run",
-    "last_run": null,
-    "notes": "Work allowance is currently blocked; normal Chat may inspect Git/PR/CI and refine sequencing but must not claim runtime/build verification."
+    "status": "ci_evidence_only",
+    "last_run": "2026-10-16T13:46:11Z",
+    "notes": "Latest main ORBYVEN CI and Integration Train completed successfully. No local build/runtime/browser verification was performed by normal Chat."
   },
-  "last_commit": "34e0d193f5bab82d8f9a583cab7b60a8ca83d450",
+  "last_commit": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
   "pull_request": 346,
-  "blocker": "Work/Codex allowance reset window is active. Execution-capable changes are deferred until Work resumes.",
+  "blocker": null,
   "safe_to_resume": true
 }
