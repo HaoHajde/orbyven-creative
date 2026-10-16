@@ -8,17 +8,17 @@ export type WarpItem = {
   number: string;
 };
 
+const readHeaderVisibility = () => {
+  if (typeof document === "undefined") return true;
+  return document.documentElement.dataset.orbyvenHeaderVisible !== "false";
+};
+
 export default function WarpMenu({ items, activeSection }: { items: WarpItem[]; activeSection: string | null }) {
   const [open, setOpen] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(true);
+  const [headerVisible, setHeaderVisible] = useState(readHeaderVisibility);
   const activeItem = items.find((item) => item.id === activeSection) ?? null;
 
   useEffect(() => {
-    const initial = document.documentElement.dataset.orbyvenHeaderVisible;
-    if (initial === "true" || initial === "false") {
-      setHeaderVisible(initial === "true");
-    }
-
     const onHeaderVisibility = (event: Event) => {
       const customEvent = event as CustomEvent<{ visible?: boolean }>;
       if (typeof customEvent.detail?.visible === "boolean") {
