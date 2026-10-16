@@ -1,24 +1,26 @@
 {
   "version": 1,
   "worker_id": "integrity",
-  "state": "READY",
-  "mode": "work",
-  "updated_at": "2026-10-16T12:00:00Z",
+  "state": "BLOCKED_LIMIT",
+  "mode": "chat",
+  "updated_at": "2026-10-16T13:43:00Z",
   "branch": null,
-  "base_main_sha": "32260d8fe7924d7d1e30465fd24be99389c3c2b0",
+  "base_main_sha": "b0a9ce69f5aaec8a337fd0e59e56db5a10e19cc9",
   "current_objective": "Continuously verify ORBYVEN project integrity across code quality, security, SEO, legal/operational implementation, and CI; fix what can be fixed safely and clearly separate user-required actions.",
   "last_completed": [
-    "Latest main includes trigger-hardening migration alignment at 32260d8fe7924d7d1e30465fd24be99389c3c2b0."
+    "Security & integrity hardening PR #347 is merged.",
+    "Trigger-hardening migration history alignment PR #348 is merged.",
+    "Persistent Chat ↔ Work handoff protocol PR #349 is merged."
   ],
-  "next_action": "Inspect current main, recent commits, open PRs, CI and existing integrity/audit documentation; only address newly detected or still-open issues and avoid repeating completed audits without evidence of change.",
+  "next_action": "Normal Chat: inspect current main plus open integrity/legal/architecture PRs, especially #227, and distinguish genuinely unresolved risks from stale work already superseded by #347/#348. Produce a short evidence-based remaining-risk list and one concrete Work resume action; do not repeat completed audits without a repository change that justifies them.",
   "files_touched": [],
   "tests": {
     "status": "not_run",
     "last_run": null,
-    "notes": "Seed checkpoint only; no new integrity verification performed by this handoff setup."
+    "notes": "Work allowance is currently blocked; normal Chat may inspect repository/PR/CI evidence and refine the audit plan but must not claim runtime, deployment or browser validation not actually performed."
   },
-  "last_commit": "32260d8fe7924d7d1e30465fd24be99389c3c2b0",
-  "pull_request": null,
-  "blocker": null,
+  "last_commit": "b0a9ce69f5aaec8a337fd0e59e56db5a10e19cc9",
+  "pull_request": 227,
+  "blocker": "Work/Codex allowance reset window is active. Execution-capable fixes are deferred until Work resumes.",
   "safe_to_resume": true
 }
