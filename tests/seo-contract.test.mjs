@@ -79,8 +79,11 @@ test("SEO V3.1 connects commercial pages through indexable topic clusters", () =
 });
 
 test("service and invitation hubs expose descriptive internal links", () => {
-  const services = read("app/servicii/page.tsx");
+  const servicesRoute = read("app/servicii/page.tsx");
+  const services = read("components/PublicServicesPage.tsx");
   const invitations = read("components/InvitationServiceLanding.tsx");
+
+  assert.ok(servicesRoute.includes("PublicServicesPage"));
   for (const route of ["/creare-site", "/site-prezentare", "/redesign-site", "/studii-de-caz"]) {
     assert.ok(services.includes(route), route);
   }
