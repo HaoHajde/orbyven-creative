@@ -1,0 +1,52 @@
+name: ORBYVEN Video AI
+
+on:
+  pull_request:
+    paths:
+      - "app/api/video-ai/**"
+      - "app/video-ai/**"
+      - "app/en/video-ai/**"
+      - "components/VideoAiStudio.tsx"
+      - "components/video-ai/**"
+      - "lib/video-ai-*.ts"
+      - "tests/video-ai.test.mjs"
+      - ".github/workflows/video-ai.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/api/video-ai/**"
+      - "app/video-ai/**"
+      - "app/en/video-ai/**"
+      - "components/VideoAiStudio.tsx"
+      - "components/video-ai/**"
+      - "lib/video-ai-*.ts"
+      - "tests/video-ai.test.mjs"
+      - ".github/workflows/video-ai.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbyven-video-ai-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Video AI contract tests
+        run: node --experimental-strip-types --test tests/video-ai.test.mjs
