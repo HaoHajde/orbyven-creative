@@ -1,9 +1,5 @@
 "use client";
 
-import { WorkspaceAiShortcuts, WorkspaceTextScaleControl } from "@/components/workspace/WorkspaceUtilityControls";
-import WorkspaceModuleGlyph from "@/components/workspace/WorkspaceModuleGlyph";
-import WorkspaceCreateDialog from "@/components/workspace/WorkspaceCreateDialog";
-
 import BrandLogo from "@/components/BrandLogo";
 import WorkspaceOrbitBackground from "@/components/WorkspaceOrbitBackground";
 import WorkspaceContent from "@/components/WorkspaceContent";
@@ -22,6 +18,17 @@ import {
 import type { WorkspaceNavigationIntent, WorkspaceOpenOptions } from "@/lib/workspace-navigation";
 import { scheduleWorkspaceWarp } from "@/lib/workspace-warp";
 import {
+  WORKSPACE_LANGUAGE_STORAGE_KEY,
+  normalizeWorkspaceLanguage,
+  workspaceCreateLabel,
+  workspaceGroupLabel,
+  workspaceIntlLocale,
+  workspaceModuleShortName,
+  workspaceRoleLabel,
+  workspaceShellCopy,
+  type WorkspaceUiLanguage,
+} from "@/lib/workspace-i18n";
+import {
   getCurrentWorkspace,
   setOrganizationModuleEnabled,
   type OrbyvenWorkspace,
@@ -30,6 +37,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -40,6 +48,7 @@ type TextScale = 0.9 | 1 | 1.1 | 1.2 | 1.3;
 
 const TEXT_SCALE_STEPS: TextScale[] = [0.9, 1, 1.1, 1.2, 1.3];
 const DEFAULT_TEXT_SCALE: TextScale = 1.1;
+const LAST_WORKSPACE_MODULE_KEY = "orbyven-workspace-last-module";
 const TEXT_SCALE_SIDEBAR_WIDTH: Record<TextScale, string> = {
   0.9: "206px",
   1: "206px",
@@ -56,14 +65,6 @@ export type WorkspaceShellProps = {
   onOpenPath: (href: string) => void;
   intelligenceRequest?: IntelligenceRequest;
   initialWorkspace?: OrbyvenWorkspace | null;
-};
-
-const roleLabels: Record<OrbyvenWorkspace["membership"]["role"], string> = {
-  owner: "Owner",
-  admin: "Admin",
-  manager: "Manager",
-  member: "Membru",
-  viewer: "Viewer",
 };
 
 export default function WorkspaceShell({
@@ -85,6 +86,9 @@ export default function WorkspaceShell({
   const [savingModule, setSavingModule] = useState<OrbyvenModuleId | null>(null);
   const [mobileModuleMenuOpen, setMobileModuleMenuOpen] = useState(false);
   const [textScale, setTextScale] = useState<TextScale>(DEFAULT_TEXT_SCALE);
+  const [uiLanguage, setUiLanguage] = useState<WorkspaceUiLanguage>("ro");
+  const copy = workspaceShellCopy[uiLanguage];
+  const restoredModuleRef = useRef(false);
 
 
   const loadWorkspace = useCallback(async () => {
@@ -128,6 +132,11 @@ export default function WorkspaceShell({
     const nextTextScale = TEXT_SCALE_STEPS.includes(savedTextScale as TextScale)
       ? savedTextScale as TextScale
       : DEFAULT_TEXT_SCALE;
+    const savedLanguage = window.localStorage.getItem(WORKSPACE_LANGUAGE_STORAGE_KEY);
+    const nextLanguage: WorkspaceUiLanguage =
+      savedLanguage === "en" || savedLanguage === "ro"
+        ? savedLanguage
+        : normalizeWorkspaceLanguage(initialWorkspace?.profile?.locale);
 
     document.documentElement.style.colorScheme = nextTheme;
     document.documentElement.style.setProperty(
@@ -136,6 +145,7 @@ export default function WorkspaceShell({
     );
     const themeTimer = window.setTimeout(() => setTheme(nextTheme), 0);
     const textScaleTimer = window.setTimeout(() => setTextScale(nextTextScale), 0);
+    const languageTimer = window.setTimeout(() => setUiLanguage(nextLanguage), 0);
     const workspaceTimer = window.setTimeout(() => {
       if (!initialWorkspace) void loadWorkspace();
     }, 0);
@@ -143,11 +153,30 @@ export default function WorkspaceShell({
     return () => {
       window.clearTimeout(themeTimer);
       window.clearTimeout(textScaleTimer);
+      window.clearTimeout(languageTimer);
       window.clearTimeout(workspaceTimer);
       document.documentElement.style.removeProperty("--orbyven-workspace-chrome");
     };
   }, [initialWorkspace, loadWorkspace]);
 
+
+  useEffect(() => {
+    const { data } = orbyvenSupabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      setWorkspace(null);
+      void Promise.resolve(onSignedOut());
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, [onSignedOut]);
+
+  useEffect(() => {
+    document.documentElement.lang = uiLanguage;
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:locale", locale: uiLanguage }));
+  }, [uiLanguage]);
 
   useEffect(() => {
     const bridge = (window as Window & {
@@ -173,6 +202,24 @@ export default function WorkspaceShell({
     [enabledModules]
   );
 
+  useEffect(() => {
+    if (!workspace || restoredModuleRef.current) return;
+    restoredModuleRef.current = true;
+
+    const savedModule = window.localStorage.getItem(
+      LAST_WORKSPACE_MODULE_KEY
+    ) as OrbyvenModuleId | null;
+
+    if (!savedModule || !enabledModules.includes(savedModule)) return;
+
+    const restoreTimer = window.setTimeout(() => {
+      setActiveModule(savedModule);
+      setNavigation({ module: savedModule, token: 1 });
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, [workspace, enabledModules]);
+
   const activeDefinition =
     ORBYVEN_MODULES.find((definition) => definition.id === activeModule) ?? ORBYVEN_MODULES[0];
 
@@ -183,7 +230,7 @@ export default function WorkspaceShell({
     workspace?.profile?.display_name ?? workspace?.organization.name ?? "ORBYVEN";
   const greetingName =
     workspace?.profile?.greeting_name ?? workspace?.organization.name.split(" ")[0] ?? "";
-  const locale = workspace?.profile?.locale ?? "ro-RO";
+  const locale = workspaceIntlLocale(uiLanguage);
   const timeZone = workspace?.profile?.timezone ?? "Europe/Bucharest";
   const initials = organizationName
     .split(/\s+/)
@@ -201,6 +248,12 @@ export default function WorkspaceShell({
     }).format(new Date());
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }, [locale, timeZone]);
+
+  const changeLanguage = (nextLanguage: WorkspaceUiLanguage) => {
+    setUiLanguage(nextLanguage);
+    window.localStorage.setItem(WORKSPACE_LANGUAGE_STORAGE_KEY, nextLanguage);
+    requestNativeHaptic();
+  };
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -235,6 +288,7 @@ export default function WorkspaceShell({
 
   const openModule = useCallback((id: OrbyvenModuleId, options: WorkspaceOpenOptions = {}) => {
     if (!enabledModules.includes(id)) return;
+    window.localStorage.setItem(LAST_WORKSPACE_MODULE_KEY, id);
     setPanel("workspace");
     setActiveModule(id);
     setNavigation((current) => ({ module: id, token: current.token + 1, ...options }));
@@ -259,12 +313,27 @@ export default function WorkspaceShell({
         eventId,
       }));
     };
+    const handleNativeTaskRecord = (event: Event) => {
+      const taskId = (event as CustomEvent<{ taskId?: string }>).detail?.taskId;
+      if (!taskId) return;
+
+      openModule("tasks", { recordId: taskId });
+      const bridge = (window as Window & {
+        ReactNativeWebView?: { postMessage: (message: string) => void };
+      }).ReactNativeWebView;
+      bridge?.postMessage(JSON.stringify({
+        type: "orbyven:native-task-opened",
+        taskId,
+      }));
+    };
 
     window.addEventListener("orbyven:native-documents", handleNativeDocuments);
     window.addEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
+    window.addEventListener("orbyven:native-task-record", handleNativeTaskRecord);
     return () => {
       window.removeEventListener("orbyven:native-documents", handleNativeDocuments);
       window.removeEventListener("orbyven:native-calendar-record", handleNativeCalendarRecord);
+      window.removeEventListener("orbyven:native-task-record", handleNativeTaskRecord);
     };
   }, [openModule]);
 
@@ -306,6 +375,16 @@ export default function WorkspaceShell({
   }, [workspace?.organization.id]);
 
   useEffect(() => {
+    if (!workspace?.organization.id) return;
+
+    const bridge = (window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }).ReactNativeWebView;
+
+    bridge?.postMessage(JSON.stringify({ type: "orbyven:workspace-ready" }));
+  }, [workspace?.organization.id]);
+
+  useEffect(() => {
     if (navigation.token === 0 || panel !== "workspace") return;
 
     const selector = navigation.create
@@ -326,7 +405,7 @@ export default function WorkspaceShell({
 
     const currentlyEnabled = workspace.enabledModules.includes(id);
     if (!currentlyEnabled && !workspace.entitledModules.includes(id)) {
-      setActionError("Acest modul necesită un abonament sau acces pilot aprobat.");
+      setActionError(copy.moduleRequiresPlan);
       return;
     }
     const previousModules = workspace.enabledModules;
@@ -352,7 +431,7 @@ export default function WorkspaceShell({
       setWorkspace((current) =>
         current ? { ...current, enabledModules: previousModules } : current
       );
-      setActionError("Modulul nu a putut fi actualizat. Modificarea a fost anulată.");
+      setActionError(copy.moduleUpdateError);
     } finally {
       setSavingModule(null);
     }
@@ -378,7 +457,7 @@ export default function WorkspaceShell({
   } as CSSProperties;
 
   if (loading) {
-    return <WorkspaceStateScreen vars={vars} theme={theme} title="Se pregătește workspace-ul..." />;
+    return <WorkspaceStateScreen vars={vars} theme={theme} title={copy.loading} />;
   }
 
   if (loadError || !workspace) {
@@ -386,11 +465,17 @@ export default function WorkspaceShell({
       <WorkspaceStateScreen
         vars={vars}
         theme={theme}
-        title="Workspace indisponibil"
-        description={loadError}
-        actionLabel="Încearcă din nou"
+        title={copy.unavailable}
+        description={
+          loadError === "Contul este autentificat, dar nu are încă un workspace ORBYVEN atribuit."
+            ? copy.noWorkspace
+            : loadError === "Workspace-ul nu a putut fi încărcat. Încearcă din nou."
+              ? copy.loadError
+              : loadError
+        }
+        actionLabel={copy.retry}
         onAction={loadWorkspace}
-        secondaryLabel="Delogare"
+        secondaryLabel={copy.signOut}
         onSecondary={logout}
       />
     );
@@ -422,7 +507,7 @@ export default function WorkspaceShell({
             <div className="hidden h-6 w-px bg-[var(--border)] lg:block" />
             <div className="hidden min-w-0 lg:block">
               <span className="block max-w-[180px] truncate text-[11px] font-semibold">{organizationName}</span>
-              <span className="block text-[10px] text-[var(--muted-2)]">Business workspace</span>
+              <span className="block text-[10px] text-[var(--muted-2)]">{copy.businessWorkspace}</span>
             </div>
           </div>
 
@@ -440,12 +525,18 @@ export default function WorkspaceShell({
                 className="hidden h-9 items-center justify-center rounded-full bg-[var(--button)] px-4 text-[11px] font-semibold text-[var(--button-text)] shadow-sm transition hover:opacity-90 sm:flex"
               >
                 <span className="sm:hidden" aria-hidden="true">+</span>
-                <span className="hidden sm:inline">+ Creează</span>
-                <span className="sr-only sm:hidden">Creează o înregistrare</span>
+                <span className="hidden sm:inline">{copy.create}</span>
+                <span className="sr-only sm:hidden">{copy.createRecord}</span>
               </button>
             )}
-            <WorkspaceAiShortcuts variant="header" onOpenPath={onOpenPath} />
-            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? "Înapoi" : "Module"}</button>
+            <button
+              type="button"
+              onClick={() => onOpenPath("/ai-web-design")}
+              className="hidden h-9 rounded-[10px] border border-[#7897ff]/25 bg-[#7897ff]/10 px-3 text-[11px] font-semibold text-[#aebcff] transition hover:border-[#7897ff]/45 hover:bg-[#7897ff]/15 xl:block"
+            >
+              AI Web Design
+            </button>
+            <button type="button" onClick={() => setPanel(panel === "modules" ? "workspace" : "modules")} className="hidden h-9 rounded-[10px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)] lg:block">{panel === "modules" ? copy.back : copy.modules}</button>
             <WorkspaceIntelligence
               organizationId={workspace.organization.id}
               theme={theme}
@@ -463,8 +554,28 @@ export default function WorkspaceShell({
               enabledModules={enabledModules}
               onOpenModule={openModule}
             />
-            <button type="button" onClick={toggleTheme} aria-label="Schimbă tema" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9">{theme === "dark" ? "☀" : "☾"}</button>
-            <button type="button" onClick={logout} aria-label="Delogare" title="Delogare" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm sm:h-9 sm:w-9">{initials || "OR"}</button>
+            <div
+              className="flex h-11 items-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 p-1 sm:h-9"
+              aria-label={uiLanguage === "ro" ? "Schimbă limba" : "Change language"}
+            >
+              {(["ro", "en"] as const).map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => changeLanguage(language)}
+                  aria-pressed={uiLanguage === language}
+                  className={`flex h-full min-w-[30px] items-center justify-center rounded-full px-2 text-[9px] font-bold tracking-[0.08em] transition ${
+                    uiLanguage === language
+                      ? "bg-[var(--button)] text-[var(--button-text)]"
+                      : "text-[var(--muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={toggleTheme} aria-label={copy.changeTheme} className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[color:var(--surface-2)]/75 text-sm transition hover:border-[var(--border-strong)] sm:h-9 sm:w-9">{theme === "dark" ? "☀" : "☾"}</button>
+            <button type="button" onClick={logout} aria-label={copy.signOut} title={copy.signOut} className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] text-[11px] font-semibold text-[var(--accent)] shadow-sm sm:h-9 sm:w-9">{initials || "OR"}</button>
           </div>
         </div>
       </header>
@@ -473,7 +584,7 @@ export default function WorkspaceShell({
         <aside data-workspace-surface="sidebar" className="sticky top-[77px] hidden h-[calc(100dvh-90px)] min-w-0 overflow-y-auto overscroll-contain rounded-[15px] border border-[var(--border)] bg-[color:var(--surface)]/88 px-2.5 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.10)] md:flex md:flex-col">
           <div className="rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
             <p className="truncate text-[11px] font-semibold">{organizationName}</p>
-            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{roleLabels[workspace.membership.role]} · Workspace activ</p>
+            <p className="mt-1 text-[10px] text-[var(--muted-2)]">{workspaceRoleLabel(workspace.membership.role, uiLanguage)} · {copy.workspaceActive}</p>
           </div>
 
           {WORKSPACE_NAV_GROUPS.map((group) => {
@@ -481,8 +592,8 @@ export default function WorkspaceShell({
             if (!items.length) return null;
             return (
               <div key={group.label} className="mt-5 border-b border-[var(--border)] pb-4 last:border-b-0">
-                <p className="mb-2 px-3 text-[9px] font-bold tracking-[0.15em] text-[var(--muted-2)]">{group.label}</p>
-                <nav className="space-y-0.5" aria-label={group.label}>
+                <p className="mb-2 px-3 text-[9px] font-bold tracking-[0.15em] text-[var(--muted-2)]">{workspaceGroupLabel(group.label, uiLanguage)}</p>
+                <nav className="space-y-0.5" aria-label={workspaceGroupLabel(group.label, uiLanguage)}>
                   {items.map((definition) => {
                     const active = panel === "workspace" && activeModule === definition.id;
                     return (
@@ -495,8 +606,8 @@ export default function WorkspaceShell({
                           ? "flex w-full items-center gap-3 rounded-[9px] border border-[#7797ff]/20 bg-[linear-gradient(95deg,rgba(76,104,237,0.33),rgba(75,99,204,0.16))] px-3 py-2.5 text-left text-[12px] font-semibold text-[var(--text)]"
                           : "flex w-full items-center gap-3 rounded-[9px] border border-transparent px-3 py-2.5 text-left text-[12px] text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)]"}
                       >
-                        <WorkspaceModuleGlyph id={definition.id} />
-                        <span className="truncate">{definition.shortName}</span>
+                        <ModuleGlyph id={definition.id} />
+                        <span className="truncate">{workspaceModuleShortName(definition.id, uiLanguage)}</span>
                       </button>
                     );
                   })}
@@ -506,18 +617,51 @@ export default function WorkspaceShell({
           })}
 
           <div className="mt-auto space-y-2 pt-6">
-            <WorkspaceAiShortcuts variant="sidebar" onOpenPath={onOpenPath} />
-            <WorkspaceTextScaleControl
-              percent={Math.round(textScale * 100)}
-              canDecrease={textScale !== TEXT_SCALE_STEPS[0]}
-              canIncrease={textScale !== TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
-              onReset={resetTextScale}
-              onDecrease={() => changeTextScale(-1)}
-              onIncrease={() => changeTextScale(1)}
-            />
+            <button
+              type="button"
+              onClick={() => onOpenPath("/ai-web-design")}
+              className="w-full rounded-[11px] border border-[#7897ff]/22 bg-[#7897ff]/[0.08] px-3.5 py-3 text-left transition hover:border-[#7897ff]/42 hover:bg-[#7897ff]/[0.12]"
+            >
+              <span className="block text-[11px] font-semibold text-[var(--text)]">✦ AI Web Design</span>
+              <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--muted)]">{copy.aiNote}</span>
+            </button>
+            <div data-workspace-text-scale-control="desktop" className="min-w-0 rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3 py-2.5">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="min-w-0 text-[10px] font-semibold leading-4 text-[var(--muted)]">{copy.textSize}</span>
+                <button
+                  type="button"
+                  onClick={resetTextScale}
+                  title={copy.resetText}
+                  aria-label={copy.resetText}
+                  className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-center text-[9px] font-semibold text-[var(--muted-2)]"
+                >
+                  {Math.round(textScale * 100)}%
+                </button>
+              </div>
+              <div className="mt-2 grid min-w-0 grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(-1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[0]}
+                  aria-label={copy.smallerText}
+                  className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A−
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeTextScale(1)}
+                  disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
+                  aria-label={copy.largerText}
+                  className="flex h-8 min-w-0 items-center justify-center rounded-[9px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
+                >
+                  A+
+                </button>
+              </div>
+            </div>
             <button type="button" onClick={() => setPanel("modules")} className="w-full rounded-[11px] border border-[var(--border)] bg-[color:var(--surface-2)]/60 px-3.5 py-3 text-left text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]">
-              <span className="block text-[var(--text)]">{canManageModules ? "Personalizează workspace-ul" : "Modulele tale"}</span>
-              <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? "Adaugă sau ascunde instrumente" : "Vezi instrumentele disponibile"}</span>
+              <span className="block text-[var(--text)]">{canManageModules ? copy.customizeWorkspace : copy.yourModules}</span>
+              <span className="mt-1 block text-[10px] font-normal text-[var(--muted-2)]">{canManageModules ? copy.addHideTools : copy.viewTools}</span>
             </button>
           </div>
         </aside>
@@ -554,12 +698,38 @@ export default function WorkspaceShell({
         </section>
       </div>
 
-      <WorkspaceCreateDialog
-        open={createMenuOpen && canCreate}
-        options={createOptions}
-        onClose={() => setCreateMenuOpen(false)}
-        onCreate={(id) => openModule(id, { create: true })}
-      />
+      {createMenuOpen && canCreate && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:items-center">
+          <button
+            type="button"
+            aria-label={copy.close}
+            onClick={() => setCreateMenuOpen(false)}
+            className="absolute inset-0 bg-[#020814]/70"
+          />
+          <section role="dialog" aria-modal="true" aria-labelledby="workspace-create-title" className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[24px] border border-[var(--border-strong)] bg-[var(--bg)] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-2)]">{copy.newAction}</p>
+                <h2 id="workspace-create-title" className="mt-1 text-2xl font-semibold tracking-[-0.04em]">{copy.whatCreate}</h2>
+              </div>
+              <button type="button" onClick={() => setCreateMenuOpen(false)} aria-label={copy.close} className="h-11 w-11 shrink-0 rounded-full border border-[var(--border)] text-lg sm:h-9 sm:w-9">×</button>
+            </div>
+            <div className="mt-5 grid gap-2">
+              {createOptions.map((definition) => (
+                <button
+                  key={definition.id}
+                  type="button"
+                  onClick={() => openModule(definition.id, { create: true })}
+                  className="flex w-full items-center justify-between gap-4 rounded-[15px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm font-semibold transition hover:border-[var(--border-strong)] hover:bg-[var(--surface)]"
+                >
+                  <span>{workspaceCreateLabel(definition.id, uiLanguage)}</span>
+                  <span aria-hidden="true" className="text-[var(--muted)]">→</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       <div data-workspace-mobile-dock="true" className="fixed bottom-[max(0.45rem,env(safe-area-inset-bottom))] left-1/2 z-[80] w-[calc(100%-16px)] max-w-[430px] -translate-x-1/2 transition-opacity duration-150 md:hidden">
         {mobileModuleMenuOpen && (
@@ -581,9 +751,9 @@ export default function WorkspaceShell({
                         : "border-transparent bg-[color:var(--surface)]/72 text-[var(--muted)]"
                     }`}
                   >
-                    <WorkspaceModuleGlyph id={definition.id} />
+                    <ModuleGlyph id={definition.id} />
                     <span className="w-full truncate text-[10px] font-semibold leading-tight">
-                      {definition.shortName}
+                      {workspaceModuleShortName(definition.id, uiLanguage)}
                     </span>
                   </button>
                 );
@@ -592,15 +762,15 @@ export default function WorkspaceShell({
 
             <div data-workspace-text-scale-control="mobile" className="mt-3 min-w-0 rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 py-2.5">
               <div className="flex min-w-0 items-center justify-between gap-2">
-                <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">Dimensiune text</span>
+                <span className="min-w-0 text-[11px] font-semibold leading-4 text-[var(--muted)]">{copy.textSize}</span>
                 <button
                   type="button"
                   onClick={() => {
                     requestNativeHaptic();
                     resetTextScale();
                   }}
-                  aria-label="Revino la dimensiunea textului 100%"
-                  title="Revino la 100%"
+                  aria-label={copy.resetText}
+                  title={copy.resetText}
                   className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold text-[var(--muted-2)]"
                 >
                   {Math.round(textScale * 100)}%
@@ -614,7 +784,7 @@ export default function WorkspaceShell({
                     changeTextScale(-1);
                   }}
                   disabled={textScale === TEXT_SCALE_STEPS[0]}
-                  aria-label="Micșorează textul"
+                  aria-label={copy.smallerText}
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A−
@@ -626,7 +796,7 @@ export default function WorkspaceShell({
                     changeTextScale(1);
                   }}
                   disabled={textScale === TEXT_SCALE_STEPS[TEXT_SCALE_STEPS.length - 1]}
-                  aria-label="Mărește textul"
+                  aria-label={copy.largerText}
                   className="flex h-11 min-w-0 items-center justify-center rounded-[11px] border border-[var(--border)] px-2 text-[12px] font-semibold disabled:opacity-30"
                 >
                   A+
@@ -634,14 +804,18 @@ export default function WorkspaceShell({
               </div>
             </div>
 
-            <WorkspaceAiShortcuts
-              variant="mobile"
-              onOpenPath={onOpenPath}
-              beforeOpen={() => {
+            <button
+              type="button"
+              onClick={() => {
                 requestNativeHaptic();
                 setMobileModuleMenuOpen(false);
+                onOpenPath("/ai-web-design");
               }}
-            />
+              className="mt-3 flex min-h-11 w-full items-center justify-between rounded-[16px] border border-[#7897ff]/24 bg-[#7897ff]/[0.09] px-4 text-[11px] font-semibold text-[var(--text)]"
+            >
+              <span>✦ AI Web Design</span>
+              <span className="text-[#aebcff]">→</span>
+            </button>
 
             <button
               type="button"
@@ -652,13 +826,13 @@ export default function WorkspaceShell({
               }}
               className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[16px] border border-[var(--border)] bg-[color:var(--surface-2)]/75 px-3 text-[11px] font-semibold text-[var(--muted)]"
             >
-              {canManageModules ? "Gestionează modulele" : "Vezi configurația modulelor"}
+              {canManageModules ? copy.manageModules : copy.viewModuleConfig}
             </button>
           </div>
         )}
 
         <nav
-          aria-label="Navigare mobilă ORBYVEN"
+          aria-label={copy.mobileNavigation}
           className="grid grid-cols-5 items-center rounded-[24px] border border-[var(--border-strong)] bg-[color:var(--surface)]/96 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,0.32)] backdrop-blur-2xl"
         >
           <button
@@ -674,7 +848,7 @@ export default function WorkspaceShell({
                 : "text-[var(--muted)]"
             }`}
           >
-            <WorkspaceModuleGlyph id="overview" />
+            <ModuleGlyph id="overview" />
             <span>Overview</span>
           </button>
 
@@ -692,13 +866,13 @@ export default function WorkspaceShell({
                 : "text-[var(--muted)]"
             }`}
           >
-            <WorkspaceModuleGlyph id="tasks" />
-            <span>Lucrări</span>
+            <ModuleGlyph id="tasks" />
+            <span>{workspaceModuleShortName("tasks", uiLanguage)}</span>
           </button>
 
           <button
             type="button"
-            aria-label={canCreate ? "Creează o înregistrare" : "Deschide modulele"}
+            aria-label={canCreate ? copy.createRecord : copy.modules}
             onClick={() => {
               requestNativeHaptic();
               if (canCreate) {
@@ -711,7 +885,7 @@ export default function WorkspaceShell({
             className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 text-[9px] font-semibold text-[var(--text)] active:scale-[0.97]"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--button)] text-[23px] font-light leading-none text-[var(--button-text)] shadow-[0_8px_24px_rgba(57,86,210,0.35)]" aria-hidden="true">+</span>
-            <span>Nou</span>
+            <span>{copy.new}</span>
           </button>
 
           <button
@@ -728,14 +902,14 @@ export default function WorkspaceShell({
                 : "text-[var(--muted)]"
             }`}
           >
-            <WorkspaceModuleGlyph id="leads" />
-            <span>Clienți</span>
+            <ModuleGlyph id="leads" />
+            <span>{workspaceModuleShortName("leads", uiLanguage)}</span>
           </button>
 
           <button
             type="button"
             aria-expanded={mobileModuleMenuOpen}
-            aria-label={mobileModuleMenuOpen ? "Închide meniul modulelor" : "Deschide meniul modulelor"}
+            aria-label={mobileModuleMenuOpen ? copy.closeModules : copy.openModules}
             onClick={() => {
               requestNativeHaptic();
               setMobileModuleMenuOpen((current) => !current);
@@ -749,7 +923,7 @@ export default function WorkspaceShell({
               <span className="h-1 w-1 rounded-full bg-current" />
               <span className="h-1 w-1 rounded-full bg-current" />
             </span>
-            <span>Mai multe</span>
+            <span>{copy.more}</span>
           </button>
         </nav>
       </div>
@@ -757,4 +931,19 @@ export default function WorkspaceShell({
   );
 }
 
+const modulePaths: Record<OrbyvenModuleId, string> = {
+  overview: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
+  leads: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2z M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
+  tasks: "M8 3h8v3H8z M8 5H5v16h14V5h-3 M9 12l2 2 4-4 M9 18h6",
+  calendar: "M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6 M8 15h3 M8 18h3",
+  estimates: "M5 2h10l4 4v16H5z M15 2v5h4 M8 12h8 M8 16h8 M8 19h5",
+  documents: "M5 3h10l4 4v14H5z M15 3v5h4 M8 12h8 M8 16h8",
+  inventory: "M4 6h16v14H4z M7 6V3h10v3 M8 10h8 M8 14h3 M14 14h2 M8 18h8",
+  expenses: "M3 6h18v14H3z M3 10h18 M16 16h3 M6 3h12",
+  thermal: "M3 20h18 M5 20V9l7-6 7 6v11 M8 20v-5h8v5 M7 11h10 M12 8v5",
+  team: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 10a4 4 0 1 0 0-8a4 4 0 0 0 0 8 M18 8a3 3 0 0 1 0 6 M18 16a4 4 0 0 1 4 4",
+};
 
+function ModuleGlyph({ id }: { id: OrbyvenModuleId }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-[16px] w-[16px] shrink-0"><path d={modulePaths[id]} /></svg>;
+}
