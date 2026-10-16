@@ -1,22 +1,25 @@
 {
   "version": 1,
   "worker_id": "product-film-engine",
-  "state": "READY",
-  "mode": "work",
-  "updated_at": "2026-10-16T12:00:00Z",
+  "state": "BLOCKED_LIMIT",
+  "mode": "chat",
+  "updated_at": "2026-10-16T13:43:00Z",
   "branch": null,
-  "base_main_sha": "32260d8fe7924d7d1e30465fd24be99389c3c2b0",
+  "base_main_sha": "34e0d193f5bab82d8f9a583cab7b60a8ca83d450",
   "current_objective": "Continue ORBYVEN Product Film Engine / Video AI from the latest repository state, prioritizing a stable end-to-end generation pipeline, CI health, and production-ready incremental development.",
-  "last_completed": [],
-  "next_action": "Inspect current main, the latest Product Film Engine/Video AI branch or PR, recent commits, and CI; resume the highest-priority unfinished implementation from verified Git state rather than chat memory.",
+  "last_completed": [
+    "Persistent Chat ↔ Work handoff protocol is merged on main.",
+    "Open Product Film / Video AI integration is tracked in PR #287."
+  ],
+  "next_action": "Normal Chat: inspect PR #287 against current main, identify how far it has drifted, separate already-safe architecture from stale integration assumptions, and prepare one minimal Work resume action focused on an end-to-end stable generation/export path without duplicating work already present on main.",
   "files_touched": [],
   "tests": {
     "status": "not_run",
     "last_run": null,
-    "notes": "Seed checkpoint only; no Product Film Engine implementation performed by this handoff setup."
+    "notes": "Work allowance is currently blocked; normal Chat may review Git state, PR design and CI evidence but must not claim browser/render/build verification."
   },
-  "last_commit": null,
-  "pull_request": null,
-  "blocker": null,
+  "last_commit": "34e0d193f5bab82d8f9a583cab7b60a8ca83d450",
+  "pull_request": 287,
+  "blocker": "Work/Codex allowance reset window is active. Execution-capable Product Film work is deferred until Work resumes.",
   "safe_to_resume": true
 }
