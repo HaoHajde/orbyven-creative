@@ -15,6 +15,10 @@ export function WorkspaceAiShortcuts({
     beforeOpen?.();
     onOpenPath(path);
   };
+  const openVideoAi = () => {
+    beforeOpen?.();
+    onOpenPath("/video-ai");
+  };
 
   if (variant === "header") {
     return (
@@ -28,7 +32,7 @@ export function WorkspaceAiShortcuts({
         </button>
         <button
           type="button"
-          onClick={() => open("/video-ai")}
+          onClick={openVideoAi}
           className="hidden h-9 rounded-[10px] border border-[#9a79ff]/25 bg-[#9a79ff]/10 px-3 text-[11px] font-semibold text-[#c0adff] transition hover:border-[#9a79ff]/45 hover:bg-[#9a79ff]/15 2xl:block"
         >
           Video AI
@@ -50,7 +54,7 @@ export function WorkspaceAiShortcuts({
         </button>
         <button
           type="button"
-          onClick={() => open("/video-ai")}
+          onClick={openVideoAi}
           className="w-full rounded-[11px] border border-[#9a79ff]/22 bg-[#9a79ff]/[0.08] px-3.5 py-3 text-left transition hover:border-[#9a79ff]/42 hover:bg-[#9a79ff]/[0.12]"
         >
           <span className="block text-[11px] font-semibold text-[var(--text)]">◈ Video AI</span>
@@ -72,7 +76,7 @@ export function WorkspaceAiShortcuts({
       </button>
       <button
         type="button"
-        onClick={() => open("/video-ai")}
+        onClick={openVideoAi}
         className="mt-2 flex min-h-11 w-full items-center justify-between rounded-[16px] border border-[#9a79ff]/24 bg-[#9a79ff]/[0.09] px-4 text-[11px] font-semibold text-[var(--text)]"
       >
         <span>◈ Video AI</span>
