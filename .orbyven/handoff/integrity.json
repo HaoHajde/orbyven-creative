@@ -1,26 +1,28 @@
 {
   "version": 1,
   "worker_id": "integrity",
-  "state": "BLOCKED_LIMIT",
-  "mode": "chat",
-  "updated_at": "2026-10-16T13:43:00Z",
+  "state": "READY_FOR_WORK",
+  "mode": "work",
+  "updated_at": "2026-10-16T13:48:53Z",
   "branch": null,
-  "base_main_sha": "b0a9ce69f5aaec8a337fd0e59e56db5a10e19cc9",
+  "base_main_sha": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
   "current_objective": "Continuously verify ORBYVEN project integrity across code quality, security, SEO, legal/operational implementation, and CI; fix what can be fixed safely and clearly separate user-required actions.",
   "last_completed": [
     "Security & integrity hardening PR #347 is merged.",
     "Trigger-hardening migration history alignment PR #348 is merged.",
-    "Persistent Chat ↔ Work handoff protocol PR #349 is merged."
+    "Persistent Chat ↔ Work handoff protocol PR #349 is merged.",
+    "Normal-Chat review found legacy PR #227 is non-mergeable and heavily superseded by current main; it should not be merged wholesale.",
+    "Latest current-main ORBYVEN CI and Integration Train completed successfully after the handoff commits."
   ],
-  "next_action": "Normal Chat: inspect current main plus open integrity/legal/architecture PRs, especially #227, and distinguish genuinely unresolved risks from stale work already superseded by #347/#348. Produce a short evidence-based remaining-risk list and one concrete Work resume action; do not repeat completed audits without a repository change that justifies them.",
+  "next_action": "Work: start a fresh integrity pass from current main (do not revive/merge PR #227). First run the existing architecture/security/SEO/legal/offboarding test suites and Quality Gate/CI. Only if a test or current-code inspection exposes a real regression, fix that regression on a fresh branch. Use PR #227 solely as a checklist for any capability demonstrably absent from main (architecture guard, tenant export/offboarding, legal audit retention, privileged AI RPC boundary, sitemap/Search Console metadata); do not re-port items already present.",
   "files_touched": [],
   "tests": {
-    "status": "not_run",
-    "last_run": null,
-    "notes": "Work allowance is currently blocked; normal Chat may inspect repository/PR/CI evidence and refine the audit plan but must not claim runtime, deployment or browser validation not actually performed."
+    "status": "ci_evidence_only",
+    "last_run": "2026-10-16T13:46:11Z",
+    "notes": "GitHub reports current-main CI/Integration Train success. No runtime/deployment/browser audit was performed by normal Chat."
   },
-  "last_commit": "b0a9ce69f5aaec8a337fd0e59e56db5a10e19cc9",
-  "pull_request": 227,
-  "blocker": "Work/Codex allowance reset window is active. Execution-capable fixes are deferred until Work resumes.",
+  "last_commit": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
+  "pull_request": null,
+  "blocker": null,
   "safe_to_resume": true
 }
