@@ -3,25 +3,32 @@
   "worker_id": "universal-core",
   "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-17T14:53:00Z",
+  "updated_at": "2026-10-17T14:58:00Z",
   "branch": "feat/universal-core-tags-20261017",
   "base_main_sha": "d82d353eb83242d5b07ea5b6864534141653f7a5",
   "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
   "last_completed": [
     "PR #357 universal Command Palette and PR #360 universal custom fields were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
     "Re-audited GitHub main and the live ORBYVEN schema for tags/statuses: no generic tag taxonomy or assignment persistence exists.",
-    "Confirmed existing CRM/task/calendar/estimate statuses are protected by database CHECK constraints and encode real domain workflow semantics, so they will not be replaced wholesale by configurable labels."
+    "Confirmed existing CRM/task/calendar/estimate statuses are protected by database CHECK constraints and encode real domain workflow semantics, so they will not be replaced wholesale by configurable labels.",
+    "Implemented workspace_tags and workspace_tag_assignments with organization-scoped uniqueness, composite tenant integrity, explicit Data API grants and RLS.",
+    "Tag taxonomy management is owner/admin; assignment writes allow owner/admin/manager/member while viewer remains read-only.",
+    "Implemented lib/workspace-tags.ts with stable key normalization, tag/assignment validation and explicit mutation confirmation.",
+    "Added targeted Universal Tags behavioral and SQL security invariants to the existing test:ecosystem workspace suite."
   ],
-  "next_action": "Implement the smallest isolated Universal Tags milestone: organization-scoped tag definitions and generic entity assignments with composite tenant integrity, explicit Data API grants, RLS, admin-only taxonomy management, non-viewer assignment writes, pure normalization/validation and targeted regression coverage. Do not wire into shared shell/navigation/module registry or vertical module UIs in this PR.",
+  "next_action": "Open the atomic Universal Tags PR, apply owner:cross and run ORBYVEN CI, Architecture Guard and Quality Gate. Fix only demonstrated failures. When green and mergeable against current main, integrate before designing configurable status presentation/configuration that preserves existing domain workflow constraints.",
   "files_touched": [
-    ".orbyven/handoff/universal-core.json"
+    ".orbyven/handoff/universal-core.json",
+    "supabase/migrations/20261017145400_universal_tags.sql",
+    "lib/workspace-tags.ts",
+    "tests/workspace-warp-navigation.test.mjs"
   ],
   "tests": {
-    "status": "not_started",
+    "status": "pending",
     "last_run": null,
-    "notes": "Tags/statuses audit complete; tag implementation is the first safe atomic milestone."
+    "notes": "Implementation complete; targeted coverage is registered in test:ecosystem. Checkpoint recorded before PR/full gates."
   },
-  "last_commit": "d82d353eb83242d5b07ea5b6864534141653f7a5",
+  "last_commit": "6d96353552a50939b664777f21b3bda2d3af77bb",
   "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
