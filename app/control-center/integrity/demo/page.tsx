@@ -1,4 +1,4 @@
-import ControlCenterIntegrityDemo from "@/components/ControlCenterIntegrityDemo";
+import ControlCenterIntegrityConsole from "@/components/ControlCenterIntegrityConsole";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -15,5 +15,5 @@ export default function ControlCenterIntegrityDemoPage() {
     notFound();
   }
 
-  return <ControlCenterIntegrityDemo />;
+  return <ControlCenterIntegrityConsole demo />;
 }
