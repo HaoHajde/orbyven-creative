@@ -17,6 +17,7 @@ function WorkspaceLoginPageContent() {
   const plan = searchParams.get("plan");
   const requestedNext = searchParams.get("next");
   const nextAiWebDesign = requestedNext === "ai-web-design";
+  const nextVideoAi = requestedNext === "video-ai";
   const checkoutPlan = plan === "start" || plan === "business" || plan === "pro" ? plan : null;
   const checkoutQuery = checkoutPlan ? `?plan=${checkoutPlan}&checkout=1` : "";
   const routeAfterAuth = useCallback((destination: Awaited<ReturnType<typeof getWorkspaceEntryPath>>) => {
@@ -26,8 +27,9 @@ function WorkspaceLoginPageContent() {
       return destination;
     }
     if (nextAiWebDesign && destination === "/workspace") return "/ai-web-design";
+    if (nextVideoAi && destination === "/workspace") return "/video-ai";
     return destination === "/workspace/login" ? "/workspace" : destination;
-  }, [checkoutPlan, checkoutQuery, nextAiWebDesign]);
+  }, [checkoutPlan, checkoutQuery, nextAiWebDesign, nextVideoAi]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

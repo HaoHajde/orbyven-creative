@@ -40,7 +40,6 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
       setLoading(true);
       setError("");
       try {
-        // Escaping LIKE wildcards avoids a search term becoming an arbitrary match.
         const pattern = "%" + needle.replace(/[\\%_]/g, "\\$&") + "%";
         const results = await Promise.all([
           searchModules.includes("leads")
@@ -80,9 +79,7 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
         if (currentRequest === requestId.current) setLoading(false);
       }
     }, 280);
-    return () => {
-      window.clearTimeout(timer);
-    };
+    return () => window.clearTimeout(timer);
     // searchKey is the stable set of visible, enabled searchable modules.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, searchKey, organizationId]);
@@ -94,7 +91,14 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
     setHits([]);
     onOpenModule(hit.module, { recordId: hit.id });
   };
-  const validQuery = query.trim().length >= 2;
+  const normalizedQuery = query.trim().toLocaleLowerCase("ro-RO");
+  const videoAiMatch = normalizedQuery.length >= 2 && (
+    normalizedQuery.includes("video") ||
+    normalizedQuery === "ai" ||
+    normalizedQuery.includes("ai video") ||
+    normalizedQuery.includes("video ai")
+  );
+  const validQuery = normalizedQuery.length >= 2;
   const visibleHits = hits.filter((hit) => searchModules.includes(hit.module));
 
   return (
@@ -107,8 +111,6 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
           autoComplete="off"
           value={query}
           onChange={(event) => {
-            // Invalidate already running responses synchronously, before the
-            // debounced effect cleanup. Never display another query's results.
             ++requestId.current;
             const next = event.target.value;
             setQuery(next);
@@ -118,7 +120,18 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
             setLoading(next.trim().length >= 2 && Boolean(searchKey));
           }}
           onFocus={() => setOpen(true)}
-          onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); if (event.key === "Enter" && visibleHits[0] && open && !loading) { event.preventDefault(); choose(visibleHits[0]); } }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setOpen(false);
+            if (event.key === "Enter" && videoAiMatch && open) {
+              event.preventDefault();
+              window.location.assign("/video-ai");
+              return;
+            }
+            if (event.key === "Enter" && visibleHits[0] && open && !loading) {
+              event.preventDefault();
+              choose(visibleHits[0]);
+            }
+          }}
           placeholder="Caută client, lucrare, ofertă, material..."
           className="w-full min-w-0 bg-transparent text-[12px] text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
         />
@@ -143,12 +156,25 @@ export default function WorkspaceSearch({ organizationId, enabledModules, onOpen
       {open && validQuery && (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[90] max-h-[340px] overflow-y-auto rounded-[15px] border border-[var(--border-strong)] bg-[var(--surface)] p-2 shadow-[0_22px_60px_rgba(0,0,0,0.35)]">
           <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--muted-2)]">Rezultate în firma ta</p>
+          {videoAiMatch ? (
+            <button
+              type="button"
+              onClick={() => window.location.assign("/video-ai")}
+              className="mb-1 flex w-full items-center justify-between gap-3 rounded-[10px] border border-[#9a79ff]/20 bg-[#9a79ff]/[0.07] px-3 py-2.5 text-left transition hover:bg-[#9a79ff]/[0.12]"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[12px] font-semibold">◈ ORBYVEN Video AI</span>
+                <span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">Storyboard, direcție și producție video AI</span>
+              </span>
+              <span className="text-xs text-[#a895ff]" aria-hidden="true">→</span>
+            </button>
+          ) : null}
           {error ? <p role="alert" className="px-2 py-3 text-xs text-red-400">{error}</p> : visibleHits.length ? visibleHits.map((hit) => (
             <button key={hit.module + hit.id} type="button" onClick={() => choose(hit)} className="flex w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-[var(--accent-soft)]">
               <span className="min-w-0"><span className="block truncate text-[12px] font-semibold">{hit.label}</span><span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">{hit.description}</span></span>
               <span className="text-xs text-[var(--accent)]" aria-hidden="true">↗</span>
             </button>
-          )) : !loading ? <p className="px-2 py-3 text-xs text-[var(--muted)]">Nu am găsit rezultate.</p> : <p className="px-2 py-3 text-xs text-[var(--muted)]">Se caută...</p>}
+          )) : !loading && !videoAiMatch ? <p className="px-2 py-3 text-xs text-[var(--muted)]">Nu am găsit rezultate.</p> : loading && !videoAiMatch ? <p className="px-2 py-3 text-xs text-[var(--muted)]">Se caută...</p> : null}
           <p className="border-t border-[var(--border)] px-2 pt-2 text-[10px] leading-4 text-[var(--muted-2)]">Caută după nume sau titlu. Doar modulele active sunt incluse.</p>
         </div>
       )}

@@ -106,13 +106,15 @@ test("Intelligence and public pages follow the active light theme", () => {
   const shell = read("components/WorkspaceShell.tsx");
   const intelligence = read("components/WorkspaceIntelligence.tsx");
   const home = read("components/HomePageClient.tsx");
-  const services = read("app/servicii/page.tsx");
+  const servicesRoute = read("app/servicii/page.tsx");
+  const services = read("components/PublicServicesPage.tsx");
   const contact = read("app/contact/page.tsx");
   const templates = read("app/templates/page.tsx");
   const aiWeb = read("components/AiWebDesignEntry.tsx");
   const header = read("components/SiteHeader.tsx");
   const css = read("app/globals.css");
 
+  assert.match(servicesRoute, /PublicServicesPage/);
   assert.match(shell, /theme=\{theme\}/);
   assert.match(intelligence, /theme: "light" \| "dark"/);
   assert.match(intelligence, /data-orbyven-theme=\{theme\}/);

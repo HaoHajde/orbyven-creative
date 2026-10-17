@@ -1,27 +1,47 @@
 {
   "version": 1,
   "worker_id": "product-film-engine",
-  "state": "READY_FOR_WORK",
+  "state": "BLOCKED_EXTERNAL",
   "mode": "work",
-  "updated_at": "2026-10-16T13:48:53Z",
+  "updated_at": "2026-10-17T21:01:33.343Z",
   "branch": "feature/orbyven-video-ai-20261002",
-  "base_main_sha": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
+  "base_main_sha": "512e137038388615491a85b9a1850bd68430f867",
   "current_objective": "Continue ORBYVEN Product Film Engine / Video AI from the latest repository state, prioritizing a stable end-to-end generation pipeline, CI health, and production-ready incremental development.",
   "last_completed": [
     "Persistent Chat ↔ Work handoff protocol is merged on main.",
     "Normal-Chat review confirmed PR #287 remains open/draft and GitHub currently reports it mergeable.",
     "PR #287 already contains the intended architecture: authenticated render gateway, local/free fallback, live-UI Product Film scenes, browser-side vertical recording, Region Capture fallback and regression tests.",
-    "The branch is close enough to current main that wholesale redesign would duplicate existing work; focus should be reconciliation and validation."
+    "The branch is close enough to current main that wholesale redesign would duplicate existing work; focus should be reconciliation and validation.",
+    "2026-10-17: read current main handoff and integration rules; verified PR #287 is open/draft at eae689f, 19 ahead and 8 behind main f7cb01c.",
+    "2026-10-17: restored checkout; merged main 512e137 with only the owned checkpoint add/add conflict. Previous missing-directory and scheduling blockers are obsolete.",
+    "Synchronized PR #287 with main 512e137 in merge commit 073dee62; only checkpoint conflict required resolution.",
+    "Merged source: 22 targeted tests, npm run validate (including production build), built client budget and runtime dependency audit passed; CI, Quality Gate, Video AI and Architecture Guard passed on 073dee62.",
+    "2026-10-17: public browser audit 39060878830 passed on 073dee62. On a25c8d84, CI, Quality Gate, Video AI and Architecture Guard passed; all 66 public layout checks passed.",
+    "2026-10-17T21:00Z review: main c716fc14 changes only integrity checkpoint; ff2ee3a source gates pass. Identified latest public audit failure as homepage touch-font checks, distinct from prior Lighthouse NO_NAVSTART."
   ],
-  "next_action": "Work: update PR #287's branch from current main, resolve only resulting conflicts, then validate the existing end-to-end local/free Product Film path before adding features: open Product Film, generate/play the live-UI timeline, exercise vertical browser export, and run its targeted regression/device-integrity tests plus Quality Gate/CI. Preserve the server-only external provider boundary; do not redesign the engine unless validation exposes a concrete defect.",
-  "files_touched": [],
+  "next_action": "In an authorized browser-capable environment, identify the frame and control behind homepage sub-16px audit failures before fixing or excluding anything, then continue the existing Product Film playback/export validation.",
+  "files_touched": [
+    ".orbyven/handoff/product-film-engine.json"
+  ],
   "tests": {
-    "status": "ci_evidence_only",
-    "last_run": "2026-10-16T13:46:11Z",
-    "notes": "Current main CI evidence is green. Normal Chat did not perform browser capture/render/build verification; that is the next Work responsibility."
+    "status": "source_and_ci_pass_browser_export_blocked",
+    "last_run": "2026-10-17T19:06:49.298Z",
+    "verified_commit": "073dee627bf54579bb3c974bb5dd6303a58615ca",
+    "targeted": "22/22 Product Film / Video AI / device-integrity passed",
+    "local": "npm run validate passed; built client JavaScript budget passed; npm audit --omit=dev --audit-level=high: 0 vulnerabilities",
+    "ci": "ff2ee3a: CI 39065040782, Quality Gate 39065040799, Video AI 39065040794, Architecture Guard 39065040783 passed.",
+    "browser_audit": "Retry 39061042106 attempt 2 cancelled. Latest run 39065040828 failed layout: homepage touch form control below 16px on phone, phone-landscape and tablet. Lighthouse did not run.",
+    "remaining": [
+      "Live UI playback and native vertical WebM export verification"
+    ],
+    "notes": "No source changes since validated 073dee62. main c716fc14 adds only integrity checkpoint changes. Audit scans nested iframe DOM but pointer-events exclusion stops at each document; homepage demo iframes are pointer-events-none. Possible false positive, not proven without frame/control diagnostics. Do not suppress the gate or claim Product Film export verification."
   },
-  "last_commit": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
+  "last_commit": "ff2ee3a564b5779c262395dec24993ae8b2194c9",
   "pull_request": 287,
-  "blocker": null,
+  "blocker": {
+    "type": "local_browser_execution_restricted",
+    "detail": "Local Chromium launch remains blocked by socket/ptrace permissions, as recorded previously; no attempt to bypass restrictions. Browser/export verification needs an authorized browser-capable environment. Public audit now reports homepage font failures; exact elements are absent from logs.",
+    "scheduling": "The recurring worker is executing; the historical five-task-capacity blocker is obsolete."
+  },
   "safe_to_resume": true
 }
