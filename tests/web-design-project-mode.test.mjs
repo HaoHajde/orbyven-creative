@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { inferWebDesignRequestMode } from "../lib/ai/web-design-intent.ts";
 import {
   buildWebDesignProjectPrompt,
   detectWebDesignProjectMode,
@@ -45,9 +46,12 @@ test("Invitation prompt maps the bounded website schema to event semantics", () 
 
   assert.equal(result.mode, "wedding_invitation");
   assert.equal(isInvitationProjectMode(result.mode), true);
+  assert.equal(inferWebDesignRequestMode(result.prompt), "compose");
   assert.match(result.prompt, /invitație online premium/i);
   assert.match(result.prompt, /services=detalii eveniment/i);
   assert.match(result.prompt, /contact=RSVP/i);
+  assert.match(result.prompt, /include servicii/i);
+  assert.match(result.prompt, /include proces/i);
   assert.match(result.prompt, /Nu inventa nume, dată, oră, locație/i);
   assert.match(result.prompt, /Ana și Vlad/);
   assert.ok(result.prompt.length <= 2000);
