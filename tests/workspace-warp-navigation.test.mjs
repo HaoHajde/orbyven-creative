@@ -163,7 +163,7 @@ test("custom field mutations retain explicit confirmation contract", () => {
 });
 
 test("custom field persistence is tenant scoped, RLS protected and Data API explicit", () => {
-  const migration = read("supabase/migrations/20261017144800_universal_custom_fields.sql");
+  const migration = read("supabase/migrations/20261017152452_universal_custom_fields.sql");
   assert.match(migration, /organization_id uuid not null references public\.organizations\(id\) on delete cascade/);
   assert.match(migration, /foreign key \(organization_id, definition_id, entity_type\)/);
   assert.match(migration, /alter table public\.workspace_custom_field_definitions enable row level security/);
@@ -205,7 +205,7 @@ test("workspace tag assignments stay generic and confirmation-only", () => {
 });
 
 test("workspace tag persistence is tenant scoped, viewer read-only and Data API explicit", () => {
-  const migration = read("supabase/migrations/20261017145400_universal_tags.sql");
+  const migration = read("supabase/migrations/20261017152100_universal_tags.sql");
   assert.match(migration, /foreign key \(organization_id, tag_id\)/);
   assert.match(migration, /alter table public\.workspace_tags enable row level security/);
   assert.match(migration, /alter table public\.workspace_tag_assignments enable row level security/);
@@ -285,7 +285,7 @@ test("status presentation mutations remain confirmation-only and transition-neut
 });
 
 test("status presentation persistence is closed to system keys and admin-configured only", () => {
-  const migration = read("supabase/migrations/20261017153200_status_presentation_metadata.sql");
+  const migration = read("supabase/migrations/20261017152648_status_presentation_metadata.sql");
   assert.match(migration, /entity_type = 'crm_leads'[\s\S]*status_key in \('new', 'contacted', 'qualified', 'proposal', 'won', 'lost'\)/);
   assert.match(migration, /entity_type = 'ops_tasks'[\s\S]*status_key in \('planned', 'in_progress', 'blocked', 'done', 'cancelled'\)/);
   assert.match(migration, /entity_type = 'calendar_events'[\s\S]*status_key in \('scheduled', 'completed', 'cancelled'\)/);
