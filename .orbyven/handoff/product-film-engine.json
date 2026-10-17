@@ -3,7 +3,7 @@
   "worker_id": "product-film-engine",
   "state": "BLOCKED_EXTERNAL",
   "mode": "work",
-  "updated_at": "2026-10-17T20:02:39.253Z",
+  "updated_at": "2026-10-17T21:01:33.343Z",
   "branch": "feature/orbyven-video-ai-20261002",
   "base_main_sha": "512e137038388615491a85b9a1850bd68430f867",
   "current_objective": "Continue ORBYVEN Product Film Engine / Video AI from the latest repository state, prioritizing a stable end-to-end generation pipeline, CI health, and production-ready incremental development.",
@@ -16,9 +16,10 @@
     "2026-10-17: restored checkout; merged main 512e137 with only the owned checkpoint add/add conflict. Previous missing-directory and scheduling blockers are obsolete.",
     "Synchronized PR #287 with main 512e137 in merge commit 073dee62; only checkpoint conflict required resolution.",
     "Merged source: 22 targeted tests, npm run validate (including production build), built client budget and runtime dependency audit passed; CI, Quality Gate, Video AI and Architecture Guard passed on 073dee62.",
-    "2026-10-17: public browser audit 39060878830 passed on 073dee62. On a25c8d84, CI, Quality Gate, Video AI and Architecture Guard passed; all 66 public layout checks passed."
+    "2026-10-17: public browser audit 39060878830 passed on 073dee62. On a25c8d84, CI, Quality Gate, Video AI and Architecture Guard passed; all 66 public layout checks passed.",
+    "2026-10-17T21:00Z review: main c716fc14 changes only integrity checkpoint; ff2ee3a source gates pass. Identified latest public audit failure as homepage touch-font checks, distinct from prior Lighthouse NO_NAVSTART."
   ],
-  "next_action": "Check retry of browser audit 39061042106, then validate Product Film playback and vertical WebM export in an authorized browser-capable environment; do not alter implementation based solely on Lighthouse NO_NAVSTART.",
+  "next_action": "In an authorized browser-capable environment, identify the frame and control behind homepage sub-16px audit failures before fixing or excluding anything, then continue the existing Product Film playback/export validation.",
   "files_touched": [
     ".orbyven/handoff/product-film-engine.json"
   ],
@@ -28,18 +29,18 @@
     "verified_commit": "073dee627bf54579bb3c974bb5dd6303a58615ca",
     "targeted": "22/22 Product Film / Video AI / device-integrity passed",
     "local": "npm run validate passed; built client JavaScript budget passed; npm audit --omit=dev --audit-level=high: 0 vulnerabilities",
-    "ci": "a25c8d84: CI 39061042096, Quality Gate 39061042117, Video AI 39061042109, Architecture Guard 39061042052 passed.",
-    "browser_audit": "073dee62 run 39060878830 success. a25c8d84 run 39061042106 passed 66 layout checks, then Lighthouse failed with NO_NAVSTART. Failed job retry requested successfully; result pending.",
+    "ci": "ff2ee3a: CI 39065040782, Quality Gate 39065040799, Video AI 39065040794, Architecture Guard 39065040783 passed.",
+    "browser_audit": "Retry 39061042106 attempt 2 cancelled. Latest run 39065040828 failed layout: homepage touch form control below 16px on phone, phone-landscape and tablet. Lighthouse did not run.",
     "remaining": [
       "Live UI playback and native vertical WebM export verification"
     ],
-    "notes": "Public audit does not exercise Product Film playback/export. No local browser retry or source tests repeated this run; source unchanged. Local browser permission blocker remains unresolved."
+    "notes": "No source changes since validated 073dee62. main c716fc14 adds only integrity checkpoint changes. Audit scans nested iframe DOM but pointer-events exclusion stops at each document; homepage demo iframes are pointer-events-none. Possible false positive, not proven without frame/control diagnostics. Do not suppress the gate or claim Product Film export verification."
   },
-  "last_commit": "a25c8d8477d45c9ba930bf811431ffc0d1b8251e",
+  "last_commit": "ff2ee3a564b5779c262395dec24993ae8b2194c9",
   "pull_request": 287,
   "blocker": {
     "type": "local_browser_execution_restricted",
-    "detail": "Chromium 1187 launches then exits: process_singleton_posix.cc socket() failed: Operation not permitted; ptrace also denied. Shell/npm/build work. This is not an allowance limit. Use an authorized browser-capable runner for E2E.",
+    "detail": "Local Chromium launch remains blocked by socket/ptrace permissions, as recorded previously; no attempt to bypass restrictions. Browser/export verification needs an authorized browser-capable environment. Public audit now reports homepage font failures; exact elements are absent from logs.",
     "scheduling": "The recurring worker is executing; the historical five-task-capacity blocker is obsolete."
   },
   "safe_to_resume": true
