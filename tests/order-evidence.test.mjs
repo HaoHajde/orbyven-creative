@@ -12,7 +12,7 @@ const stripe=read("lib/billing/stripe-rest.ts");
 const webhook=read("app/api/billing/webhook/route.ts");
 const sync=read("lib/billing/order-evidence-sync.ts");
 const legalAPI=read("app/api/control-center/compliance/route.ts");
-const legalUI=read("app/control-center/legal/page.tsx");
+const legalUI=read("app/control-center/legal/advanced/page.tsx");
 const price={
   id:"price_test",active:true,currency:"ron",unit_amount:39900,
   billing_scheme:"per_unit",livemode:false,tax_behavior:"inclusive",type:"recurring",

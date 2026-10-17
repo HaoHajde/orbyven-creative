@@ -10,7 +10,7 @@ const migration=read("supabase/migrations/20261002080659_organization_offboardin
 const ownerAPI=read("app/api/workspace/data-export/route.ts");
 const staffAPI=read("app/api/control-center/compliance/route.ts");
 const page=read("app/workspace/data-export/page.tsx");
-const staffUI=read("app/control-center/legal/page.tsx");
+const staffUI=read("app/control-center/legal/advanced/page.tsx");
 const org="123e4567-e89b-42d3-a456-426614174000";
 const caseId="223e4567-e89b-42d3-a456-426614174001";
 
