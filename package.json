@@ -13,7 +13,7 @@
     "validate": "npm run lint && npm run typecheck && npm run test:architecture && npm run test:ecosystem && npm run test:billing && npm run test:security && npm run test:compliance && npm run test:orders && node --test tests/pilot-demo-integrity.test.mjs && npm run test:performance && npm run test:seo && npm run test:data && npm run build",
     "test:security": "node --experimental-strip-types --test tests/security-hardening.test.mjs tests/security-private-trigger-boundary.test.mjs tests/security-web-headers.test.mjs tests/document-signature.test.mjs tests/security-privileged-rpc-boundary.test.mjs tests/auth-password-policy.test.mjs",
     "test:performance": "node --test tests/performance-boundaries.test.mjs tests/workspace-auth-performance.test.mjs tests/device-integrity.test.mjs",
-    "test:data": "node --experimental-strip-types --test tests/data-efficiency.test.mjs",
+    "test:data": "node --experimental-strip-types --test tests/data-efficiency.test.mjs tests/data-portability-import.test.mjs",
     "test:seo": "node --test tests/seo-contract.test.mjs",
     "test:compliance": "node --experimental-strip-types --test tests/compliance-foundation.test.mjs tests/client-offboarding.test.mjs tests/legal-audit-retention.test.mjs",
     "test:orders": "node --experimental-strip-types --test tests/order-evidence.test.mjs",
