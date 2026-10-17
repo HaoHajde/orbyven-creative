@@ -1,14 +1,14 @@
 {
   "version": 1,
   "worker_id": "dashboard-core",
-  "state": "READY",
+  "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-17T19:10:45.927814+00:00",
+  "updated_at": "2026-10-17T21:07:41.325Z",
   "branch": "fix/dashboard-exact-agenda-current-main",
-  "base_main_sha": "512e137038388615491a85b9a1850bd68430f867",
+  "base_main_sha": "c716fc14e6d909ccab7946a0fff756cd6e5f1a7b",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
   "last_completed": [
-    "Persistent Chat \u2194 Work handoff protocol is merged on main.",
+    "Persistent Chat ↔ Work handoff protocol is merged on main.",
     "Normal-Chat review found PR #346 is non-mergeable and based on an old main, while PR #231 is also non-mergeable, draft, and much broader/older.",
     "PR #346 contains the newer Dashboard AI intelligence/action layer; PR #231 contains the connected minimalist operational-flow concepts. They must not be merged wholesale or stacked as-is.",
     "Current main CI and Integration Train are green after the handoff commits.",
@@ -22,7 +22,7 @@
     "Saved reconciliation as PR #378 / 007e83b; closed superseded #351 with reference to #378.",
     "PR #378 implementation 007e83b passed 455 local tests, lint/typecheck, clean Next production build, source/ownership/JS budgets, GitHub ORBYVEN CI 39061156763, Quality Gate 39061156798 and Architecture Guard 39061157011. Local stale Turbopack cache issue resolved by rebuilding generated output."
   ],
-  "next_action": "Inspect Windows CI run 39061156816 for PR #378 and reconcile any installer-budget failure with existing PR #352 without merging stale branches; record the final gate result and integration disposition before starting the separate full-month Calendar UI milestone from current main.",
+  "next_action": "Validate the selectively ported PR #352 desktop branding fix on current-main-synced PR #378, including Windows installer CI; preserve budget limits and auth, then record integration readiness.",
   "files_touched": [
     ".orbyven/handoff/dashboard-core.json",
     "lib/ai/operational-agenda-query.ts",
@@ -32,13 +32,14 @@
     "tests/intelligence-core.test.mjs",
     "tests/operational-agenda-query.test.mjs",
     "tests/operational-task-query.test.mjs",
-    "package.json"
+    "package.json",
+    "desktop/src/BrandLogo.tsx",
+    "desktop/tests/brand-bundle.test.mjs",
+    "desktop/tests/contract.test.mjs"
   ],
   "tests": {
-    "status": "web_local_and_ci_passed_windows_pending",
-    "last_run": "2026-10-17T19:10:45.927895+00:00",
-    "verified_commit": "007e83bf6c4b05db844bc63e7c2f59b6b2ec42da",
-    "notes": "455 tests passed; full lint/typecheck, clean production build, Architecture Guard and 3.01 MiB JS budget passed. GitHub CI #1593, Quality Gate #1562, Architecture Guard #1253 succeeded. Windows run 39061156816 remains in_progress; earlier #351 Windows failed installer budget after successful compilation. No browser/authenticated/device runtime checks. No merge or deploy."
+    "status": "desktop_fix_validation_pending",
+    "notes": "PR #378 ed90f60 web gates passed; Windows #638/#639 failed Desktop dist 2.87 MiB > 2.00 MiB, installer itself 3.79 MiB passed. PR #352 b6d1859 has all four CI gates green. Selectively ported its three branding/test files; no wholesale merge."
   },
   "last_commit": "007e83bf6c4b05db844bc63e7c2f59b6b2ec42da",
   "pull_request": 378,
