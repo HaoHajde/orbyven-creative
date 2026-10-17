@@ -1,0 +1,72 @@
+name: ORBYVEN Daily Integrity Audit
+
+on:
+  schedule:
+    # Two UTC candidates cover Europe/Bucharest DST. A local-time guard below
+    # permits only the run that lands at 07:30 Europe/Bucharest.
+    - cron: "30 4 * * *"
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbyven-daily-integrity-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.event_name == 'workflow_dispatch' || vars.ORBYVEN_ENABLE_PRIVATE_AUDIT == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Resolve Bucharest schedule
+        id: schedule
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          local_time="$(TZ=Europe/Bucharest date +%H:%M)"
+          if [ "$local_time" = "07:30" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.schedule.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.schedule.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.schedule.outputs.run == 'true'
+        run: npm ci
+
+      - name: Run deterministic integrity audit
+        if: steps.schedule.outputs.run == 'true'
+        env:
+          INTEGRITY_SOURCE: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: npm run audit:integrity
+
+      - name: Publish protected report to Control Center
+        if: steps.schedule.outputs.run == 'true'
+        env:
+          ORBYVEN_INTEGRITY_INGEST_URL: ${{ secrets.ORBYVEN_INTEGRITY_INGEST_URL }}
+          ORBYVEN_INTEGRITY_INGEST_SECRET: ${{ secrets.ORBYVEN_INTEGRITY_INGEST_SECRET }}
+        run: npm run audit:integrity:publish
+
+      - name: Enforce integrity gate after report publication
+        if: steps.schedule.outputs.run == 'true'
+        run: |
+          node -e 'const r=require("./.orbyven-integrity/report.json"); if (["failed","error"].includes(r.status)) { console.error(`Integrity gate failed: ${r.status}, score=${r.overall_score}`); process.exit(1); } console.log(`Integrity gate ${r.status}: score=${r.overall_score}`);'
