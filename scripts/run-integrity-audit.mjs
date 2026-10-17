@@ -50,6 +50,14 @@ const suites = [
     ai: true,
   },
   {
+    category: "security",
+    label: "Production dependency vulnerabilities",
+    command: "npm",
+    args: ["audit", "--omit=dev", "--audit-level=high"],
+    severity: "high",
+    ai: true,
+  },
+  {
     category: "seo",
     label: "SEO contract",
     command: "npm",
