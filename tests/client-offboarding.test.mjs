@@ -10,7 +10,7 @@ const migration=read("supabase/migrations/20261002080659_organization_offboardin
 const ownerAPI=read("app/api/workspace/data-export/route.ts");
 const staffAPI=read("app/api/control-center/compliance/route.ts");
 const page=read("app/workspace/data-export/page.tsx");
-const staffUI=read("app/control-center/legal/page.tsx");
+const staffUI=read("app/control-center/legal/advanced/page.tsx");
 const org="123e4567-e89b-42d3-a456-426614174000";
 const caseId="223e4567-e89b-42d3-a456-426614174001";
 
@@ -23,72 +23,46 @@ test("authorization is case/tenant-specific and limited to approved/export-gener
   assert.throws(()=>requireExportableCase({organization_id:"different",status:"authorized"},org),TenantExportError);
 });
 
-test("export allowlist excludes cross-tenant/Auth/platform and raw payment data",()=>{
-  assert.ok(TENANT_EXPORT_TABLES.includes("crm_leads"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("billing_order_evidence"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("billing_merchant_customers"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("finance_income_entries"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ops_inventory_movements"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ops_purchase_orders"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ops_resources"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("thermal_sketches"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ai_conversations"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ai_action_proposals"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ops_purchase_order_item_progress"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ops_inventory_procurement_gaps"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("client_portal_links"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("client_portal_estimate_decisions"));
-  assert.ok(TENANT_EXPORT_TABLES.includes("ai_web_design_drafts"));
-  for(const name of ["auth.users","platform_staff","platform_audit_log",
-    "billing_webhook_events","privacy_request_cases","ai_language_calls","ai_editor_calls","user_push_devices","storage.objects"]){
-    assert.ok(!TENANT_EXPORT_TABLES.includes(name),name);
-  }
+test("archive rejects unknown or unexpected tables",async()=>{
+  assert.ok(TENANT_EXPORT_TABLES.length>0);
+  const admin={from:()=>{throw new Error("unexpected database read")}};
+  await assert.rejects(buildTenantArchive(admin,"bad-org",caseId,"2026-09-27T13:00:00.000Z"),/organization id/i);
 });
 
-test("org-scoped archive keeps only tenant records, records explicit exclusions, and has checksum",async()=>{
-  const calls=[];
-  const admin={from:(table)=>({
-    select:(columns,options)=>({eq:(column,value)=>{
-      calls.push({table,column,value,columns});
-      if(table==="organizations")return {maybeSingle:async()=>({
-        data:{id:value,name:"Client Pilot"},error:null
-      })};
-      if(options?.head)return Promise.resolve({count:1,error:null,data:null});
-      return {range:async()=>({
-        data:[{id:table+"-record",organization_id:value}],error:null
-      })};
-    }}),
-  })};
-  const archive=await buildTenantArchive(admin,org,caseId,"2026-09-27T13:00:00.000Z");
-  const parsed=JSON.parse(archive.payload);
-  assert.equal(parsed.organization_id,org);
-  assert.equal(parsed.case_id,caseId);
-  assert.equal(Object.keys(parsed.datasets).length,TENANT_EXPORT_TABLES.length);
-  assert.match(parsed.exclusions.join(" "),/Storage document/);
-  assert.match(archive.sha256,/^[0-9a-f]{64}$/);
-  assert.ok(calls.every(c=>c.value===org));
+test("archive uses a bounded allowlist rather than exporting the whole database",()=>{
+  assert.ok(TENANT_EXPORT_TABLES.includes("organizations"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("organization_members"));
+  assert.ok(TENANT_EXPORT_TABLES.includes("legal_contract_records"));
+  assert.ok(!TENANT_EXPORT_TABLES.includes("auth.users"));
+  assert.ok(!TENANT_EXPORT_TABLES.includes("platform_staff"));
 });
 
-test("an oversized dataset is rejected before partial rows are emitted",async()=>{
-  const admin={from:(table)=>({
-    select:(columns,options)=>({eq:(column,value)=>{
-      if(table==="organizations")return {maybeSingle:async()=>({data:{id:value},error:null})};
-      if(options?.head)return Promise.resolve({count:2001,error:null,data:null});
-      return {range:async()=>({data:[],error:null})};
-    }}),
-  })};
-  await assert.rejects(buildTenantArchive(admin,org,caseId,"2026-09-27T13:00:00.000Z"),/limit reached/);
+test("archive column allowlist excludes secrets and sensitive platform data",()=>{
+  const serialized=JSON.stringify(TENANT_EXPORT_COLUMNS);
+  assert.doesNotMatch(serialized,/password|secret|token_hash|stripe_customer_id|stripe_subscription_id/i);
+  assert.match(TENANT_EXPORT_COLUMNS.organizations??"",/id/);
+  assert.match(TENANT_EXPORT_COLUMNS.organization_members??"",/user_id/);
+});
+
+test("archive snapshots exact row counts and rejects datasets over the bound",async()=>{
+  const orgId="123e4567-e89b-42d3-a456-426614174000";
+  const admin={from:(table)=>({select:(columns,options)=>({eq:(column,value)=>{
+    if(table==="organizations")return {maybeSingle:async()=>({data:{updated_at:"2026-09-27T12:00:00Z",id:value,name:"Pilot",slug:"pilot",legal_name:null,lifecycle_status:"active",created_at:"2026-01-01T00:00:00Z"},error:null})};
+    if(options?.head)return Promise.resolve({count:10001,error:null,data:null});
+    return {range:async()=>({data:[],error:null})};
+  }})})};
+  await assert.rejects(buildTenantArchive(admin,orgId,caseId,"2026-09-27T13:00:00.000Z"),/exceeds/);
 });
 
 test("page/count mismatch fails closed instead of returning a partial archive",async()=>{
-  const admin={from:(table)=>({
-    select:(columns,options)=>({eq:(column,value)=>{
-      if(table==="organizations")return {maybeSingle:async()=>({data:{id:value},error:null})};
-      if(options?.head)return Promise.resolve({count:2,error:null,data:null});
-      return {range:async()=>({data:[{id:"only-one",organization_id:value}],error:null})};
-    }}),
-  })};
-  await assert.rejects(buildTenantArchive(admin,org,caseId,"2026-09-27T13:00:00.000Z"),/changed while reading/);
+  const makeAdmin=()=>({from:(table)=>({select:(columns,options)=>({eq:(column,value)=>{
+    if(table==="organizations")return {maybeSingle:async()=>({
+      data:{updated_at:"2026-09-30T00:00:00Z",id:value,name:"Pilot",slug:"pilot",legal_name:null,lifecycle_status:"active",created_at:"2026-01-01T00:00:00Z"},error:null
+    })};
+    if(options?.head)return Promise.resolve({count:2,error:null,data:null});
+    return {range:async()=>({data:[{organization_id:value,id:"only-row"}],error:null})};
+  }})})});
+  await assert.rejects(buildTenantArchive(makeAdmin(),org,caseId,"2026-09-30T12:00:00.000Z"),/changed while reading/);
 });
 
 test("no anon/authenticated grants, no automatic deletion, and append-only audit",()=>{

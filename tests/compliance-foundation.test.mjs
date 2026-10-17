@@ -8,7 +8,6 @@ import {
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const migration=read("supabase/migrations/20260928165933_legal_trust_foundation_alpha071.sql");
 const api=read("app/api/control-center/compliance/route.ts");
-const page=read("app/control-center/legal/page.tsx");
 const UUID="123e4567-e89b-42d3-a456-426614174000";
 const hash="a".repeat(64);
 const contract={organizationId:UUID,documentType:"contract",title:"Contract ORBYVEN",documentVersion:"v1",sha256:hash,evidenceReference:UUID+"/contracts/v1.pdf"};
@@ -60,5 +59,5 @@ test("API authorizes platform staff and never exports/deletes client data",()=>{
   assert.match(api,/billing_terms_acceptances/);
   assert.match(api,/assess_case_role/);
   assert.doesNotMatch(api,/auth\.admin\.deleteUser|storage\.remove\(/);
-  assert.match(page,/Înregistrat intern · neverificat/);
+  assert.match(api,/manualEvidenceIsVerified:false/);
 });
