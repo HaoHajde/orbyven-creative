@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadControlCenterBillingSnapshots } from "@/lib/billing/control-center";
+import { requireControlCenterOwner } from "@/lib/orbyven-control-center-owner";
 import {
   assignControlCenterMember,
   authorizeControlCenter,
@@ -57,6 +58,7 @@ function errorResponse(error: unknown) {
 export async function GET(request: Request) {
   try {
     const { admin, user, staffRole, staffSource } = await authorizeControlCenter(request);
+    requireControlCenterOwner(user.id);
     const payload = await loadControlCenterPayload(
       admin,
       user,
@@ -103,6 +105,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { admin, user, staffRole } = await authorizeControlCenter(request);
+    requireControlCenterOwner(user.id);
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
     const origin = new URL(request.url).origin;
