@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
+import { detectOperationalQuery } from "../lib/ai/operational-query-core.ts";
+import { detectEntityIntelligenceQuery } from "../lib/ai/entity-intelligence-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -61,4 +63,52 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   assert.match(route, /answerIntelligenceForActor/);
   assert.match(route, /ensureConversation/);
   assert.match(route, /persistAssistantResponse/);
+});
+
+
+test("Operational Query Mode resolves concrete dashboard questions before generic overview", () => {
+  assert.equal(detectOperationalQuery("Ce lucrări sunt întârziate?"), "overdue_tasks");
+  assert.equal(detectOperationalQuery("Arată-mi lucrările blocate"), "blocked_tasks");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt fără responsabil?"), "unassigned_tasks");
+  assert.equal(detectOperationalQuery("Ce am de făcut azi?"), "today");
+  assert.equal(detectOperationalQuery("Ce leaduri trebuie contactate azi?"), "lead_followups");
+  assert.equal(detectOperationalQuery("Ce oferte expiră și trebuie urmărite?"), "estimate_followups");
+  assert.equal(detectOperationalQuery("Salut ORBYVEN"), null);
+
+  const server = read("lib/ai/intelligence-server.ts");
+  const query = read("lib/ai/operational-query.ts");
+  assert.match(server, /answerOperationalQuery\(actor, available, prompt\)/);
+  assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(query, /\.limit\(120\)/);
+  assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(query, /recordId: row\.id/);
+});
+
+test("Entity Intelligence detects named client/work queries and stays bounded read-only", () => {
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Ce se întâmplă cu clientul Popescu SRL?"),
+    { kind: "client", value: "Popescu SRL" }
+  );
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Arată-mi situația pentru lucrarea Revizie centrală"),
+    { kind: "work", value: "Revizie centrală" }
+  );
+  assert.deepEqual(
+    detectEntityIntelligenceQuery("Ce am făcut pentru clientul acela; client: Exemplu SRL"),
+    { kind: "client", value: "Exemplu SRL" }
+  );
+  assert.equal(detectEntityIntelligenceQuery("Creează client: Exemplu SRL"), null);
+
+  const server = read("lib/ai/intelligence-server.ts");
+  const entity = read("lib/ai/entity-intelligence.ts");
+  assert.match(server, /answerEntityIntelligenceQuery\(actor, available, prompt\)/);
+  assert.match(entity, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(entity, /crm_leads/);
+  assert.match(entity, /ops_tasks/);
+  assert.match(entity, /sales_estimates/);
+  assert.match(entity, /calendar_events/);
+  assert.match(entity, /ops_documents/);
+  assert.match(entity, /FINANCE_ROLES/);
+  assert.match(entity, /available\.has\("expenses"\)/);
+  assert.doesNotMatch(entity, /\.(insert|update|delete|upsert)\s*\(/);
 });
