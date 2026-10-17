@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import AiWebDesignEntry from "@/components/AiWebDesignEntry";
+import AiWebDesignRouter from "@/components/AiWebDesignRouter";
 
 export const metadata: Metadata = {
   title: "AI Web Design ORBYVEN | Website-uri și invitații online",
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function AiWebDesignPage() {
-  return <AiWebDesignEntry />;
+  return <AiWebDesignRouter />;
 }
