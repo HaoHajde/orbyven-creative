@@ -3,21 +3,20 @@
   "worker_id": "universal-core",
   "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T16:12:00Z",
+  "updated_at": "2026-10-17T16:14:00Z",
   "branch": "feat/universal-core-reusable-templates-20261017",
   "base_main_sha": "783f27663b490f0410d4ad85d39756c941f438b0",
   "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
   "last_completed": [
     "PR #357 universal Command Palette, PR #360 universal custom fields, PR #363 Universal Tags and PR #367 protected status presentation metadata were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
-    "Audited current main and the live ORBYVEN schema for template, preset, recipe, revision and clone capabilities before implementation.",
-    "Confirmed no persisted universal workspace template/preset library exists; MaterialRecipe is an offline projection type, estimate source_estimate_id is constrained revision lineage, and task recurrence repeats completed work rather than providing arbitrary reusable creation templates.",
-    "Selected the smallest missing 1.0 capability: tenant-scoped reusable create templates for Tasks, Calendar and Estimates only, producing inert prefill data rather than executing mutations.",
-    "Implemented fail-closed SQL payload validation with closed allowlists per entity type, 32KB payload bound, RLS, explicit Data API grants and viewer read-only behavior.",
-    "Implemented the pure TypeScript reusable-template contract and prefill materializer. Contextual fields including tenant IDs, workflow status, client/task links, assignees/resources, absolute scheduling and estimate revision IDs are excluded.",
-    "Added dedicated reusable-template regression coverage and registered it in test:ecosystem; the contract has no Supabase or entity-create mutation authority.",
-    "Canonical main advanced through PR #369 migration-history reconciliation. Comparison confirmed no overlap with the reusable-template files/package; the branch was rebuilt directly on main 783f27663b490f0410d4ad85d39756c941f438b0 using the exact previously constructed template blobs, preserving all migration renames/index fixes."
+    "Audited current main and the live ORBYVEN schema for template, preset, recipe, revision and clone capabilities; no persisted universal template library exists.",
+    "Implemented tenant-scoped reusable create templates for Tasks, Calendar and Estimates as inert allowlisted prefills, with fail-closed SQL validation, RLS, explicit Data API grants and viewer read-only behavior.",
+    "The pure TypeScript contract excludes tenant IDs, workflow status, client/task links, assignee/resource bindings, absolute dates and estimate revision/source IDs and has no persistence or entity-create authority.",
+    "Added dedicated reusable-template regressions to test:ecosystem.",
+    "After PR #369 migration-history reconciliation, rebuilt the milestone directly on canonical main 783f27663b490f0410d4ad85d39756c941f438b0 and confirmed the diff is exactly five files with behind_by=0.",
+    "Opened atomic PR #370 and applied owner:cross."
   ],
-  "next_action": "Verify the reusable-template branch is 0 commits behind current main and contains only the intended five-file milestone: handoff, reusable-template migration, pure contract, dedicated test and package test registration. If current, open an atomic owner:cross PR and run Architecture Guard, Quality Gate and ORBYVEN CI. Fix only demonstrated failures. Merge only if all three are green, behind_by=0 and mergeable=true; then update canonical handoff and audit the remaining universal-core roadmap before any selective Dashboard AI 0.8.25 reconciliation.",
+  "next_action": "Observe PR #370 Architecture Guard, Quality Gate and ORBYVEN CI on the latest head. Fix only demonstrated failures. Before merge reconfirm behind_by=0 and mergeable=true; merge only if all three are green. Then update canonical handoff and audit the remaining universal-core roadmap before any selective Dashboard AI 0.8.25 reconciliation.",
   "files_touched": [
     ".orbyven/handoff/universal-core.json",
     "supabase/migrations/20261017160500_reusable_create_templates.sql",
@@ -26,12 +25,12 @@
     "package.json"
   ],
   "tests": {
-    "status": "pending",
+    "status": "pending_ci",
     "last_run": null,
-    "notes": "Reusable-template implementation is complete and registered in test:ecosystem. Checkpoint recorded before PR/full gates on the branch rebuilt from main 783f276."
+    "notes": "PR #370 required gates pending. Reusable-template regression is registered in test:ecosystem."
   },
-  "last_commit": "5081faeeb8e988da7734c9599de074af966bdeb1",
-  "pull_request": null,
+  "last_commit": "da8552e8cd4a7501f806d7b9030766b9ccc401d8",
+  "pull_request": 370,
   "blocker": null,
   "safe_to_resume": true
 }
