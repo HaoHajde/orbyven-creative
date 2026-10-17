@@ -3,34 +3,31 @@
   "worker_id": "universal-core",
   "state": "READY",
   "mode": "work",
-  "updated_at": "2026-10-17T16:24:00Z",
+  "updated_at": "2026-10-17T16:28:00Z",
   "branch": null,
-  "base_main_sha": "5eff258f954d6d04741b0c0b3d56c85b972a34e8",
-  "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
+  "base_main_sha": "6cfdea12f58fab6f9f5e6f7ece9adb483ab40577",
+  "current_objective": "Reconcile only demonstrably missing Dashboard AI 0.8.25/core capabilities after completing the ORBYVEN 1.0 universal foundation.",
   "last_completed": [
-    "PR #357 universal Command Palette, PR #360 universal custom fields, PR #363 Universal Tags and PR #367 protected status presentation metadata were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
-    "Status configurability was kept as presentation metadata over canonical CRM/Tasks/Calendar/Estimates workflow keys; no generic replacement status system was introduced.",
-    "Audited main and the live ORBYVEN schema for template/preset/recipe/revision/clone capabilities. Material recipes remain domain-specific and no persisted universal create-template library existed.",
-    "Implemented reusable create templates for Tasks, Calendar and Estimates as inert allowlisted prefills only, excluding tenant/context IDs, workflow status, assignee/resource bindings, absolute scheduling and estimate revision/source lineage.",
-    "Hardened template writes to require an active organization membership plus a non-viewer writer role, kept RLS/tenant isolation/explicit Data API grants and confirmation-only template-library mutations.",
-    "Aligned SQL and TypeScript validation, including integer-only minute fields and numeric type predicates; dedicated regressions run in test:ecosystem.",
-    "PR #373 became stale after invitation RSVP admin PR #372 and was not merged despite green gates. The milestone was rebuilt directly on current main with zero overlap and zero commits behind.",
-    "Replacement PR #375 passed Architecture Guard, Quality Gate and ORBYVEN CI on head a93d8b972dbe2fe3abe23d761e866b2b9a36a44a, remained behind_by=0 and mergeable=true, then merged atomically as 5eff258f954d6d04741b0c0b3d56c85b972a34e8."
+    "Universal foundation audit on canonical main 6cfdea12f58fab6f9f5e6f7ece9adb483ab40577 is complete.",
+    "Onboarding/first-run is production-present at app/workspace/onboarding with workspace detection, organization bootstrap and initial module selection/plan entitlements.",
+    "Global Search is live, organization-scoped, enabled-module filtered and wildcard-safe; record hits navigate through the existing workspace navigation intent.",
+    "Command Palette contract/component is implemented and green, respects enabled modules and create-role gates and emits navigation/create intents only. Its final WorkspaceShell launcher wiring remains coordinator-owned shared integration and is not modified by universal-core.",
+    "Universal Create is already live in WorkspaceShell, restricted to enabled modules, blocks viewer creation and preserves stricter finance creation roles; entitlement checks remain canonical in module enablement.",
+    "Universal custom fields, Universal Tags, protected status presentation metadata and reusable create templates are implemented as isolated tenant-safe contracts/persistence with RLS, explicit Data API grants and confirmation-only mutation guards.",
+    "Configurable statuses preserve CRM/Tasks/Calendar/Estimates canonical workflow keys and only override label/color/order; no generic status replacement or transition authority exists.",
+    "Reusable templates remain inert allowlisted prefills for Tasks/Calendar/Estimates and exclude contextual IDs, status, assignees/resources, absolute scheduling and estimate revision/source lineage.",
+    "PR #375 passed Architecture Guard, Quality Gate and ORBYVEN CI while 0 commits behind and merged as 5eff258f954d6d04741b0c0b3d56c85b972a34e8; canonical handoff followed as 6cfdea12f58fab6f9f5e6f7ece9adb483ab40577."
   ],
-  "next_action": "Audit current main against the remaining universal-core roadmap before any new implementation. Confirm onboarding/first-run, Global Search/Command Palette, Universal Create, custom fields, tags, protected status presentation metadata and reusable templates are each sufficiently covered for ORBYVEN 1.0. If no demonstrable universal-core gap remains, mark the foundation complete and only then audit Dashboard AI 0.8.25 selectively against current main; do not import old PRs wholesale and do not modify coordinator-owned shared shell/navigation/providers/module registry independently.",
+  "next_action": "Audit Dashboard AI 0.8.25 selectively against current main. Identify the historical PRs/branches that represented 0.8.25, compare their concrete capabilities with current main and retain only demonstrably missing, still-relevant primitives. Do not merge or cherry-pick old PRs wholesale. Do not modify WorkspaceShell/global navigation/providers/module registry independently. If current main already supersedes a historical capability, record it as covered and move on; implement only the smallest isolated missing capability with targeted tests and full Architecture Guard/Quality Gate/CI validation.",
   "files_touched": [
-    ".orbyven/handoff/universal-core.json",
-    "supabase/migrations/20261017160500_reusable_create_templates.sql",
-    "lib/workspace-reusable-templates.ts",
-    "tests/workspace-reusable-templates.test.mjs",
-    "package.json"
+    ".orbyven/handoff/universal-core.json"
   ],
   "tests": {
     "status": "green",
     "last_run": "2026-10-17T16:23:00Z",
-    "notes": "PR #375 current-main head a93d8b9: Architecture Guard success; Quality Gate success; ORBYVEN CI success, including lint, typecheck, ecosystem/security/compliance/performance/data/SEO tests, production build and JS budget."
+    "notes": "Universal foundation milestones are green on main. Final audit found no additional owned universal-core feature gap; Command Palette shared-shell wiring is coordinator-owned rather than a missing isolated foundation capability."
   },
-  "last_commit": "5eff258f954d6d04741b0c0b3d56c85b972a34e8",
+  "last_commit": "6cfdea12f58fab6f9f5e6f7ece9adb483ab40577",
   "pull_request": 375,
   "blocker": null,
   "safe_to_resume": true
