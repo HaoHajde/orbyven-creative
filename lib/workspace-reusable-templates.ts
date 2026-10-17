@@ -113,15 +113,15 @@ function optionalString(value: unknown, maxLength: number) {
   return value === undefined || (typeof value === "string" && value.length <= maxLength);
 }
 
-function finiteNumber(value: unknown) {
+function finiteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function nonnegativeNumber(value: unknown) {
+function nonnegativeNumber(value: unknown): value is number {
   return finiteNumber(value) && value >= 0;
 }
 
-function nonnegativeInteger(value: unknown) {
+function nonnegativeInteger(value: unknown): value is number {
   return finiteNumber(value) && Number.isInteger(value) && value >= 0;
 }
 
