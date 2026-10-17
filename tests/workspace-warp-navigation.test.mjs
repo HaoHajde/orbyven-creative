@@ -2,8 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
+
+function loadPureModule(relativePath) {
+  const source = read(relativePath);
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  const exports = {};
+  new Function("exports", compiled.outputText)(exports);
+  return exports;
+}
 
 test("Workspace warp uses sticky-header offset, retries and smooth viewport scrolling", () => {
   const source = read("lib/workspace-warp.ts");
@@ -95,4 +106,72 @@ test("Command palette stays isolated from coordinator-owned WorkspaceShell", () 
   assert.doesNotMatch(shell, /WorkspaceCommandPalette/);
   assert.match(shell, /<WorkspaceSearch/);
   assert.match(shell, /WORKSPACE_CREATE_MODULES/);
+});
+
+test("custom field contract normalizes keys and validates configurable choices", () => {
+  const customFields = loadPureModule("lib/workspace-custom-fields.ts");
+  assert.equal(customFields.normalizeWorkspaceCustomFieldKey("Serie Șasiu / Client"), "serie_sasiu_client");
+  assert.equal(customFields.normalizeWorkspaceCustomFieldKey("123"), "field_123");
+
+  const definition = {
+    entityType: "crm_leads",
+    fieldKey: "prioritate_client",
+    label: "Prioritate client",
+    fieldType: "select",
+    config: {
+      options: [
+        { value: "normal", label: "Normal" },
+        { value: "vip", label: "VIP" },
+      ],
+    },
+    required: true,
+    active: true,
+    sortOrder: 0,
+  };
+
+  assert.deepEqual(customFields.validateWorkspaceCustomFieldDefinition(definition), { valid: true });
+  assert.deepEqual(customFields.validateWorkspaceCustomFieldValue(definition, "vip"), { valid: true });
+  assert.equal(customFields.validateWorkspaceCustomFieldValue(definition, "unknown").valid, false);
+  assert.equal(customFields.validateWorkspaceCustomFieldValue(definition, null).valid, false);
+});
+
+test("custom field multi-select rejects duplicate or undeclared values", () => {
+  const customFields = loadPureModule("lib/workspace-custom-fields.ts");
+  const definition = {
+    fieldType: "multi_select",
+    required: false,
+    config: {
+      options: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ],
+    },
+  };
+
+  assert.deepEqual(customFields.validateWorkspaceCustomFieldValue(definition, ["a", "b"]), { valid: true });
+  assert.equal(customFields.validateWorkspaceCustomFieldValue(definition, ["a", "a"]).valid, false);
+  assert.equal(customFields.validateWorkspaceCustomFieldValue(definition, ["a", "c"]).valid, false);
+});
+
+test("custom field mutations retain explicit confirmation contract", () => {
+  const customFields = loadPureModule("lib/workspace-custom-fields.ts");
+  assert.throws(
+    () => customFields.requireWorkspaceCustomFieldMutationConfirmation(false),
+    /CUSTOM_FIELD_CONFIRMATION_REQUIRED/,
+  );
+  assert.doesNotThrow(() => customFields.requireWorkspaceCustomFieldMutationConfirmation(true));
+});
+
+test("custom field persistence is tenant scoped, RLS protected and Data API explicit", () => {
+  const migration = read("supabase/migrations/20261017144800_universal_custom_fields.sql");
+  assert.match(migration, /organization_id uuid not null references public\.organizations\(id\) on delete cascade/);
+  assert.match(migration, /foreign key \(organization_id, definition_id, entity_type\)/);
+  assert.match(migration, /alter table public\.workspace_custom_field_definitions enable row level security/);
+  assert.match(migration, /alter table public\.workspace_custom_field_values enable row level security/);
+  assert.match(migration, /private\.is_org_member\(organization_id\)/);
+  assert.match(migration, /private\.is_org_admin\(organization_id\)/);
+  assert.match(migration, /m\.role in \('owner', 'admin', 'manager', 'member'\)/);
+  assert.doesNotMatch(migration, /m\.role in \([^\n]*'viewer'/);
+  assert.match(migration, /revoke all on table public\.workspace_custom_field_definitions from anon/);
+  assert.match(migration, /grant select, insert, update, delete[\s\S]*to authenticated, service_role/);
 });
