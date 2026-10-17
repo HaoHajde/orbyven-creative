@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { authorizeOwnerControlCenter } from "@/lib/orbyven-control-center-owner";
 import {
-  authorizeControlCenter, ControlCenterHttpError, requireStaffRole,
+  ControlCenterHttpError, requireStaffRole,
 } from "@/lib/orbyven-control-center-server";
 import { legalConfig } from "@/lib/legal-config";
 import {
@@ -37,7 +38,7 @@ function readBody(body: unknown): Record<string,unknown> {
 
 export async function GET(request: Request) {
   try {
-    const {admin,staffRole} = await authorizeControlCenter(request);
+    const {admin,staffRole} = await authorizeOwnerControlCenter(request);
     requireStaffRole(staffRole,["platform_owner","platform_admin"]);
     const rawId = new URL(request.url).searchParams.get("organizationId");
     const organizationId = rawId ? requireUuid(rawId) : null;
@@ -108,7 +109,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const {admin,user,staffRole} = await authorizeControlCenter(request);
+    const {admin,user,staffRole} = await authorizeOwnerControlCenter(request);
     requireStaffRole(staffRole,["platform_owner","platform_admin"]);
     if (!request.headers.get("content-type")?.includes("application/json")) {
       return reply({error:"expected_json"},415);
