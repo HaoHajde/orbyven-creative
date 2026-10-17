@@ -1,27 +1,28 @@
 {
   "version": 1,
   "worker_id": "dashboard-core",
-  "state": "READY_FOR_WORK",
+  "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-16T13:48:53Z",
-  "branch": "feature/dashboard-ai-0825-current-main-r8-20261003",
-  "base_main_sha": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
+  "updated_at": "2026-10-17T13:10:28.973055+00:00",
+  "branch": "feature/dashboard-core-resume-20261017",
+  "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
   "last_completed": [
     "Persistent Chat ↔ Work handoff protocol is merged on main.",
     "Normal-Chat review found PR #346 is non-mergeable and based on an old main, while PR #231 is also non-mergeable, draft, and much broader/older.",
     "PR #346 contains the newer Dashboard AI intelligence/action layer; PR #231 contains the connected minimalist operational-flow concepts. They must not be merged wholesale or stacked as-is.",
-    "Current main CI and Integration Train are green after the handoff commits."
+    "Current main CI and Integration Train are green after the handoff commits.",
+    "2026-10-17: inspected current main and open dashboard PRs; main CI/Quality Gate green. No newer dashboard port exists. Fresh branch created; old PR task-query 120-row sampling defect identified."
   ],
-  "next_action": "Work: create a fresh dashboard integration branch from current main (4a8ade0c). Port only the still-missing Dashboard AI 0.8.25 capabilities from PR #346 first, preserving current auth/security contracts and confirmation-only mutations. Treat PR #231 as a UX/flow reference only: after the #346 port is clean, selectively reimplement its single-next-action/3-click module-flow ideas against current main rather than merging its 198-commit branch. Run architecture guard, targeted dashboard tests, Quality Gate and CI before opening/updating a PR.",
+  "next_action": "Port the five read-only task queries from PR #346 with database-side filters/exact counts and RO/EN answers, then verify targeted tests, Architecture Guard, Quality Gate and CI.",
   "files_touched": [],
   "tests": {
     "status": "ci_evidence_only",
     "last_run": "2026-10-16T13:46:11Z",
     "notes": "Latest main ORBYVEN CI and Integration Train completed successfully. No local build/runtime/browser verification was performed by normal Chat."
   },
-  "last_commit": "4a8ade0cf8a3dee9efe5600b7ca050c4ab9c58fc",
-  "pull_request": 346,
+  "last_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
 }
