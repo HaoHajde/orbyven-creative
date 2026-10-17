@@ -3,6 +3,10 @@ import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { readSiteDraft } from "@/lib/ai/site-editor";
 import { generateWebDesignForActor } from "@/lib/ai/web-design-server";
 import { readWebDesignInterviewFacts } from "@/lib/ai/web-design-interview";
+import {
+  buildWebDesignProjectPrompt,
+  isInvitationProjectMode,
+} from "@/lib/ai/web-design-project-mode";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,16 +36,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "draft invalid" }, { status: 400 });
     }
 
+    const project = buildWebDesignProjectPrompt(prompt);
     const actor = await authenticateBillingActor(request, organizationId, false);
     const result = await generateWebDesignForActor(
       actor,
-      prompt,
+      project.prompt,
       currentDraft,
       recentDrafts,
       interviewFacts
     );
 
-    return NextResponse.json(result, {
+    const payload = isInvitationProjectMode(project.mode)
+      ? {
+          ...result,
+          projectMode: project.mode,
+          // Business-specific brief gaps are intentionally hidden for invitations.
+          // The generated suggestions remain contextual to the event brief.
+          briefGaps: {
+            count: 0,
+            completionScore: 100,
+            labels: [],
+            gaps: [],
+          },
+        }
+      : { ...result, projectMode: project.mode };
+
+    return NextResponse.json(payload, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
