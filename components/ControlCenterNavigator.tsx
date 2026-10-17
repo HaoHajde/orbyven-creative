@@ -103,8 +103,11 @@ export default function ControlCenterNavigator() {
   }, [open]);
 
   useEffect(() => {
-    setOpen(false);
-    setQuery("");
+    const frame = window.requestAnimationFrame(() => {
+      setOpen(false);
+      setQuery("");
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
   if (hidden) return null;
