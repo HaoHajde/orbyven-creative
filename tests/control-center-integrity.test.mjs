@@ -6,15 +6,21 @@ function read(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("integrity UI API remains platform-owner only", () => {
+test("integrity UI API remains platform-owner and explicit-owner only", () => {
   const route = read("app/api/control-center/integrity/route.ts");
   const reportRoute = read("app/api/control-center/integrity/report/route.ts");
+  const ownerGuard = read("lib/orbyven-integrity-owner.ts");
 
   assert.match(route, /authorizeControlCenter\(request\)/);
   assert.match(route, /requireStaffRole\(staffRole, \["platform_owner"\]\)/);
+  assert.match(route, /requireIntegrityOwner\(user\.id\)/);
   assert.match(reportRoute, /authorizeControlCenter\(request\)/);
   assert.match(reportRoute, /requireStaffRole\(staffRole, \["platform_owner"\]\)/);
+  assert.match(reportRoute, /requireIntegrityOwner\(user\.id\)/);
   assert.match(reportRoute, /Cache-Control.*no-store/s);
+  assert.match(ownerGuard, /ORBYVEN_INTEGRITY_OWNER_ID/);
+  assert.match(ownerGuard, /integrity_owner_not_configured/);
+  assert.match(ownerGuard, /integrity_owner_required/);
 });
 
 test("integrity ingest requires an independent signed server secret", () => {
@@ -116,8 +122,7 @@ test("Guardian cannot self-modify its own trust boundaries", () => {
     "app/api/internal/integrity-audit/",
     "app/api/control-center/integrity/",
     "lib/orbyven-guardian-server.ts",
-    "lib/orbyven-integrity-server.ts",
-    "lib/orbyven-integrity-contracts.ts",
+    "lib/orbyven-integrity-owner.ts",
     "scripts/guardian-claim.mjs",
     "scripts/guardian-result.mjs",
     "scripts/publish-integrity-audit.mjs",
@@ -125,11 +130,19 @@ test("Guardian cannot self-modify its own trust boundaries", () => {
     "supabase/migrations/20261017115000_control_center_integrity_audit.sql",
   ];
 
+  assert.match(workflow, /lib\/orbyven-integrity-\*\.ts/);
+
   for (const boundary of boundaries) {
     const escaped = boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    assert.match(workflow, new RegExp(escaped));
+    if (boundary.startsWith("lib/orbyven-integrity-") && boundary !== "lib/orbyven-integrity-owner.ts") {
+      continue;
+    }
     assert.match(prompt, new RegExp(escaped));
+    if (boundary !== "lib/orbyven-integrity-owner.ts") {
+      assert.match(workflow, new RegExp(escaped));
+    }
   }
+  assert.match(prompt, /lib\/orbyven-integrity-owner\.ts/);
 });
 
 test("Guardian cannot rewrite critical package validation scripts", () => {
