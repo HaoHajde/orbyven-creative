@@ -3,45 +3,33 @@
   "worker_id": "operations-reliability",
   "state": "BLOCKED",
   "mode": "work",
-  "updated_at": "2026-10-17T15:31:00Z",
+  "updated_at": "2026-10-17T16:03:00Z",
   "branch": null,
-  "base_main_sha": "74830ceaaf4a558c659bfc95c5169b6148ab77f3",
-  "current_objective": "Resume the next atomic operations-reliability milestone only after the active Control Center Integrity work is reconciled; avoid concurrent wiring over the same privileged Control Center surfaces.",
+  "base_main_sha": "783f27663b490f0410d4ad85d39756c941f438b0",
+  "current_objective": "Remain blocked on the Control Center milestone until PR #350 is merged, superseded or closed; do not create concurrent privileged-surface work or invent an alternate milestone.",
   "last_completed": [
     "Attention Inbox is integrated and reuses buildBusinessAutomationSignals rather than adding a parallel event store.",
     "Universal safe recovery/retry PR #359 is integrated: safe retries are limited to reads/idempotent operations, while uncertain non-idempotent writes refresh authoritative state first.",
     "Operator Health PR #362 is integrated as a sanitized tenant-safe aggregation layer for services, jobs, integrations and data checks without exposing raw logs, provider payloads, credentials or secrets.",
-    "Re-audited current notification infrastructure before implementation: Activity Center and Attention Inbox already provide internal evidence; platform_audit_log already provides immutable audit storage; user_push_devices is only a mobile device registry and its canonical DB constraint supports ios/android only; the only email delivery is the project-request-specific Resend path; no generic push sender or generic email channel exists.",
-    "Notification Preferences + Channel Controls PR #368 was integrated into main after Architecture Guard, Quality Gate and ORBYVEN CI passed on head 169b9e3548d5bb672346bfa6ba3fefc137f82ea4 and the branch was verified 1 commit ahead / 0 commits behind main immediately before merge.",
-    "Added user_notification_preferences as a minimal per-user + per-organization push-only control plane with strict authenticated RLS ownership plus active organization membership checks. Unknown channels are rejected and a missing preference fails closed as push disabled.",
-    "Push device registration remains separate from delivery consent: successful ios/android device registration activates the push preference, while missing permission/device/token remains non-fatal to workspace activity flows. Disabling push does not delete the device registry and does not suppress Activity Center or Attention Inbox evidence.",
-    "Activity Center now exposes a minimalist push on/off control only when the native bridge is available. Preference reads/UI events return only channel/enabled/timestamp state and never expo_push_token, provider payloads, credentials or secrets.",
-    "Preference changes reuse the existing platform_audit_log through a private security-definer trigger. Audit metadata is bounded to channel and enabled; no separate audit storage or authenticated audit writer was introduced.",
-    "Targeted notification preference contract tests and security/RLS tests are registered in the existing ecosystem/security suites and passed together with lint, typecheck, architecture, security regressions and production build.",
-    "Post-merge audit identified Operator Health → Control Center presentation as the next plausible atomic milestone, but PR #350 is currently open, draft and non-mergeable and changes the same privileged Control Center routes/components/navigation. No competing wiring branch was created."
+    "Notification Preferences + Channel Controls PR #368 is complete and integrated. It remains a push-only per-user + per-organization control plane over the existing ios/android device registry; no web push, universal email channel, remote push sender, parallel Activity/Audit storage or event bus was introduced.",
+    "Notification preference contract, RLS/security, Architecture Guard, Quality Gate and ORBYVEN CI validation passed before PR #368 was merged while 0 commits behind main.",
+    "Post-merge audit identified Operator Health → Control Center presentation as the next atomic milestone, but PR #350 changes the same privileged Control Center routes/components/navigation. No competing wiring branch was created."
   ],
   "evidence": [
-    "PR #368 merged into main as 7920fb931a00af13dada6c5a2686166874db5bdf.",
-    "Validated PR head: 169b9e3548d5bb672346bfa6ba3fefc137f82ea4.",
-    "Architecture Guard run 39045029711: success.",
-    "Quality Gate run 39045029705 / validate job 117431936692: success, including lint, typecheck, architecture, ecosystem, security, data, SEO and production build.",
-    "ORBYVEN CI run 39045029736 / build job 117431936479: success, including ecosystem contract tests, security hardening regressions and production build.",
-    "Pre-merge compare: ahead_by=1, behind_by=0 against main 22310422d27ddfb3add34fef1c347fd4db88d942.",
-    "Migration: supabase/migrations/20261017153000_notification_preferences_control_plane.sql.",
-    "Control-plane helper: lib/modules/notification-preferences.ts.",
-    "Existing device registry integration: lib/modules/push-devices.ts.",
-    "Existing Activity Center integration: components/WorkspaceActivityCenter.tsx.",
-    "Targeted tests: tests/notification-preferences-contract.test.mjs and tests/notification-preferences-security.test.mjs.",
-    "PR #350 feat: ORBYVEN Control Center Integrity + daily secure audits is open, draft=true, merged=false, mergeable=false, head b987bfe830a74093ba11e9a2ba09870c5aecf9b1, with 37 changed files.",
-    "PR #350 directly changes app/control-center/page.tsx, app/api/control-center/route.ts, components/ControlCenterCompact.tsx, components/ControlCenterNavigator.tsx and components/PlatformCoreOperations.tsx, so adding Operator Health wiring now would create competing edits on privileged Control Center surfaces."
+    "Notification Preferences + Channel Controls PR #368 merged as 7920fb931a00af13dada6c5a2686166874db5bdf.",
+    "Validated PR #368 head 169b9e3548d5bb672346bfa6ba3fefc137f82ea4: Architecture Guard run 39045029711 success, Quality Gate run 39045029705 success, ORBYVEN CI run 39045029736 success; pre-merge compare was behind_by=0.",
+    "Current main audited at 783f27663b490f0410d4ad85d39756c941f438b0 after PR #369 production migration reconciliation.",
+    "Current main Integration Train run 39045572705 succeeded and ORBYVEN CI run 39045572890 succeeded.",
+    "PR #350 feat: ORBYVEN Control Center Integrity + daily secure audits remains open, draft=true, merged=false, mergeable=false, head b987bfe830a74093ba11e9a2ba09870c5aecf9b1.",
+    "PR #350 changes privileged Control Center surfaces including app/control-center/*, app/api/control-center/*, components/ControlCenterCompact.tsx, components/ControlCenterNavigator.tsx and components/PlatformCoreOperations.tsx."
   ],
   "remaining": [
-    "No universal remote-push sender/delivery worker was found in main. The new preference is intentionally control-plane only; any future sender must gate delivery on the per-user/per-organization preference, tolerate zero registered devices and never expose tokens to UI/audit.",
-    "Email remains the project-request-specific delivery path and is not a configurable universal notification channel until reusable infrastructure is demonstrated.",
-    "Web push remains unsupported because the canonical user_push_devices schema only permits ios/android.",
-    "Operator Health currently exists as an isolated sanitized read model/panel. Control Center wiring remains pending until PR #350 is reconciled with current main or closed/merged; do not create a parallel Control Center surface meanwhile."
+    "Do not reopen Notification Preferences + Channel Controls; that milestone is complete.",
+    "Do not create a universal remote-push sender, email notification system, event bus, Activity Center clone or parallel audit storage without a future independently demonstrated infrastructure gap.",
+    "OperatorHealthPanel exists as a sanitized read model/panel but must not be wired into Control Center until PR #350 is merged, superseded or closed and the resulting current main has been re-audited.",
+    "After #350 reconciliation, reuse only the established Control Center authorization boundary and sanitized telemetry. Do not expose raw logs, provider payloads, credentials, secrets or introduce new privilege paths."
   ],
-  "next_action": "Re-check current main, PR #350 and CI. If PR #350 has been merged or superseded, audit the resulting Control Center and wire the existing OperatorHealthPanel only if sanitized telemetry can be sourced through the established authorization boundary without raw logs or new privilege paths. If #350 remains active on the same surfaces, do not create a competing branch; keep this workstream blocked or select a different demonstrable reliability gap only if it is independent of Control Center and already supported by real infrastructure.",
+  "next_action": "Periodically re-check current main, PR #350 and CI. If PR #350 remains active on the same privileged Control Center surfaces, keep this workstream BLOCKED, create no branch and perform no alternate milestone. If PR #350 is merged, superseded or closed, first re-audit Control Center from current main; only then wire the existing OperatorHealthPanel through the established authorization boundary using sanitized telemetry. Before integration run targeted Operator Health tests plus Security, Architecture Guard, Quality Gate and ORBYVEN CI, and merge only when the branch is 0 commits behind main.",
   "files_touched": [
     "supabase/migrations/20261017153000_notification_preferences_control_plane.sql",
     "lib/modules/notification-preferences.ts",
@@ -53,12 +41,12 @@
     ".orbyven/handoff/operations-reliability.json"
   ],
   "tests": {
-    "status": "passed",
-    "last_run": "2026-10-17T15:27:55Z",
-    "notes": "Architecture Guard 39045029711, Quality Gate 39045029705 and ORBYVEN CI 39045029736 all passed on the exact merged PR head before merge. Branch was 0 commits behind main at integration. The post-merge handoff-only commit triggered fresh main CI/Quality runs; they are not required to prove the already-merged feature head but should be observed before future code work."
+    "status": "passed_blocked_next_milestone",
+    "last_run": "2026-10-17T15:33:49Z",
+    "notes": "Notification Preferences is complete. Current main 783f27663b490f0410d4ad85d39756c941f438b0 has successful Integration Train and ORBYVEN CI. No Control Center implementation work is permitted while PR #350 remains active on overlapping privileged surfaces."
   },
-  "last_commit": "74830ceaaf4a558c659bfc95c5169b6148ab77f3",
+  "last_commit": "783f27663b490f0410d4ad85d39756c941f438b0",
   "pull_request": 368,
-  "blocker": "PR #350 is an active draft Control Center Integrity implementation on the same privileged routes/components needed for Operator Health wiring. Parallel implementation risks conflicts and security-boundary divergence; wait for reconciliation/merge/closure before wiring Operator Health into Control Center.",
-  "safe_to_resume": true
+  "blocker": "PR #350 remains an active draft Control Center Integrity implementation on the same privileged routes/components required for Operator Health wiring. Wait for merge, supersession or closure, then re-audit current main before any implementation.",
+  "safe_to_resume": false
 }
