@@ -1,29 +1,37 @@
 {
   "version": 1,
   "worker_id": "universal-core",
-  "state": "IN_PROGRESS",
+  "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T16:31:00Z",
+  "updated_at": "2026-10-17T16:37:00Z",
   "branch": "feat/universal-core-operational-query-20261017",
   "base_main_sha": "75f2a0bf69755029fd27d7bb2286a4b206e9f71a",
-  "current_objective": "Selectively reconcile the first demonstrably missing Dashboard AI 0.8.25 primitive: exact read-only Operational Query Mode, without importing historical PR #346 wholesale.",
+  "current_objective": "Validate the first selective Dashboard AI 0.8.25 reconciliation milestone: exact read-only Operational Query Mode, without importing historical PR #346 wholesale.",
   "last_completed": [
-    "Universal ORBYVEN 1.0 foundation is complete for the universal-core-owned surfaces; Command Palette final WorkspaceShell wiring remains coordinator-owned shared integration.",
-    "Audited historical Dashboard AI 0.8.25 integrations and identified PR #346 R8 as the latest historical reference rather than a merge candidate.",
-    "Compared R8 with current main: current Intelligence already has authenticated tenant-scoped module availability, operational business signals, next-best actions and generic operations summaries, but no exact Operational Query contract for blocked/overdue/unassigned/urgent/unscheduled work, today/tomorrow/week agenda, lead follow-ups or estimate follow-ups.",
-    "Business Brief, Decision Support, entity intelligence and outcome-loop capabilities are intentionally deferred; this milestone is limited to the smallest missing read-only Operational Query primitive.",
-    "Historical code will be adapted selectively to current main contracts; no old PR will be merged or cherry-picked wholesale."
+    "Universal ORBYVEN 1.0 foundation is complete for universal-core-owned surfaces; Command Palette final WorkspaceShell wiring remains coordinator-owned shared integration.",
+    "Audited historical Dashboard AI 0.8.25 integrations and identified PR #346 R8 as the latest historical reference only.",
+    "Compared R8 with current main: current Intelligence already has authenticated tenant-scoped module availability, operational business signals, next-best actions and generic operations summaries, but lacked exact Operational Query handling.",
+    "Implemented a selective detector only for blocked/overdue/unassigned/urgent/unscheduled work, today/tomorrow/week agenda, lead follow-ups and estimate follow-ups. Business Brief, Decision Support, entity intelligence and outcome loop remain deferred.",
+    "Hardened the detector as read-intent only: explicit mutation verbs return null so existing Plan Mode / Agent Actions keep handling change requests.",
+    "Implemented read-only tenant-scoped query responders using existing BillingActor/service-client contracts; every data read is organization-scoped and capability availability is reconstructed from active organization_modules plus active entitlements.",
+    "Integrated Operational Query through the authenticated Intelligence API after conversation/entity-context resolution. Clear operational read queries are answered directly; nonmatches fall through unchanged to answerIntelligenceForActor and existing plan/action/specialist behavior.",
+    "Added intelligence-core regressions for intent detection, mutation refusal, tenant scoping, entitlement gates and no persistence authority. No WorkspaceShell/navigation/provider/module-registry changes were made."
   ],
-  "next_action": "Implement an isolated Operational Query detector and read-only tenant-scoped query responder for the exact operational intents still missing on current main, integrate it minimally before generic specialist routing in lib/ai/intelligence-server.ts, add targeted regressions, checkpoint, then run Architecture Guard, Quality Gate and ORBYVEN CI. Preserve current auth/module gates and perform no mutations.",
+  "next_action": "Confirm current main has not advanced incompatibly, open an atomic PR with the appropriate ownership label, and run Architecture Guard, Quality Gate and ORBYVEN CI. Fix only demonstrated failures. Merge only if all three are green, behind_by=0 and the PR remains mergeable; then update canonical handoff and continue the selective 0.8.25 audit with the next demonstrably missing primitive rather than wholesale R8 integration.",
   "files_touched": [
-    ".orbyven/handoff/universal-core.json"
+    ".orbyven/handoff/universal-core.json",
+    "lib/ai/operational-query-core.ts",
+    "lib/ai/operational-query.ts",
+    "lib/ai/operational-query-entry.ts",
+    "app/api/ai/intelligence/route.ts",
+    "tests/intelligence-core.test.mjs"
   ],
   "tests": {
-    "status": "not_started",
+    "status": "pending_ci",
     "last_run": null,
-    "notes": "Selective Dashboard AI reconciliation milestone selected after current-main capability audit."
+    "notes": "Targeted coverage is registered in the existing intelligence-core ecosystem test. Full required gates have not run on this branch yet."
   },
-  "last_commit": "75f2a0bf69755029fd27d7bb2286a4b206e9f71a",
+  "last_commit": "a2adcb059457727f2b6f72fd12da77669798405f",
   "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
