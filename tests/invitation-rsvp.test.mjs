@@ -112,7 +112,7 @@ test("RSVP admin UI stays compact with search filters edit delete confirmation a
 });
 
 test("seating tables are private, project scoped and assignment-safe", () => {
-  const migration = read("supabase/migrations/20261017182000_invitation_seating.sql");
+  const migration = read("supabase/migrations/20261017172556_invitation_seating.sql");
   const tableRoute = read("app/api/invitations/tables/route.ts");
   const rsvpRoute = read("app/api/invitations/rsvps/route.ts");
   const server = read("lib/invitations/server.ts");
