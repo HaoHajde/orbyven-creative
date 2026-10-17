@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "worker_id": "product-film-engine",
+  "state": "BLOCKED_EXTERNAL",
+  "mode": "work",
+  "updated_at": "2026-10-17T08:08:18.890Z",
+  "branch": "feature/orbyven-video-ai-20261002",
+  "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "current_objective": "Continue ORBYVEN Product Film Engine / Video AI from the latest repository state, prioritizing a stable end-to-end generation pipeline, CI health, and production-ready incremental development.",
+  "last_completed": [
+    "Persistent Chat ↔ Work handoff protocol is merged on main.",
+    "Normal-Chat review confirmed PR #287 remains open/draft and GitHub currently reports it mergeable.",
+    "PR #287 already contains the intended architecture: authenticated render gateway, local/free fallback, live-UI Product Film scenes, browser-side vertical recording, Region Capture fallback and regression tests.",
+    "The branch is close enough to current main that wholesale redesign would duplicate existing work; focus should be reconciliation and validation.",
+    "2026-10-17: read current main handoff and integration rules; verified PR #287 is open/draft at eae689f, 19 ahead and 8 behind main f7cb01c."
+  ],
+  "next_action": "When execution is available, synchronize PR #287 branch feature/orbyven-video-ai-20261002 with current main, reconciling this owned checkpoint; then resume the existing end-to-end validation objective without importing or redesigning from uncommitted chat work.",
+  "files_touched": [
+    ".orbyven/handoff/product-film-engine.json"
+  ],
+  "tests": {
+    "status": "ci_evidence_only_runtime_unavailable",
+    "last_run": "2026-10-17T08:08:18.890Z",
+    "verified_commit": "eae689fdbeb34275c42a221f5daebb6fae58a932",
+    "main_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+    "main_ci": "ORBYVEN CI, Quality Gate, Integration Train: success",
+    "branch_ci": "ORBYVEN CI, Quality Gate, Architecture Guard, Video AI: success; Manual Browser Performance Audit: failure",
+    "notes": "No new runtime/browser/export verification on this run: exec-server rejects process creation with No such file or directory. Earlier local uncommitted changes are not on Git and cannot be verified or recovered by the unavailable runtime. Do not regard those changes as implemented. Earlier local candidate tests were 14 passed / 5 failed (floating-point and negative-zero assertions); these results do not describe the committed PR head.",
+    "remaining": [
+      "Reconcile branch with current main",
+      "Product Film / Video AI and device-integrity tests",
+      "Quality Gate / CI on synchronized head",
+      "Live UI playback and native vertical capture end-to-end",
+      "Investigate the existing mobile-landscape public layout failure"
+    ]
+  },
+  "last_commit": "eae689fdbeb34275c42a221f5daebb6fae58a932",
+  "pull_request": 287,
+  "blocker": {
+    "type": "execution_environment_unavailable",
+    "detail": "exec_command: exec-server rejected request (-32603): No such file or directory (os error 2). No evidence that this is an allowance limit; do not label BLOCKED_LIMIT.",
+    "scheduling": "Hourly automation creation rejected: too_many_active_automations, 5 active / limit 5. No task was created and no other task was modified."
+  },
+  "safe_to_resume": true
+}
