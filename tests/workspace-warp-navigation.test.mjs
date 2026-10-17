@@ -175,3 +175,45 @@ test("custom field persistence is tenant scoped, RLS protected and Data API expl
   assert.match(migration, /revoke all on table public\.workspace_custom_field_definitions from anon/);
   assert.match(migration, /grant select, insert, update, delete[\s\S]*to authenticated, service_role/);
 });
+
+test("workspace tags normalize beginner-friendly names into stable keys", () => {
+  const tags = loadPureModule("lib/workspace-tags.ts");
+  assert.equal(tags.normalizeWorkspaceTagKey("Client VIP / Urgent"), "client_vip_urgent");
+  assert.equal(tags.normalizeWorkspaceTagKey("123"), "tag_123");
+  assert.deepEqual(tags.validateWorkspaceTag({
+    tagKey: "client_vip",
+    name: "Client VIP",
+    color: "#A855F7",
+    active: true,
+    sortOrder: 0,
+  }), { valid: true });
+  assert.equal(tags.validateWorkspaceTag({
+    tagKey: "client_vip",
+    name: "Client VIP",
+    color: "purple",
+    active: true,
+    sortOrder: 0,
+  }).valid, false);
+});
+
+test("workspace tag assignments stay generic and confirmation-only", () => {
+  const tags = loadPureModule("lib/workspace-tags.ts");
+  assert.deepEqual(tags.validateWorkspaceTagAssignment({ entityType: "crm_leads", entityId: "record-1" }), { valid: true });
+  assert.equal(tags.validateWorkspaceTagAssignment({ entityType: "CRM Leads", entityId: "record-1" }).valid, false);
+  assert.throws(() => tags.requireWorkspaceTagMutationConfirmation(false), /WORKSPACE_TAG_CONFIRMATION_REQUIRED/);
+  assert.doesNotThrow(() => tags.requireWorkspaceTagMutationConfirmation(true));
+});
+
+test("workspace tag persistence is tenant scoped, viewer read-only and Data API explicit", () => {
+  const migration = read("supabase/migrations/20261017145400_universal_tags.sql");
+  assert.match(migration, /foreign key \(organization_id, tag_id\)/);
+  assert.match(migration, /alter table public\.workspace_tags enable row level security/);
+  assert.match(migration, /alter table public\.workspace_tag_assignments enable row level security/);
+  assert.match(migration, /private\.is_org_member\(organization_id\)/);
+  assert.match(migration, /private\.is_org_admin\(organization_id\)/);
+  assert.match(migration, /m\.role in \('owner', 'admin', 'manager', 'member'\)/);
+  assert.doesNotMatch(migration, /m\.role in \([^\n]*'viewer'/);
+  assert.match(migration, /revoke all on table public\.workspace_tags from anon/);
+  assert.match(migration, /grant select, insert, update, delete[\s\S]*to authenticated, service_role/);
+  assert.match(migration, /grant select, insert, delete[\s\S]*to authenticated, service_role/);
+});
