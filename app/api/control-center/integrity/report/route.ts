@@ -4,6 +4,7 @@ import {
   ControlCenterHttpError,
   requireStaffRole,
 } from "@/lib/orbyven-control-center-server";
+import { requireIntegrityOwner } from "@/lib/orbyven-integrity-owner";
 import { readIntegrityReport } from "@/lib/orbyven-integrity-server";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,9 @@ function safeFilename(value: string) {
 
 export async function GET(request: Request) {
   try {
-    const { admin, staffRole } = await authorizeControlCenter(request);
+    const { admin, user, staffRole } = await authorizeControlCenter(request);
     requireStaffRole(staffRole, ["platform_owner"]);
+    requireIntegrityOwner(user.id);
 
     const url = new URL(request.url);
     const runId = url.searchParams.get("run_id")?.trim() ?? "";
