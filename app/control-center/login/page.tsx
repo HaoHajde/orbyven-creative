@@ -24,6 +24,15 @@ async function verifyControlCenterSession(accessToken: string) {
   throw failure;
 }
 
+function Shield() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M12 3 5.5 6v5.2c0 4.2 2.5 7.4 6.5 9.3 4-1.9 6.5-5.1 6.5-9.3V6L12 3Z" />
+      <path d="m9 12 2 2 4-5" />
+    </svg>
+  );
+}
+
 export default function ControlCenterLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,6 +44,7 @@ export default function ControlCenterLoginPage() {
   const [mfaFactorId, setMfaFactorId] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [mfaSecret, setMfaSecret] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +151,7 @@ export default function ControlCenterLoginPage() {
         } catch (mfaError) {
           console.error(mfaError);
           await orbyvenSupabase.auth.signOut();
-          setErrorMessage("MFA nu a putut fi inițializat. Încearcă din nou.");
+          setErrorMessage("MFA indisponibil. Încearcă din nou.");
         }
         setLoading(false);
         return;
@@ -151,7 +161,7 @@ export default function ControlCenterLoginPage() {
       setErrorMessage(
         verifyError instanceof Error
           ? verifyError.message
-          : "Contul nu are acces la ORBYVEN Control Center."
+          : "Acces refuzat."
       );
       setLoading(false);
     }
@@ -164,7 +174,7 @@ export default function ControlCenterLoginPage() {
 
     const code = mfaCode.trim();
     if (!/^\d{6,8}$/.test(code) || !mfaFactorId) {
-      setErrorMessage("Introdu codul valid din aplicația Authenticator.");
+      setErrorMessage("Cod invalid.");
       setLoading(false);
       return;
     }
@@ -175,7 +185,7 @@ export default function ControlCenterLoginPage() {
     });
 
     if (error) {
-      setErrorMessage("Codul MFA este incorect sau a expirat.");
+      setErrorMessage("Cod incorect sau expirat.");
       setLoading(false);
       return;
     }
@@ -198,7 +208,7 @@ export default function ControlCenterLoginPage() {
       setErrorMessage(
         verifyError instanceof Error
           ? verifyError.message
-          : "Control Center access denied."
+          : "Acces refuzat."
       );
       setLoading(false);
     }
@@ -212,138 +222,82 @@ export default function ControlCenterLoginPage() {
     setMfaSecret("");
     setPassword("");
     setErrorMessage("");
+    setCopied(false);
+  };
+
+  const copySecret = async () => {
+    if (!mfaSecret) return;
+    try {
+      await navigator.clipboard.writeText(mfaSecret);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
   };
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0b] text-sm text-[#a1a1a6]">
-        Se verifică accesul intern...
+      <main className="grid min-h-screen place-items-center bg-[#08080a] text-[#77777d]">
+        <span className="h-5 w-5 animate-spin rounded-full border border-white/15 border-t-white" aria-label="Checking access" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0b] text-[#f5f5f7] antialiased">
-      <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col px-6 py-6 md:px-10">
-        <header className="flex items-center justify-between">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_-10%,rgba(79,70,229,.16),transparent_34%),#08080a] text-[#f5f5f7] antialiased">
+      <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-5 sm:px-8 md:px-10">
+        <header className="flex items-center justify-between gap-4">
           <BrandLogo compact theme="dark" />
-          <span className="rounded-full border border-white/[0.1] bg-white/[0.05] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a1a1a6]">
-            Internal only
-          </span>
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8d8d94]">
+            <Shield />
+            <span>MFA</span>
+          </div>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-16">
-          <div className="w-full max-w-[460px]">
-            <div className="mb-8 text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#86868b]">
-                ORBYVEN · CONTROL CENTER
-              </p>
-              <h1 className="mt-5 text-[48px] font-semibold leading-none tracking-[-0.055em] sm:text-[58px]">
-                Platform control.
-              </h1>
-              <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-[#a1a1a6]">
-                Acces intern pentru administrarea tenant-urilor ORBYVEN. Nu este dashboard-ul clientului.
-              </p>
+        <section className="flex flex-1 items-center justify-center py-10 sm:py-16">
+          <div className="w-full max-w-[410px]">
+            <div className="mb-6 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#707077]">ORBYVEN</p>
+              <h1 className="mt-2 text-[38px] font-semibold leading-none tracking-[-0.055em] sm:text-[44px]">Control Center</h1>
             </div>
 
             {mfaMode === "none" ? (
-            <form
-              onSubmit={submit}
-              className="rounded-[30px] border border-white/[0.1] bg-[#111113] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] sm:p-8"
-            >
-              <label className="block">
-                <span className="mb-2.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#a1a1a6]">
-                  Email ORBYVEN
-                </span>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setErrorMessage("");
-                  }}
-                  className="w-full rounded-[18px] border border-white/[0.1] bg-black px-4 py-4 text-sm outline-none focus:border-[#6d68ff] focus:ring-4 focus:ring-[#4b46ee]/20"
-                />
-              </label>
-
-              <label className="mt-5 block">
-                <span className="mb-2.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#a1a1a6]">
-                  Parolă
-                </span>
-                <input
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    setErrorMessage("");
-                  }}
-                  className="w-full rounded-[18px] border border-white/[0.1] bg-black px-4 py-4 text-sm outline-none focus:border-[#6d68ff] focus:ring-4 focus:ring-[#4b46ee]/20"
-                />
-              </label>
-
-              {errorMessage && (
-                <div className="mt-5 rounded-[18px] border border-red-400/20 bg-red-400/[0.08] px-4 py-3 text-sm text-red-300">
-                  {errorMessage}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-6 h-12 w-full rounded-full bg-[#f5f5f7] px-5 text-sm font-semibold text-black disabled:opacity-60"
-              >
-                {loading ? "Se verifică..." : "Intră în Control Center"}
-              </button>
-            </form>
-            ) : (
-              <form
-                onSubmit={submitMfa}
-                className="rounded-[30px] border border-white/[0.1] bg-[#111113] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] sm:p-8"
-              >
-                <div className="rounded-[18px] border border-[#6d68ff]/25 bg-[#6d68ff]/10 px-4 py-4 text-sm leading-6 text-[#d8d7ff]">
-                  {mfaMode === "enroll" ? (
-                    <>
-                      <p className="font-semibold">Activează autentificarea în doi pași.</p>
-                      <p className="mt-2 text-[#b8b7c7]">
-                        Adaugă cheia de mai jos în Google Authenticator, Microsoft Authenticator
-                        sau altă aplicație TOTP, apoi introdu codul generat.
-                      </p>
-                      <code className="mt-3 block break-all rounded-xl bg-black/50 px-3 py-2 font-mono text-xs text-white">
-                        {mfaSecret}
-                      </code>
-                    </>
-                  ) : (
-                    <p>
-                      Introdu codul din aplicația Authenticator pentru a confirma sesiunea internă.
-                    </p>
-                  )}
-                </div>
-
-                <label className="mt-5 block">
-                  <span className="mb-2.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#a1a1a6]">
-                    Cod MFA
-                  </span>
+              <form onSubmit={submit} className="rounded-[26px] border border-white/[0.09] bg-[#111114]/90 p-4 shadow-[0_30px_90px_rgba(0,0,0,.38)] backdrop-blur-xl sm:p-5">
+                <label className="block">
+                  <span className="sr-only">Email</span>
                   <input
-                    type="text"
+                    type="email"
                     required
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={8}
-                    value={mfaCode}
+                    autoComplete="email"
+                    placeholder="Email"
+                    value={email}
                     onChange={(event) => {
-                      setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8));
+                      setEmail(event.target.value);
                       setErrorMessage("");
                     }}
-                    className="w-full rounded-[18px] border border-white/[0.1] bg-black px-4 py-4 text-center font-mono text-lg tracking-[0.25em] outline-none focus:border-[#6d68ff] focus:ring-4 focus:ring-[#4b46ee]/20"
+                    className="h-12 w-full rounded-[15px] border border-white/[0.08] bg-black/45 px-4 text-sm outline-none transition placeholder:text-[#56565c] focus:border-indigo-400/55"
+                  />
+                </label>
+
+                <label className="mt-2.5 block">
+                  <span className="sr-only">Parolă</span>
+                  <input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    placeholder="Parolă"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      setErrorMessage("");
+                    }}
+                    className="h-12 w-full rounded-[15px] border border-white/[0.08] bg-black/45 px-4 text-sm outline-none transition placeholder:text-[#56565c] focus:border-indigo-400/55"
                   />
                 </label>
 
                 {errorMessage && (
-                  <div className="mt-5 rounded-[18px] border border-red-400/20 bg-red-400/[0.08] px-4 py-3 text-sm text-red-300">
+                  <div role="alert" className="mt-3 rounded-[13px] border border-rose-400/18 bg-rose-400/[0.07] px-3 py-2.5 text-[11px] text-rose-200">
                     {errorMessage}
                   </div>
                 )}
@@ -351,17 +305,65 @@ export default function ControlCenterLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-6 h-12 w-full rounded-full bg-[#f5f5f7] px-5 text-sm font-semibold text-black disabled:opacity-60"
+                  className="mt-3 h-12 w-full rounded-[15px] bg-white px-5 text-xs font-semibold text-black transition hover:bg-[#ededf0] disabled:opacity-50"
                 >
-                  {loading ? "Se verifică..." : "Confirmă MFA"}
+                  {loading ? "Verific…" : "Continuă"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void cancelMfa()}
-                  className="mt-3 h-11 w-full rounded-full border border-white/[0.1] text-sm font-medium text-[#a1a1a6]"
-                >
-                  Anulează
-                </button>
+
+                <div className="mt-4 flex items-center justify-center gap-3 text-[9px] font-medium uppercase tracking-[0.12em] text-[#55555b]">
+                  <span>Exact owner</span>
+                  <span className="h-1 w-1 rounded-full bg-[#414147]" />
+                  <span>AAL2</span>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={submitMfa} className="rounded-[26px] border border-white/[0.09] bg-[#111114]/90 p-4 shadow-[0_30px_90px_rgba(0,0,0,.38)] backdrop-blur-xl sm:p-5">
+                <div className="flex items-center gap-3 rounded-[15px] border border-indigo-300/15 bg-indigo-400/[0.06] px-3.5 py-3 text-[11px] text-indigo-100/85">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-indigo-300/[0.08] text-indigo-200"><Shield /></span>
+                  <span>{mfaMode === "enroll" ? "Adaugă cheia TOTP, apoi confirmă codul." : "Confirmă codul din Authenticator."}</span>
+                </div>
+
+                {mfaMode === "enroll" && (
+                  <div className="mt-2.5 flex items-center gap-2 rounded-[15px] border border-white/[0.08] bg-black/45 p-2.5">
+                    <code className="min-w-0 flex-1 break-all px-1 font-mono text-[10px] leading-5 text-[#c8c8ce]">{mfaSecret}</code>
+                    <button type="button" onClick={() => void copySecret()} className="h-8 shrink-0 rounded-[10px] border border-white/[0.08] px-2.5 text-[9px] font-semibold text-[#8f8f96] hover:text-white">
+                      {copied ? "COPIED" : "COPY"}
+                    </button>
+                  </div>
+                )}
+
+                <label className="mt-2.5 block">
+                  <span className="sr-only">Cod MFA</span>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={8}
+                    placeholder="000000"
+                    value={mfaCode}
+                    onChange={(event) => {
+                      setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8));
+                      setErrorMessage("");
+                    }}
+                    className="h-14 w-full rounded-[15px] border border-white/[0.08] bg-black/45 px-4 text-center font-mono text-xl tracking-[0.3em] outline-none transition placeholder:text-[#39393f] focus:border-indigo-400/55"
+                  />
+                </label>
+
+                {errorMessage && (
+                  <div role="alert" className="mt-3 rounded-[13px] border border-rose-400/18 bg-rose-400/[0.07] px-3 py-2.5 text-[11px] text-rose-200">
+                    {errorMessage}
+                  </div>
+                )}
+
+                <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                  <button type="submit" disabled={loading} className="h-12 rounded-[15px] bg-white px-5 text-xs font-semibold text-black transition hover:bg-[#ededf0] disabled:opacity-50">
+                    {loading ? "Verific…" : "Confirmă"}
+                  </button>
+                  <button type="button" onClick={() => void cancelMfa()} className="h-12 rounded-[15px] border border-white/[0.08] px-4 text-xs font-medium text-[#77777d] transition hover:text-white">
+                    ×
+                  </button>
+                </div>
               </form>
             )}
           </div>
