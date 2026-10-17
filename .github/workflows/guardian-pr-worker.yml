@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   prepare-patch:
-    if: vars.ORBYVEN_ENABLE_GUARDIAN == 'true'
+    if: github.event.repository.private == true && vars.ORBYVEN_ENABLE_GUARDIAN == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
