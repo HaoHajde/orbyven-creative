@@ -46,6 +46,9 @@ export default function WorkspaceCommandPalette({
     () => filterWorkspaceCommandPaletteItems(items, query),
     [items, query],
   );
+  const safeActiveIndex = visibleItems.length
+    ? Math.min(activeIndex, visibleItems.length - 1)
+    : 0;
 
   const close = useCallback(() => {
     setOpen(false);
@@ -85,10 +88,6 @@ export default function WorkspaceCommandPalette({
     const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
     return () => window.clearTimeout(timer);
   }, [open]);
-
-  useEffect(() => {
-    setActiveIndex((current) => Math.min(current, Math.max(visibleItems.length - 1, 0)));
-  }, [visibleItems.length]);
 
   const execute = (item: WorkspaceCommandPaletteItem) => {
     close();
@@ -177,9 +176,9 @@ export default function WorkspaceCommandPalette({
                     } else if (event.key === "ArrowUp") {
                       event.preventDefault();
                       setActiveIndex((current) => visibleItems.length ? (current - 1 + visibleItems.length) % visibleItems.length : 0);
-                    } else if (event.key === "Enter" && visibleItems[activeIndex]) {
+                    } else if (event.key === "Enter" && visibleItems[safeActiveIndex]) {
                       event.preventDefault();
-                      execute(visibleItems[activeIndex]);
+                      execute(visibleItems[safeActiveIndex]);
                     }
                   }}
                   autoComplete="off"
@@ -197,7 +196,7 @@ export default function WorkspaceCommandPalette({
                   onMouseEnter={() => setActiveIndex(index)}
                   onFocus={() => setActiveIndex(index)}
                   onClick={() => execute(item)}
-                  className={`flex w-full items-center justify-between gap-4 rounded-[13px] px-3 py-3 text-left transition sm:px-4 ${index === activeIndex ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-2)]"}`}
+                  className={`flex w-full items-center justify-between gap-4 rounded-[13px] px-3 py-3 text-left transition sm:px-4 ${index === safeActiveIndex ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-2)]"}`}
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[13px] font-semibold text-[var(--text)]">{item.label}</span>
