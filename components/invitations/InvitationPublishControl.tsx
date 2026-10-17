@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EditableSite } from "@/lib/ai/site-editor";
 import type { InvitationProjectType } from "@/lib/invitations/contracts";
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import InvitationSeatingControl from "@/components/invitations/InvitationSeatingControl";
 
 type AdminProject = {
   id: string;
@@ -15,12 +16,21 @@ type AdminProject = {
   publicPath: string;
 };
 
+type SeatingTable = {
+  id: string;
+  name: string;
+  capacity: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type Rsvp = {
   id: string;
   guestName: string;
   attending: boolean;
   guestCount: number;
   message: string | null;
+  tableId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -28,6 +38,7 @@ type Rsvp = {
 type State = {
   project: AdminProject | null;
   rsvps: Rsvp[];
+  tables: SeatingTable[];
   error?: string;
 };
 
@@ -61,7 +72,7 @@ export default function InvitationPublishControl({
   draft,
   canEdit,
 }: Props) {
-  const [state, setState] = useState<State>({ project: null, rsvps: [] });
+  const [state, setState] = useState<State>({ project: null, rsvps: [], tables: [] });
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -95,6 +106,10 @@ export default function InvitationPublishControl({
       return `${item.guestName} ${item.message ?? ""}`.toLocaleLowerCase("ro-RO").includes(needle);
     });
   }, [filter, query, state.rsvps]);
+  const tableNameById = useMemo(
+    () => new Map(state.tables.map((table) => [table.id, table.name])),
+    [state.tables]
+  );
 
   const load = async () => {
     setLoading(true);
@@ -109,11 +124,12 @@ export default function InvitationPublishControl({
       );
       const body = (await response.json()) as State;
       if (!response.ok) throw new Error(body.error || "Statusul invitației nu este disponibil.");
-      setState({ project: body.project ?? null, rsvps: body.rsvps ?? [] });
+      setState({ project: body.project ?? null, rsvps: body.rsvps ?? [], tables: body.tables ?? [] });
     } catch (error) {
       setState({
         project: null,
         rsvps: [],
+        tables: [],
         error: error instanceof Error ? error.message : "Status indisponibil.",
       });
     } finally {
@@ -143,7 +159,7 @@ export default function InvitationPublishControl({
       });
       const body = (await response.json()) as State;
       if (!response.ok) throw new Error(body.error || "Invitația nu a putut fi publicată.");
-      setState({ project: body.project ?? null, rsvps: body.rsvps ?? [] });
+      setState({ project: body.project ?? null, rsvps: body.rsvps ?? [], tables: body.tables ?? [] });
     } catch (error) {
       setState((current) => ({
         ...current,
@@ -253,11 +269,12 @@ export default function InvitationPublishControl({
   const exportCsv = () => {
     if (!visibleRsvps.length) return;
     const rows = [
-      ["Nume", "Participă", "Persoane", "Mesaj", "Trimis", "Actualizat"],
+      ["Nume", "Participă", "Persoane", "Masă", "Mesaj", "Trimis", "Actualizat"],
       ...visibleRsvps.map((item) => [
         item.guestName,
         item.attending ? "Da" : "Nu",
         item.attending ? item.guestCount : 0,
+        item.tableId ? tableNameById.get(item.tableId) ?? "" : "",
         item.message ?? "",
         shortDate(item.createdAt),
         shortDate(item.updatedAt),
@@ -461,6 +478,7 @@ export default function InvitationPublishControl({
                             {item.attending ? `${item.guestCount} pers.` : "Nu participă"}
                           </span>
                         </div>
+                        {item.tableId ? <p className="mt-1 text-[8px] text-[#bdb2ff]/70">{tableNameById.get(item.tableId) ?? "Masă"}</p> : null}
                         {item.message ? <p className="mt-1.5 line-clamp-2 text-[8px] leading-4 text-white/35">{item.message}</p> : null}
                         {canEdit ? (
                           <div className="mt-2 flex items-center justify-end gap-2 border-t border-white/[0.05] pt-2">
@@ -491,6 +509,16 @@ export default function InvitationPublishControl({
                   </p>
                 )}
               </div>
+
+              <InvitationSeatingControl
+                organizationId={organizationId}
+                projectType={projectType}
+                tables={state.tables}
+                rsvps={state.rsvps}
+                canEdit={canEdit}
+                onRefresh={load}
+                onError={(message) => setState((current) => ({ ...current, error: message }))}
+              />
             </div>
           ) : null}
         </div>
