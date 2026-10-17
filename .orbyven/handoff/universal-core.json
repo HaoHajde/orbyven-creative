@@ -1,35 +1,37 @@
 {
   "version": 1,
   "worker_id": "universal-core",
-  "state": "IN_PROGRESS",
+  "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T15:58:00Z",
-  "branch": null,
-  "base_main_sha": "9057731eb1e1194371d3332ce2e98656b09373e1",
+  "updated_at": "2026-10-17T16:14:00Z",
+  "branch": "feat/universal-core-reusable-templates-20261017-v2",
+  "base_main_sha": "009b4a353be150b9391b330ea8a0b33adc111ddf",
   "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
   "last_completed": [
-    "PR #357 universal Command Palette, PR #360 universal custom fields and PR #363 Universal Tags were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
-    "Audited CRM, Tasks, Calendar and Estimates status contracts and confirmed canonical workflow keys remain source of truth; no generic status system is justified.",
-    "Implemented optional tenant-scoped status presentation metadata for protected existing workflow keys only: display label, color and order. No new status keys, no active/disable semantics and no transition authority were introduced.",
-    "The status presentation registry preserves the canonical key and protected=true and falls back to built-in system presentation when an override is absent or removed.",
-    "Status metadata writes are owner/admin only through RLS; members may read; anon is revoked; allowed entity/status combinations are closed by a database CHECK constraint.",
-    "After current-main realignment, synchronized PR #367 head 399ded00ae831708ec153bcb940d180950216fce was confirmed behind_by=0 and mergeable=true.",
-    "PR #367 passed Architecture Guard, Quality Gate and ORBYVEN CI on the synchronized head, including targeted status regressions, security/legal/performance/SEO, production build and JS budget, then merged atomically as 9057731eb1e1194371d3332ce2e98656b09373e1."
+    "PR #357 universal Command Palette, PR #360 universal custom fields, PR #363 Universal Tags and PR #367 protected status presentation metadata were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
+    "Re-audited current main and the live ORBYVEN schema for template, preset, recipe, revision and clone capabilities; no persisted universal create-template library exists. Material recipes remain estimate/material-specific and do not cover Tasks/Calendar/Estimates reusable create drafts.",
+    "Closed stale PR #370 and rebuilt the five-file reusable-template milestone directly over canonical main 009b4a353be150b9391b330ea8a0b33adc111ddf on feat/universal-core-reusable-templates-20261017-v2, preserving operations-reliability changes; compare confirmed behind_by=0.",
+    "Hardened reusable-template write authorization so organization_members.access_status must be active in addition to an allowed non-viewer role.",
+    "Aligned SQL payload validation with the TypeScript contract by rejecting fractional estimatedMinutes, durationMinutes and reminderMinutes; added regressions for both the pure contract and SQL guards.",
+    "Opened replacement atomic PR #373 and applied owner:cross. Templates remain inert draft prefills with no direct entity-create authority or shared-shell wiring.",
+    "First PR #373 run: Architecture Guard passed, but CI and Quality Gate stopped at Typecheck. Reproduced the failure locally with strict tsc: numeric validation helpers returned boolean and therefore did not narrow unknown payload properties.",
+    "Fixed only the demonstrated TypeScript issue by making finiteNumber, nonnegativeNumber and nonnegativeInteger type predicates (`value is number`); strict local tsc then passed with unchanged runtime behavior."
   ],
-  "next_action": "Re-audit current main for reusable templates before implementing anything. Inventory existing template/preset/clone/revision capabilities across modules and persistence, distinguish domain-specific templates from a missing universal reusable-template contract, and choose the smallest demonstrably missing isolated capability. Reuse current tenant/auth/confirmation contracts and do not modify shared shell/navigation/providers/module registry or vertical module UI wiring. If reusable templates are already sufficient for ORBYVEN 1.0, record that finding and move to the next missing universal-core capability.",
+  "next_action": "Observe the rerun of PR #373 Architecture Guard, Quality Gate and ORBYVEN CI on the latest head after the type-predicate fix. Fix only demonstrated failures. Before merge reconfirm behind_by=0 and mergeable=true; merge only if all three are green. Then update canonical handoff and audit the remaining universal-core roadmap before any selective Dashboard AI 0.8.25 reconciliation.",
   "files_touched": [
     ".orbyven/handoff/universal-core.json",
-    "supabase/migrations/20261017153200_status_presentation_metadata.sql",
-    "lib/workspace-status-presentations.ts",
-    "tests/workspace-warp-navigation.test.mjs"
+    "supabase/migrations/20261017160500_reusable_create_templates.sql",
+    "lib/workspace-reusable-templates.ts",
+    "tests/workspace-reusable-templates.test.mjs",
+    "package.json"
   ],
   "tests": {
-    "status": "green",
-    "last_run": "2026-10-17T15:56:00Z",
-    "notes": "PR #367 synchronized head 399ded00: Architecture Guard success; Quality Gate success; ORBYVEN CI success. Targeted status-presentation tests ran through the workspace ecosystem suite."
+    "status": "pending_ci_retry",
+    "last_run": "2026-10-17T16:13:00Z",
+    "notes": "Architecture Guard passed on head 7dedef9. CI and Quality Gate failed at Typecheck before later suites ran. The exact strict TypeScript narrowing failure was reproduced and fixed; all required gates must rerun on the new head."
   },
-  "last_commit": "9057731eb1e1194371d3332ce2e98656b09373e1",
-  "pull_request": 367,
+  "last_commit": "79a3de1f6065c5e699f45b3096c77d237a425aaf",
+  "pull_request": 373,
   "blocker": null,
   "safe_to_resume": true
 }
