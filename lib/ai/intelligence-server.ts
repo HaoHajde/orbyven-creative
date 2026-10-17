@@ -1,3 +1,4 @@
+import { answerTaskQuery, detectTaskQuery } from "@/lib/ai/operational-task-query";
 import { authenticateBillingActor, createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import { readAllPages } from "@/lib/modules/paged-read";
 import { routeIntelligencePrompt } from "@/lib/ai/intelligence-router";
@@ -443,6 +444,9 @@ export async function answerIntelligenceForActor(
 
   const mutation = await createMutationIntelligenceResponse(actor, available, prompt, conversationId);
   if (mutation) return mutation;
+
+  const taskQuery = detectTaskQuery(prompt);
+  if (taskQuery) return answerTaskQuery(createBillingServiceClient(actor), actor.organizationId, available, taskQuery);
 
   const intent = routeIntelligencePrompt(prompt);
 

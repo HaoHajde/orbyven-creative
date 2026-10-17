@@ -3,7 +3,7 @@
   "worker_id": "dashboard-core",
   "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-17T13:10:28.973055+00:00",
+  "updated_at": "2026-10-17T13:12:19.513528+00:00",
   "branch": "feature/dashboard-core-resume-20261017",
   "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
@@ -12,16 +12,23 @@
     "Normal-Chat review found PR #346 is non-mergeable and based on an old main, while PR #231 is also non-mergeable, draft, and much broader/older.",
     "PR #346 contains the newer Dashboard AI intelligence/action layer; PR #231 contains the connected minimalist operational-flow concepts. They must not be merged wholesale or stacked as-is.",
     "Current main CI and Integration Train are green after the handoff commits.",
-    "2026-10-17: inspected current main and open dashboard PRs; main CI/Quality Gate green. No newer dashboard port exists. Fresh branch created; old PR task-query 120-row sampling defect identified."
+    "2026-10-17: inspected current main and open dashboard PRs; main CI/Quality Gate green. No newer dashboard port exists. Fresh branch created; old PR task-query 120-row sampling defect identified.",
+    "Implemented selective five-category task queries from PR #346: exact server-side counts, at most three contextual navigation links, RO/EN, tenant/module guards, original mutation-confirmation dispatch preserved. Six focused executable tests passed."
   ],
-  "next_action": "Port the five read-only task queries from PR #346 with database-side filters/exact counts and RO/EN answers, then verify targeted tests, Architecture Guard, Quality Gate and CI.",
-  "files_touched": [],
+  "next_action": "Run full validation, production build, Architecture Guard and GitHub CI for the selective task-query port; fix only demonstrated failures before proceeding to other PR #346 capabilities.",
+  "files_touched": [
+    "lib/ai/operational-task-query.ts",
+    "lib/ai/intelligence-server.ts",
+    "tests/operational-task-query.test.mjs",
+    "package.json",
+    ".orbyven/handoff/dashboard-core.json"
+  ],
   "tests": {
-    "status": "ci_evidence_only",
-    "last_run": "2026-10-16T13:46:11Z",
-    "notes": "Latest main ORBYVEN CI and Integration Train completed successfully. No local build/runtime/browser verification was performed by normal Chat."
+    "status": "targeted_passed_full_pending",
+    "last_run": "2026-10-17T13:12:19.513528+00:00",
+    "notes": "6/6 task-query tests passed using actual Supabase query builder with mocked HTTP; no authenticated UI/browser check claimed."
   },
-  "last_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "last_commit": "dcdf2ebecd0f66495d82ce0be4980b9b1a8a9854",
   "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
