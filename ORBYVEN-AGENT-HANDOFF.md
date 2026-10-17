@@ -8,11 +8,19 @@ Git remains the source of truth. This protocol adds small machine-readable check
 
 ## Canonical handoff files
 
-Each long-running workstream owns exactly one status file under `.orbyven/handoff/`:
+Each long-running workstream owns exactly one status file under `.orbyven/handoff/`.
+
+Current persistent workstreams:
 
 - `dashboard-core.json`
 - `product-film-engine.json`
 - `integrity.json`
+- `universal-core.json`
+- `data-portability.json`
+- `operations-reliability.json`
+- `release-coordinator.json`
+
+ORBYVEN 1.0 universal workstreams must also read `ORBYVEN-1.0-WORKSTREAMS.md`.
 
 Workers must update only their own status file. This avoids unnecessary cross-chat merge conflicts.
 
@@ -33,10 +41,12 @@ Before making changes, every worker must:
 
 1. fetch current `main`;
 2. read `AGENTS.md`, `INTEGRATION-AUTOMATION.md`, and this file;
-3. read its own `.orbyven/handoff/<worker>.json`;
-4. inspect the latest commit(s), relevant PR/branch state, and any files listed in the checkpoint;
-5. avoid repeating work listed under `last_completed`;
-6. set its checkpoint to `IN_PROGRESS` with the current branch and objective before substantial work.
+3. read `ORBYVEN-1.0-WORKSTREAMS.md` when the objective belongs to the 1.0 universal foundation;
+4. read its own `.orbyven/handoff/<worker>.json`;
+5. inspect the latest commit(s), relevant PR/branch state, and any files listed in the checkpoint;
+6. audit current `main` for the requested capability before implementing it, so existing sufficient functionality is not rebuilt;
+7. avoid repeating work listed under `last_completed`;
+8. set its checkpoint to `IN_PROGRESS` with the current branch and objective before substantial work.
 
 ## Checkpoint rule
 
@@ -88,16 +98,19 @@ When Work is available again, the worker must:
 
 ## Concurrency rule
 
-The three workstreams may run concurrently only when their branch scopes do not overlap unsafely.
+Persistent workstreams may run concurrently only when their branch scopes and owned contracts do not overlap unsafely.
+
+For the ORBYVEN 1.0 parallel plan, shared integration surfaces and workstream boundaries in `ORBYVEN-1.0-WORKSTREAMS.md` are authoritative in addition to repository ownership rules.
 
 If another worker has touched the same contract or file family since the checkpoint:
 
 - rebase/sync first;
 - inspect the diff;
 - update only the owned implementation;
+- prefer a narrow contract/component that can be wired later by the coordinator;
 - stop with `BLOCKED_EXTERNAL` rather than guessing through a conflict.
 
-Repository ownership and integration rules in `INTEGRATION-AUTOMATION.md` remain authoritative.
+Repository ownership and integration rules in `INTEGRATION-AUTOMATION.md` remain authoritative. A workstream name never replaces the required existing PR ownership label.
 
 ## Required checkpoint fields
 
@@ -129,4 +142,5 @@ A worker may set `DONE` only when:
 - requested implementation is complete;
 - relevant tests/build checks are actually run or an explicit unverified reason is recorded;
 - branch/PR/commit state is recorded;
+- known shared-file/contract collisions are surfaced;
 - `next_action` is empty or points to a deliberately separate future objective.

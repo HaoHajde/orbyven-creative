@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "worker_id": "operations-reliability",
+  "state": "READY",
+  "mode": "work",
+  "updated_at": "2026-10-17T13:21:00Z",
+  "branch": null,
+  "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "current_objective": "Complete ORBYVEN 1.0 operational reliability: unified notifications/attention, activity timeline presentation, Settings/Admin consolidation, user-facing recovery states and operator observability.",
+  "last_completed": [
+    "ORBYVEN 1.0 reliability scope was separated from universal core and data portability to reduce shared-file conflicts.",
+    "Coordinator-controlled shared shell/navigation integration was established for overlapping surfaces."
+  ],
+  "next_action": "Start from current main and audit existing notification, activity/audit, settings/control-center, error handling and operational health surfaces. Record what already exists and select the first demonstrably missing atomic capability, prioritizing a unified attention/notification model that reuses current business signals rather than creating a duplicate event system. Preserve security/audit evidence and tenant isolation. Run targeted tests plus Architecture Guard/Quality Gate/CI before proposing integration.",
+  "files_touched": [],
+  "tests": {
+    "status": "not_started",
+    "last_run": null,
+    "notes": "No implementation has started. First action is a current-main capability and event/read-model audit."
+  },
+  "last_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "pull_request": null,
+  "blocker": null,
+  "safe_to_resume": true
+}

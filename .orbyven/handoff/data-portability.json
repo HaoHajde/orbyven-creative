@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "worker_id": "data-portability",
+  "state": "READY",
+  "mode": "work",
+  "updated_at": "2026-10-17T13:21:00Z",
+  "branch": null,
+  "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "current_objective": "Complete ORBYVEN 1.0 universal data portability: safe import, attachments, export/backup/offboarding UX and user-readable data movement reports without weakening tenant isolation.",
+  "last_completed": [
+    "Existing audited export/offboarding and compliance foundations were identified as reusable infrastructure.",
+    "Parallel workstream boundaries were defined so data portability does not create duplicate storage or tenant abstractions."
+  ],
+  "next_action": "Start from current main and audit existing import, export/offboarding, document/attachment and storage contracts. Record what already exists and select the first demonstrably missing atomic capability, prioritizing a universal import foundation with preview, mapping, validation and non-destructive duplicate handling. Reuse current tenant-scoped APIs; do not add a second data/storage abstraction. Run targeted data/security/compliance tests plus Architecture Guard/Quality Gate/CI before proposing integration.",
+  "files_touched": [],
+  "tests": {
+    "status": "not_started",
+    "last_run": null,
+    "notes": "No implementation has started. First action is a current-main capability audit and contract inventory."
+  },
+  "last_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "pull_request": null,
+  "blocker": null,
+  "safe_to_resume": true
+}
