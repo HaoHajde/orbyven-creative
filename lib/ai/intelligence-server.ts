@@ -1,3 +1,4 @@
+import { answerAgendaQuery, detectAgendaQuery } from "@/lib/ai/operational-agenda-query";
 import { answerTaskQuery, detectTaskQuery } from "@/lib/ai/operational-task-query";
 import { authenticateBillingActor, createBillingServiceClient, type BillingActor } from "@/lib/billing/supabase-server";
 import { readAllPages } from "@/lib/modules/paged-read";
@@ -447,6 +448,9 @@ export async function answerIntelligenceForActor(
 
   const taskQuery = detectTaskQuery(prompt);
   if (taskQuery) return answerTaskQuery(createBillingServiceClient(actor), actor.organizationId, available, taskQuery);
+
+  const agendaQuery = detectAgendaQuery(prompt);
+  if (agendaQuery) return answerAgendaQuery(createBillingServiceClient(actor), actor.organizationId, available, agendaQuery);
 
   const intent = routeIntelligencePrompt(prompt);
 
