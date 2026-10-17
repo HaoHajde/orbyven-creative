@@ -67,6 +67,7 @@ begin
       jsonb_typeof(template_payload -> 'estimatedMinutes') <> 'number'
       or (template_payload ->> 'estimatedMinutes')::numeric < 0
       or (template_payload ->> 'estimatedMinutes')::numeric > 100000
+      or trunc((template_payload ->> 'estimatedMinutes')::numeric) <> (template_payload ->> 'estimatedMinutes')::numeric
     ) then
       return false;
     end if;
@@ -101,7 +102,8 @@ begin
     if not (template_payload ? 'durationMinutes')
        or jsonb_typeof(template_payload -> 'durationMinutes') <> 'number'
        or (template_payload ->> 'durationMinutes')::numeric <= 0
-       or (template_payload ->> 'durationMinutes')::numeric > 525600 then
+       or (template_payload ->> 'durationMinutes')::numeric > 525600
+       or trunc((template_payload ->> 'durationMinutes')::numeric) <> (template_payload ->> 'durationMinutes')::numeric then
       return false;
     end if;
 
@@ -123,6 +125,7 @@ begin
       jsonb_typeof(template_payload -> 'reminderMinutes') <> 'number'
       or (template_payload ->> 'reminderMinutes')::numeric < 0
       or (template_payload ->> 'reminderMinutes')::numeric > 10080
+      or trunc((template_payload ->> 'reminderMinutes')::numeric) <> (template_payload ->> 'reminderMinutes')::numeric
     ) then
       return false;
     end if;
@@ -280,6 +283,7 @@ as $$
     from public.organization_members m
     where m.organization_id = target_org
       and m.user_id = auth.uid()
+      and m.access_status = 'active'
       and m.role in ('owner', 'admin', 'manager', 'member')
   );
 $$;
