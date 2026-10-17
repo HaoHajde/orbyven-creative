@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadWorkspaceActivity, type WorkspaceActivityItem } from "@/lib/modules/activity";
+import {
+  loadNotificationPreference,
+  setNotificationPreference,
+} from "@/lib/modules/notification-preferences";
 import type { OrbyvenModuleId } from "@/lib/orbyven-modules";
 import type { OrbyvenWorkspace } from "@/lib/orbyven-workspace";
 import type { WorkspaceOpenOptions } from "@/lib/workspace-navigation";
@@ -19,6 +23,11 @@ type NativeBridgeWindow = Window & {
   ReactNativeWebView?: {
     postMessage: (message: string) => void;
   };
+};
+
+type PreferenceChangedDetail = {
+  channel?: string;
+  enabled?: boolean;
 };
 
 const levelDot = {
@@ -40,6 +49,10 @@ export default function WorkspaceActivityCenter({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [nativePushAvailable, setNativePushAvailable] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushPreferenceLoading, setPushPreferenceLoading] = useState(false);
+  const [pushPreferenceSaving, setPushPreferenceSaving] = useState(false);
+  const [pushPreferenceError, setPushPreferenceError] = useState("");
 
   const canAccessFinances = ["owner", "admin", "manager"].includes(role);
 
@@ -63,6 +76,21 @@ export default function WorkspaceActivityCenter({
     }
   }, [organizationId, enabledModules, canAccessFinances, locale, timeZone]);
 
+  const loadPushPreference = useCallback(async () => {
+    setPushPreferenceLoading(true);
+    setPushPreferenceError("");
+    try {
+      const preference = await loadNotificationPreference(organizationId, "push");
+      setPushEnabled(preference.enabled);
+    } catch (reason) {
+      console.error("Push preference could not be loaded", reason);
+      setPushEnabled(false);
+      setPushPreferenceError("Preferința push nu a putut fi verificată.");
+    } finally {
+      setPushPreferenceLoading(false);
+    }
+  }, [organizationId]);
+
   useEffect(() => {
     const bridgeTimer = window.setTimeout(() => {
       const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
@@ -70,6 +98,31 @@ export default function WorkspaceActivityCenter({
     }, 0);
     return () => window.clearTimeout(bridgeTimer);
   }, []);
+
+  useEffect(() => {
+    if (!nativePushAvailable) return;
+
+    const preferenceTimer = window.setTimeout(() => void loadPushPreference(), 0);
+    const onPreferenceChanged = (event: Event) => {
+      const detail = (event as CustomEvent<PreferenceChangedDetail>).detail;
+      if (detail?.channel !== "push" || typeof detail.enabled !== "boolean") return;
+      setPushEnabled(detail.enabled);
+      setPushPreferenceError("");
+      setPushPreferenceSaving(false);
+    };
+
+    window.addEventListener(
+      "orbyven:notification-preference-changed",
+      onPreferenceChanged
+    );
+    return () => {
+      window.clearTimeout(preferenceTimer);
+      window.removeEventListener(
+        "orbyven:notification-preference-changed",
+        onPreferenceChanged
+      );
+    };
+  }, [nativePushAvailable, loadPushPreference]);
 
   useEffect(() => {
     if (loading) return;
@@ -108,8 +161,27 @@ export default function WorkspaceActivityCenter({
   );
 
   const requestNativePush = () => {
+    setPushPreferenceError("");
     const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
     bridge?.postMessage(JSON.stringify({ type: "orbyven:register-push" }));
+  };
+
+  const disableNativePush = async () => {
+    setPushPreferenceSaving(true);
+    setPushPreferenceError("");
+    try {
+      const preference = await setNotificationPreference(
+        organizationId,
+        "push",
+        false
+      );
+      setPushEnabled(preference.enabled);
+    } catch (reason) {
+      console.error("Push preference could not be updated", reason);
+      setPushPreferenceError("Preferința push nu a putut fi actualizată.");
+    } finally {
+      setPushPreferenceSaving(false);
+    }
   };
 
   const openItem = (item: WorkspaceActivityItem) => {
@@ -184,20 +256,34 @@ export default function WorkspaceActivityCenter({
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 sm:max-h-[calc(100dvh-176px)]">
               {nativePushAvailable ? (
-                <div className="mb-2 flex items-center justify-between gap-3 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold">Alerte pe iPhone</p>
-                    <p className="mt-0.5 text-[10px] text-[var(--muted)]">
-                      Primește notificări ORBYVEN și deschide direct contextul relevant.
-                    </p>
+                <div className="mb-2 rounded-[13px] border border-[var(--border)] bg-[var(--surface-2)]/55 px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold">Alerte push</p>
+                      <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                        Controlează doar livrarea externă. Atenționările rămân mereu vizibile aici.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={pushEnabled ? () => void disableNativePush() : requestNativePush}
+                      disabled={pushPreferenceLoading || pushPreferenceSaving}
+                      className="shrink-0 rounded-full border border-[var(--border-strong)] px-3 py-2 text-[10px] font-semibold disabled:opacity-40"
+                    >
+                      {pushPreferenceLoading
+                        ? "Se verifică…"
+                        : pushPreferenceSaving
+                          ? "Se salvează…"
+                          : pushEnabled
+                            ? "Oprește"
+                            : "Activează"}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={requestNativePush}
-                    className="shrink-0 rounded-full border border-[var(--border-strong)] px-3 py-2 text-[10px] font-semibold"
-                  >
-                    Activează
-                  </button>
+                  {pushPreferenceError ? (
+                    <p role="alert" className="mt-2 text-[10px] text-rose-300">
+                      {pushPreferenceError}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
               {loading && !items.length ? (
