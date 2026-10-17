@@ -1,34 +1,30 @@
 {
   "version": 1,
   "worker_id": "universal-core",
-  "state": "READY",
+  "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-17T16:28:00Z",
-  "branch": null,
-  "base_main_sha": "6cfdea12f58fab6f9f5e6f7ece9adb483ab40577",
-  "current_objective": "Reconcile only demonstrably missing Dashboard AI 0.8.25/core capabilities after completing the ORBYVEN 1.0 universal foundation.",
+  "updated_at": "2026-10-17T16:31:00Z",
+  "branch": "feat/universal-core-operational-query-20261017",
+  "base_main_sha": "75f2a0bf69755029fd27d7bb2286a4b206e9f71a",
+  "current_objective": "Selectively reconcile the first demonstrably missing Dashboard AI 0.8.25 primitive: exact read-only Operational Query Mode, without importing historical PR #346 wholesale.",
   "last_completed": [
-    "Universal foundation audit on canonical main 6cfdea12f58fab6f9f5e6f7ece9adb483ab40577 is complete.",
-    "Onboarding/first-run is production-present at app/workspace/onboarding with workspace detection, organization bootstrap and initial module selection/plan entitlements.",
-    "Global Search is live, organization-scoped, enabled-module filtered and wildcard-safe; record hits navigate through the existing workspace navigation intent.",
-    "Command Palette contract/component is implemented and green, respects enabled modules and create-role gates and emits navigation/create intents only. Its final WorkspaceShell launcher wiring remains coordinator-owned shared integration and is not modified by universal-core.",
-    "Universal Create is already live in WorkspaceShell, restricted to enabled modules, blocks viewer creation and preserves stricter finance creation roles; entitlement checks remain canonical in module enablement.",
-    "Universal custom fields, Universal Tags, protected status presentation metadata and reusable create templates are implemented as isolated tenant-safe contracts/persistence with RLS, explicit Data API grants and confirmation-only mutation guards.",
-    "Configurable statuses preserve CRM/Tasks/Calendar/Estimates canonical workflow keys and only override label/color/order; no generic status replacement or transition authority exists.",
-    "Reusable templates remain inert allowlisted prefills for Tasks/Calendar/Estimates and exclude contextual IDs, status, assignees/resources, absolute scheduling and estimate revision/source lineage.",
-    "PR #375 passed Architecture Guard, Quality Gate and ORBYVEN CI while 0 commits behind and merged as 5eff258f954d6d04741b0c0b3d56c85b972a34e8; canonical handoff followed as 6cfdea12f58fab6f9f5e6f7ece9adb483ab40577."
+    "Universal ORBYVEN 1.0 foundation is complete for the universal-core-owned surfaces; Command Palette final WorkspaceShell wiring remains coordinator-owned shared integration.",
+    "Audited historical Dashboard AI 0.8.25 integrations and identified PR #346 R8 as the latest historical reference rather than a merge candidate.",
+    "Compared R8 with current main: current Intelligence already has authenticated tenant-scoped module availability, operational business signals, next-best actions and generic operations summaries, but no exact Operational Query contract for blocked/overdue/unassigned/urgent/unscheduled work, today/tomorrow/week agenda, lead follow-ups or estimate follow-ups.",
+    "Business Brief, Decision Support, entity intelligence and outcome-loop capabilities are intentionally deferred; this milestone is limited to the smallest missing read-only Operational Query primitive.",
+    "Historical code will be adapted selectively to current main contracts; no old PR will be merged or cherry-picked wholesale."
   ],
-  "next_action": "Audit Dashboard AI 0.8.25 selectively against current main. Identify the historical PRs/branches that represented 0.8.25, compare their concrete capabilities with current main and retain only demonstrably missing, still-relevant primitives. Do not merge or cherry-pick old PRs wholesale. Do not modify WorkspaceShell/global navigation/providers/module registry independently. If current main already supersedes a historical capability, record it as covered and move on; implement only the smallest isolated missing capability with targeted tests and full Architecture Guard/Quality Gate/CI validation.",
+  "next_action": "Implement an isolated Operational Query detector and read-only tenant-scoped query responder for the exact operational intents still missing on current main, integrate it minimally before generic specialist routing in lib/ai/intelligence-server.ts, add targeted regressions, checkpoint, then run Architecture Guard, Quality Gate and ORBYVEN CI. Preserve current auth/module gates and perform no mutations.",
   "files_touched": [
     ".orbyven/handoff/universal-core.json"
   ],
   "tests": {
-    "status": "green",
-    "last_run": "2026-10-17T16:23:00Z",
-    "notes": "Universal foundation milestones are green on main. Final audit found no additional owned universal-core feature gap; Command Palette shared-shell wiring is coordinator-owned rather than a missing isolated foundation capability."
+    "status": "not_started",
+    "last_run": null,
+    "notes": "Selective Dashboard AI reconciliation milestone selected after current-main capability audit."
   },
-  "last_commit": "6cfdea12f58fab6f9f5e6f7ece9adb483ab40577",
-  "pull_request": 375,
+  "last_commit": "75f2a0bf69755029fd27d7bb2286a4b206e9f71a",
+  "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
 }
