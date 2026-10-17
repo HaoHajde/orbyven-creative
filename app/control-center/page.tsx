@@ -1,10 +1,10 @@
-import ControlCenter from "@/components/ControlCenter";
+import ControlCenterCompact from "@/components/ControlCenterCompact";
 import ControlCenterNavigator from "@/components/ControlCenterNavigator";
 
 export default function ControlCenterPage() {
   return (
     <>
-      <ControlCenter />
+      <ControlCenterCompact />
       <ControlCenterNavigator />
     </>
   );
