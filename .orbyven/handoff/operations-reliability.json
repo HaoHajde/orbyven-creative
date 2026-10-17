@@ -1,24 +1,32 @@
 {
   "version": 1,
   "worker_id": "operations-reliability",
-  "state": "READY",
+  "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T13:21:00Z",
-  "branch": null,
-  "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
-  "current_objective": "Complete ORBYVEN 1.0 operational reliability: unified notifications/attention, activity timeline presentation, Settings/Admin consolidation, user-facing recovery states and operator observability.",
+  "updated_at": "2026-10-17T14:30:00Z",
+  "branch": "feat/operations-attention-inbox",
+  "base_main_sha": "427d1697068a21dc89a2d1e842280c56660775db",
+  "current_objective": "Validate the first ORBYVEN 1.0 reliability milestone: a unified attention inbox read model derived from existing business signals without introducing a parallel event system.",
   "last_completed": [
-    "ORBYVEN 1.0 reliability scope was separated from universal core and data portability to reduce shared-file conflicts.",
-    "Coordinator-controlled shared shell/navigation integration was established for overlapping surfaces."
+    "Audited canonical main after PR #353 integration. Existing business automation signals already provide the actionable operational source used by Overview and ORBYVEN Intelligence; no notification/event store was added.",
+    "Confirmed Control Center already owns internal platform administration and tenant technical-health responsibilities, so this worker did not duplicate or rewire that surface.",
+    "Added a pure Attention Inbox projection with Acum / Azi / Atenție / Rezolvat buckets. Active items derive from AutomationSignal; resolved presentation requires external immutable evidence with an evidence ID.",
+    "Added regression coverage for bucket projection, Bucharest local-day handling, evidence requirements and active-over-resolved precedence; registered it in the ecosystem gate.",
+    "Shared shell/navigation was not modified."
   ],
-  "next_action": "Start from current main and audit existing notification, activity/audit, settings/control-center, error handling and operational health surfaces. Record what already exists and select the first demonstrably missing atomic capability, prioritizing a unified attention/notification model that reuses current business signals rather than creating a duplicate event system. Preserve security/audit evidence and tenant isolation. Run targeted tests plus Architecture Guard/Quality Gate/CI before proposing integration.",
-  "files_touched": [],
+  "next_action": "Run/observe targeted ecosystem coverage plus Architecture Guard, Quality Gate and CI on the PR. If all checks remain green against current main, integrate this atomic milestone. After integration, re-audit main and choose the next missing reliability capability, likely universal recovery/retry presentation or operator health aggregation without exposing sensitive provider payloads.",
+  "files_touched": [
+    "lib/operations/attention-inbox.ts",
+    "tests/operations-attention-inbox.test.mjs",
+    "package.json",
+    ".orbyven/handoff/operations-reliability.json"
+  ],
   "tests": {
-    "status": "not_started",
+    "status": "pending_ci",
     "last_run": null,
-    "notes": "No implementation has started. First action is a current-main capability and event/read-model audit."
+    "notes": "Target regression is included in test:ecosystem. This connector session has no local repository/network clone, so validation is delegated to repository CI; do not mark DONE until required checks are green."
   },
-  "last_commit": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
+  "last_commit": "143907d6ee68405695a479d03440aac754104f1f",
   "pull_request": null,
   "blocker": null,
   "safe_to_resume": true
