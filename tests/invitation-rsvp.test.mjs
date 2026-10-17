@@ -79,7 +79,7 @@ test("published invitations are private-by-link and Design Studio can publish th
 test("RSVP admin mutations remain authenticated and tenant scoped", () => {
   const route = read("app/api/invitations/rsvps/route.ts");
   const server = read("lib/invitations/server.ts");
-  const migration = read("supabase/migrations/20261017160300_invitation_rsvp_admin.sql");
+  const migration = read("supabase/migrations/20261017161205_invitation_rsvp_admin.sql");
 
   assert.match(route, /export async function PATCH/);
   assert.match(route, /export async function DELETE/);
