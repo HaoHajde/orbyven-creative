@@ -1,9 +1,9 @@
 {
   "version": 1,
   "worker_id": "dashboard-core",
-  "state": "IN_PROGRESS",
+  "state": "READY",
   "mode": "work",
-  "updated_at": "2026-10-17T13:13:56.639Z",
+  "updated_at": "2026-10-17T13:16:17.439Z",
   "branch": "feature/dashboard-core-resume-20261017",
   "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
@@ -14,9 +14,10 @@
     "Current main CI and Integration Train are green after the handoff commits.",
     "2026-10-17: inspected current main and open dashboard PRs; main CI/Quality Gate green. No newer dashboard port exists. Fresh branch created; old PR task-query 120-row sampling defect identified.",
     "Implemented selective five-category task queries from PR #346: exact server-side counts, at most three contextual navigation links, RO/EN, tenant/module guards, original mutation-confirmation dispatch preserved. Six focused executable tests passed.",
-    "PR #351 created as a draft from current main; no wholesale old-PR merge, no production deploy. Local validation passed."
+    "PR #351 created as a draft from current main; no wholesale old-PR merge, no production deploy. Local validation passed.",
+    "PR #351 implementation d71b7d5 passed GitHub ORBYVEN CI #1445, Quality Gate #1414 and Architecture Guard #1125. This milestone is a selective task-query port only; remaining #346 capabilities and #231 UX are not implemented."
   ],
-  "next_action": "Verify PR #351 latest-head CI, Quality Gate and Architecture Guard; resolve only concrete failures before porting the next PR #346 capability.",
+  "next_action": "On feature/dashboard-core-resume-20261017 / PR #351, selectively port only the read-only today/tomorrow/next-seven-days agenda queries from PR #346, using the workspace timezone and exact counts; preserve current auth/module checks and confirmation-only mutations.",
   "files_touched": [
     "lib/ai/operational-task-query.ts",
     "lib/ai/intelligence-server.ts",
@@ -25,11 +26,12 @@
     ".orbyven/handoff/dashboard-core.json"
   ],
   "tests": {
-    "status": "local_passed_ci_pending",
-    "last_run": "2026-10-17T13:13:56.639Z",
-    "notes": "Full npm run validate passed: lint, typecheck, 370 tests, production build. Local ownership guard and built JS budget passed (2.97 MiB; max 230.9 KiB). Six tests use actual Supabase SDK with mocked HTTP. Read-only SQL confirmed no whitespace-only assignees. GitHub CI/Quality Gate/Architecture Guard pending for PR #351. No authenticated UI/device check."
+    "status": "implementation_local_and_ci_passed",
+    "last_run": "2026-10-17T13:16:17.439Z",
+    "verified_commit": "d71b7d5a2321a8f93be7b7a459c28f3f25aaeef7",
+    "notes": "Full local validate: 370 tests, lint, typecheck, production build, ownership and JS budget passed. GitHub CI 39035720323, Quality Gate 39035720378, Architecture Guard 39035720372 succeeded on d71b7d5. Windows 39035720316 was still running at checkpoint. A subsequent checkpoint-only commit does not change implementation. No authenticated browser/device runtime check."
   },
-  "last_commit": "5f5625ed066ec3f5cd5c973308124a7f5b9b2c46",
+  "last_commit": "d71b7d5a2321a8f93be7b7a459c28f3f25aaeef7",
   "pull_request": 351,
   "blocker": null,
   "safe_to_resume": true
