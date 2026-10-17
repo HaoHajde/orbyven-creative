@@ -1,34 +1,34 @@
 {
   "version": 1,
   "worker_id": "universal-core",
-  "state": "IN_PROGRESS",
+  "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T15:24:00Z",
-  "branch": null,
-  "base_main_sha": "2e64861c9590b737b56bb1fa829821844fddc8b0",
+  "updated_at": "2026-10-17T15:53:00Z",
+  "branch": "feat/universal-core-status-metadata-20261017",
+  "base_main_sha": "4d166a2dcc292d877d0063add5396a5d691da670",
   "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
   "last_completed": [
-    "PR #357 universal Command Palette and PR #360 universal custom fields were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
-    "Audited main/live schema before tags work and confirmed CRM/task/calendar/estimate statuses are protected workflow truth rather than candidates for replacement by a generic status field.",
-    "Implemented the isolated Universal Tags foundation with organization-scoped taxonomy, generic assignments, composite tenant integrity, RLS, explicit Data API grants, viewer read-only behavior, pure validation/normalization and confirmation-only mutation guard.",
-    "Preserved PR #362 operations-reliability work and concurrent data-portability work through repeated current-main realignment; neither overlapped Universal Tags files.",
-    "Final synchronized PR #363 head 6119940cf5f441ecbadd8e21945264af8f9d157a was confirmed 0 commits behind main and mergeable.",
-    "PR #363 passed Architecture Guard, Quality Gate and ORBYVEN CI on the synchronized head and merged atomically as 2e64861c9590b737b56bb1fa829821844fddc8b0."
+    "PR #357 universal Command Palette, PR #360 universal custom fields and PR #363 Universal Tags were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
+    "Audited CRM, Tasks, Calendar and Estimates status contracts and confirmed canonical workflow keys remain source of truth; no generic status system is justified.",
+    "Implemented presentation-only metadata for existing protected workflow keys: display label, color and order; no new status keys, no active semantics and no transition authority.",
+    "Initial PR #367 head 4f17398e598075617cc99e79a0b9a3eb0508eb51 passed Architecture Guard, Quality Gate and ORBYVEN CI but became stale when main advanced.",
+    "Canonical main advanced to 4d166a2dcc292d877d0063add5396a5d691da670 with invitation/RSVP work only; zero overlap with this milestone was confirmed.",
+    "Realigned PR #367 to current main, reapplied only the four status-metadata files, confirmed behind_by=0 and reopened the PR after GitHub auto-closed it during the zero-diff reset."
   ],
-  "next_action": "Audit current-main configurable-status contracts before implementation. Treat existing CRM stage, task status, calendar status and estimate status as workflow source of truth. Inspect database constraints, transition/mutation services, UI labels/options, role/tenant protections and existing metadata/configuration. Implement only a demonstrably missing safe metadata/configuration layer; do not add generic_status. If existing status capabilities are sufficient for ORBYVEN 1.0, record that finding and advance to the next missing capability, likely reusable templates, without touching shared shell/navigation/providers/module registry.",
+  "next_action": "Observe Architecture Guard, Quality Gate and ORBYVEN CI on the synchronized PR #367 head. Fix only demonstrated failures. Before merge reconfirm behind_by=0 and mergeable=true; merge only if all three are green. Then update canonical handoff and audit reusable templates.",
   "files_touched": [
     ".orbyven/handoff/universal-core.json",
-    "supabase/migrations/20261017145400_universal_tags.sql",
-    "lib/workspace-tags.ts",
+    "supabase/migrations/20261017153200_status_presentation_metadata.sql",
+    "lib/workspace-status-presentations.ts",
     "tests/workspace-warp-navigation.test.mjs"
   ],
   "tests": {
-    "status": "green",
-    "last_run": "2026-10-17T15:23:00Z",
-    "notes": "PR #363 synchronized head 6119940: Architecture Guard success; Quality Gate success including lint/typecheck/workspace regression/security/legal/performance/SEO/build/JS budget; ORBYVEN CI success."
+    "status": "pending_ci",
+    "last_run": "2026-10-17T15:45:00Z",
+    "notes": "Previous head was green but stale. Required gates must pass again on the synchronized current-main head."
   },
-  "last_commit": "2e64861c9590b737b56bb1fa829821844fddc8b0",
-  "pull_request": 363,
+  "last_commit": "18556666f2393d0d73687f2f6d9cfd4253cf9d36",
+  "pull_request": 367,
   "blocker": null,
   "safe_to_resume": true
 }

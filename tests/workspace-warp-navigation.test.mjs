@@ -217,3 +217,86 @@ test("workspace tag persistence is tenant scoped, viewer read-only and Data API 
   assert.match(migration, /grant select, insert, update, delete[\s\S]*to authenticated, service_role/);
   assert.match(migration, /grant select, insert, delete[\s\S]*to authenticated, service_role/);
 });
+
+test("status presentation registry preserves canonical protected workflow keys", () => {
+  const statusPresentation = loadPureModule("lib/workspace-status-presentations.ts");
+  assert.deepEqual(
+    statusPresentation.getWorkspaceSystemStatuses("crm_leads").map((item) => item.statusKey),
+    ["new", "contacted", "qualified", "proposal", "won", "lost"],
+  );
+  assert.deepEqual(
+    statusPresentation.getWorkspaceSystemStatuses("ops_tasks").map((item) => item.statusKey),
+    ["planned", "in_progress", "blocked", "done", "cancelled"],
+  );
+  assert.deepEqual(
+    statusPresentation.getWorkspaceSystemStatuses("calendar_events").map((item) => item.statusKey),
+    ["scheduled", "completed", "cancelled"],
+  );
+  assert.deepEqual(
+    statusPresentation.getWorkspaceSystemStatuses("sales_estimates").map((item) => item.statusKey),
+    ["draft", "sent", "accepted", "rejected", "expired"],
+  );
+  assert.equal(statusPresentation.getWorkspaceSystemStatus("sales_estimates", "accepted").protected, true);
+  assert.equal(statusPresentation.getWorkspaceSystemStatus("sales_estimates", "accepted").defaultLabel, "Acceptată");
+});
+
+test("status presentation overrides cannot invent workflow statuses or mutate canonical keys", () => {
+  const statusPresentation = loadPureModule("lib/workspace-status-presentations.ts");
+  const valid = {
+    entityType: "ops_tasks",
+    statusKey: "blocked",
+    displayLabel: "Necesită atenție",
+    color: "#A855F7",
+    sortOrder: 9,
+  };
+  assert.deepEqual(statusPresentation.validateWorkspaceStatusPresentation(valid), { valid: true });
+  assert.equal(statusPresentation.validateWorkspaceStatusPresentation({ ...valid, statusKey: "waiting_approval" }).valid, false);
+
+  const resolved = statusPresentation.resolveWorkspaceStatusPresentation("ops_tasks", "blocked", valid);
+  assert.equal(resolved.statusKey, "blocked");
+  assert.equal(resolved.displayLabel, "Necesită atenție");
+  assert.equal(resolved.color, "#A855F7");
+  assert.equal(resolved.protected, true);
+  assert.equal(resolved.source, "override");
+
+  const fallback = statusPresentation.resolveWorkspaceStatusPresentation("ops_tasks", "blocked", null);
+  assert.equal(fallback.statusKey, "blocked");
+  assert.equal(fallback.displayLabel, "Blocat");
+  assert.equal(fallback.protected, true);
+  assert.equal(fallback.source, "system");
+  assert.throws(
+    () => statusPresentation.resolveWorkspaceStatusPresentation("ops_tasks", "waiting_approval", null),
+    /WORKSPACE_STATUS_SYSTEM_KEY_REQUIRED/,
+  );
+});
+
+test("status presentation mutations remain confirmation-only and transition-neutral", () => {
+  const statusPresentation = loadPureModule("lib/workspace-status-presentations.ts");
+  assert.throws(
+    () => statusPresentation.requireWorkspaceStatusPresentationMutationConfirmation(false),
+    /WORKSPACE_STATUS_PRESENTATION_CONFIRMATION_REQUIRED/,
+  );
+  assert.doesNotThrow(() => statusPresentation.requireWorkspaceStatusPresentationMutationConfirmation(true));
+
+  const source = read("lib/workspace-status-presentations.ts");
+  assert.doesNotMatch(source, /orbyvenSupabase/);
+  assert.doesNotMatch(source, /generic_status/);
+  assert.doesNotMatch(source, /setEstimateStatus|setWorkTaskStatus|setCalendarEventStatus|updateCrmLead/);
+});
+
+test("status presentation persistence is closed to system keys and admin-configured only", () => {
+  const migration = read("supabase/migrations/20261017153200_status_presentation_metadata.sql");
+  assert.match(migration, /entity_type = 'crm_leads'[\s\S]*status_key in \('new', 'contacted', 'qualified', 'proposal', 'won', 'lost'\)/);
+  assert.match(migration, /entity_type = 'ops_tasks'[\s\S]*status_key in \('planned', 'in_progress', 'blocked', 'done', 'cancelled'\)/);
+  assert.match(migration, /entity_type = 'calendar_events'[\s\S]*status_key in \('scheduled', 'completed', 'cancelled'\)/);
+  assert.match(migration, /entity_type = 'sales_estimates'[\s\S]*status_key in \('draft', 'sent', 'accepted', 'rejected', 'expired'\)/);
+  assert.match(migration, /unique \(organization_id, entity_type, status_key\)/);
+  assert.match(migration, /alter table public\.workspace_status_presentations enable row level security/);
+  assert.match(migration, /using \(private\.is_org_member\(organization_id\)\)/);
+  assert.match(migration, /with check \(private\.is_org_admin\(organization_id\)\)/);
+  assert.match(migration, /using \(private\.is_org_admin\(organization_id\)\)/);
+  assert.match(migration, /revoke all on table public\.workspace_status_presentations from anon/);
+  assert.match(migration, /grant select, insert, update, delete[\s\S]*to authenticated, service_role/);
+  assert.doesNotMatch(migration, /generic_status/);
+  assert.doesNotMatch(migration, /\bactive\s+boolean\b/);
+});
