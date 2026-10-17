@@ -30,6 +30,10 @@ test("reusable template keys normalize predictably and task payloads exclude con
     estimatedMinutes: 240,
   };
   assert.deepEqual(templates.validateWorkspaceReusableTemplatePayload("ops_tasks", taskPayload), { valid: true });
+  assert.equal(
+    templates.validateWorkspaceReusableTemplatePayload("ops_tasks", { ...taskPayload, estimatedMinutes: 12.5 }).valid,
+    false,
+  );
   for (const forbidden of ["clientId", "taskId", "status", "assignee", "scheduledAt", "dueAt", "organizationId"]) {
     assert.equal(
       templates.validateWorkspaceReusableTemplatePayload("ops_tasks", { ...taskPayload, [forbidden]: "unsafe" }).valid,
@@ -51,6 +55,14 @@ test("calendar templates keep relative duration and reject absolute or linked sc
     reminderMinutes: 60,
   };
   assert.deepEqual(templates.validateWorkspaceReusableTemplatePayload("calendar_events", calendarPayload), { valid: true });
+  assert.equal(
+    templates.validateWorkspaceReusableTemplatePayload("calendar_events", { ...calendarPayload, durationMinutes: 90.5 }).valid,
+    false,
+  );
+  assert.equal(
+    templates.validateWorkspaceReusableTemplatePayload("calendar_events", { ...calendarPayload, reminderMinutes: 1.5 }).valid,
+    false,
+  );
   for (const forbidden of ["startAt", "endAt", "clientId", "taskId", "assignee", "resourceIds", "status"]) {
     assert.equal(
       templates.validateWorkspaceReusableTemplatePayload("calendar_events", { ...calendarPayload, [forbidden]: "unsafe" }).valid,
@@ -109,8 +121,12 @@ test("template persistence is tenant-scoped, fail-closed, viewer read-only and D
   assert.match(migration, /jsonb_object_keys\(template_payload\)/);
   assert.match(migration, /jsonb_array_elements\(template_payload -> 'items'\)/);
   assert.match(migration, /pg_column_size\(template_payload\) > 32768/);
+  assert.match(migration, /m\.access_status = 'active'/);
   assert.match(migration, /m\.role in \('owner', 'admin', 'manager', 'member'\)/);
   assert.doesNotMatch(migration, /m\.role in \([^\n]*'viewer'/);
+  assert.match(migration, /trunc\(\(template_payload ->> 'estimatedMinutes'\)::numeric\)/);
+  assert.match(migration, /trunc\(\(template_payload ->> 'durationMinutes'\)::numeric\)/);
+  assert.match(migration, /trunc\(\(template_payload ->> 'reminderMinutes'\)::numeric\)/);
   assert.match(migration, /alter table public\.workspace_reusable_templates enable row level security/);
   assert.match(migration, /private\.is_org_member\(organization_id\)/);
   assert.match(migration, /revoke all on table public\.workspace_reusable_templates from anon/);
