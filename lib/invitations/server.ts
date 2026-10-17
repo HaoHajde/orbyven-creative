@@ -27,6 +27,7 @@ export type InvitationRsvp = {
   guestCount: number;
   message: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 function slugPart(value: string) {
@@ -68,6 +69,46 @@ function projectFromRow(row: Record<string, unknown> | null): PublishedInvitatio
     draft,
     publishedAt: row.published_at,
   };
+}
+
+function rsvpFromRow(row: Record<string, unknown> | null): InvitationRsvp | null {
+  if (
+    !row ||
+    typeof row.id !== "string" ||
+    typeof row.guest_name !== "string" ||
+    typeof row.attending !== "boolean" ||
+    typeof row.guest_count !== "number" ||
+    typeof row.created_at !== "string" ||
+    typeof row.updated_at !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    guestName: row.guest_name,
+    attending: row.attending,
+    guestCount: row.guest_count,
+    message: typeof row.message === "string" ? row.message : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function resolveOwnedInvitationProjectId(
+  actor: BillingActor,
+  projectType: InvitationProjectType
+) {
+  const client = createBillingServiceClient(actor);
+  const { data, error } = await client
+    .from("invitation_projects")
+    .select("id")
+    .eq("organization_id", actor.organizationId)
+    .eq("source_key", invitationSourceKey(projectType))
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.id) throw new Error("INVITATION_PROJECT_NOT_FOUND");
+  return String(data.id);
 }
 
 export async function publishInvitationProject(input: {
@@ -146,31 +187,67 @@ export async function loadInvitationAdminState(
 
   const { data: responses, error: responseError } = await client
     .from("invitation_rsvps")
-    .select("id,guest_name,attending,guest_count,message,created_at")
+    .select("id,guest_name,attending,guest_count,message,created_at,updated_at")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(1000);
   if (responseError) throw responseError;
 
   const rsvps: InvitationRsvp[] = (responses ?? []).flatMap((item) => {
-    if (
-      typeof item.id !== "string" ||
-      typeof item.guest_name !== "string" ||
-      typeof item.attending !== "boolean" ||
-      typeof item.guest_count !== "number" ||
-      typeof item.created_at !== "string"
-    ) return [];
-    return [{
-      id: item.id,
-      guestName: item.guest_name,
-      attending: item.attending,
-      guestCount: item.guest_count,
-      message: typeof item.message === "string" ? item.message : null,
-      createdAt: item.created_at,
-    }];
+    const parsed = rsvpFromRow(item as Record<string, unknown> | null);
+    return parsed ? [parsed] : [];
   });
 
   return { project, rsvps };
+}
+
+export async function updateInvitationRsvp(input: {
+  actor: BillingActor;
+  projectType: InvitationProjectType;
+  rsvpId: string;
+  guestName: string;
+  attending: boolean;
+  guestCount: number;
+  message: string | null;
+}) {
+  const client = createBillingServiceClient(input.actor);
+  const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const { data, error } = await client
+    .from("invitation_rsvps")
+    .update({
+      guest_name: input.guestName,
+      attending: input.attending,
+      guest_count: input.attending ? input.guestCount : 0,
+      message: input.message,
+      updated_by: input.actor.userId,
+    })
+    .eq("id", input.rsvpId)
+    .eq("project_id", projectId)
+    .select("id,guest_name,attending,guest_count,message,created_at,updated_at")
+    .maybeSingle();
+  if (error) throw error;
+  const rsvp = rsvpFromRow(data as Record<string, unknown> | null);
+  if (!rsvp) throw new Error("INVITATION_RSVP_NOT_FOUND");
+  return rsvp;
+}
+
+export async function deleteInvitationRsvp(input: {
+  actor: BillingActor;
+  projectType: InvitationProjectType;
+  rsvpId: string;
+}) {
+  const client = createBillingServiceClient(input.actor);
+  const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const { data, error } = await client
+    .from("invitation_rsvps")
+    .delete()
+    .eq("id", input.rsvpId)
+    .eq("project_id", projectId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.id) throw new Error("INVITATION_RSVP_NOT_FOUND");
+  return String(data.id);
 }
 
 export async function loadPublishedInvitation(slug: string): Promise<PublishedInvitationProject | null> {
