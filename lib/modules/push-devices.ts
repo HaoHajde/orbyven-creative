@@ -1,4 +1,5 @@
 import { orbyvenSupabase } from "@/lib/orbyven-supabase";
+import { setNotificationPreference } from "@/lib/modules/notification-preferences";
 
 export type PushDeviceRegistrationInput = {
   expoPushToken: string;
@@ -36,5 +37,10 @@ export async function registerPushDevice(
     .single();
 
   if (error) throw error;
+
+  // Device registration and delivery consent are separate concerns. A registered
+  // token is not delivery permission until the per-user/per-organization preference
+  // has been persisted. If this write fails, the preference remains fail-closed.
+  await setNotificationPreference(organizationId, "push", true);
   return data;
 }
