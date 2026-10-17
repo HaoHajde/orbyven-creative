@@ -84,10 +84,18 @@ test("Operational Query remains tenant-scoped, entitlement-gated and read-only",
   assert.match(entry, /organization_entitlements/);
   assert.match(entry, /available\.add\(moduleId\)/);
   assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
-  assert.match(query, /available\.has\("tasks"\)/);
+  assert.match(read("lib/ai/operational-task-query.ts"), /available\.has\("tasks"\)/);
   assert.match(query, /available\.has\("leads"\)/);
   assert.match(query, /available\.has\("estimates"\)/);
   assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
   assert.match(route, /answerOperationalQueryForActor/);
   assert.match(route, /operationalResult \?\? await answerIntelligenceForActor/);
+});
+
+test("canonical operational detector supports RO/EN exact queries without silently dropping filters", () => {
+  assert.equal(detectOperationalQuery('Show blocked tasks'), 'blocked_tasks');
+  assert.equal(detectOperationalQuery('Show my agenda for tomorrow'), 'tomorrow');
+  for (const prompt of ['Ce lucrări blocate pentru clientul Ana?', 'Show overdue tasks for Acme', 'Ce am azi pentru Ana?', 'Agenda săptămâna următoare', 'Show my agenda today and delete it']) {
+    assert.equal(detectOperationalQuery(prompt), null, prompt);
+  }
 });

@@ -92,8 +92,8 @@ test("Vite adapts only Next-specific rendering primitives", () => {
   assert.match(vite, /desktopDynamic/);
   assert.match(dynamicAdapter, /Suspense/);
   assert.match(dynamicAdapter, /lazy/);
-  assert.match(brandAdapter, /public\/branding\/orbyven-logo-dark\.png/);
-  assert.match(brandAdapter, /public\/branding\/orbyven-icon-light\.png/);
+  assert.match(brandAdapter, /app\/icon\.svg\?url/);
+  assert.doesNotMatch(brandAdapter, /public\/branding\/orbyven-(?:logo|icon)-(?:dark|light)\.png/);
   assert.match(workspaceContent, /next\/dynamic/);
 });
 
