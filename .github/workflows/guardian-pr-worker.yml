@@ -1,0 +1,239 @@
+name: ORBYVEN Guardian PR Worker
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: orbyven-guardian-pr-worker
+  cancel-in-progress: false
+
+jobs:
+  prepare-patch:
+    if: github.event.repository.private == true && vars.ORBYVEN_ENABLE_GUARDIAN == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    outputs:
+      has_job: ${{ steps.claim.outputs.has_job }}
+      action_id: ${{ steps.claim.outputs.action_id }}
+      branch: ${{ steps.claim.outputs.branch }}
+
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Claim one queued Guardian action
+        id: claim
+        env:
+          ORBYVEN_GUARDIAN_CLAIM_URL: ${{ secrets.ORBYVEN_GUARDIAN_CLAIM_URL }}
+          ORBYVEN_GUARDIAN_WORKER_SECRET: ${{ secrets.ORBYVEN_GUARDIAN_WORKER_SECRET }}
+          GUARDIAN_WORK_DIR: ${{ runner.temp }}/orbyven-guardian
+        run: node scripts/guardian-claim.mjs
+
+      - name: Install dependencies
+        if: steps.claim.outputs.has_job == 'true'
+        run: npm ci
+
+      - name: Run Guardian in workspace-only sandbox
+        if: steps.claim.outputs.has_job == 'true'
+        id: codex
+        uses: openai/codex-action@a8d8be6ee028bea4525bc722d16f36687b408c81
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ runner.temp }}/orbyven-guardian/prompt.md
+          output-file: ${{ runner.temp }}/orbyven-guardian/codex-output.txt
+          permission-profile: ":workspace"
+          safety-strategy: "drop-sudo"
+          allow-bots: "true"
+          effort: "high"
+
+      - name: Reject Guardian trust-boundary changes
+        if: steps.claim.outputs.has_job == 'true'
+        shell: bash
+        run: |
+          git add -N .
+          changed="$(git diff --name-only)"
+          if [ -z "$changed" ]; then
+            echo "Guardian produced no reviewable patch." >&2
+            exit 1
+          fi
+          echo "$changed" | while IFS= read -r path; do
+            case "$path" in
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-*.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
+                echo "Guardian attempted to change protected trust boundary: $path" >&2
+                exit 41
+                ;;
+            esac
+          done
+
+      - name: Create review-only patch artifact
+        if: steps.claim.outputs.has_job == 'true'
+        shell: bash
+        run: |
+          mkdir -p "${{ runner.temp }}/orbyven-patch"
+          git diff --binary > "${{ runner.temp }}/orbyven-patch/guardian.patch"
+          cp "${{ runner.temp }}/orbyven-guardian/job.json" "${{ runner.temp }}/orbyven-patch/job.json"
+          cp "${{ runner.temp }}/orbyven-guardian/pr-body.md" "${{ runner.temp }}/orbyven-patch/pr-body.md"
+          cp "${{ runner.temp }}/orbyven-guardian/codex-output.txt" "${{ runner.temp }}/orbyven-patch/codex-output.txt" || true
+          test -s "${{ runner.temp }}/orbyven-patch/guardian.patch"
+
+      - name: Upload ephemeral patch
+        if: steps.claim.outputs.has_job == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: guardian-patch-${{ steps.claim.outputs.action_id }}
+          path: ${{ runner.temp }}/orbyven-patch
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Mark failed Guardian attempt
+        if: failure() && steps.claim.outputs.has_job == 'true'
+        env:
+          ORBYVEN_GUARDIAN_RESULT_URL: ${{ secrets.ORBYVEN_GUARDIAN_RESULT_URL }}
+          ORBYVEN_GUARDIAN_WORKER_SECRET: ${{ secrets.ORBYVEN_GUARDIAN_WORKER_SECRET }}
+          GUARDIAN_WORK_DIR: ${{ runner.temp }}/orbyven-guardian
+          GUARDIAN_RESULT_STATUS: failed
+          GUARDIAN_RESULT_SUMMARY: Guardian could not produce a safe reviewable patch. Inspect the protected workflow run.
+        run: node scripts/guardian-result.mjs
+
+  validate-and-open-pr:
+    needs: prepare-patch
+    if: needs.prepare-patch.result == 'success' && needs.prepare-patch.outputs.has_job == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout current main with write token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Download Guardian patch
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: guardian-patch-${{ needs.prepare-patch.outputs.action_id }}
+          path: ${{ runner.temp }}/orbyven-patch
+
+      - name: Restore Guardian metadata
+        shell: bash
+        run: |
+          mkdir -p "${{ runner.temp }}/orbyven-guardian"
+          cp "${{ runner.temp }}/orbyven-patch/job.json" "${{ runner.temp }}/orbyven-guardian/job.json"
+          cp "${{ runner.temp }}/orbyven-patch/codex-output.txt" "${{ runner.temp }}/orbyven-guardian/codex-output.txt" || true
+
+      - name: Apply proposed patch
+        run: |
+          git apply --index --check "${{ runner.temp }}/orbyven-patch/guardian.patch"
+          git apply --index "${{ runner.temp }}/orbyven-patch/guardian.patch"
+          git diff --cached --check
+
+      - name: Independently enforce Guardian trust boundary
+        shell: bash
+        run: |
+          changed="$(git diff --cached --name-only)"
+          echo "$changed" | while IFS= read -r path; do
+            case "$path" in
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-*.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
+                echo "Trusted validator rejected protected path: $path" >&2
+                exit 42
+                ;;
+            esac
+          done
+
+      - name: Prevent validation-script tampering
+        shell: bash
+        run: |
+          git show HEAD:package.json > "${{ runner.temp }}/guardian-base-package.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const before = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/guardian-base-package.json', 'utf8'));
+          const after = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const critical = [
+            'lint',
+            'typecheck',
+            'build',
+            'validate',
+            'test:architecture',
+            'test:security',
+            'test:compliance',
+            'test:seo'
+          ];
+          for (const name of critical) {
+            if ((before.scripts?.[name] ?? null) !== (after.scripts?.[name] ?? null)) {
+              console.error(`Guardian attempted to alter protected package script: ${name}`);
+              process.exit(43);
+            }
+          }
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Full ORBYVEN validation gate
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: guardian-ci-placeholder-key
+        run: npm run validate
+
+      - name: Create isolated Guardian branch
+        id: branch
+        env:
+          BRANCH_NAME: ${{ needs.prepare-patch.outputs.branch }}
+        run: |
+          git config user.name "ORBYVEN Guardian"
+          git config user.email "guardian@users.noreply.github.com"
+          git checkout -b "$BRANCH_NAME"
+          git commit -m "fix: Guardian integrity remediation"
+          git push origin "$BRANCH_NAME"
+          echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Open draft PR for owner review
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          pr_url="$(gh pr create --draft --base main --head "$BRANCH_NAME" --title "fix: ORBYVEN Guardian integrity remediation" --body-file "${{ runner.temp }}/orbyven-patch/pr-body.md")"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Publish waiting-for-approval state
+        env:
+          ORBYVEN_GUARDIAN_RESULT_URL: ${{ secrets.ORBYVEN_GUARDIAN_RESULT_URL }}
+          ORBYVEN_GUARDIAN_WORKER_SECRET: ${{ secrets.ORBYVEN_GUARDIAN_WORKER_SECRET }}
+          GUARDIAN_WORK_DIR: ${{ runner.temp }}/orbyven-guardian
+          GUARDIAN_RESULT_STATUS: waiting_approval
+          GUARDIAN_BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+          GUARDIAN_PR_URL: ${{ steps.pr.outputs.pr_url }}
+        run: node scripts/guardian-result.mjs
+
+      - name: Mark failed validation or PR publication
+        if: failure()
+        env:
+          ORBYVEN_GUARDIAN_RESULT_URL: ${{ secrets.ORBYVEN_GUARDIAN_RESULT_URL }}
+          ORBYVEN_GUARDIAN_WORKER_SECRET: ${{ secrets.ORBYVEN_GUARDIAN_WORKER_SECRET }}
+          GUARDIAN_WORK_DIR: ${{ runner.temp }}/orbyven-guardian
+          GUARDIAN_RESULT_STATUS: failed
+          GUARDIAN_RESULT_SUMMARY: Guardian patch failed trusted validation or PR publication. No automatic merge occurred.
+        run: node scripts/guardian-result.mjs
