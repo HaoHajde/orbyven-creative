@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateBillingActor } from "@/lib/billing/supabase-server";
 import { answerIntelligenceForActor } from "@/lib/ai/intelligence-server";
+import { answerOperationalQueryForActor } from "@/lib/ai/operational-query-entry";
 import {
   appendUserConversationMessage,
   ensureConversation,
@@ -68,7 +69,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await answerIntelligenceForActor(
+    const operationalResult = await answerOperationalQueryForActor(
+      actor,
+      entityContext.effectivePrompt
+    );
+    const result = operationalResult ?? await answerIntelligenceForActor(
       actor,
       entityContext.effectivePrompt,
       conversation.id

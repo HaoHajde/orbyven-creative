@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "worker_id": "data-portability",
+  "state": "IN_PROGRESS",
+  "mode": "work",
+  "updated_at": "2026-10-17T15:36:00Z",
+  "branch": "orbyven/data-portability-existing-duplicates",
+  "base_main_sha": "4d166a2dcc292d877d0063add5396a5d691da670",
+  "current_objective": "Deliver the third atomic ORBYVEN 1.0 data-portability milestone: server-derived existing-record duplicate coverage through a narrow allowlisted import-target adapter, without enabling writes.",
+  "last_completed": [
+    "Integrated PR #355 as main commit 0f88852: zero-write universal import preflight with tenant fail-closed validation, mapping, row validation and skip-only duplicate semantics.",
+    "Integrated PR #364 as main commit 047110f after Architecture Guard, ORBYVEN CI and Quality Gate were green on the final head.",
+    "Re-audited current Supabase production schema read-only for crm_leads and organization_entitlements.",
+    "Confirmed crm_leads has no unique email/phone constraint; duplicate detection remains an explicit ORBYVEN rule rather than a claimed DB guarantee.",
+    "Confirmed crm_leads SELECT is organization-member scoped and protected by a restrictive leads entitlement policy, while organization_entitlements can be explicitly checked by organization members.",
+    "Implemented an allowlisted semantic crm_contacts import target with server-owned fields and normalized-email duplicate semantics.",
+    "Implemented an actor bearer-token/RLS existing-record reader with active leads-entitlement validation, exact organization filters, returned-tenant validation, a 10,000-record hard cap and fail-closed scan drift detection; there is no service-role fallback.",
+    "Updated /api/workspace/data-import/preflight so target-aware requests derive target schema/duplicate keys server-side, reject contract overrides and client existing-record snapshots, expose only aggregate duplicate coverage and keep all writes disabled.",
+    "Added targeted test:data coverage for allowlisting, case-insensitive existing-email detection, tenant/RLS boundaries, scan caps and zero-write behavior.",
+    "Opened PR #365 with chat-2-platform ownership and validated product head 0664ca5 successfully through Architecture Guard, ORBYVEN CI and Quality Gate.",
+    "Updated the handoff and successfully revalidated that handoff-only head through Architecture Guard, Quality Gate and all CI functional/build steps.",
+    "Detected main advancing before merge through PR #366 (live AI invitations + RSVP), stopped integration, audited the overlap and confirmed the only package.json overlap is an added invitation-rsvp ecosystem test.",
+    "Prepared a clean realignment over main 4d166a2 preserving both invitation-rsvp ecosystem coverage and data-portability existing-duplicate coverage."
+  ],
+  "next_action": "Validate PR #365 once more from current main 4d166a2. If Architecture Guard, ORBYVEN CI and Quality Gate are green and main remains compatible/mergeable, squash-merge #365. Then start the next atomic data-portability milestone from canonical main by auditing the safest confirmed-write path for crm_contacts, including explicit confirmation, duplicate revalidation immediately before mutation, role/entitlement enforcement, idempotency/retry semantics and rollback/report behavior without silent overwrite.",
+  "files_touched": [
+    ".orbyven/handoff/data-portability.json",
+    "lib/data-portability/import-targets.ts",
+    "lib/data-portability/import-existing-records.server.ts",
+    "app/api/workspace/data-import/preflight/route.ts",
+    "tests/data-portability-existing-duplicates.test.mjs",
+    "package.json"
+  ],
+  "tests": {
+    "status": "pending_ci_after_main_realign",
+    "last_run": "2026-10-17T15:34:00Z",
+    "notes": "The previous final head was green, but main advanced through #366 before merge. This branch is being rebuilt on 4d166a2 with invitation-rsvp coverage retained, so all required gates must rerun."
+  },
+  "last_commit": "c6efccbecaec73b1e00703b7f9094c3e4cfcbbe7",
+  "pull_request": 365,
+  "blocker": null,
+  "safe_to_resume": true
+}

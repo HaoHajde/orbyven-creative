@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "worker_id": "universal-core",
+  "state": "READY",
+  "mode": "work",
+  "updated_at": "2026-10-17T16:43:00Z",
+  "branch": null,
+  "base_main_sha": "5a33fff57779e848bbc2e9a2ba7053dd15dccdf7",
+  "current_objective": "Continue selective Dashboard AI 0.8.25 reconciliation after integrating exact read-only Operational Query Mode; add only demonstrably missing primitives from historical R8 concepts.",
+  "last_completed": [
+    "Universal ORBYVEN 1.0 foundation is complete for universal-core-owned surfaces; Command Palette final WorkspaceShell wiring remains coordinator-owned shared integration.",
+    "Historical Dashboard AI 0.8.25 PR #346 R8 is used only as a capability reference, never as a wholesale merge/cherry-pick source.",
+    "Current-main audit demonstrated a real gap for exact Operational Query handling despite existing tenant-scoped operational summaries/business signals.",
+    "Implemented read-only Operational Query for blocked/overdue/unassigned/urgent/unscheduled tasks, today/tomorrow/week agenda, lead follow-ups and estimate follow-ups.",
+    "Operational Query is mutation-safe: explicit mutation verbs are rejected by the detector and fall through to the existing Plan Mode / Agent Actions confirmation pipeline.",
+    "All business reads are organization-scoped and module availability is gated by enabled organization_modules plus currently active entitlements.",
+    "No WorkspaceShell/global navigation/providers/module registry changes were made.",
+    "PR #376 passed Architecture Guard, Quality Gate and ORBYVEN CI on head 7eac0a6d0303984262d502271992bb74a52edc1e; final integration check confirmed behind_by=0 and mergeable=true, then merged atomically as 5a33fff57779e848bbc2e9a2ba7053dd15dccdf7."
+  ],
+  "next_action": "Re-audit current main against the remaining historical Dashboard AI 0.8.25 R8 capabilities: Entity Intelligence/scoped questions, Business Brief + Explainable Focus, Decision Support + confirmation-only Decision→Action handoff, read-only Action Outcome Loop, Adaptive Follow-up, renderer split and Windows parity. Do not assume each is still missing. Identify the smallest demonstrably absent, still-relevant primitive that can remain isolated from coordinator-owned shared shell/navigation surfaces; record capabilities already superseded by current main as covered rather than reimplementing them."
+  ,"files_touched": [
+    ".orbyven/handoff/universal-core.json",
+    "lib/ai/operational-query-core.ts",
+    "lib/ai/operational-query.ts",
+    "lib/ai/operational-query-entry.ts",
+    "app/api/ai/intelligence/route.ts",
+    "tests/intelligence-core.test.mjs"
+  ],
+  "tests": {
+    "status": "green",
+    "last_run": "2026-10-17T16:42:00Z",
+    "notes": "PR #376: Architecture Guard success; Quality Gate success; ORBYVEN CI success, including lint, typecheck, ecosystem/security/compliance/performance/data/SEO tests, production build and JS budget."
+  },
+  "last_commit": "5a33fff57779e848bbc2e9a2ba7053dd15dccdf7",
+  "pull_request": 376,
+  "blocker": null,
+  "safe_to_resume": true
+}

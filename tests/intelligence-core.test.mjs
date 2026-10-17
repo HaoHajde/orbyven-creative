@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { routeIntelligencePrompt } from "../lib/ai/intelligence-router.ts";
+import { detectOperationalQuery } from "../lib/ai/operational-query-core.ts";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 
@@ -61,4 +62,32 @@ test("Intelligence API is no-store, authenticated and bounded", () => {
   assert.match(route, /answerIntelligenceForActor/);
   assert.match(route, /ensureConversation/);
   assert.match(route, /persistAssistantResponse/);
+});
+
+test("Operational Query detects exact read intents and does not steal mutations", () => {
+  assert.equal(detectOperationalQuery("Care lucrări sunt blocate?"), "blocked_tasks");
+  assert.equal(detectOperationalQuery("Ce lucrări sunt întârziate?"), "overdue_tasks");
+  assert.equal(detectOperationalQuery("Ce am de făcut azi?"), "today");
+  assert.equal(detectOperationalQuery("Ce am mâine în calendar?"), "tomorrow");
+  assert.equal(detectOperationalQuery("Care oferte expiră curând?"), "estimate_followups");
+  assert.equal(detectOperationalQuery("Cine trebuie contactat azi la lead-uri?"), "lead_followups");
+  assert.equal(detectOperationalQuery("Marchează lucrarea ca blocată"), null);
+  assert.equal(detectOperationalQuery("Programează taskurile urgente mâine"), null);
+});
+
+test("Operational Query remains tenant-scoped, entitlement-gated and read-only", () => {
+  const entry = read("lib/ai/operational-query-entry.ts");
+  const query = read("lib/ai/operational-query.ts");
+  const route = read("app/api/ai/intelligence/route.ts");
+
+  assert.match(entry, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(entry, /organization_entitlements/);
+  assert.match(entry, /available\.add\(moduleId\)/);
+  assert.match(query, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(query, /available\.has\("tasks"\)/);
+  assert.match(query, /available\.has\("leads"\)/);
+  assert.match(query, /available\.has\("estimates"\)/);
+  assert.doesNotMatch(query, /\.(insert|update|delete|upsert)\s*\(/);
+  assert.match(route, /answerOperationalQueryForActor/);
+  assert.match(route, /operationalResult \?\? await answerIntelligenceForActor/);
 });
