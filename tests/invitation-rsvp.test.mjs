@@ -22,7 +22,7 @@ test("invitation contracts keep AI publish modes bounded", () => {
 });
 
 test("invitation storage is RLS enabled and server-role only", () => {
-  const migration = read("supabase/migrations/20261017180500_ai_invitation_projects_rsvp.sql");
+  const migration = read("supabase/migrations/20261017152117_ai_invitation_projects_rsvp.sql");
   for (const table of ["invitation_projects", "invitation_rsvps", "invitation_rsvp_ip_quota"]) {
     assert.match(migration, new RegExp(`alter table public\\.${table} enable row level security`, "i"));
     assert.match(migration, new RegExp(`revoke all on public\\.${table} from public, anon, authenticated`, "i"));
