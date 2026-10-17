@@ -147,6 +147,14 @@ export function parseIntegrityIngestPayload(value: unknown): IntegrityIngestPayl
   }
 
   const reportMarkdown = requiredString(raw.report_markdown, "report_markdown", MAX_REPORT_LENGTH);
+  const reportSha256 = requiredString(raw.report_sha256, "report_sha256", 64).toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(reportSha256)) {
+    throw new ControlCenterHttpError(
+      400,
+      "invalid_integrity_payload",
+      "report_sha256 must be a SHA-256 hex digest."
+    );
+  }
 
   return {
     run_key: requiredString(raw.run_key, "run_key", 180),
@@ -160,7 +168,7 @@ export function parseIntegrityIngestPayload(value: unknown): IntegrityIngestPayl
     category_scores: categoryScores,
     summary: requiredString(raw.summary, "summary", 8_000),
     report_markdown: reportMarkdown,
-    report_sha256: requiredString(raw.report_sha256, "report_sha256", 128),
+    report_sha256: reportSha256,
     findings: findingsRaw.map(parseFinding),
     metadata:
       raw.metadata && typeof raw.metadata === "object" && !Array.isArray(raw.metadata)
@@ -173,36 +181,54 @@ export async function ingestIntegrityRun(
   admin: SupabaseClient,
   payload: IntegrityIngestPayload
 ) {
+  const computedDigest = createHash("sha256").update(payload.report_markdown).digest("hex");
+  if (!secureEqual(computedDigest, payload.report_sha256)) {
+    throw new ControlCenterHttpError(
+      400,
+      "integrity_report_digest_mismatch",
+      "Integrity report digest does not match the report body."
+    );
+  }
+
+  const { data: existing, error: existingError } = await admin
+    .from("platform_integrity_runs")
+    .select("id,report_sha256")
+    .eq("run_key", payload.run_key)
+    .maybeSingle();
+  if (existingError) throw existingError;
+
+  if (existing) {
+    if (!existing.report_sha256 || !secureEqual(existing.report_sha256, payload.report_sha256)) {
+      throw new ControlCenterHttpError(
+        409,
+        "integrity_run_conflict",
+        "An immutable integrity run already exists with this run key."
+      );
+    }
+    return existing.id as string;
+  }
+
   const { data: run, error: runError } = await admin
     .from("platform_integrity_runs")
-    .upsert(
-      {
-        run_key: payload.run_key,
-        source: payload.source,
-        status: payload.status,
-        branch: payload.branch ?? null,
-        commit_sha: payload.commit_sha ?? null,
-        started_at: payload.started_at,
-        finished_at: payload.finished_at,
-        overall_score: payload.overall_score,
-        category_scores: payload.category_scores,
-        summary: payload.summary,
-        report_markdown: payload.report_markdown,
-        report_sha256: payload.report_sha256,
-        metadata: payload.metadata ?? {},
-      },
-      { onConflict: "run_key" }
-    )
+    .insert({
+      run_key: payload.run_key,
+      source: payload.source,
+      status: payload.status,
+      branch: payload.branch ?? null,
+      commit_sha: payload.commit_sha ?? null,
+      started_at: payload.started_at,
+      finished_at: payload.finished_at,
+      overall_score: payload.overall_score,
+      category_scores: payload.category_scores,
+      summary: payload.summary,
+      report_markdown: payload.report_markdown,
+      report_sha256: payload.report_sha256,
+      metadata: payload.metadata ?? {},
+    })
     .select("id")
     .single();
 
   if (runError || !run) throw runError ?? new Error("Integrity run was not persisted.");
-
-  const { error: deleteError } = await admin
-    .from("platform_integrity_findings")
-    .delete()
-    .eq("run_id", run.id);
-  if (deleteError) throw deleteError;
 
   if (payload.findings.length > 0) {
     const { error: findingsError } = await admin.from("platform_integrity_findings").insert(
