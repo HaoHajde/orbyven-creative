@@ -3,35 +3,36 @@
   "worker_id": "operations-reliability",
   "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T14:46:00Z",
-  "branch": "feat/operations-recovery-ux",
-  "base_main_sha": "94db92c4ed92da45a3e66c5992d97fff241712da",
-  "current_objective": "Validate the second ORBYVEN 1.0 reliability milestone: universal safe recovery/retry presentation without duplicating bounded backend recovery flows or exposing raw provider failures.",
+  "updated_at": "2026-10-17T14:54:00Z",
+  "branch": "feat/operations-operator-health",
+  "base_main_sha": "0f8885286a08a526e4dd51aa1db3157b48d16d1d",
+  "current_objective": "Validate the third ORBYVEN 1.0 reliability milestone: sanitized operator health aggregation for services, jobs, integrations and data checks without duplicating Control Center tenant-configuration health.",
   "last_completed": [
-    "Re-audited current main after the Attention Inbox milestone and current concurrent integrations. No universal error boundary/retry presentation contract has landed; bounded recovery remains flow-specific.",
-    "Confirmed workspace modules already use sanitized user-facing load errors and reusable load callbacks, but the shared ModuleError surface is passive and does not express safe retry semantics.",
-    "Added a pure recovery presentation contract covering offline, timeout, rate limit, service unavailable, authentication, permission, not-found, conflict, validation and unknown states in Romanian and English.",
-    "Separated safe retry from uncertain non-idempotent writes: reads/idempotent writes can retry transient failures, while non-idempotent writes refresh authoritative state first to avoid duplicates.",
-    "Added a standalone premium RecoveryState component consuming only the sanitized presentation contract. It accepts retry/refresh callbacks but no Error object, provider payload, credentials or raw sensitive details.",
-    "Added regression coverage for retry safety, conflict refresh, no-retry authorization/validation states, secret/provider-field non-propagation, bilingual semantics and component contract.",
-    "The first PR #359 validation passed Architecture Guard, Quality Gate and CI. Main advanced during validation, so the branch was rebased instead of merging stale. Main advanced again through PR #358; its new web-design-studio ecosystem test was preserved while recovery was reapplied atomically.",
-    "Shared shell/navigation and existing bounded backend recovery endpoints were not modified."
+    "Attention Inbox milestone is integrated in main and reuses buildBusinessAutomationSignals rather than adding an event store.",
+    "Universal safe recovery/retry milestone PR #359 was integrated after Architecture Guard, Quality Gate and CI passed on a current branch. Transient reads/idempotent writes may retry; uncertain non-idempotent writes refresh authoritative state first.",
+    "A separate Manual Browser Performance Audit exposed an unrelated pre-existing homepage tablet form-control font-size issue below 16px; recovery did not touch that surface and the issue was not hidden or folded into the reliability PR.",
+    "Re-audited current Activity/Audit infrastructure: lib/modules/activity.ts already provides a tenant-scoped Activity Center read model; Control Center already loads immutable platform_audit_log evidence, so no parallel activity/audit event system is needed.",
+    "Confirmed current Control Center technical health is limited to tenant configuration checks such as profile, owner, active members, known modules and lifecycle state. Operational jobs/services/providers are not aggregated there.",
+    "Added a pure Operator Health read model that accepts only bounded status telemetry, marks stale/future-invalid checks unknown, aggregates degraded/attention/unknown/healthy state and strictly filters organization-scoped checks to the requested tenant.",
+    "Added a standalone responsive OperatorHealthPanel that consumes only the sanitized snapshot and exposes no raw logs, Error objects, provider payloads, secrets or credentials.",
+    "Added regression coverage for severity aggregation, stale data, tenant isolation, platform-only scope, telemetry normalization and non-propagation of raw/sensitive fields. Shared shell/navigation and Control Center wiring were not modified.",
+    "Main advanced through data-portability PR #355 while PR #362 was opening; its test:data registration was preserved while this milestone was rebased atomically onto current main."
   ],
-  "next_action": "Observe the rerun of Architecture Guard, Quality Gate and CI on PR #359 after rebasing onto main 94db92c4ed92da45a3e66c5992d97fff241712da. Merge only if the branch remains current and all relevant checks are green. Then re-audit current main and select operator health/observability aggregation or universal Activity/Audit presentation based on the existing read models, without exposing sensitive or cross-tenant data.",
+  "next_action": "Observe Architecture Guard, Quality Gate and CI on PR #362 after rebasing onto main 0f8885286a08a526e4dd51aa1db3157b48d16d1d. Merge only if the branch remains current and all relevant checks are green. After integration, re-audit notification preferences/channel controls and the remaining Activity/Audit presentation gap; do not duplicate existing Activity Center or platform_audit_log storage.",
   "files_touched": [
-    "lib/operations/recovery.ts",
-    "components/operations/RecoveryState.tsx",
-    "tests/operations-recovery.test.mjs",
+    "lib/operations/operator-health.ts",
+    "components/operations/OperatorHealthPanel.tsx",
+    "tests/operations-operator-health.test.mjs",
     "package.json",
     ".orbyven/handoff/operations-reliability.json"
   ],
   "tests": {
     "status": "pending_ci",
-    "last_run": "2026-10-17T14:45:00Z",
-    "notes": "Previous PR #359 heads passed Architecture Guard, Quality Gate and CI, but concurrent main integrations changed the canonical base. The current rebased head must pass those gates again. Security regressions and production build are part of Quality Gate/CI; no bypass is allowed."
+    "last_run": null,
+    "notes": "Operator health regression is registered in test:ecosystem. Current main data-portability tests are preserved in test:data. Quality Gate/CI must validate lint, typecheck, architecture, ecosystem, security, data tests and production build before integration; no bypass is allowed."
   },
-  "last_commit": "4f279f7fb4077db56bff6591f593684f356bc915",
-  "pull_request": 359,
+  "last_commit": "ebe57f8b171c7661f4a7ac433a9cf943cf962166",
+  "pull_request": 362,
   "blocker": null,
   "safe_to_resume": true
 }
