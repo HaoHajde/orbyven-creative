@@ -52,13 +52,14 @@ export function buildWebDesignProjectPrompt(prompt: string) {
   if (mode === "website") return { mode, prompt };
 
   const label = INVITATION_LABELS[mode];
-  const source = prompt.trim().slice(0, 1450);
+  const source = prompt.trim().slice(0, 1350);
   const instruction = [
     `[MOD ORBYVEN: invitație online / ${label}]`,
     "Construiește o invitație online premium, mobile-first, nu un site comercial.",
     "Câmpul brand poate deveni numele persoanelor sau titlul evenimentului, dar numai dacă apare în cererea utilizatorului.",
     "Mapează schema astfel: services=detalii eveniment, benefits=repere, about=poveste, gallery=galerie, process=program, faq=informații utile, contact=RSVP.",
-    "CTA-ul principal trebuie să fie RSVP sau confirmarea prezenței. Evită limbajul de vânzare, ofertare, servicii și clienți.",
+    "Include servicii pentru detaliile evenimentului; include despre pentru poveste; include proces pentru program; include contact pentru RSVP. Galeria și FAQ rămân opționale.",
+    "CTA-ul principal trebuie să fie RSVP sau confirmarea prezenței. Evită limbajul de vânzare, ofertare și clienți.",
     "Nu inventa nume, dată, oră, locație, adresă, nași/părinți, program, dress code, cadouri, contacte sau alte fapte lipsă.",
     `Cererea utilizatorului: ${source}`,
   ].join(" ");
