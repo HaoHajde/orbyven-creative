@@ -3,7 +3,7 @@
   "worker_id": "dashboard-core",
   "state": "IN_PROGRESS",
   "mode": "work",
-  "updated_at": "2026-10-17T13:23:15.583581+00:00",
+  "updated_at": "2026-10-17T13:24:35.505198+00:00",
   "branch": "feature/dashboard-core-resume-20261017",
   "base_main_sha": "f7cb01c87d642c846b143013a5e7f26dd70a6445",
   "current_objective": "Continue ORBYVEN dashboard/core development with a professional, minimalist, beginner-friendly 3-click UX; keep modules integrated as one ecosystem and preserve responsive PC/phone/tablet behavior.",
@@ -30,9 +30,9 @@
   ],
   "tests": {
     "status": "focused_passed_full_pending",
-    "notes": "12 task/agenda tests passed; fixed Next eslint module-variable naming finding. Full validation, build and remote CI pending; no browser/device checks."
+    "notes": "12 focused tests and changed-file lint passed. Full validate found Supabase generic inference failure with conditional select; split typed query builders and typecheck now passes. Full validation rerunning; no browser/device verification."
   },
-  "last_commit": "76971fd704375ca651ccf2b00dcd78af35f0d119",
+  "last_commit": "5a52245d6d79b8c9681c3d8a4b5ad3df7055eeba",
   "pull_request": 351,
   "blocker": null,
   "safe_to_resume": true

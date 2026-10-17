@@ -57,12 +57,13 @@ export async function answerAgendaQuery(
   const timeZone = profile.data?.timezone || "Europe/Bucharest";
   const { start, end } = agendaRange(now, timeZone, period);
   const results = await Promise.all(modules.map(async module => {
-    let query = client.from(module === "tasks" ? "ops_tasks" : "calendar_events")
-      .select(module === "tasks" ? "id,title,client_id,scheduled_at" : "id,title,client_id,task_id,start_at", { count: "exact" })
-      .eq("organization_id", organizationId);
-    if (module === "tasks") query = query.not("status", "in", '("done","cancelled")').gte("scheduled_at", start).lt("scheduled_at", end);
-    else query = query.neq("status", "cancelled").lt("start_at", end)
-      .or(`end_at.gt.${start},and(end_at.is.null,start_at.gte.${start}),and(end_at.eq.${start},start_at.eq.${start})`);
+    const query = module === "tasks"
+      ? client.from("ops_tasks").select("id,title,client_id,scheduled_at", { count: "exact" })
+        .eq("organization_id", organizationId).not("status", "in", '("done","cancelled")')
+        .gte("scheduled_at", start).lt("scheduled_at", end)
+      : client.from("calendar_events").select("id,title,client_id,task_id,start_at", { count: "exact" })
+        .eq("organization_id", organizationId).neq("status", "cancelled").lt("start_at", end)
+        .or(`end_at.gt.${start},and(end_at.is.null,start_at.gte.${start}),and(end_at.eq.${start},start_at.eq.${start})`);
     const result: AgendaResult = await query.order(module === "tasks" ? "scheduled_at" : "start_at").order("id").limit(3);
     if (result.error) throw result.error;
     if (result.count === null || result.data === null) throw new Error("Agenda results unavailable.");
