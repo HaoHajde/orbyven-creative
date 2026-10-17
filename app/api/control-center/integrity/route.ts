@@ -37,7 +37,20 @@ export async function GET(request: Request) {
     requireStaffRole(staffRole, ["platform_owner"]);
 
     const payload = await loadIntegrityPayload(admin);
-    return NextResponse.json(payload, {
+    const latestRunId = payload.latest_run?.id ?? null;
+    const currentPayload = latestRunId
+      ? {
+          ...payload,
+          manual_actions: payload.manual_actions.filter(
+            (finding) => finding.run_id === latestRunId
+          ),
+          ai_actions: payload.ai_actions.filter(
+            (finding) => finding.run_id === latestRunId
+          ),
+        }
+      : payload;
+
+    return NextResponse.json(currentPayload, {
       headers: {
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
