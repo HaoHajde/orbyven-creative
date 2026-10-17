@@ -42,6 +42,7 @@ function publicPayload(state: Awaited<ReturnType<typeof loadInvitationAdminState
         }
       : null,
     rsvps: state.rsvps,
+    tables: state.tables,
   };
 }
 
