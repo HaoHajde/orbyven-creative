@@ -20,12 +20,21 @@ export type PublishedInvitationProject = {
   publishedAt: string;
 };
 
+export type InvitationTable = {
+  id: string;
+  name: string;
+  capacity: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type InvitationRsvp = {
   id: string;
   guestName: string;
   attending: boolean;
   guestCount: number;
   message: string | null;
+  tableId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -71,6 +80,26 @@ function projectFromRow(row: Record<string, unknown> | null): PublishedInvitatio
   };
 }
 
+function tableFromRow(row: Record<string, unknown> | null): InvitationTable | null {
+  if (
+    !row ||
+    typeof row.id !== "string" ||
+    typeof row.name !== "string" ||
+    typeof row.capacity !== "number" ||
+    typeof row.created_at !== "string" ||
+    typeof row.updated_at !== "string"
+  ) {
+    return null;
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    capacity: row.capacity,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 function rsvpFromRow(row: Record<string, unknown> | null): InvitationRsvp | null {
   if (
     !row ||
@@ -90,6 +119,7 @@ function rsvpFromRow(row: Record<string, unknown> | null): InvitationRsvp | null
     attending: row.attending,
     guestCount: row.guest_count,
     message: typeof row.message === "string" ? row.message : null,
+    tableId: typeof row.table_id === "string" ? row.table_id : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -109,6 +139,22 @@ async function resolveOwnedInvitationProjectId(
   if (error) throw error;
   if (!data?.id) throw new Error("INVITATION_PROJECT_NOT_FOUND");
   return String(data.id);
+}
+
+async function assertInvitationTableBelongsToProject(
+  actor: BillingActor,
+  projectId: string,
+  tableId: string
+) {
+  const client = createBillingServiceClient(actor);
+  const { data, error } = await client
+    .from("invitation_tables")
+    .select("id")
+    .eq("id", tableId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.id) throw new Error("INVITATION_TABLE_NOT_FOUND");
 }
 
 export async function publishInvitationProject(input: {
@@ -172,7 +218,11 @@ export async function publishInvitationProject(input: {
 export async function loadInvitationAdminState(
   actor: BillingActor,
   projectType: InvitationProjectType
-): Promise<{ project: PublishedInvitationProject | null; rsvps: InvitationRsvp[] }> {
+): Promise<{
+  project: PublishedInvitationProject | null;
+  rsvps: InvitationRsvp[];
+  tables: InvitationTable[];
+}> {
   const client = createBillingServiceClient(actor);
   const { data: row, error } = await client
     .from("invitation_projects")
@@ -183,22 +233,105 @@ export async function loadInvitationAdminState(
   if (error) throw error;
 
   const project = projectFromRow(row as Record<string, unknown> | null);
-  if (!project) return { project: null, rsvps: [] };
+  if (!project) return { project: null, rsvps: [], tables: [] };
 
-  const { data: responses, error: responseError } = await client
-    .from("invitation_rsvps")
-    .select("id,guest_name,attending,guest_count,message,created_at,updated_at")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (responseError) throw responseError;
+  const [responsesResult, tablesResult] = await Promise.all([
+    client
+      .from("invitation_rsvps")
+      .select("id,guest_name,attending,guest_count,message,table_id,created_at,updated_at")
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    client
+      .from("invitation_tables")
+      .select("id,name,capacity,created_at,updated_at")
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: true })
+      .limit(200),
+  ]);
+  if (responsesResult.error) throw responsesResult.error;
+  if (tablesResult.error) throw tablesResult.error;
 
-  const rsvps: InvitationRsvp[] = (responses ?? []).flatMap((item) => {
+  const rsvps: InvitationRsvp[] = (responsesResult.data ?? []).flatMap((item) => {
     const parsed = rsvpFromRow(item as Record<string, unknown> | null);
     return parsed ? [parsed] : [];
   });
+  const tables: InvitationTable[] = (tablesResult.data ?? []).flatMap((item) => {
+    const parsed = tableFromRow(item as Record<string, unknown> | null);
+    return parsed ? [parsed] : [];
+  });
 
-  return { project, rsvps };
+  return { project, rsvps, tables };
+}
+
+export async function createInvitationTable(input: {
+  actor: BillingActor;
+  projectType: InvitationProjectType;
+  name: string;
+  capacity: number;
+}) {
+  const client = createBillingServiceClient(input.actor);
+  const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const { data, error } = await client
+    .from("invitation_tables")
+    .insert({
+      project_id: projectId,
+      name: input.name,
+      capacity: input.capacity,
+      created_by: input.actor.userId,
+      updated_by: input.actor.userId,
+    })
+    .select("id,name,capacity,created_at,updated_at")
+    .single();
+  if (error) throw error;
+  const table = tableFromRow(data as Record<string, unknown> | null);
+  if (!table) throw new Error("INVITATION_TABLE_INVALID_RESPONSE");
+  return table;
+}
+
+export async function updateInvitationTable(input: {
+  actor: BillingActor;
+  projectType: InvitationProjectType;
+  tableId: string;
+  name: string;
+  capacity: number;
+}) {
+  const client = createBillingServiceClient(input.actor);
+  const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const { data, error } = await client
+    .from("invitation_tables")
+    .update({
+      name: input.name,
+      capacity: input.capacity,
+      updated_by: input.actor.userId,
+    })
+    .eq("id", input.tableId)
+    .eq("project_id", projectId)
+    .select("id,name,capacity,created_at,updated_at")
+    .maybeSingle();
+  if (error) throw error;
+  const table = tableFromRow(data as Record<string, unknown> | null);
+  if (!table) throw new Error("INVITATION_TABLE_NOT_FOUND");
+  return table;
+}
+
+export async function deleteInvitationTable(input: {
+  actor: BillingActor;
+  projectType: InvitationProjectType;
+  tableId: string;
+}) {
+  const client = createBillingServiceClient(input.actor);
+  const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const { data, error } = await client
+    .from("invitation_tables")
+    .delete()
+    .eq("id", input.tableId)
+    .eq("project_id", projectId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.id) throw new Error("INVITATION_TABLE_NOT_FOUND");
+  return String(data.id);
 }
 
 export async function updateInvitationRsvp(input: {
@@ -209,21 +342,29 @@ export async function updateInvitationRsvp(input: {
   attending: boolean;
   guestCount: number;
   message: string | null;
+  tableId?: string | null;
 }) {
   const client = createBillingServiceClient(input.actor);
   const projectId = await resolveOwnedInvitationProjectId(input.actor, input.projectType);
+  const tableId = input.attending ? input.tableId : null;
+  if (tableId) {
+    await assertInvitationTableBelongsToProject(input.actor, projectId, tableId);
+  }
+  const update: Record<string, unknown> = {
+    guest_name: input.guestName,
+    attending: input.attending,
+    guest_count: input.attending ? input.guestCount : 0,
+    message: input.message,
+    updated_by: input.actor.userId,
+  };
+  if (input.tableId !== undefined || !input.attending) update.table_id = tableId ?? null;
+
   const { data, error } = await client
     .from("invitation_rsvps")
-    .update({
-      guest_name: input.guestName,
-      attending: input.attending,
-      guest_count: input.attending ? input.guestCount : 0,
-      message: input.message,
-      updated_by: input.actor.userId,
-    })
+    .update(update)
     .eq("id", input.rsvpId)
     .eq("project_id", projectId)
-    .select("id,guest_name,attending,guest_count,message,created_at,updated_at")
+    .select("id,guest_name,attending,guest_count,message,table_id,created_at,updated_at")
     .maybeSingle();
   if (error) throw error;
   const rsvp = rsvpFromRow(data as Record<string, unknown> | null);

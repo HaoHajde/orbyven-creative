@@ -23,6 +23,9 @@ function jsonError(error: unknown) {
   if (message === "ORG_ACCESS_REQUIRED") {
     return NextResponse.json({ error: "Acces refuzat." }, { status: 403 });
   }
+  if (message === "INVITATION_TABLE_NOT_FOUND") {
+    return NextResponse.json({ error: "Masa selectată nu mai există." }, { status: 400 });
+  }
   if (message === "INVITATION_PROJECT_NOT_FOUND" || message === "INVITATION_RSVP_NOT_FOUND") {
     return NextResponse.json({ error: "Răspunsul nu mai există." }, { status: 404 });
   }
@@ -58,6 +61,11 @@ function readEditableRsvp(body: Record<string, unknown>) {
   const attending = body.attending;
   const guestCount = Number(body.guestCount);
   const message = typeof body.message === "string" ? body.message.trim() : "";
+  const tableId = body.tableId === null || body.tableId === ""
+    ? null
+    : typeof body.tableId === "string" && UUID_RE.test(body.tableId.trim())
+      ? body.tableId.trim()
+      : undefined;
   if (
     guestName.length < 2 ||
     guestName.length > 120 ||
@@ -67,11 +75,18 @@ function readEditableRsvp(body: Record<string, unknown>) {
     guestCount > 12 ||
     (attending && guestCount < 1) ||
     (!attending && guestCount !== 0) ||
-    message.length > 700
+    message.length > 700 ||
+    (body.tableId !== undefined && tableId === undefined)
   ) {
     return null;
   }
-  return { guestName, attending, guestCount, message: message || null };
+  return {
+    guestName,
+    attending,
+    guestCount,
+    message: message || null,
+    ...(body.tableId !== undefined ? { tableId } : {}),
+  };
 }
 
 function rejectViewer(role: string) {
