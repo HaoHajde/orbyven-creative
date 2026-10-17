@@ -20,7 +20,7 @@ test("authenticated AI Design uses the minimal multi-project studio", () => {
   assert.match(studio, /invitație online de nuntă/);
   assert.match(studio, /invitație online de botez/);
   assert.match(studio, /invitație online pentru un eveniment/);
-  assert.match(studio, />Generează</);
+  assert.match(studio, /"Generează"/);
   assert.doesNotMatch(studio, /Generative Web Design Specialist/);
   assert.doesNotMatch(studio, /ORBYVEN folosește gratuit motorul local/);
 });
