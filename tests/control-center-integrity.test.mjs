@@ -58,19 +58,29 @@ test("Guardian queue is structurally limited to PR preparation", () => {
   assert.match(server, /mode: "prepare_pr"/);
 });
 
-test("daily integrity workflow cannot write to repository contents", () => {
+test("daily integrity workflow is private-repo only and cannot write repository contents", () => {
   const workflow = read(".github/workflows/daily-integrity-audit.yml");
 
   assert.doesNotMatch(workflow, /contents:\s*write/);
   assert.match(workflow, /permissions:\s*\n\s*contents: read/);
+  assert.match(workflow, /github\.event\.repository\.private == true/);
   assert.match(workflow, /ORBYVEN_ENABLE_PRIVATE_AUDIT == 'true'/);
   assert.match(workflow, /TZ=Europe\/Bucharest date \+%H:%M/);
   assert.match(workflow, /"07:30"/);
+  assert.match(workflow, /persist-credentials: false/);
 });
 
-test("Guardian AI runs without a write-capable GitHub token", () => {
+test("daily security audit includes production dependency vulnerability scanning", () => {
+  const runner = read("scripts/run-integrity-audit.mjs");
+
+  assert.match(runner, /Production dependency vulnerabilities/);
+  assert.match(runner, /"audit", "--omit=dev", "--audit-level=high"/);
+});
+
+test("Guardian AI runs only on a private repo and without a write-capable GitHub token", () => {
   const workflow = read(".github/workflows/guardian-pr-worker.yml");
 
+  assert.match(workflow, /github\.event\.repository\.private == true/);
   assert.match(workflow, /prepare-patch:[\s\S]*permissions:\s*\n\s*contents: read/);
   assert.match(workflow, /openai\/codex-action@a8d8be6ee028bea4525bc722d16f36687b408c81/);
   assert.match(workflow, /permission-profile: ":workspace"/);
@@ -89,6 +99,8 @@ test("Guardian write token exists only in trusted validation job", () => {
 
   assert.match(trustedJob, /contents: write/);
   assert.match(trustedJob, /pull-requests: write/);
+  assert.match(trustedJob, /Independently enforce Guardian trust boundary/);
+  assert.match(trustedJob, /Prevent validation-script tampering/);
   assert.match(trustedJob, /npm run validate/);
   assert.match(trustedJob, /gh pr create --draft/);
   assert.doesNotMatch(trustedJob, /openai\/codex-action/);
@@ -98,14 +110,42 @@ test("Guardian write token exists only in trusted validation job", () => {
 test("Guardian cannot self-modify its own trust boundaries", () => {
   const workflow = read(".github/workflows/guardian-pr-worker.yml");
   const prompt = read("scripts/guardian-claim.mjs");
-
-  for (const boundary of [
+  const boundaries = [
     ".github/workflows/",
     "app/api/internal/integrity-guardian/",
+    "app/api/internal/integrity-audit/",
+    "app/api/control-center/integrity/",
     "lib/orbyven-guardian-server.ts",
     "lib/orbyven-integrity-server.ts",
-  ]) {
-    assert.match(workflow, new RegExp(boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-    assert.match(prompt, new RegExp(boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    "lib/orbyven-integrity-contracts.ts",
+    "scripts/guardian-claim.mjs",
+    "scripts/guardian-result.mjs",
+    "scripts/publish-integrity-audit.mjs",
+    "tests/control-center-integrity.test.mjs",
+    "supabase/migrations/20261017115000_control_center_integrity_audit.sql",
+  ];
+
+  for (const boundary of boundaries) {
+    const escaped = boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(workflow, new RegExp(escaped));
+    assert.match(prompt, new RegExp(escaped));
   }
+});
+
+test("Guardian cannot rewrite critical package validation scripts", () => {
+  const workflow = read(".github/workflows/guardian-pr-worker.yml");
+
+  for (const script of [
+    "lint",
+    "typecheck",
+    "build",
+    "validate",
+    "test:architecture",
+    "test:security",
+    "test:compliance",
+    "test:seo",
+  ]) {
+    assert.match(workflow, new RegExp(`'${script.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}'`));
+  }
+  assert.match(workflow, /process\.exit\(43\)/);
 });
