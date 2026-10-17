@@ -20,6 +20,9 @@ jobs:
     if: github.event.repository.private == true && (github.event_name == 'workflow_dispatch' || vars.ORBYVEN_ENABLE_PRIVATE_AUDIT == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: integrity-ci-placeholder-key
 
     steps:
       - name: Resolve Bucharest schedule
