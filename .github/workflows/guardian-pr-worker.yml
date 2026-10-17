@@ -71,7 +71,7 @@ jobs:
           fi
           echo "$changed" | while IFS= read -r path; do
             case "$path" in
-              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-server.ts|lib/orbyven-integrity-contracts.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-*.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
                 echo "Guardian attempted to change protected trust boundary: $path" >&2
                 exit 41
                 ;;
@@ -155,7 +155,7 @@ jobs:
           changed="$(git diff --cached --name-only)"
           echo "$changed" | while IFS= read -r path; do
             case "$path" in
-              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-server.ts|lib/orbyven-integrity-contracts.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-*.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
                 echo "Trusted validator rejected protected path: $path" >&2
                 exit 42
                 ;;
