@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import AiWebDesignRouter from "@/components/AiWebDesignRouter";
 
+// AiWebDesignEntry remains the public fallback inside AiWebDesignRouter.
 export const metadata: Metadata = {
   title: "AI Web Design ORBYVEN | Website-uri și invitații online",
   description:
