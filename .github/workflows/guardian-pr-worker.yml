@@ -71,7 +71,7 @@ jobs:
           fi
           echo "$changed" | while IFS= read -r path; do
             case "$path" in
-              .github/workflows/*|app/api/internal/integrity-guardian/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-server.ts|.env|.env.*)
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-server.ts|lib/orbyven-integrity-contracts.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
                 echo "Guardian attempted to change protected trust boundary: $path" >&2
                 exit 41
                 ;;
@@ -148,6 +148,45 @@ jobs:
           git apply --index --check "${{ runner.temp }}/orbyven-patch/guardian.patch"
           git apply --index "${{ runner.temp }}/orbyven-patch/guardian.patch"
           git diff --cached --check
+
+      - name: Independently enforce Guardian trust boundary
+        shell: bash
+        run: |
+          changed="$(git diff --cached --name-only)"
+          echo "$changed" | while IFS= read -r path; do
+            case "$path" in
+              .github/workflows/*|app/api/internal/integrity-guardian/*|app/api/internal/integrity-audit/*|app/api/control-center/integrity/*|lib/orbyven-guardian-server.ts|lib/orbyven-integrity-server.ts|lib/orbyven-integrity-contracts.ts|scripts/guardian-claim.mjs|scripts/guardian-result.mjs|scripts/publish-integrity-audit.mjs|tests/control-center-integrity.test.mjs|supabase/migrations/20261017115000_control_center_integrity_audit.sql|.env|.env.*)
+                echo "Trusted validator rejected protected path: $path" >&2
+                exit 42
+                ;;
+            esac
+          done
+
+      - name: Prevent validation-script tampering
+        shell: bash
+        run: |
+          git show HEAD:package.json > "${{ runner.temp }}/guardian-base-package.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const before = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/guardian-base-package.json', 'utf8'));
+          const after = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const critical = [
+            'lint',
+            'typecheck',
+            'build',
+            'validate',
+            'test:architecture',
+            'test:security',
+            'test:compliance',
+            'test:seo'
+          ];
+          for (const name of critical) {
+            if ((before.scripts?.[name] ?? null) !== (after.scripts?.[name] ?? null)) {
+              console.error(`Guardian attempted to alter protected package script: ${name}`);
+              process.exit(43);
+            }
+          }
+          NODE
 
       - name: Install dependencies
         run: npm ci
