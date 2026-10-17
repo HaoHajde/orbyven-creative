@@ -3,7 +3,7 @@
   "worker_id": "universal-core",
   "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T16:20:00Z",
+  "updated_at": "2026-10-17T16:21:00Z",
   "branch": "feat/universal-core-reusable-templates-20261017-v3",
   "base_main_sha": "b52c81ad3ab08d1058908a183f23022ff031153f",
   "current_objective": "Complete the universal ORBYVEN 1.0 core UX: onboarding, global search, universal create, custom fields, configurable tags/statuses and reusable templates while preserving beginner-friendly three-click behavior.",
@@ -11,13 +11,13 @@
     "PR #357 universal Command Palette, PR #360 universal custom fields, PR #363 Universal Tags and PR #367 protected status presentation metadata were integrated after Architecture Guard, Quality Gate and ORBYVEN CI passed.",
     "Re-audited current main and the live ORBYVEN schema for template, preset, recipe, revision and clone capabilities; no persisted universal create-template library exists. Material recipes remain estimate/material-specific and do not cover Tasks/Calendar/Estimates reusable create drafts.",
     "Reusable create templates remain isolated to Tasks, Calendar and Estimates as inert allowlisted prefills; no shared WorkspaceShell/navigation/providers/module registry or vertical module UI wiring is changed.",
-    "Hardened template writes to require organization_members.access_status='active' plus a non-viewer writer role, and aligned SQL integer-minute validation with the TypeScript contract.",
-    "PR #373 rerun on head fadceca2 passed Architecture Guard, Quality Gate and ORBYVEN CI after fixing the demonstrated TypeScript narrowing failure with numeric type predicates.",
-    "Before merge, canonical main advanced through PR #372 to b52c81ad3ab08d1058908a183f23022ff031153f; merge was blocked despite green gates.",
-    "Audited PR #372 and confirmed it changes only invitation RSVP admin surfaces/migration/tests and does not overlap any of the five reusable-template files.",
-    "Rebuilt the hardened five-file reusable-template milestone directly over canonical main b52c81ad3ab08d1058908a183f23022ff031153f on feat/universal-core-reusable-templates-20261017-v3, preserving RSVP admin and prior operations-reliability work."
+    "Hardened template writes to require organization_members.access_status='active' plus a non-viewer writer role, aligned SQL integer-minute validation with the TypeScript contract and fixed the demonstrated TypeScript narrowing failure with numeric type predicates.",
+    "PR #373 head fadceca2 passed Architecture Guard, Quality Gate and ORBYVEN CI, but canonical main advanced through invitation RSVP admin PR #372 before merge; #373 was not merged and was closed as superseded.",
+    "Audited PR #372 and confirmed zero overlap with the reusable-template files.",
+    "Rebuilt the hardened five-file milestone directly over canonical main b52c81ad3ab08d1058908a183f23022ff031153f on feat/universal-core-reusable-templates-20261017-v3, preserving RSVP admin and prior operations-reliability work; compare confirmed behind_by=0.",
+    "Opened replacement atomic PR #375 and applied owner:cross."
   ],
-  "next_action": "Confirm the v3 branch is behind_by=0, open a replacement atomic reusable-template PR, apply owner:cross and close PR #373 as superseded. Rerun Architecture Guard, Quality Gate and ORBYVEN CI on the synchronized head. Merge only if all three are green, behind_by remains 0 and the PR is mergeable against current main. Then update canonical handoff and audit the remaining universal-core roadmap before any selective Dashboard AI 0.8.25 reconciliation.",
+  "next_action": "Observe PR #375 Architecture Guard, Quality Gate and ORBYVEN CI on its latest synchronized head. Fix only demonstrated failures. Before merge reconfirm behind_by=0 and mergeable=true; merge only if all three are green. Then update canonical handoff and audit the remaining universal-core roadmap before any selective Dashboard AI 0.8.25 reconciliation.",
   "files_touched": [
     ".orbyven/handoff/universal-core.json",
     "supabase/migrations/20261017160500_reusable_create_templates.sql",
@@ -28,10 +28,10 @@
   "tests": {
     "status": "pending_ci_after_main_realign",
     "last_run": "2026-10-17T16:18:00Z",
-    "notes": "PR #373 head fadceca2 passed Architecture Guard, Quality Gate and ORBYVEN CI, but main advanced through PR #372 before merge. The v3 current-main branch must rerun all three required gates."
+    "notes": "Superseded PR #373 was fully green but stale. PR #375 is the only active reusable-template integration candidate and must rerun Architecture Guard, Quality Gate and ORBYVEN CI on its latest head."
   },
-  "last_commit": "a44992309484d0cd321031f8bede1edc498d4965",
-  "pull_request": 373,
+  "last_commit": "3f6b4ca319b844cadf84c4297cb895a683ccd76e",
+  "pull_request": 375,
   "blocker": null,
   "safe_to_resume": true
 }
