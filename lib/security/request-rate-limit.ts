@@ -37,3 +37,30 @@ export async function claimProjectRequestIpQuota(request: Request): Promise<bool
   if (error) throw new Error("PROJECT_REQUEST_RATE_LIMIT_UNAVAILABLE");
   return data === true;
 }
+
+export async function claimInvitationRsvpIpQuota(request: Request): Promise<boolean> {
+  const ip = clientIp(request);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const secret = process.env.ORBYVEN_REQUEST_RATE_LIMIT_SECRET?.trim() || key;
+
+  // RSVP is a public write boundary. Missing proxy/service configuration fails
+  // closed instead of silently accepting unthrottled submissions.
+  if (!ip || !secret || secret.length < 32 || !url || !key) {
+    throw new Error("INVITATION_RSVP_RATE_LIMIT_NOT_CONFIGURED");
+  }
+
+  const fingerprint = createHmac("sha256", secret)
+    .update("orbyven:invitation-rsvp:ip:v1:")
+    .update(ip)
+    .digest("hex");
+  const admin = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await admin.rpc("claim_invitation_rsvp_ip_quota", {
+    p_fingerprint: fingerprint,
+  });
+  if (error) throw new Error("INVITATION_RSVP_RATE_LIMIT_UNAVAILABLE");
+  return data === true;
+}
