@@ -4,6 +4,7 @@ import {
   ControlCenterHttpError,
   requireStaffRole,
 } from "@/lib/orbyven-control-center-server";
+import { requireIntegrityOwner } from "@/lib/orbyven-integrity-owner";
 import {
   loadIntegrityPayload,
   queueGuardianFix,
@@ -33,8 +34,9 @@ function errorResponse(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    const { admin, staffRole } = await authorizeControlCenter(request);
+    const { admin, user, staffRole } = await authorizeControlCenter(request);
     requireStaffRole(staffRole, ["platform_owner"]);
+    requireIntegrityOwner(user.id);
 
     const payload = await loadIntegrityPayload(admin);
     const latestRunId = payload.latest_run?.id ?? null;
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
   try {
     const { admin, user, staffRole } = await authorizeControlCenter(request);
     requireStaffRole(staffRole, ["platform_owner"]);
+    requireIntegrityOwner(user.id);
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
