@@ -108,4 +108,39 @@ test("RSVP admin UI stays compact with search filters edit delete confirmation a
   assert.match(control, /Export CSV/);
   assert.match(control, /new Blob\(\["\\uFEFF", csv\]/);
   assert.match(control, /rsvp-\$\{projectType\}-/);
+  assert.match(control, /"Masă"/);
+});
+
+test("seating tables are private, project scoped and assignment-safe", () => {
+  const migration = read("supabase/migrations/20261017182000_invitation_seating.sql");
+  const tableRoute = read("app/api/invitations/tables/route.ts");
+  const rsvpRoute = read("app/api/invitations/rsvps/route.ts");
+  const server = read("lib/invitations/server.ts");
+
+  assert.match(migration, /create table if not exists public\.invitation_tables/);
+  assert.match(migration, /alter table public\.invitation_tables enable row level security/);
+  assert.match(migration, /revoke all on public\.invitation_tables from public, anon, authenticated/);
+  assert.match(migration, /grant select, insert, update, delete on public\.invitation_tables to service_role/);
+  assert.match(migration, /table_id uuid references public\.invitation_tables\(id\) on delete set null/);
+  assert.match(tableRoute, /authenticateBillingActor\(request, identity\.organizationId, false\)/);
+  assert.match(tableRoute, /role === "viewer"/);
+  assert.match(server, /assertInvitationTableBelongsToProject/);
+  assert.match(server, /\.eq\("project_id", projectId\)/);
+  assert.match(rsvpRoute, /tableId/);
+  assert.doesNotMatch(migration, /grant .* to authenticated/i);
+});
+
+test("seating UI supports table capacity, assignment and one-table-per-page print export", () => {
+  const seating = read("components/invitations/InvitationSeatingControl.tsx");
+  const control = read("components/invitations/InvitationPublishControl.tsx");
+
+  assert.match(seating, /Masă nouă/);
+  assert.match(seating, /Capacitate masă/);
+  assert.match(seating, /Neatribuit/);
+  assert.match(seating, /Tipărește \/ PDF/);
+  assert.match(seating, /page-break-after:always/);
+  assert.match(seating, /window\.print\(\)/);
+  assert.match(seating, /\/api\/invitations\/tables/);
+  assert.match(seating, /\/api\/invitations\/rsvps/);
+  assert.match(control, /InvitationSeatingControl/);
 });
