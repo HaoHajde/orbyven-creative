@@ -75,3 +75,37 @@ test("published invitations are private-by-link and Design Studio can publish th
   assert.match(control, /Publică invitația/);
   assert.match(control, /Copiază link/);
 });
+
+test("RSVP admin mutations remain authenticated and tenant scoped", () => {
+  const route = read("app/api/invitations/rsvps/route.ts");
+  const server = read("lib/invitations/server.ts");
+  const migration = read("supabase/migrations/20261017161205_invitation_rsvp_admin.sql");
+
+  assert.match(route, /export async function PATCH/);
+  assert.match(route, /export async function DELETE/);
+  assert.match(route, /authenticateBillingActor\(request, identity\.organizationId, false\)/);
+  assert.match(route, /role === "viewer"/);
+  assert.match(route, /guestName\.length < 2/);
+  assert.match(route, /message\.length > 700/);
+  assert.match(server, /resolveOwnedInvitationProjectId/);
+  assert.match(server, /\.eq\("organization_id", actor\.organizationId\)/);
+  assert.match(server, /\.eq\("project_id", projectId\)/);
+  assert.match(server, /updated_by: input\.actor\.userId/);
+  assert.match(migration, /add column if not exists updated_by uuid references auth\.users\(id\) on delete set null/);
+  assert.match(migration, /grant select, insert, update, delete on public\.invitation_rsvps to service_role/);
+  assert.doesNotMatch(migration, /grant .* to authenticated/i);
+});
+
+test("RSVP admin UI stays compact with search filters edit delete confirmation and CSV export", () => {
+  const control = read("components/invitations/InvitationPublishControl.tsx");
+
+  assert.match(control, /placeholder="Caută invitat"/);
+  assert.match(control, /"attending"/);
+  assert.match(control, /"declined"/);
+  assert.match(control, /method: "PATCH"/);
+  assert.match(control, /method: "DELETE"/);
+  assert.match(control, /deleteConfirmId/);
+  assert.match(control, /Export CSV/);
+  assert.match(control, /new Blob\(\["\\uFEFF", csv\]/);
+  assert.match(control, /rsvp-\$\{projectType\}-/);
+});
