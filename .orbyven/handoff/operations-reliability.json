@@ -1,34 +1,37 @@
 {
   "version": 1,
   "worker_id": "operations-reliability",
-  "state": "READY",
+  "state": "VALIDATING",
   "mode": "work",
-  "updated_at": "2026-10-17T14:34:00Z",
-  "branch": null,
-  "base_main_sha": "c6830e3dd66729a18e9d3c27b12e6a24fb8587c2",
-  "current_objective": "Continue ORBYVEN 1.0 operational reliability from current main after the unified Attention Inbox read-model milestone.",
+  "updated_at": "2026-10-17T14:46:00Z",
+  "branch": "feat/operations-recovery-ux",
+  "base_main_sha": "94db92c4ed92da45a3e66c5992d97fff241712da",
+  "current_objective": "Validate the second ORBYVEN 1.0 reliability milestone: universal safe recovery/retry presentation without duplicating bounded backend recovery flows or exposing raw provider failures.",
   "last_completed": [
-    "Audited canonical main after PR #353 integration. Existing business automation signals already provide the actionable operational source used by Overview and ORBYVEN Intelligence; no notification/event store was added.",
-    "Confirmed Control Center already owns internal platform administration and tenant technical-health responsibilities, so this worker did not duplicate or rewire that surface.",
-    "Implemented the pure Attention Inbox projection with Acum / Azi / Atenție / Rezolvat buckets. Active items derive from AutomationSignal; resolved presentation requires external immutable evidence with an evidence ID.",
-    "Added regression coverage for bucket projection, Bucharest local-day handling, evidence requirements and active-over-resolved precedence; registered it in the ecosystem gate.",
-    "PR #356 passed Architecture Guard, Quality Gate and CI while current with main, then merged as c6830e3dd66729a18e9d3c27b12e6a24fb8587c2.",
-    "Shared shell/navigation was not modified."
+    "Re-audited current main after the Attention Inbox milestone and current concurrent integrations. No universal error boundary/retry presentation contract has landed; bounded recovery remains flow-specific.",
+    "Confirmed workspace modules already use sanitized user-facing load errors and reusable load callbacks, but the shared ModuleError surface is passive and does not express safe retry semantics.",
+    "Added a pure recovery presentation contract covering offline, timeout, rate limit, service unavailable, authentication, permission, not-found, conflict, validation and unknown states in Romanian and English.",
+    "Separated safe retry from uncertain non-idempotent writes: reads/idempotent writes can retry transient failures, while non-idempotent writes refresh authoritative state first to avoid duplicates.",
+    "Added a standalone premium RecoveryState component consuming only the sanitized presentation contract. It accepts retry/refresh callbacks but no Error object, provider payload, credentials or raw sensitive details.",
+    "Added regression coverage for retry safety, conflict refresh, no-retry authorization/validation states, secret/provider-field non-propagation, bilingual semantics and component contract.",
+    "The first PR #359 validation passed Architecture Guard, Quality Gate and CI. Main advanced during validation, so the branch was rebased instead of merging stale. Main advanced again through PR #358; its new web-design-studio ecosystem test was preserved while recovery was reapplied atomically.",
+    "Shared shell/navigation and existing bounded backend recovery endpoints were not modified."
   ],
-  "next_action": "Re-audit current main after any concurrent integrations, then implement the next demonstrably missing atomic reliability capability. Prefer universal error recovery/retry presentation over operator-health aggregation unless existing recovery work has landed. Reuse existing bounded recovery/jobs/health sources, keep audit evidence immutable, and never expose secrets, credentials, cross-tenant data or raw sensitive provider payloads. Leave shared shell/navigation wiring to the coordinator.",
+  "next_action": "Observe the rerun of Architecture Guard, Quality Gate and CI on PR #359 after rebasing onto main 94db92c4ed92da45a3e66c5992d97fff241712da. Merge only if the branch remains current and all relevant checks are green. Then re-audit current main and select operator health/observability aggregation or universal Activity/Audit presentation based on the existing read models, without exposing sensitive or cross-tenant data.",
   "files_touched": [
-    "lib/operations/attention-inbox.ts",
-    "tests/operations-attention-inbox.test.mjs",
+    "lib/operations/recovery.ts",
+    "components/operations/RecoveryState.tsx",
+    "tests/operations-recovery.test.mjs",
     "package.json",
     ".orbyven/handoff/operations-reliability.json"
   ],
   "tests": {
-    "status": "green",
-    "last_run": "2026-10-17T14:32:00Z",
-    "notes": "PR #356: ORBYVEN Architecture Guard success; ORBYVEN Quality Gate success; ORBYVEN CI success. The targeted attention regression is registered in test:ecosystem and therefore covered by the successful gates."
+    "status": "pending_ci",
+    "last_run": "2026-10-17T14:45:00Z",
+    "notes": "Previous PR #359 heads passed Architecture Guard, Quality Gate and CI, but concurrent main integrations changed the canonical base. The current rebased head must pass those gates again. Security regressions and production build are part of Quality Gate/CI; no bypass is allowed."
   },
-  "last_commit": "c6830e3dd66729a18e9d3c27b12e6a24fb8587c2",
-  "pull_request": 356,
+  "last_commit": "4f279f7fb4077db56bff6591f593684f356bc915",
+  "pull_request": 359,
   "blocker": null,
   "safe_to_resume": true
 }
