@@ -48,23 +48,64 @@ test("integrity tables are server-only with RLS and no browser grants", () => {
   }
 });
 
-test("Guardian is structurally limited to PR preparation", () => {
+test("Guardian queue is structurally limited to PR preparation", () => {
   const contracts = read("lib/orbyven-integrity-contracts.ts");
   const server = read("lib/orbyven-integrity-server.ts");
-  const workflow = read(".github/workflows/daily-integrity-audit.yml");
 
   assert.match(contracts, /mode: "pr_only"/);
   assert.match(contracts, /automatic_merge: false/);
   assert.match(contracts, /direct_production_writes: false/);
   assert.match(server, /mode: "prepare_pr"/);
-  assert.doesNotMatch(workflow, /contents:\s*write/);
-  assert.match(workflow, /permissions:\s*\n\s*contents: read/);
 });
 
-test("scheduled audit remains disabled until the private-audit safety switch is enabled", () => {
+test("daily integrity workflow cannot write to repository contents", () => {
   const workflow = read(".github/workflows/daily-integrity-audit.yml");
 
+  assert.doesNotMatch(workflow, /contents:\s*write/);
+  assert.match(workflow, /permissions:\s*\n\s*contents: read/);
   assert.match(workflow, /ORBYVEN_ENABLE_PRIVATE_AUDIT == 'true'/);
   assert.match(workflow, /TZ=Europe\/Bucharest date \+%H:%M/);
   assert.match(workflow, /"07:30"/);
+});
+
+test("Guardian AI runs without a write-capable GitHub token", () => {
+  const workflow = read(".github/workflows/guardian-pr-worker.yml");
+
+  assert.match(workflow, /prepare-patch:[\s\S]*permissions:\s*\n\s*contents: read/);
+  assert.match(workflow, /openai\/codex-action@a8d8be6ee028bea4525bc722d16f36687b408c81/);
+  assert.match(workflow, /permission-profile: ":workspace"/);
+  assert.match(workflow, /safety-strategy: "drop-sudo"/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /ORBYVEN_ENABLE_GUARDIAN == 'true'/);
+
+  const prepareJob = workflow.split("validate-and-open-pr:")[0];
+  assert.doesNotMatch(prepareJob, /contents:\s*write/);
+  assert.doesNotMatch(prepareJob, /pull-requests:\s*write/);
+});
+
+test("Guardian write token exists only in trusted validation job", () => {
+  const workflow = read(".github/workflows/guardian-pr-worker.yml");
+  const trustedJob = workflow.split("validate-and-open-pr:")[1];
+
+  assert.match(trustedJob, /contents: write/);
+  assert.match(trustedJob, /pull-requests: write/);
+  assert.match(trustedJob, /npm run validate/);
+  assert.match(trustedJob, /gh pr create --draft/);
+  assert.doesNotMatch(trustedJob, /openai\/codex-action/);
+  assert.doesNotMatch(workflow, /gh pr merge/);
+});
+
+test("Guardian cannot self-modify its own trust boundaries", () => {
+  const workflow = read(".github/workflows/guardian-pr-worker.yml");
+  const prompt = read("scripts/guardian-claim.mjs");
+
+  for (const boundary of [
+    ".github/workflows/",
+    "app/api/internal/integrity-guardian/",
+    "lib/orbyven-guardian-server.ts",
+    "lib/orbyven-integrity-server.ts",
+  ]) {
+    assert.match(workflow, new RegExp(boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(prompt, new RegExp(boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });
